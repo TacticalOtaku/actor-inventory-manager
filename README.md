@@ -2,8 +2,6 @@
 
 A modern, highly immersive RPG-style Actor Inventory Window & Equipment Paperdoll module for **Foundry VTT** (supporting D&D 5e v3.0+ through v5.3+ and Foundry v12 through v14+).
 
-![Actor Inventory Manager](https://raw.githubusercontent.com/TacticalOtaku/actor-inventory-manager/main/docs/preview.png)
-
 ---
 
 ## Features

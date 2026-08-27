@@ -1,0 +1,126 @@
+<div class="aim-vitals-panel">
+  <!-- Actor Portrait & Identity Card -->
+  <div class="aim-profile-card">
+    <div class="aim-portrait-frame">
+      <img class="aim-portrait-img" src="{{vitals.img}}" alt="{{vitals.name}}" />
+      {{#if vitals.level}}
+        <span class="aim-level-badge" title="{{localize 'AIM.vitals.level'}} {{vitals.level}}">{{vitals.level}}</span>
+      {{/if}}
+    </div>
+    <div class="aim-identity-info">
+      <h2 class="aim-actor-name" title="{{vitals.name}}">{{vitals.name}}</h2>
+      <div class="aim-actor-sub">{{#if vitals.race}}{{vitals.race}}{{/if}}{{#if vitals.alignment}} • {{vitals.alignment}}{{/if}}</div>
+    </div>
+    <button type="button" class="aim-theme-switch-btn" data-action="toggleTheme" title="{{themeTooltip}}">
+      <i class="{{themeIcon}}"></i>
+    </button>
+  </div>
+
+  <!-- Combat Vitals Badges: HP, AC, Speed, Init -->
+  <div class="aim-combat-vitals">
+    <div class="aim-hp-box">
+      <div class="aim-hp-header">
+        <span class="aim-hp-label"><i class="fa-solid fa-heart"></i> {{localize "AIM.vitals.hp"}}</span>
+        <span class="aim-hp-numbers">{{vitals.hp.value}} / {{vitals.hp.max}}{{#if vitals.hp.temp}} (+{{vitals.hp.temp}}){{/if}}</span>
+      </div>
+      <div class="aim-meter aim-hp-meter">
+        <div class="aim-meter-fill" style="width: {{vitals.hp.pct}}%;"></div>
+      </div>
+    </div>
+
+    <div class="aim-vital-badges-grid">
+      <div class="aim-badge-card aim-badge-ac" title="{{localize 'AIM.vitals.ac'}}">
+        <i class="fa-solid fa-shield-halved"></i>
+        <div class="aim-badge-val">{{vitals.ac}}</div>
+        <div class="aim-badge-lbl">{{localize "AIM.vitals.ac"}}</div>
+      </div>
+      <div class="aim-badge-card aim-badge-init" title="{{localize 'AIM.vitals.init'}}">
+        <i class="fa-solid fa-bolt-lightning"></i>
+        <div class="aim-badge-val">{{vitals.init}}</div>
+        <div class="aim-badge-lbl">{{localize "AIM.vitals.init"}}</div>
+      </div>
+      <div class="aim-badge-card aim-badge-speed" title="{{localize 'AIM.vitals.speed'}}">
+        <i class="fa-solid fa-person-running"></i>
+        <div class="aim-badge-val">{{vitals.speed}}</div>
+        <div class="aim-badge-lbl">{{localize "AIM.vitals.speed"}}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ability Scores & Saves -->
+  <div class="aim-abilities-section">
+    <div class="aim-section-title">
+      <i class="fa-solid fa-gem"></i>
+      <span>{{localize "AIM.vitals.abilities"}}</span>
+    </div>
+    <div class="aim-abilities-grid">
+      {{#each vitals.abilities as |ability key|}}
+      <div class="aim-ability-cell">
+        <div class="aim-ability-key">{{key}}</div>
+        <div class="aim-ability-score">{{ability.value}}</div>
+        <div class="aim-ability-mod">{{ability.mod}}</div>
+        <div class="aim-ability-save {{#if ability.proficient}}is-proficient{{/if}}" title="{{localize 'AIM.vitals.save'}}: {{ability.save}}">
+          <i class="fa-solid {{#if ability.proficient}}fa-circle-check{{else}}fa-circle{{/if}}"></i>
+          <span>{{ability.save}}</span>
+        </div>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+
+  <!-- Passive Senses -->
+  <div class="aim-passives-section">
+    <div class="aim-passive-item" title="{{localize 'AIM.vitals.passivePerception'}}">
+      <i class="fa-solid fa-eye"></i>
+      <span>{{localize "AIM.vitals.perception"}}: <strong>{{vitals.passives.perception}}</strong></span>
+    </div>
+    <div class="aim-passive-item" title="{{localize 'AIM.vitals.passiveInvestigation'}}">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <span>{{localize "AIM.vitals.investigation"}}: <strong>{{vitals.passives.investigation}}</strong></span>
+    </div>
+    <div class="aim-passive-item" title="{{localize 'AIM.vitals.passiveInsight'}}">
+      <i class="fa-solid fa-brain"></i>
+      <span>{{localize "AIM.vitals.insight"}}: <strong>{{vitals.passives.insight}}</strong></span>
+    </div>
+  </div>
+
+  <!-- Weight & Encumbrance Meter -->
+  <div class="aim-encumbrance-box">
+    <div class="aim-encumbrance-header">
+      <span class="aim-enc-label"><i class="fa-solid fa-weight-hanging"></i> {{localize "AIM.encumbrance.title"}}</span>
+      <span class="aim-enc-numbers">{{encumbrance.value}} / {{encumbrance.max}} {{encumbrance.unit}}</span>
+    </div>
+    <div class="aim-meter aim-encumbrance-meter {{encumbrance.tierClass}}">
+      <div class="aim-meter-fill" style="width: {{encumbrance.pct}}%;"></div>
+    </div>
+    <div class="aim-enc-status {{encumbrance.tierClass}}">
+      {{localize encumbrance.tierLabelKey}}
+    </div>
+  </div>
+
+  <!-- Currency Purse -->
+  <div class="aim-currency-section">
+    <div class="aim-currency-grid">
+      <div class="aim-coin aim-pp" title="Platinum"><span>PP</span> {{vitals.currency.pp}}</div>
+      <div class="aim-coin aim-gp" title="Gold"><span>GP</span> {{vitals.currency.gp}}</div>
+      <div class="aim-coin aim-ep" title="Electrum"><span>EP</span> {{vitals.currency.ep}}</div>
+      <div class="aim-coin aim-sp" title="Silver"><span>SP</span> {{vitals.currency.sp}}</div>
+      <div class="aim-coin aim-cp" title="Copper"><span>CP</span> {{vitals.currency.cp}}</div>
+    </div>
+    <div class="aim-total-gold">
+      <i class="fa-solid fa-sack-dollar"></i> {{localize "AIM.currency.totalValue"}}: <strong>{{vitals.currency.totalGold}} GP</strong>
+    </div>
+  </div>
+
+  <!-- Rest Controls -->
+  <div class="aim-rest-buttons">
+    <button type="button" class="aim-btn aim-rest-btn" data-action="shortRest">
+      <i class="fa-solid fa-mug-hot"></i>
+      <span>{{localize "AIM.actions.shortRest"}}</span>
+    </button>
+    <button type="button" class="aim-btn aim-rest-btn" data-action="longRest">
+      <i class="fa-solid fa-bed"></i>
+      <span>{{localize "AIM.actions.longRest"}}</span>
+    </button>
+  </div>
+</div>

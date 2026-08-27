@@ -1,0 +1,60 @@
+<div class="aim-container-card {{#if isCollapsed}}is-collapsed{{/if}}" data-drop-target="container" data-container-id="{{id}}">
+  <div class="aim-container-header" data-action="toggleContainer" data-container-id="{{id}}">
+    <div class="aim-container-left">
+      <i class="aim-toggle-arrow fa-solid {{#if isCollapsed}}fa-chevron-right{{else}}fa-chevron-down{{/if}}"></i>
+      <img class="aim-container-img" src="{{img}}" alt="{{name}}" />
+      <span class="aim-container-name">{{name}}</span>
+      <span class="aim-container-count">({{itemCount}})</span>
+    </div>
+
+    <div class="aim-container-badges">
+      {{#if hasReduction}}
+        <span class="aim-reduction-badge" title="{{localize 'AIM.containers.reductionTooltip'}}">
+          <i class="fa-solid fa-feather"></i> -{{reductionPct}}%
+        </span>
+      {{/if}}
+
+      {{#if weightyContainersActive}}
+        <button type="button" class="aim-container-gear-btn" data-action="openContainerRules" data-container-id="{{id}}" title="{{localize 'AIM.containers.rulesConfig'}}">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      {{/if}}
+    </div>
+  </div>
+
+  {{#unless isCollapsed}}
+  <div class="aim-container-contents">
+    {{#if items.length}}
+      <div class="aim-nested-items-list">
+        {{#each items}}
+        <div class="aim-item-row rarity-{{this.rarity}} {{#if this.hasGlow}}has-rarity-glow{{/if}}"
+             data-drag-item="true"
+             data-item-id="{{this.id}}"
+             data-item-uuid="{{this.uuid}}"
+             data-rarity="{{this.rarity}}"
+             data-item-rarity="{{this.rarity}}"
+             style="{{this.cssVars}}">
+          <div class="aim-item-main" data-action="openItem" data-item-id="{{this.id}}">
+            <img class="aim-item-thumb" src="{{this.img}}" alt="{{this.name}}" style="border-color: {{this.rarityColor}};" />
+            <div class="aim-item-info">
+              <span class="aim-item-name" style="color: {{this.rarityColor}};">{{this.name}}</span>
+              <span class="aim-item-meta">{{this.weightDisplay}} {{#if this.priceDisplay}}• {{this.priceDisplay}}{{/if}}</span>
+            </div>
+          </div>
+          <div class="aim-item-actions">
+            {{#if this.hasMultiple}}<span class="aim-item-qty">x{{this.quantity}}</span>{{/if}}
+            <button type="button" class="aim-btn-icon" data-action="useItem" data-item-id="{{this.id}}" title="{{localize 'AIM.actions.use'}}">
+              <i class="fa-solid fa-dice-d20"></i>
+            </button>
+          </div>
+        </div>
+        {{/each}}
+      </div>
+    {{else}}
+      <div class="aim-empty-container-hint">
+        <i class="fa-regular fa-folder-open"></i> {{localize "AIM.containers.empty"}}
+      </div>
+    {{/if}}
+  </div>
+  {{/unless}}
+</div>

@@ -1,0 +1,47 @@
+<div class="aim-slot {{#if hasItem}}has-item rarity-{{item.rarity}}{{else}}is-empty{{/if}} {{#if isLocked}}is-locked{{/if}} {{#if item.hasGlow}}has-rarity-glow{{/if}} aim-slot-{{id}}"
+     data-drop-target="slot"
+     data-slot-id="{{id}}"
+     {{#if hasItem}}data-rarity="{{item.rarity}}" data-item-rarity="{{item.rarity}}"{{/if}}
+     title="{{#if isLocked}}{{lockReason}}{{else if hasItem}}{{item.name}}{{else}}{{label}}{{/if}}">
+
+  <div class="aim-slot-socket"
+       style="{{#if hasItem}}--slot-rarity-color: {{item.rarityColor}}; border-color: {{item.rarityColor}}; box-shadow: 0 0 10px {{item.rarityColor}}50;{{/if}}"
+       {{#if hasItem}}data-drag-item="true" data-item-id="{{item.id}}" data-item-uuid="{{item.uuid}}" data-slot-id="{{id}}"{{/if}}>
+
+    <!-- Ornate Gothic Corner Filigree -->
+    <span class="aim-socket-corner tl"></span>
+    <span class="aim-socket-corner tr"></span>
+    <span class="aim-socket-corner bl"></span>
+    <span class="aim-socket-corner br"></span>
+
+    {{#if hasItem}}
+      <img class="aim-slot-img" src="{{item.img}}" alt="{{item.name}}" data-action="openItem" data-item-id="{{item.id}}" />
+      {{#if item.hasMultiple}}
+        <span class="aim-slot-qty">{{item.quantity}}</span>
+      {{/if}}
+      {{#if item.isAttuned}}
+        <span class="aim-attuned-badge" title="{{localize 'AIM.items.attuned'}}"><i class="fa-solid fa-sun"></i></span>
+      {{/if}}
+      <button type="button" class="aim-slot-unequip-btn" data-action="unequipSlot" data-slot-id="{{id}}" title="{{localize 'AIM.actions.unequip'}}">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    {{else}}
+      <div class="aim-slot-placeholder">
+        {{#if isImageIcon}}
+          <img class="aim-slot-icon-img" src="{{icon}}" alt="{{label}}" />
+        {{else}}
+          <i class="{{icon}}"></i>
+        {{/if}}
+      </div>
+    {{/if}}
+
+    {{#if isLocked}}
+      <div class="aim-slot-lock-overlay" title="{{lockReason}}">
+        <i class="fa-solid fa-lock"></i>
+        <span class="aim-lock-text">2H</span>
+      </div>
+    {{/if}}
+  </div>
+
+  <div class="aim-slot-name-tag">{{label}}</div>
+</div>

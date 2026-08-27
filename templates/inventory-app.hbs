@@ -1,0 +1,52 @@
+<div class="aim-window-content {{#if isPaperdollCollapsed}}is-paperdoll-collapsed{{/if}} {{#if isSpellsPanelOpen}}is-spells-open{{/if}}">
+  <!-- Left Column: Character Vitals & Progression -->
+  <aside class="aim-column aim-vitals-column">
+    {{> "modules/actor-inventory-manager/templates/parts/character-vitals.hbs"}}
+  </aside>
+
+  <!-- Center Column: Paperdoll Equipment Slots (Collapsible) -->
+  <main class="aim-column aim-paperdoll-column {{#if isPaperdollCollapsed}}is-collapsed{{/if}}">
+    {{#if isPaperdollCollapsed}}
+      <div class="aim-paperdoll-collapsed-strip" data-action="togglePaperdoll" title="{{localize 'AIM.paperdoll.expandTooltip'}}">
+        <button type="button" class="aim-expand-paperdoll-btn" data-action="togglePaperdoll" title="{{localize 'AIM.paperdoll.expandTooltip'}}">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+        <div class="aim-vertical-label">
+          <i class="fa-solid fa-person-military-rifle"></i>
+          <span>{{localize "AIM.paperdoll.title"}}</span>
+        </div>
+        <div class="aim-collapsed-badge" title="{{localize 'AIM.attunement.title'}}">
+          <i class="fa-solid fa-sun"></i> {{vitals.attunement.value}}/{{attunementSlots.length}}
+        </div>
+      </div>
+    {{else}}
+      {{> "modules/actor-inventory-manager/templates/parts/paperdoll.hbs"}}
+    {{/if}}
+  </main>
+
+  <!-- Main Column: Inventory Grid & Containers -->
+  <section class="aim-column aim-inventory-column">
+    {{> "modules/actor-inventory-manager/templates/parts/inventory-grid.hbs"}}
+  </section>
+
+  <!-- 4th Column / Side Drawer: Spells & Action Abilities (Expandable) -->
+  {{#if isSpellsPanelOpen}}
+    <section class="aim-column aim-spells-column">
+      {{> "modules/actor-inventory-manager/templates/parts/spells-actions.hbs"}}
+    </section>
+  {{/if}}
+
+  <!-- Ornate RPG Bookmark Tab on the Right Edge -->
+  <button type="button"
+          class="aim-spells-bookmark-tab {{#if isSpellsPanelOpen}}is-open{{/if}}"
+          data-action="toggleSpellsPanel"
+          title="{{#if isSpellsPanelOpen}}{{localize 'AIM.spells.collapseTooltip'}}{{else}}{{localize 'AIM.spells.expandTooltip'}}{{/if}}">
+    <div class="aim-bookmark-icon">
+      <i class="fa-solid {{#if isSpellsPanelOpen}}fa-chevron-left{{else}}fa-wand-magic-sparkles{{/if}}"></i>
+    </div>
+    <div class="aim-bookmark-text">
+      <span>{{localize "AIM.spells.drawerTab"}}</span>
+    </div>
+    <div class="aim-bookmark-gem"></div>
+  </button>
+</div>

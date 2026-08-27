@@ -1,0 +1,283 @@
+<div class="aim-spells-panel">
+  <!-- Header: Title & Close Button -->
+  <div class="aim-spells-header">
+    <div class="aim-spells-title">
+      <i class="fa-solid fa-wand-magic-sparkles"></i>
+      <span>{{localize "AIM.spells.drawerTitle"}}</span>
+    </div>
+    <button type="button" class="aim-btn-icon aim-close-spells-btn" data-action="toggleSpellsPanel" title="{{localize 'AIM.actions.close'}}">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <!-- Sub-Tabs Filter -->
+  <nav class="aim-spells-tabs">
+    <button type="button" class="aim-spells-tab-btn {{#if (eq spellsTab 'all')}}is-active{{/if}}" data-action="switchSpellsTab" data-tab="all">
+      <i class="fa-solid fa-layer-group"></i>
+      <span>{{localize "AIM.spells.tabs.all"}}</span>
+      <span class="aim-tab-count">{{spellsCounts.all}}</span>
+    </button>
+    <button type="button" class="aim-spells-tab-btn {{#if (eq spellsTab 'spells')}}is-active{{/if}}" data-action="switchSpellsTab" data-tab="spells">
+      <i class="fa-solid fa-hat-wizard"></i>
+      <span>{{localize "AIM.spells.tabs.spells"}}</span>
+      <span class="aim-tab-count">{{spellsCounts.spells}}</span>
+    </button>
+    <button type="button" class="aim-spells-tab-btn {{#if (eq spellsTab 'actions')}}is-active{{/if}}" data-action="switchSpellsTab" data-tab="actions">
+      <i class="fa-solid fa-bolt"></i>
+      <span>{{localize "AIM.spells.tabs.actions"}}</span>
+      <span class="aim-tab-count">{{spellsCounts.actions}}</span>
+    </button>
+    <button type="button" class="aim-spells-tab-btn {{#if (eq spellsTab 'passives')}}is-active{{/if}}" data-action="switchSpellsTab" data-tab="passives">
+      <i class="fa-solid fa-shield-heart"></i>
+      <span>{{localize "AIM.spells.tabs.passives"}}</span>
+      <span class="aim-tab-count">{{spellsCounts.passives}}</span>
+    </button>
+  </nav>
+
+  <!-- Search Filter -->
+  <div class="aim-spells-search-wrapper">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="text" class="aim-spells-search-input" data-spells-search="true" placeholder="{{localize 'AIM.spells.searchPlaceholder'}}" value="{{spellsSearchFilter}}" />
+  </div>
+
+  <!-- Scrollable Contents -->
+  <div class="aim-spells-scroll-area">
+    <!-- Spell Slots Tracker Widget (When Spells or All tab is active and actor has slots) -->
+    {{#if (or (eq spellsTab 'all') (eq spellsTab 'spells'))}}
+      {{#if spellSlots.length}}
+      <div class="aim-spell-slots-section">
+        <div class="aim-spell-slots-header">
+          <i class="fa-solid fa-sparkles"></i> {{localize "AIM.spells.spellSlotsTitle"}}
+        </div>
+        <div class="aim-spell-slots-grid">
+          {{#each spellSlots}}
+          <div class="aim-slot-tracker-card" data-slot-key="{{this.key}}">
+            <div class="aim-slot-tracker-top">
+              <span class="aim-slot-name">{{this.label}}</span>
+              <span class="aim-slot-count">{{this.value}} / {{this.max}}</span>
+            </div>
+            <div class="aim-slot-pips-row">
+              {{#each this.pips}}
+                <span class="aim-slot-pip {{#if this.filled}}is-filled{{/if}}"
+                      data-action="updateSpellSlot"
+                      data-slot-key="{{../key}}"
+                      data-delta="{{#if this.filled}}-1{{else}}1{{/if}}"
+                      title="{{#if this.filled}}Spend Slot{{else}}Restore Slot{{/if}}"></span>
+              {{/each}}
+            </div>
+            <div class="aim-slot-quick-btns">
+              <button type="button" class="aim-slot-btn" data-action="updateSpellSlot" data-slot-key="{{this.key}}" data-delta="-1" title="-1 Slot" {{#if (eq this.value 0)}}disabled{{/if}}>-</button>
+              <button type="button" class="aim-slot-btn" data-action="updateSpellSlot" data-slot-key="{{this.key}}" data-delta="1" title="+1 Slot" {{#if (eq this.value this.max)}}disabled{{/if}}>+</button>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+    {{/if}}
+
+    <!-- Spells Section (When Spells or All tab is active) -->
+    {{#if (or (eq spellsTab 'all') (eq spellsTab 'spells'))}}
+      {{#if spellGroups.length}}
+        <div class="aim-spells-list-section">
+          {{#each spellGroups}}
+          <div class="aim-spell-level-group">
+            <div class="aim-spell-group-header">
+              <span>{{this.title}}</span>
+              <span class="aim-group-count">({{this.count}})</span>
+            </div>
+            <div class="aim-spells-group-items">
+              {{#each this.spells}}
+              <div class="aim-spell-card school-{{this.school}} level-{{this.level}}"
+                   data-drag-item="true"
+                   data-item-id="{{this.id}}"
+                   data-item-uuid="{{this.uuid}}"
+                   data-school="{{this.school}}"
+                   data-level="{{this.level}}"
+                   style="--spell-school-color: {{this.schoolColor}};">
+                <div class="aim-spell-thumb-wrapper" data-action="openItem" data-item-id="{{this.id}}" style="border-color: {{this.schoolColor}};">
+                  <img src="{{this.img}}" alt="{{this.name}}" />
+                </div>
+
+                <div class="aim-spell-info" data-action="openItem" data-item-id="{{this.id}}">
+                  <div class="aim-spell-name-row">
+                    <span class="aim-spell-name" style="color: {{this.schoolColor}};">{{this.name}}</span>
+                    {{#if this.canTogglePrep}}
+                      <button type="button" class="aim-prep-btn {{#if this.isPrepared}}is-prepared{{/if}}"
+                              data-action="toggleSpellPrep"
+                              data-item-id="{{this.id}}"
+                              title="{{#if this.isPrepared}}{{localize 'AIM.spells.prepared'}}{{else}}{{localize 'AIM.spells.unprepared'}}{{/if}}">
+                        <i class="fa-solid fa-book-bookmark"></i>
+                      </button>
+                    {{/if}}
+                  </div>
+
+                  <div class="aim-spell-meta-row">
+                    <span class="aim-spell-school" style="color: {{this.schoolColor}};">{{this.schoolLabel}}</span>
+                    {{#if this.activationLabel}}
+                      <span class="aim-action-pill {{this.activationType}}">{{this.activationLabel}}</span>
+                    {{/if}}
+                    {{#if this.rangeDisplay}}
+                      <span class="aim-meta-stat">{{this.rangeDisplay}}</span>
+                    {{/if}}
+                  </div>
+
+                  <div class="aim-spell-components-row">
+                    {{#if this.components.v}}<span class="aim-comp-chip" title="Vocal">V</span>{{/if}}
+                    {{#if this.components.s}}<span class="aim-comp-chip" title="Somatic">S</span>{{/if}}
+                    {{#if this.components.m}}<span class="aim-comp-chip" title="Material">M</span>{{/if}}
+                    {{#if this.components.concentration}}<span class="aim-comp-chip conc" title="Concentration"><i class="fa-solid fa-brain"></i></span>{{/if}}
+                    {{#if this.components.ritual}}<span class="aim-comp-chip ritual" title="Ritual"><i class="fa-solid fa-scroll"></i></span>{{/if}}
+                  </div>
+                </div>
+
+                <div class="aim-spell-actions">
+                  <button type="button" class="aim-btn-icon aim-btn-cast" data-action="useItem" data-item-id="{{this.id}}" title="{{localize 'AIM.spells.cast'}}">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                  </button>
+                </div>
+              </div>
+              {{/each}}
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      {{else}}
+        {{#if (eq spellsTab 'spells')}}
+          <div class="aim-empty-list-hint">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <p>{{localize "AIM.spells.noSpellsFound"}}</p>
+          </div>
+        {{/if}}
+      {{/if}}
+    {{/if}}
+
+    <!-- Action Abilities Section (Actions, Bonus, Reactions) -->
+    {{#if (or (eq spellsTab 'all') (eq spellsTab 'actions'))}}
+      <!-- Actions -->
+      {{#if actionsData.actions.length}}
+      <div class="aim-actions-group">
+        <div class="aim-action-group-header">
+          <i class="fa-solid fa-bolt"></i> {{localize "AIM.spells.actionTypes.action"}} ({{actionsData.actions.length}})
+        </div>
+        <div class="aim-action-items">
+          {{#each actionsData.actions}}
+          <div class="aim-action-card" data-drag-item="true" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}">
+            <div class="aim-action-thumb" data-action="openItem" data-item-id="{{this.id}}">
+              <img src="{{this.img}}" alt="{{this.name}}" />
+            </div>
+            <div class="aim-action-details" data-action="openItem" data-item-id="{{this.id}}">
+              <span class="aim-action-name">{{this.name}}</span>
+              <div class="aim-action-meta">
+                <span class="aim-source-label">{{this.sourceLabel}}</span>
+                {{#if this.hasUses}}<span class="aim-uses-badge">{{this.usesDisplay}}</span>{{/if}}
+                {{#if this.hasRecharge}}<span class="aim-recharge-badge"><i class="fa-solid fa-arrows-rotate"></i> {{this.rechargeDisplay}}</span>{{/if}}
+              </div>
+            </div>
+            <div class="aim-action-controls">
+              <button type="button" class="aim-btn-icon" data-action="useItem" data-item-id="{{this.id}}" title="{{localize 'AIM.actions.use'}}">
+                <i class="fa-solid fa-dice-d20"></i>
+              </button>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+
+      <!-- Bonus Actions -->
+      {{#if actionsData.bonus.length}}
+      <div class="aim-actions-group">
+        <div class="aim-action-group-header">
+          <i class="fa-solid fa-forward"></i> {{localize "AIM.spells.actionTypes.bonus"}} ({{actionsData.bonus.length}})
+        </div>
+        <div class="aim-action-items">
+          {{#each actionsData.bonus}}
+          <div class="aim-action-card" data-drag-item="true" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}">
+            <div class="aim-action-thumb" data-action="openItem" data-item-id="{{this.id}}">
+              <img src="{{this.img}}" alt="{{this.name}}" />
+            </div>
+            <div class="aim-action-details" data-action="openItem" data-item-id="{{this.id}}">
+              <span class="aim-action-name">{{this.name}}</span>
+              <div class="aim-action-meta">
+                <span class="aim-source-label">{{this.sourceLabel}}</span>
+                {{#if this.hasUses}}<span class="aim-uses-badge">{{this.usesDisplay}}</span>{{/if}}
+                {{#if this.hasRecharge}}<span class="aim-recharge-badge"><i class="fa-solid fa-arrows-rotate"></i> {{this.rechargeDisplay}}</span>{{/if}}
+              </div>
+            </div>
+            <div class="aim-action-controls">
+              <button type="button" class="aim-btn-icon" data-action="useItem" data-item-id="{{this.id}}" title="{{localize 'AIM.actions.use'}}">
+                <i class="fa-solid fa-dice-d20"></i>
+              </button>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+
+      <!-- Reactions -->
+      {{#if actionsData.reactions.length}}
+      <div class="aim-actions-group">
+        <div class="aim-action-group-header">
+          <i class="fa-solid fa-reply"></i> {{localize "AIM.spells.actionTypes.reaction"}} ({{actionsData.reactions.length}})
+        </div>
+        <div class="aim-action-items">
+          {{#each actionsData.reactions}}
+          <div class="aim-action-card" data-drag-item="true" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}">
+            <div class="aim-action-thumb" data-action="openItem" data-item-id="{{this.id}}">
+              <img src="{{this.img}}" alt="{{this.name}}" />
+            </div>
+            <div class="aim-action-details" data-action="openItem" data-item-id="{{this.id}}">
+              <span class="aim-action-name">{{this.name}}</span>
+              <div class="aim-action-meta">
+                <span class="aim-source-label">{{this.sourceLabel}}</span>
+                {{#if this.hasUses}}<span class="aim-uses-badge">{{this.usesDisplay}}</span>{{/if}}
+                {{#if this.hasRecharge}}<span class="aim-recharge-badge"><i class="fa-solid fa-arrows-rotate"></i> {{this.rechargeDisplay}}</span>{{/if}}
+              </div>
+            </div>
+            <div class="aim-action-controls">
+              <button type="button" class="aim-btn-icon" data-action="useItem" data-item-id="{{this.id}}" title="{{localize 'AIM.actions.use'}}">
+                <i class="fa-solid fa-dice-d20"></i>
+              </button>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+    {{/if}}
+
+    <!-- Passive Features Section -->
+    {{#if (or (eq spellsTab 'all') (eq spellsTab 'passives'))}}
+      {{#if actionsData.passives.length}}
+      <div class="aim-actions-group">
+        <div class="aim-action-group-header">
+          <i class="fa-solid fa-shield-heart"></i> {{localize "AIM.spells.actionTypes.passive"}} ({{actionsData.passives.length}})
+        </div>
+        <div class="aim-action-items">
+          {{#each actionsData.passives}}
+          <div class="aim-action-card is-passive" data-drag-item="true" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}">
+            <div class="aim-action-thumb" data-action="openItem" data-item-id="{{this.id}}">
+              <img src="{{this.img}}" alt="{{this.name}}" />
+            </div>
+            <div class="aim-action-details" data-action="openItem" data-item-id="{{this.id}}">
+              <span class="aim-action-name">{{this.name}}</span>
+              <div class="aim-action-meta">
+                <span class="aim-source-label">{{this.sourceLabel}}</span>
+                {{#if this.hasUses}}<span class="aim-uses-badge">{{this.usesDisplay}}</span>{{/if}}
+              </div>
+            </div>
+            <div class="aim-action-controls">
+              <button type="button" class="aim-btn-icon" data-action="useItem" data-item-id="{{this.id}}" title="{{localize 'AIM.actions.use'}}">
+                <i class="fa-solid fa-dice-d20"></i>
+              </button>
+            </div>
+          </div>
+          {{/each}}
+        </div>
+      </div>
+      {{/if}}
+    {{/if}}
+  </div>
+</div>

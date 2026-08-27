@@ -1,0 +1,261 @@
+{
+  "AIM": {
+    "app": {
+      "title": "Actor Inventory & Paperdoll"
+    },
+    "paperdoll": {
+      "title": "Equipment Paperdoll",
+      "collapseTooltip": "Collapse Paperdoll Panel",
+      "expandTooltip": "Expand Paperdoll Panel"
+    },
+    "sheetButton": {
+      "label": "RPG Inventory",
+      "tooltip": "Open RPG Equipment Paperdoll & Inventory Manager"
+    },
+    "slots": {
+      "head": "Head",
+      "neck": "Neck",
+      "cloak": "Cloak",
+      "armor": "Body Armor",
+      "hands": "Hands",
+      "waist": "Waist",
+      "feet": "Feet",
+      "ring1": "Ring 1",
+      "ring2": "Ring 2",
+      "mainHand": "Main Hand",
+      "offHand": "Off Hand",
+      "attunement1": "Attunement 1",
+      "attunement2": "Attunement 2",
+      "attunement3": "Attunement 3",
+      "quick1": "Quick 1",
+      "quick2": "Quick 2",
+      "quick3": "Quick 3",
+      "quick4": "Quick 4",
+      "lockedBy2H": "Occupied by Two-Handed Weapon"
+    },
+    "vitals": {
+      "level": "Level",
+      "hp": "Hit Points",
+      "ac": "AC",
+      "init": "Init",
+      "speed": "Speed",
+      "abilities": "Abilities & Saves",
+      "save": "Saving Throw",
+      "perception": "Perception",
+      "investigation": "Investigation",
+      "insight": "Insight",
+      "passivePerception": "Passive Perception",
+      "passiveInvestigation": "Passive Investigation",
+      "passiveInsight": "Passive Insight"
+    },
+    "theme": {
+      "switchToLight": "Switch to Light Theme (Parchment)",
+      "switchToDark": "Switch to Dark Theme (Fantasy)"
+    },
+    "encumbrance": {
+      "title": "Carrying Capacity",
+      "normal": "Normal Load",
+      "encumbered": "Encumbered (-10 ft Speed)",
+      "heavily_encumbered": "Heavily Encumbered (-20 ft, Disadvantage)",
+      "overburdened": "Overburdened (Cannot Move)"
+    },
+    "currency": {
+      "totalValue": "Total Wealth"
+    },
+    "templates": {
+      "dnd2024": {
+        "name": "D&D 2024 Rules (Default)",
+        "desc": "Standard 2024 equipment slots, 3 attunement sockets, 2-handed lock, single armor and shield."
+      },
+      "dnd2014": {
+        "name": "D&D 2014 Rules",
+        "desc": "Classic 2014 5e equipment paperdoll layout."
+      }
+    },
+    "editor": {
+      "windowTitle": "Paperdoll & Slots Editor (GM)",
+      "openTooltip": "Open Paperdoll & Slots Editor (GM Only)",
+      "gmOnly": "Only Game Master can access the Paperdoll Editor.",
+      "templateLabel": "Paperdoll Template",
+      "customActorConfig": "Custom Actor Configuration",
+      "applyToActor": "Apply to this Actor",
+      "applyToActorHint": "Binds this template layout directly to this actor",
+      "appliedSuccess": "Applied paperdoll template to {actor}",
+      "saveAsNew": "Save as New Template",
+      "saveAsNewHint": "Save this layout as a reusable world template",
+      "updateTemplate": "Update Template",
+      "updateTemplateHint": "Update this custom template in world settings",
+      "savedTemplateSuccess": "Saved template '{name}' to world settings",
+      "deleteTemplate": "Delete Template",
+      "deleteTemplateHint": "Delete this custom template from world",
+      "deleteTemplateConfirm": "Are you sure you want to permanently delete template '{id}'?",
+      "exportJSON": "Export JSON",
+      "importJSON": "Import JSON",
+      "importJSONHint": "Paste valid JSON paperdoll template data",
+      "maxSlots": "Max Slots",
+      "actorTarget": "Target Actor",
+      "addSlot": "Add Slot",
+      "columns": {
+        "left": "Left Column",
+        "center": "Center Column",
+        "right": "Right Column"
+      },
+      "slotConfigTitle": "Configure Paperdoll Slot",
+      "browseFile": "Browse Image (FilePicker)",
+      "slot": {
+        "id": "Slot ID",
+        "idHint": "Unique identifier (letters, numbers, underscore)",
+        "label": "Slot Label",
+        "icon": "Icon Class",
+        "column": "Column",
+        "itemTypes": "Allowed Item Types",
+        "accepts": "Accepted Tags / Subtypes",
+        "acceptsHint": "Comma separated keywords (e.g. helmet, hat, crown, tattoo)",
+        "rulesTitle": "Slot Restrictions & Rules"
+      },
+      "rules": {
+        "isArmor": "Exclusive Body Armor (Max 1 per actor)",
+        "isShield": "Exclusive Shield (Max 1 per actor)",
+        "locksOffHandOn2H": "Locked by Two-Handed Weapons in Main Hand",
+        "singlePerActor": "Single per Actor (Cannot equip multiple items in this category)"
+      }
+    },
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "equip": "Equip",
+      "unequip": "Unequip",
+      "use": "Use / Roll",
+      "delete": "Delete Item",
+      "shortRest": "Short Rest",
+      "longRest": "Long Rest"
+    },
+    "attunement": {
+      "title": "Attuned Items",
+      "empty": "Empty Attunement Slot",
+      "attune": "Attune to Item",
+      "break": "End Attunement"
+    },
+    "tabs": {
+      "all": "All",
+      "weapons": "Weapons",
+      "armor": "Armor",
+      "consumables": "Consumables",
+      "containers": "Containers",
+      "loot": "Loot"
+    },
+    "filters": {
+      "searchPlaceholder": "Search items..."
+    },
+    "sort": {
+      "name": "Sort by Name",
+      "weight": "Sort by Weight",
+      "value": "Sort by Value",
+      "rarity": "Sort by Rarity"
+    },
+    "items": {
+      "attuned": "Attuned",
+      "attunedBadge": "Attuned",
+      "requiresAttunement": "Requires Attunement",
+      "requiresAttunementShort": "Requires Attune",
+      "emptyList": "No items found in this category."
+    },
+    "spells": {
+      "drawerTab": "Spells",
+      "drawerTabFull": "Spells & Actions",
+      "drawerTitle": "Spells & Abilities",
+      "collapseTooltip": "Close Spells & Actions Panel",
+      "expandTooltip": "Open Spells & Actions Panel",
+      "searchPlaceholder": "Search spells & abilities...",
+      "spellSlotsTitle": "Spell Slots",
+      "pact": "Pact",
+      "levelSlot": "Lvl {level}",
+      "levelGroup": "Level {level} Spells",
+      "cantrips": "Cantrips",
+      "cast": "Cast Spell",
+      "prepared": "Prepared",
+      "unprepared": "Unprepared (Click to Prepare)",
+      "noSpellsFound": "No spells found for this character.",
+      "tabs": {
+        "all": "All",
+        "spells": "Spells",
+        "actions": "Actions",
+        "passives": "Passives"
+      },
+      "actionTypes": {
+        "action": "Actions",
+        "bonus": "Bonus Actions",
+        "reaction": "Reactions",
+        "passive": "Passives & Traits"
+      }
+    },
+    "containers": {
+      "title": "Bags & Containers",
+      "empty": "Empty container",
+      "reductionTooltip": "Weight reduction applied to items inside",
+      "rulesConfig": "Configure Container Rules (Weighty Containers)"
+    },
+    "dialogs": {
+      "deleteItem": {
+        "title": "Delete Item",
+        "message": "Are you sure you want to delete {item}?",
+        "confirm": "Delete",
+        "cancel": "Cancel"
+      }
+    },
+    "notifications": {
+      "maxAttunementReached": "Cannot attune: Maximum attunement limit reached ({max}/{max}).",
+      "attunedSuccess": "Attuned to {item}",
+      "unattunedSuccess": "Ended attunement to {item}",
+      "rulesViolated": "Equipment rule violation: {reason}",
+      "noValidSlot": "Cannot equip '{item}': No compatible or empty slot available (Valid: {valid}).",
+      "offhandBlockedBy2H": "Cannot equip '{item}' in off-hand: Main hand weapon '{conflict}' requires two hands.",
+      "armorAlreadyEquipped": "Cannot equip '{item}': '{conflict}' is already equipped in Armor slot.",
+      "shieldAlreadyEquipped": "Cannot equip '{item}': Shield '{conflict}' is already equipped."
+    },
+    "settings": {
+      "theme": {
+        "name": "Interface Theme",
+        "hint": "Choose the visual theme for the inventory window: Dark Fantasy, Light Parchment, or Auto-detect.",
+        "dark": "Dark Fantasy",
+        "light": "Light Parchment",
+        "auto": "Auto (System Preference)"
+      },
+      "enforcementMode": {
+        "name": "Equipment Rules Enforcement Mode",
+        "hint": "Controls how slot conflicts and rules are handled when equipping items.",
+        "block": "Strict Block (Prevent invalid equipment with toast warning)",
+        "autoSwap": "Smart Auto-Swap (Automatically unequip conflicting items)",
+        "warn": "Warn Only (Show warning but permit invalid equipment)"
+      },
+      "showSheetButton": {
+        "name": "Show RPG Inventory Button in Character Sheet",
+        "hint": "Adds a quick access button to the top of actor sheets to open the Paperdoll inventory."
+      },
+      "showActorPortraitBackdrop": {
+        "name": "Show Actor Portrait Backdrop in Paperdoll",
+        "hint": "Displays the character's portrait as a stylized fantasy silhouette backdrop behind the equipment slots."
+      },
+      "autoReconcileSlots": {
+        "name": "Auto-Reconcile Equipped Items on Load",
+        "hint": "Automatically assigns valid paperdoll slots to equipped items that don't have explicit slot flags."
+      },
+      "logLevel": {
+        "name": "Log Level",
+        "hint": "Module logging verbosity in browser console.",
+        "none": "None",
+        "error": "Errors",
+        "warn": "Warnings",
+        "info": "Info",
+        "debug": "Debug",
+        "trace": "Trace"
+      }
+    },
+    "keybindings": {
+      "openInventory": {
+        "name": "Open RPG Inventory",
+        "hint": "Shortcut (default Shift+I) to open the RPG inventory of selected token or character."
+      }
+    }
+  }
+}

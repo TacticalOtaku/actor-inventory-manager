@@ -1,0 +1,76 @@
+<div class="aim-paperdoll-panel">
+  <div class="aim-paperdoll-header">
+    <div class="aim-gothic-title">
+      <span class="aim-title-wing left"></span>
+      <h3><i class="fa-solid fa-person-military-rifle"></i> {{localize "AIM.paperdoll.title"}}</h3>
+      <div class="aim-paperdoll-header-controls">
+        {{#if isGM}}
+          <button type="button" class="aim-gm-editor-btn" data-action="openPaperdollEditor" title="{{localize 'AIM.editor.openTooltip'}}">
+            <i class="fa-solid fa-gear"></i>
+          </button>
+        {{/if}}
+        <button type="button" class="aim-collapse-paperdoll-btn" data-action="togglePaperdoll" title="{{localize 'AIM.paperdoll.collapseTooltip'}}">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+      </div>
+      <span class="aim-title-wing right"></span>
+    </div>
+  </div>
+
+  <div class="aim-paperdoll-stage">
+    <!-- Character Backdrop Graphic & Runic Overlay -->
+    {{#if showActorPortraitBackdrop}}
+      <div class="aim-actor-portrait-bg" style="background-image: url('{{actorImg}}');"></div>
+    {{else}}
+      <div class="aim-silhouette-bg"></div>
+    {{/if}}
+    <div class="aim-runic-circle-bg"></div>
+
+    <!-- Paperdoll Slots Layout Grid -->
+    <div class="aim-slots-layout">
+      <!-- Left Column Slots -->
+      <div class="aim-slots-col aim-col-left">
+        {{#each leftSlots}}
+          {{> "modules/actor-inventory-manager/templates/parts/slot.hbs" this}}
+        {{/each}}
+      </div>
+
+      <!-- Center Column Slots -->
+      <div class="aim-slots-col aim-col-center">
+        {{#each centerSlots}}
+          {{> "modules/actor-inventory-manager/templates/parts/slot.hbs" this}}
+        {{/each}}
+      </div>
+
+      <!-- Right Column Slots -->
+      <div class="aim-slots-col aim-col-right">
+        {{#each rightSlots}}
+          {{> "modules/actor-inventory-manager/templates/parts/slot.hbs" this}}
+        {{/each}}
+      </div>
+    </div>
+  </div>
+
+  <!-- Attunement Bar -->
+  <div class="aim-attunement-bar">
+    <div class="aim-attunement-title">
+      <i class="fa-solid fa-sun"></i> {{localize "AIM.attunement.title"}} <span>({{vitals.attunement.value}} / {{attunementSlots.length}})</span>
+    </div>
+    <div class="aim-attunement-sockets">
+      {{#each attunementSlots}}
+      <div class="aim-attune-socket {{#if this.hasItem}}has-item rarity-{{this.item.rarity}}{{else}}is-empty{{/if}} {{#if this.item.hasGlow}}has-rarity-glow{{/if}}"
+           {{#if this.hasItem}}data-rarity="{{this.item.rarity}}" data-item-rarity="{{this.item.rarity}}" style="border-color: {{this.item.rarityColor}}; {{#if this.item.hasGlow}}box-shadow: 0 0 8px {{this.item.rarityColor}}66;{{/if}}"{{/if}}
+           title="{{#if this.hasItem}}{{this.item.name}}{{else}}{{localize 'AIM.attunement.empty'}}{{/if}}">
+        {{#if this.hasItem}}
+          <img src="{{this.item.img}}" alt="{{this.item.name}}" data-action="openItem" data-item-id="{{this.item.id}}" />
+          <button type="button" class="aim-attune-toggle" data-action="toggleAttune" data-item-id="{{this.item.id}}" title="{{localize 'AIM.attunement.break'}}">
+            <i class="fa-solid fa-link-slash"></i>
+          </button>
+        {{else}}
+          <i class="fa-solid fa-sun-plant-wilt"></i>
+        {{/if}}
+      </div>
+      {{/each}}
+    </div>
+  </div>
+</div>

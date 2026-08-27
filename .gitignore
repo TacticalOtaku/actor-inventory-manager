@@ -1,0 +1,23 @@
+# Operating System files
+.DS_Store
+Thumbs.db
+*.lnk
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node / Scratch / Logs
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+scratch/
+
+# Build and archive artifacts
+*.zip
+dist/
+build/

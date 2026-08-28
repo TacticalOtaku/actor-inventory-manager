@@ -12,6 +12,7 @@ import {
   isShield,
   isTwoHandedWeapon
 } from "./item-classifier.js";
+import { getActorSlots } from "./paperdoll-templates.js";
 import { slotRegistry } from "./slot-definitions.js";
 
 /**
@@ -48,11 +49,19 @@ export function getActorEquippedMap(actor) {
     i?.system?.equipped === true && !i?.system?.container
   ));
 
+  // Determine all valid slot IDs on this actor (including custom slots)
+  const actorSlots = getActorSlots ? getActorSlots(actor) : null;
+  const validSlotIdSet = new Set(
+    actorSlots && actorSlots.length > 0
+      ? actorSlots.map(s => s.id)
+      : slotRegistry.getAll().map(s => s.id)
+  );
+
   // Step 1: Place items that have explicit slot flags
   const unassigned = [];
   for (const item of equippedItems) {
     const slotId = getItemAssignedSlot(item);
-    if (slotId && slotRegistry.has(slotId) && !slotMap.has(slotId)) {
+    if (slotId && validSlotIdSet.has(slotId) && !slotMap.has(slotId)) {
       slotMap.set(slotId, item);
     } else {
       unassigned.push(item);
@@ -61,7 +70,7 @@ export function getActorEquippedMap(actor) {
 
   // Step 2: Auto-reconcile unassigned equipped items into free valid slots
   for (const item of unassigned) {
-    const validSlots = getValidSlotsForItem(item);
+    const validSlots = getValidSlotsForItem(item, actor);
     let assigned = false;
     for (const sId of validSlots) {
       if (!slotMap.has(sId)) {

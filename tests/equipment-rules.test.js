@@ -132,3 +132,50 @@ test("Equipment Rules: Dual Shields restriction", () => {
   assert.equal(result.code, "SHIELD_ALREADY_EQUIPPED");
   assert.equal(result.conflictItem, shield1);
 });
+
+test("Equipment Rules: Custom Actor Slots (Pants & Bracelet placement)", () => {
+  const pants = {
+    id: "p1",
+    name: "Военные штаны",
+    type: "equipment",
+    system: { equipped: true, type: { value: "clothing" } },
+    flags: { "actor-inventory-manager": { slot: "pants_custom" } }
+  };
+
+  const bracelet = {
+    id: "b1",
+    name: "Браслет Ярости Демона",
+    type: "equipment",
+    system: { equipped: true, type: { value: "trinket" } },
+    flags: { "actor-inventory-manager": { slot: "bracelet_custom" } }
+  };
+
+  const customActor = {
+    id: "actor999",
+    name: "Hero",
+    flags: {
+      "actor-inventory-manager": {
+        customTemplate: {
+          id: "custom",
+          slots: [
+            { id: "pants_custom", label: "Штаны", itemTypes: ["equipment"] },
+            { id: "bracelet_custom", label: "Браслет", itemTypes: ["equipment"] },
+            { id: "cloak_slot", label: "Верхняя одежда", itemTypes: ["equipment"] },
+            { id: "amulet_slot", label: "Амулет/Ожерелье", itemTypes: ["equipment"] }
+          ]
+        }
+      }
+    },
+    getFlag(scope, key) {
+      return this.flags?.[scope]?.[key];
+    },
+    items: new Map([["p1", pants], ["b1", bracelet]])
+  };
+
+  const slotMap = getActorEquippedMap(customActor);
+  assert.equal(slotMap.get("pants_custom"), pants);
+  assert.equal(slotMap.get("bracelet_custom"), bracelet);
+  assert.equal(slotMap.has("cloak_slot"), false);
+  assert.equal(slotMap.has("amulet_slot"), false);
+});
+

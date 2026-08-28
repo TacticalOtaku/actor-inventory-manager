@@ -362,13 +362,21 @@ export function getActorPaperdollTemplate(actor) {
   }
 
   // 1. Check if actor has custom template data stored directly on actor flags
-  const customTemplateData = actor.getFlag ? actor.getFlag(MODULE_ID, FLAGS.CUSTOM_TEMPLATE) : actor.flags?.[MODULE_ID]?.[FLAGS.CUSTOM_TEMPLATE];
+  const customTemplateData = (actor.getFlag ? (actor.getFlag(MODULE_ID, FLAGS.CUSTOM_TEMPLATE) || actor.getFlag(MODULE_ID, "customTemplate")) : null) ||
+    actor.flags?.[MODULE_ID]?.[FLAGS.CUSTOM_TEMPLATE] ||
+    actor.flags?.[MODULE_ID]?.customTemplate ||
+    actor.flags?.[MODULE_ID]?.paperdollCustomTemplate;
+
   if (customTemplateData && Array.isArray(customTemplateData.slots) && customTemplateData.slots.length > 0) {
     return formatTemplateContext(customTemplateData);
   }
 
   // 2. Check if actor has a templateId assigned
-  const templateId = actor.getFlag ? actor.getFlag(MODULE_ID, FLAGS.TEMPLATE_ID) : actor.flags?.[MODULE_ID]?.[FLAGS.TEMPLATE_ID];
+  const templateId = (actor.getFlag ? (actor.getFlag(MODULE_ID, FLAGS.TEMPLATE_ID) || actor.getFlag(MODULE_ID, "templateId")) : null) ||
+    actor.flags?.[MODULE_ID]?.[FLAGS.TEMPLATE_ID] ||
+    actor.flags?.[MODULE_ID]?.templateId ||
+    actor.flags?.[MODULE_ID]?.paperdollTemplateId;
+
   const template = getTemplateById(templateId || TEMPLATE_PRESETS.DND_2024);
 
   return formatTemplateContext(template);

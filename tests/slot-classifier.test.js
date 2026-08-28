@@ -90,3 +90,42 @@ test("Item Classifier: Headgear, Rings, Cloaks, Boots, Amulets", () => {
   assert.equal(classifyItem(amulet), "neck");
   assert.deepEqual(getValidSlotsForItem(amulet), [SLOTS.NECK]);
 });
+
+test("Item Classifier: Custom Slots & Russian Items (Pants, Bracelets, Underarmor)", () => {
+  const pants = { id: "p1", name: "Военные штаны", type: "equipment", system: { type: { value: "clothing" } } };
+  assert.equal(classifyItem(pants), "legs");
+  assert.equal(isBodyArmor(pants), false);
+
+  const bracelet = { id: "b1", name: "Браслет Ярости Демона", type: "equipment", system: { type: { value: "trinket" } } };
+  assert.equal(classifyItem(bracelet), "bracelet");
+
+  // Mock actor with custom slots: pants and bracelet
+  const customActor = {
+    id: "actor123",
+    documentName: "Actor",
+    flags: {
+      "actor-inventory-manager": {
+        customTemplate: {
+          id: "custom",
+          slots: [
+            { id: "outerwear", label: "Верхняя одежда", itemTypes: ["equipment"] },
+            { id: "amulet", label: "Амулет/Ожерелье", itemTypes: ["equipment"] },
+            { id: "pants_slot", label: "Штаны", itemTypes: ["equipment"] },
+            { id: "bracelet_slot", label: "Браслет", itemTypes: ["equipment"] }
+          ]
+        }
+      }
+    },
+    getFlag(scope, key) {
+      return this.flags?.[scope]?.[key];
+    }
+  };
+
+  const validPantsSlots = getValidSlotsForItem(pants, customActor);
+  assert.equal(validPantsSlots.includes("pants_slot"), true);
+  assert.equal(isItemCompatibleWithSlot(pants, "pants_slot", customActor), true);
+
+  const validBraceletSlots = getValidSlotsForItem(bracelet, customActor);
+  assert.equal(validBraceletSlots.includes("bracelet_slot"), true);
+  assert.equal(isItemCompatibleWithSlot(bracelet, "bracelet_slot", customActor), true);
+});

@@ -88,6 +88,51 @@ export function registerModuleSettings() {
       LOG.setLevel(game.settings.get(MODULE_ID, "logLevel"));
     } catch {}
 
-    LOG.info("Settings registered successfully");
+    // Register Keybindings
+    registerModuleKeybindings();
+
+    LOG.info("Settings and keybindings registered successfully");
   });
 }
+
+/**
+ * Register module keybindings (e.g. 'I' key for toggling inventory)
+ */
+export function registerModuleKeybindings() {
+  if (!globalThis.game?.keybindings?.register) return;
+
+  globalThis.game.keybindings.register(MODULE_ID, "openInventory", {
+    name: "AIM.keybindings.openInventory.name",
+    hint: "AIM.keybindings.openInventory.hint",
+    editable: [
+      { key: "KeyI" }
+    ],
+    onDown: () => {
+      // 1. Get controlled token's actor on canvas
+      const controlled = globalThis.canvas?.tokens?.controlled ?? [];
+      let targetActor = controlled[0]?.actor;
+
+      // 2. If no token selected, fallback to user's assigned character
+      if (!targetActor) {
+        targetActor = globalThis.game?.user?.character;
+      }
+
+      if (!targetActor) {
+        globalThis.ui?.notifications?.warn(
+          globalThis.game?.i18n?.localize("AIM.keybindings.noActorSelected") ||
+          "Please select a token on the canvas or assign a character to open inventory."
+        );
+        return true;
+      }
+
+      const app = globalThis.ActorInventoryManager?.toggleInventory
+        ? globalThis.ActorInventoryManager.toggleInventory(targetActor)
+        : (globalThis.ActorInventoryManager?.openInventory ? globalThis.ActorInventoryManager.openInventory(targetActor) : null);
+
+      return true;
+    },
+    restricted: false,
+    precedence: globalThis.CONST?.KEYBINDING_PRECEDENCE?.NORMAL ?? 0
+  });
+}
+

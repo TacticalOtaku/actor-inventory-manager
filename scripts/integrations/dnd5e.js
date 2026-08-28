@@ -4,6 +4,7 @@
 
 import { ITEM_RARITY_COLORS } from "../constants.js";
 import { num } from "../core/weight-calculator.js";
+import { computeActorCurrency } from "./item-piles.js";
 import {
   getItemRarityVisuals,
   getRarityColor,
@@ -44,15 +45,8 @@ export function extractActorVitals(actor) {
   const movement = attributes.movement ?? {};
   const init = attributes.init?.total ?? attributes.init?.mod ?? 0;
 
-  // Currency
-  const currency = system.currency ?? { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 };
-  const totalGold = (
-    num(currency.pp, 0) * 10 +
-    num(currency.gp, 0) +
-    num(currency.ep, 0) * 0.5 +
-    num(currency.sp, 0) * 0.1 +
-    num(currency.cp, 0) * 0.01
-  ).toFixed(2);
+  // Currency (calculated via Item Piles if active or standard dnd5e)
+  const currencyData = computeActorCurrency(actor);
 
   // Abilities
   const abilities = {};
@@ -121,8 +115,7 @@ export function extractActorVitals(actor) {
     },
     abilities,
     currency: {
-      ...currency,
-      totalGold
+      ...currencyData
     },
     attunement: {
       value: attunedItemsCount,

@@ -253,9 +253,10 @@
     },
     "keybindings": {
       "openInventory": {
-        "name": "Open RPG Inventory",
-        "hint": "Shortcut (default Shift+I) to open the RPG inventory of selected token or character."
-      }
+        "name": "Toggle RPG Inventory Window",
+        "hint": "Open or close the RPG Inventory & Paperdoll for the selected token or assigned character (Default: I)."
+      },
+      "noActorSelected": "Please select a token on the canvas or assign a character to open the inventory."
     }
   }
 }

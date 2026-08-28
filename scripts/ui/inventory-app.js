@@ -638,3 +638,18 @@ export async function openActorInventory(actor) {
   await app.render({ force: true });
   return app;
 }
+
+/**
+ * Toggle the Actor Inventory Window for a given actor
+ * @param {Object} actor
+ * @returns {Promise<ActorInventoryApp|null>}
+ */
+export async function toggleActorInventory(actor) {
+  if (!actor) return null;
+  const existing = OPEN_INVENTORY_APPS.get(actor.id);
+  if (existing?.rendered) {
+    await existing.close();
+    return null;
+  }
+  return openActorInventory(actor);
+}

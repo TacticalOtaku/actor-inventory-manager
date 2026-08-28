@@ -39,8 +39,9 @@ import {
   setActorPaperdollTemplate
 } from "./core/paperdoll-templates.js";
 import { openPaperdollEditor } from "./ui/paperdoll-editor.js";
-import { openActorInventory, ActorInventoryApp, preloadTemplates } from "./ui/inventory-app.js";
+import { openActorInventory, toggleActorInventory, ActorInventoryApp, preloadTemplates } from "./ui/inventory-app.js";
 import { equipItemToSlot, unequipItem, toggleItemEquipped, useItem, toggleAttunement } from "./ui/item-actions.js";
+import { isItemPilesActive, computeActorCurrency } from "./integrations/item-piles.js";
 
 function registerHandlebarsHelpers() {
   if (typeof globalThis.Handlebars === "undefined") return;
@@ -89,6 +90,7 @@ Hooks.once("ready", () => {
   // Create and expose Public API
   const api = {
     openInventory: openActorInventory,
+    toggleInventory: toggleActorInventory,
     openEditor: openPaperdollEditor,
     getActorPaperdollTemplate,
     getActorSlots,
@@ -126,7 +128,9 @@ Hooks.once("ready", () => {
     isWeightyContainersActive,
     getContainerWeightReductionPct,
     validateContainerDrop,
-    openWeightyContainersDialog
+    openWeightyContainersDialog,
+    isItemPilesActive,
+    computeActorCurrency
   };
 
   const module = game.modules.get(MODULE_ID);

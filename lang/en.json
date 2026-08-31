@@ -209,6 +209,7 @@
       "unattunedSuccess": "Ended attunement to {item}",
       "rulesViolated": "Equipment rule violation: {reason}",
       "noValidSlot": "Cannot equip '{item}': No compatible or empty slot available (Valid: {valid}).",
+      "slotOccupied": "Cannot equip '{item}': the target slot is occupied by '{conflict}'.",
       "offhandBlockedBy2H": "Cannot equip '{item}' in off-hand: Main hand weapon '{conflict}' requires two hands.",
       "armorAlreadyEquipped": "Cannot equip '{item}': '{conflict}' is already equipped in Armor slot.",
       "shieldAlreadyEquipped": "Cannot equip '{item}': Shield '{conflict}' is already equipped."

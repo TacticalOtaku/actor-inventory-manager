@@ -3,6 +3,11 @@
 // ─────────────────────────────────────────────────────────
 
 import { FLAGS, MODULE_ID, SLOTS } from "../constants.js";
+import {
+  matchPreArmorClassification,
+  matchesFocusClassification,
+  matchWearableClassification
+} from "./item-classification-rules.js";
 import { getActorSlots } from "./paperdoll-templates.js";
 import { slotRegistry } from "./slot-definitions.js";
 
@@ -122,217 +127,17 @@ export function classifyItem(item) {
     return "shield";
   }
 
-  // Pants / Trousers / Legs
-  if (
-    systemType === "pants" ||
-    systemType === "legs" ||
-    systemType === "trousers" ||
-    subType === "pants" ||
-    subType === "legs" ||
-    name.includes("pants") ||
-    name.includes("trousers") ||
-    name.includes("breeches") ||
-    name.includes("leggings") ||
-    name.includes("штаны") ||
-    name.includes("брюки") ||
-    name.includes("порты") ||
-    name.includes("шорты") ||
-    name.includes("рейтузы") ||
-    name.includes("чулки")
-  ) {
-    return "legs";
-  }
-
-  // Bracelet / Wrist / Bracers
-  if (
-    systemType === "bracelet" ||
-    systemType === "wrist" ||
-    subType === "bracelet" ||
-    subType === "wrist" ||
-    name.includes("bracelet") ||
-    name.includes("wrist") ||
-    name.includes("браслет") ||
-    name.includes("браслеты") ||
-    name.includes("запястье") ||
-    name.includes("напульсник")
-  ) {
-    return "bracelet";
-  }
-
-  // Underarmor / Shirt
-  if (
-    systemType === "underarmor" ||
-    systemType === "shirt" ||
-    subType === "underarmor" ||
-    name.includes("underarmor") ||
-    name.includes("поддоспешник") ||
-    name.includes("рубаха") ||
-    name.includes("рубашка") ||
-    name.includes("гамбезон") ||
-    name.includes("туника") ||
-    name.includes("жилет")
-  ) {
-    return "underarmor";
-  }
-
-  // Badge / Medal / Ribbon
-  if (
-    systemType === "badge" ||
-    systemType === "medal" ||
-    subType === "badge" ||
-    name.includes("медаль") ||
-    name.includes("орден") ||
-    name.includes("награда") ||
-    name.includes("нашивка") ||
-    name.includes("лента") ||
-    name.includes("значок") ||
-    name.includes("badge") ||
-    name.includes("medal") ||
-    name.includes("ribbon")
-  ) {
-    return "badge";
-  }
+  const descriptor = { systemType, subType, name };
+  const preArmorClassification = matchPreArmorClassification(descriptor);
+  if (preArmorClassification) return preArmorClassification;
 
   // Body Armor
   if (isBodyArmor(item)) {
     return "armor";
   }
 
-  // Headgear
-  if (
-    systemType === "helmet" ||
-    systemType === "head" ||
-    subType === "helmet" ||
-    subType === "head" ||
-    name.includes("helmet") ||
-    name.includes("helm") ||
-    name.includes("circlet") ||
-    name.includes("hood") ||
-    name.includes("crown") ||
-    name.includes("mask") ||
-    name.includes("шлем") ||
-    name.includes("венец") ||
-    name.includes("диадема") ||
-    name.includes("капюшон") ||
-    name.includes("маска") ||
-    name.includes("корона") ||
-    name.includes("шапка")
-  ) {
-    return "head";
-  }
-
-  // Neck / Amulet
-  if (
-    systemType === "neck" ||
-    systemType === "amulet" ||
-    systemType === "necklace" ||
-    subType === "amulet" ||
-    subType === "necklace" ||
-    name.includes("amulet") ||
-    name.includes("necklace") ||
-    name.includes("pendant") ||
-    name.includes("medallion") ||
-    name.includes("periapt") ||
-    name.includes("collar") ||
-    name.includes("амулет") ||
-    name.includes("ожерелье") ||
-    name.includes("кулон") ||
-    name.includes("медальон") ||
-    name.includes("периапт")
-  ) {
-    return "neck";
-  }
-
-  // Cloak / Shoulders / Outerwear
-  if (
-    systemType === "cloak" ||
-    systemType === "cape" ||
-    systemType === "mantle" ||
-    subType === "cloak" ||
-    subType === "cape" ||
-    name.includes("cloak") ||
-    name.includes("cape") ||
-    name.includes("mantle") ||
-    name.includes("shawl") ||
-    name.includes("плащ") ||
-    name.includes("накидка") ||
-    name.includes("мантия") ||
-    name.includes("пелерина") ||
-    name.includes("верхняя одежда")
-  ) {
-    return "cloak";
-  }
-
-  // Hands / Gloves / Bracers (if not bracelet)
-  if (
-    systemType === "hands" ||
-    systemType === "gloves" ||
-    systemType === "gauntlets" ||
-    systemType === "bracers" ||
-    subType === "gloves" ||
-    subType === "gauntlets" ||
-    name.includes("glove") ||
-    name.includes("gauntlet") ||
-    name.includes("bracer") ||
-    name.includes("handwrap") ||
-    name.includes("перчатки") ||
-    name.includes("наручи") ||
-    name.includes("рукавицы")
-  ) {
-    return "hands";
-  }
-
-  // Waist / Belt
-  if (
-    systemType === "waist" ||
-    systemType === "belt" ||
-    systemType === "girdle" ||
-    subType === "belt" ||
-    name.includes("belt") ||
-    name.includes("girdle") ||
-    name.includes("sash") ||
-    name.includes("cinch") ||
-    name.includes("пояс") ||
-    name.includes("кушак") ||
-    name.includes("ремень")
-  ) {
-    return "waist";
-  }
-
-  // Feet / Boots
-  if (
-    systemType === "feet" ||
-    systemType === "boots" ||
-    systemType === "shoes" ||
-    systemType === "greaves" ||
-    subType === "boots" ||
-    subType === "shoes" ||
-    name.includes("boot") ||
-    name.includes("shoe") ||
-    name.includes("greave") ||
-    name.includes("slipper") ||
-    name.includes("sandal") ||
-    name.includes("сапоги") ||
-    name.includes("ботинки") ||
-    name.includes("туфли") ||
-    name.includes("поножи") ||
-    name.includes("обувь")
-  ) {
-    return "feet";
-  }
-
-  // Rings
-  if (
-    systemType === "ring" ||
-    subType === "ring" ||
-    name.includes("ring") ||
-    name.includes("band") ||
-    name.includes("signet") ||
-    name.includes("кольцо") ||
-    name.includes("перстень")
-  ) {
-    return "ring";
-  }
+  const wearableClassification = matchWearableClassification(descriptor);
+  if (wearableClassification) return wearableClassification;
 
   // Containers
   if (type === "container" || type === "backpack") {
@@ -344,23 +149,7 @@ export function classifyItem(item) {
     return "consumable";
   }
 
-  // Focus / Wand / Rod / Staff
-  if (
-    systemType === "wand" ||
-    systemType === "rod" ||
-    systemType === "staff" ||
-    systemType === "focus" ||
-    name.includes("wand") ||
-    name.includes("rod") ||
-    name.includes("staff") ||
-    name.includes("focus") ||
-    name.includes("палочка") ||
-    name.includes("жезл") ||
-    name.includes("посох") ||
-    name.includes("фокус")
-  ) {
-    return "focus";
-  }
+  if (matchesFocusClassification(descriptor)) return "focus";
 
   // Generic equipment fallback
   if (type === "equipment") {
@@ -756,4 +545,3 @@ export function findBestSlotForEquipping(actor, item, currentSlotMap) {
   // If no empty slot, return the first valid slot (for swapping)
   return validSlots[0];
 }
-

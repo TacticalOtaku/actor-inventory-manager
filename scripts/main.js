@@ -18,6 +18,7 @@ import { slotRegistry, DEFAULT_SLOT_DEFINITIONS } from "./core/slot-definitions.
 import { computeActorEncumbrance, computeActorCapacity } from "./core/weight-calculator.js";
 import { registerEnforcementHooks } from "./foundry/enforcement-hooks.js";
 import { LOG } from "./foundry/logger.js";
+import { registerFoundryPaperdollRuntime } from "./foundry/paperdoll-runtime.js";
 import { registerModuleSettings } from "./foundry/settings.js";
 import { registerSheetInjectionHooks } from "./foundry/sheet-injection.js";
 import { extractActorVitals, formatItemForDisplay } from "./integrations/dnd5e.js";
@@ -72,6 +73,9 @@ function registerHandlebarsHelpers() {
     });
   }
 }
+
+// Bind platform ports before any module service reads from Foundry.
+registerFoundryPaperdollRuntime();
 
 // Register settings and preload templates on init
 registerModuleSettings();

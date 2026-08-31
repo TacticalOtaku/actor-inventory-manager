@@ -4,8 +4,8 @@
 
 import { FLAGS, MODULE_ID, SLOTS } from "../constants.js";
 import { getActorEquippedMap, isOffHandLockedBy2H } from "../core/equipment-rules.js";
-import { isBodyArmor, isPhysicalItem, isShield } from "../core/item-classifier.js";
-import { computeActorEncumbrance, num } from "../core/weight-calculator.js";
+import { isPhysicalItem } from "../core/item-classifier.js";
+import { computeActorEncumbrance } from "../core/weight-calculator.js";
 import {
   extractActorActions,
   extractActorSpells,
@@ -25,6 +25,13 @@ import { LOG } from "../foundry/logger.js";
 import { getActorPaperdollTemplate, getActorSlots } from "../core/paperdoll-templates.js";
 import { openPaperdollEditor } from "./paperdoll-editor.js";
 import { DragDropController } from "./drag-drop-controller.js";
+import {
+  buildAttunementSlots,
+  buildInventoryCounts,
+  buildSpellsCounts,
+  filterAndSortInventoryItems,
+  resolveThemeContext
+} from "./inventory-context.js";
 import {
   equipItemToSlot,
   toggleAttunement,
@@ -175,73 +182,22 @@ export class ActorInventoryApp extends InventoryApplicationBase {
 
     // Build Attunement items dynamically based on actor template max
     const attunementCount = actorTemplateCtx.attunementMax ?? (actor.system?.attributes?.attunement?.max ?? 3);
-    const attunedItems = Array.from(actor.items.values()).filter(i => {
-      const att = i.system?.attunement;
-      return i.system?.attuned === true || att === 2 || att === "attuned" || att === "ATTUNED" || String(att).toLowerCase() === "attuned";
-    });
-
-    const attunementSlots = Array.from({ length: attunementCount }, (_, idx) => {
-      const item = attunedItems[idx] ?? null;
-      return {
-        index: idx + 1,
-        slotId: `attunement${idx + 1}`,
-        item: item ? formatItemForDisplay(item) : null,
-        hasItem: Boolean(item)
-      };
-    });
+    const actorItems = Array.from(actor.items.values());
+    const attunementSlots = buildAttunementSlots(actorItems, attunementCount, formatItemForDisplay);
 
     // Filter physical items only (exclude feats, spells, classes, races)
-    const allPhysicalItems = Array.from(actor.items.values()).filter(i => (
+    const allPhysicalItems = actorItems.filter(i => (
       isPhysicalItem(i) && !i.system?.container
     ));
-    const containers = Array.from(actor.items.values()).filter(i => (
+    const containers = actorItems.filter(i => (
       i.type === "container" || i.type === "backpack" || i.system?.type?.value === "container"
     ));
 
-    // Filter items by current tab
-    const tabFiltered = allPhysicalItems.filter(item => {
-      if (this.currentTab === "weapons") {
-        return item.type === "weapon";
-      }
-      if (this.currentTab === "armor") {
-        return (
-          item.type === "equipment" &&
-          (isBodyArmor(item) || isShield(item) || !["trinket", "vehicle"].includes(item.system?.type?.value))
-        );
-      }
-      if (this.currentTab === "consumables") {
-        return item.type === "consumable";
-      }
-      if (this.currentTab === "containers") {
-        return item.type === "container" || item.type === "backpack" || item.system?.type?.value === "container";
-      }
-      if (this.currentTab === "loot") {
-        return item.type === "loot" || item.type === "tool" || (item.type === "equipment" && item.system?.type?.value === "trinket");
-      }
-      return true; // "all"
-    });
-
-    // Apply search query
-    const searchFiltered = tabFiltered.filter(item => {
-      if (!this.searchFilter) return true;
-      return item.name.toLowerCase().includes(this.searchFilter.toLowerCase());
-    });
-
-    // Sort items
-    searchFiltered.sort((a, b) => {
-      if (this.sortBy === "weight") {
-        return num(b.system?.weight?.value ?? b.system?.weight, 0) - num(a.system?.weight?.value ?? a.system?.weight, 0);
-      }
-      if (this.sortBy === "value") {
-        return num(b.system?.price?.value ?? b.system?.price, 0) - num(a.system?.price?.value ?? a.system?.price, 0);
-      }
-      if (this.sortBy === "rarity") {
-        return (a.system?.rarity ?? "").localeCompare(b.system?.rarity ?? "");
-      }
-      return a.name.localeCompare(b.name);
-    });
-
-    const displayItems = searchFiltered.map(i => formatItemForDisplay(i));
+    const displayItems = filterAndSortInventoryItems(allPhysicalItems, {
+      tab: this.currentTab,
+      search: this.searchFilter,
+      sortBy: this.sortBy
+    }).map(i => formatItemForDisplay(i));
 
     // Build container explorer tree
     const containerTrees = containers.map(container => {
@@ -265,55 +221,22 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       };
     });
 
-    // Calculate counts for each tab
-    const weaponsCount = allPhysicalItems.filter(i => i.type === "weapon").length;
-    const armorCount = allPhysicalItems.filter(i => (
-      i.type === "equipment" && (isBodyArmor(i) || isShield(i) || !["trinket", "vehicle"].includes(i.system?.type?.value))
-    )).length;
-    const consumablesCount = allPhysicalItems.filter(i => i.type === "consumable").length;
-    const containersCount = containers.length;
-    const lootCount = allPhysicalItems.filter(i => (
-      i.type === "loot" || i.type === "tool" || (i.type === "equipment" && i.system?.type?.value === "trinket")
-    )).length;
-
-    const counts = {
-      all: allPhysicalItems.length,
-      weapons: weaponsCount,
-      armor: armorCount,
-      consumables: consumablesCount,
-      containers: containersCount,
-      loot: lootCount
-    };
+    const counts = buildInventoryCounts(allPhysicalItems, containers);
 
     // Extract Spells and Actions Data
     const spellSlots = extractSpellSlots(actor);
     const spellGroups = extractActorSpells(actor, this.spellsSearchFilter);
     const actionsData = extractActorActions(actor, this.spellsSearchFilter);
 
-    let totalSpells = 0;
-    for (const g of spellGroups) {
-      totalSpells += g.count;
-    }
-    const totalActiveActions = (actionsData.actions.length || 0) + (actionsData.bonus.length || 0) + (actionsData.reactions.length || 0);
-    const totalPassives = actionsData.passives.length || 0;
-
-    const spellsCounts = {
-      all: totalSpells + totalActiveActions + totalPassives,
-      spells: totalSpells,
-      actions: totalActiveActions,
-      passives: totalPassives
-    };
+    const spellsCounts = buildSpellsCounts(spellGroups, actionsData);
 
     // Determine active theme
     const settingTheme = game.settings?.get?.(MODULE_ID, "theme") ?? "dark";
-    let activeTheme = settingTheme;
-    if (settingTheme === "auto") {
-      activeTheme = window.matchMedia?.("(prefers-color-scheme: light)")?.matches ? "light" : "dark";
-    }
-    const isDark = activeTheme === "dark";
-    const isLight = activeTheme === "light";
-    const themeIcon = isDark ? "fa-solid fa-moon" : "fa-solid fa-sun";
-    const themeTooltip = isDark ? game.i18n.localize("AIM.theme.switchToLight") : game.i18n.localize("AIM.theme.switchToDark");
+    const themeContext = resolveThemeContext(
+      settingTheme,
+      Boolean(window.matchMedia?.("(prefers-color-scheme: light)")?.matches),
+      key => game.i18n.localize(key)
+    );
 
     return {
       ...context,
@@ -330,11 +253,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       hasContainers: containerTrees.length > 0,
       currentTab: this.currentTab,
       counts,
-      theme: activeTheme,
-      isDark,
-      isLight,
-      themeIcon,
-      themeTooltip,
+      ...themeContext,
       isGM: Boolean(globalThis.game?.user?.isGM),
       showActorPortraitBackdrop: Boolean(globalThis.game?.settings?.get(MODULE_ID, "showActorPortraitBackdrop") ?? true) && Boolean(actor.img),
       actorImg: actor.img,

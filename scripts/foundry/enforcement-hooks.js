@@ -86,8 +86,13 @@ export function handlePreUpdateItem(item, changes, options, userId) {
 
   // Handle auto-swap items if any
   if (result.autoSwapItems && result.autoSwapItems.length > 0) {
+    const conflictingItems = result.autoSwapItems.filter(i => i.id !== item.id);
+    const conflictMessage = game.i18n.format("AIM.notifications.slotOccupied", {
+      item: item.name,
+      conflict: conflictingItems.map(i => i.name).join(", ")
+    });
+
     if (mode === ENFORCEMENT_MODES.AUTO_SWAP) {
-      const conflictingItems = result.autoSwapItems.filter(i => i.id !== item.id);
       if (conflictingItems.length > 0) {
         LOG.info("Auto-swapping conflicting item(s)", {
           unequipping: conflictingItems.map(i => i.name).join(", "),
@@ -112,9 +117,11 @@ export function handlePreUpdateItem(item, changes, options, userId) {
           }
         }
       }
-    } else if (mode === ENFORCEMENT_MODES.BLOCK && !result.valid) {
-      ui.notifications?.warn(result.error);
+    } else if (mode === ENFORCEMENT_MODES.BLOCK && conflictingItems.length > 0) {
+      ui.notifications?.warn(conflictMessage);
       return false;
+    } else if (mode === ENFORCEMENT_MODES.WARN && conflictingItems.length > 0) {
+      ui.notifications?.warn(conflictMessage);
     }
   }
 

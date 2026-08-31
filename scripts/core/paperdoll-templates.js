@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { FLAGS, MODULE_ID, SLOTS, TEMPLATE_PRESETS } from "../constants.js";
-import { LOG } from "../foundry/logger.js";
+import { getPaperdollRuntime } from "./paperdoll-runtime.js";
 
 /**
  * Built-in Preset: D&D 2024 Rules (Default)
@@ -306,7 +306,7 @@ export const PRESET_TEMPLATES = {
  */
 export function getWorldCustomTemplates() {
   try {
-    return globalThis.game?.settings?.get(MODULE_ID, "customTemplates") ?? {};
+    return getPaperdollRuntime().getCustomTemplates() ?? {};
   } catch {
     return {};
   }
@@ -317,11 +317,12 @@ export function getWorldCustomTemplates() {
  * @returns {Array<Object>}
  */
 export function getAllTemplates() {
+  const runtime = getPaperdollRuntime();
   const custom = getWorldCustomTemplates();
   const presets = Object.values(PRESET_TEMPLATES).map(p => ({
     ...p,
-    name: globalThis.game?.i18n?.localize ? globalThis.game.i18n.localize(p.nameKey) : (p.name || p.id),
-    description: globalThis.game?.i18n?.localize ? globalThis.game.i18n.localize(p.descKey) : (p.description || "")
+    name: runtime.localize(p.nameKey, p.name || p.id),
+    description: runtime.localize(p.descKey, p.description || "")
   }));
 
   const customList = Object.values(custom).map(c => ({
@@ -388,9 +389,10 @@ export function getActorPaperdollTemplate(actor) {
  * @returns {Object}
  */
 function formatTemplateContext(template) {
+  const runtime = getPaperdollRuntime();
   const slots = (template.slots || []).map(s => {
-    const localizedLabel = s.labelKey && globalThis.game?.i18n?.localize
-      ? globalThis.game.i18n.localize(s.labelKey)
+    const localizedLabel = s.labelKey
+      ? runtime.localize(s.labelKey, s.label || s.id)
       : (s.label || s.id);
 
     return {
@@ -408,7 +410,9 @@ function formatTemplateContext(template) {
 
   return {
     templateId: template.id || "custom",
-    templateName: template.nameKey && globalThis.game?.i18n?.localize ? globalThis.game.i18n.localize(template.nameKey) : (template.name || template.id),
+    templateName: template.nameKey
+      ? runtime.localize(template.nameKey, template.name || template.id)
+      : (template.name || template.id),
     isPreset: Boolean(template.isPreset),
     attunementMax: template.attunementMax ?? 3,
     slots,
@@ -435,8 +439,9 @@ export function getActorSlots(actor) {
  */
 export async function setActorPaperdollTemplate(actor, templateId, customTemplateData = null) {
   if (!actor) return;
-  if (!globalThis.game?.user?.isGM) {
-    ui.notifications?.warn(globalThis.game?.i18n?.localize("AIM.editor.gmOnly") || "Only GM can modify actor paperdoll templates");
+  const runtime = getPaperdollRuntime();
+  if (!runtime.isGM()) {
+    runtime.notifyWarning(runtime.localize("AIM.editor.gmOnly", "Only GM can modify actor paperdoll templates"));
     return;
   }
 
@@ -459,7 +464,7 @@ export async function setActorPaperdollTemplate(actor, templateId, customTemplat
     }
   }
 
-  LOG.info("Actor paperdoll template updated", { actorId: actor.id, templateId });
+  runtime.logInfo("Actor paperdoll template updated", { actorId: actor.id, templateId });
 }
 
 /**
@@ -467,7 +472,8 @@ export async function setActorPaperdollTemplate(actor, templateId, customTemplat
  * @param {Object} templateData
  */
 export async function saveWorldCustomTemplate(templateData) {
-  if (!globalThis.game?.user?.isGM) return;
+  const runtime = getPaperdollRuntime();
+  if (!runtime.isGM()) return;
   if (!templateData || !templateData.id) throw new Error("Template must have a unique ID");
 
   const custom = getWorldCustomTemplates();
@@ -477,8 +483,8 @@ export async function saveWorldCustomTemplate(templateData) {
     updatedAt: Date.now()
   };
 
-  await globalThis.game.settings.set(MODULE_ID, "customTemplates", custom);
-  LOG.info("Saved custom template to world", { templateId: templateData.id });
+  await runtime.setCustomTemplates(custom);
+  runtime.logInfo("Saved custom template to world", { templateId: templateData.id });
 }
 
 /**
@@ -486,15 +492,16 @@ export async function saveWorldCustomTemplate(templateData) {
  * @param {string} templateId
  */
 export async function deleteWorldCustomTemplate(templateId) {
-  if (!globalThis.game?.user?.isGM) return;
+  const runtime = getPaperdollRuntime();
+  if (!runtime.isGM()) return;
   if (PRESET_TEMPLATES[templateId]) {
     throw new Error("Cannot delete built-in preset templates");
   }
 
   const custom = getWorldCustomTemplates();
   delete custom[templateId];
-  await globalThis.game.settings.set(MODULE_ID, "customTemplates", custom);
-  LOG.info("Deleted custom template from world", { templateId });
+  await runtime.setCustomTemplates(custom);
+  runtime.logInfo("Deleted custom template from world", { templateId });
 }
 
 /**

@@ -2,6 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { isBodyArmor, isPhysicalItem, isShield } from "../scripts/core/item-classifier.js";
+import {
+  buildAttunementSlots,
+  buildInventoryCounts,
+  buildSpellsCounts,
+  filterAndSortInventoryItems,
+  resolveThemeContext
+} from "../scripts/ui/inventory-context.js";
 
 test("Inventory Filtering: Exclude non-physical actor items", () => {
   const feat = { id: "f1", name: "Divine Smite", type: "feat" };
@@ -55,4 +62,40 @@ test("Inventory Filtering: Tab categories filtering", () => {
   // Tab: loot
   const loot = items.filter(i => i.type === "loot" || i.type === "tool");
   assert.deepEqual(loot, [gem]);
+});
+
+test("Inventory Context: filters, searches and sorts without mutating input", () => {
+  const items = [
+    { name: "Dagger", type: "weapon", system: { weight: { value: 1 }, price: { value: 2 } } },
+    { name: "Greatsword", type: "weapon", system: { weight: { value: 6 }, price: { value: 50 } } },
+    { name: "Potion", type: "consumable", system: { weight: { value: 0.5 }, price: { value: 10 } } }
+  ];
+
+  const result = filterAndSortInventoryItems(items, { tab: "weapons", search: "g", sortBy: "weight" });
+  assert.deepEqual(result.map(item => item.name), ["Greatsword", "Dagger"]);
+  assert.deepEqual(items.map(item => item.name), ["Dagger", "Greatsword", "Potion"]);
+});
+
+test("Inventory Context: derives counts, attunement, spells and auto theme", () => {
+  const items = [
+    { name: "Sword", type: "weapon", system: {} },
+    { name: "Charm", type: "equipment", system: { type: { value: "trinket" }, attunement: 2 } },
+    { name: "Potion", type: "consumable", system: {} }
+  ];
+
+  assert.deepEqual(buildInventoryCounts(items, []), {
+    all: 3, weapons: 1, armor: 0, consumables: 1, containers: 0, loot: 1
+  });
+  assert.equal(buildAttunementSlots(items, 2, item => ({ name: item.name }))[0].item.name, "Charm");
+  assert.deepEqual(buildSpellsCounts(
+    [{ count: 2 }, { count: 1 }],
+    { actions: [{}], bonus: [{}], reactions: [], passives: [{}] }
+  ), { all: 6, spells: 3, actions: 2, passives: 1 });
+  assert.deepEqual(resolveThemeContext("auto", true, key => key), {
+    theme: "light",
+    isDark: false,
+    isLight: true,
+    themeIcon: "fa-solid fa-sun",
+    themeTooltip: "AIM.theme.switchToDark"
+  });
 });

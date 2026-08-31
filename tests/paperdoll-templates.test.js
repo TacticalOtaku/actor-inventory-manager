@@ -6,16 +6,19 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { FLAGS, MODULE_ID, SLOTS, TEMPLATE_PRESETS } from "../scripts/constants.js";
+import { configurePaperdollRuntime, resetPaperdollRuntime } from "../scripts/core/paperdoll-runtime.js";
 import {
   DND_2014_TEMPLATE,
   DND_2024_TEMPLATE,
+  deleteWorldCustomTemplate,
   exportTemplateJSON,
   getAllTemplates,
   getActorPaperdollTemplate,
   getActorSlots,
   getTemplateById,
   importTemplateJSON,
-  PRESET_TEMPLATES
+  PRESET_TEMPLATES,
+  setActorPaperdollTemplate
 } from "../scripts/core/paperdoll-templates.js";
 import { getValidSlotsForItem, isItemCompatibleWithSlot } from "../scripts/core/item-classifier.js";
 import { equipmentRuleEngine } from "../scripts/core/equipment-rules.js";
@@ -152,4 +155,93 @@ test("Paperdoll Templates: JSON Export and Import roundtrip", async () => {
   const parsed = JSON.parse(json);
   assert.equal(parsed.id, "dnd2024");
   assert.equal(parsed.slots.length, 11);
+});
+
+test("Paperdoll Templates: runtime port isolates Foundry persistence", async () => {
+  let storedTemplates = {};
+  const logEntries = [];
+  configurePaperdollRuntime({
+    getCustomTemplates: () => storedTemplates,
+    setCustomTemplates: async value => {
+      storedTemplates = value;
+    },
+    isGM: () => true,
+    localize: (key, fallback) => fallback ?? key,
+    logInfo: (message, data) => logEntries.push({ message, data })
+  });
+
+  try {
+    const imported = await importTemplateJSON(JSON.stringify({
+      id: "runtime-test",
+      name: "Runtime Test",
+      slots: []
+    }));
+
+    assert.equal(imported.id, "runtime-test");
+    assert.equal(storedTemplates["runtime-test"].isPreset, false);
+    assert.equal(logEntries.at(-1).data.templateId, "runtime-test");
+  } finally {
+    resetPaperdollRuntime();
+  }
+});
+
+test("Paperdoll Templates: non-GM assignment warns without actor writes", async () => {
+  const warnings = [];
+  let writes = 0;
+  configurePaperdollRuntime({
+    isGM: () => false,
+    localize: (key, fallback) => fallback ?? key,
+    notifyWarning: message => warnings.push(message)
+  });
+  const actor = {
+    setFlag: async () => { writes += 1; },
+    unsetFlag: async () => { writes += 1; }
+  };
+
+  try {
+    await setActorPaperdollTemplate(actor, TEMPLATE_PRESETS.DND_2014);
+    assert.equal(writes, 0);
+    assert.equal(warnings.length, 1);
+  } finally {
+    resetPaperdollRuntime();
+  }
+});
+
+test("Paperdoll Templates: GM assignment and deletion use injected persistence", async () => {
+  let storedTemplates = {
+    removable: { id: "removable", name: "Remove Me", slots: [], isPreset: false }
+  };
+  const flagWrites = [];
+  const actorUpdates = [];
+  configurePaperdollRuntime({
+    getCustomTemplates: () => storedTemplates,
+    setCustomTemplates: async value => { storedTemplates = value; },
+    isGM: () => true,
+    localize: (key, fallback) => fallback ?? key
+  });
+  const actor = {
+    id: "actor-runtime",
+    system: { attributes: { attunement: { max: 3 } } },
+    setFlag: async (moduleId, key, value) => flagWrites.push({ moduleId, key, value }),
+    unsetFlag: async (moduleId, key) => flagWrites.push({ moduleId, key, unset: true }),
+    update: async changes => actorUpdates.push(changes)
+  };
+
+  try {
+    await setActorPaperdollTemplate(actor, TEMPLATE_PRESETS.DND_2014);
+    assert.deepEqual(flagWrites, [
+      { moduleId: MODULE_ID, key: FLAGS.CUSTOM_TEMPLATE, unset: true },
+      { moduleId: MODULE_ID, key: FLAGS.TEMPLATE_ID, value: TEMPLATE_PRESETS.DND_2014 }
+    ]);
+    assert.deepEqual(actorUpdates, [{ "system.attributes.attunement.max": 3 }]);
+
+    await deleteWorldCustomTemplate("removable");
+    assert.equal(storedTemplates.removable, undefined);
+    await assert.rejects(
+      deleteWorldCustomTemplate(TEMPLATE_PRESETS.DND_2024),
+      /Cannot delete built-in preset/
+    );
+  } finally {
+    resetPaperdollRuntime();
+  }
 });

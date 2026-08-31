@@ -162,90 +162,75 @@ export class PaperdollEditorApp extends ApplicationBase {
   }
 
   _bindDragDrop() {
-    const slotCards = this.element.querySelectorAll(".aim-editor-slot-card");
-    const columns = this.element.querySelectorAll(".aim-editor-column");
+    this.element.querySelectorAll(".aim-editor-slot-card")
+      .forEach(card => this._bindSlotCardDragDrop(card));
+    this.element.querySelectorAll(".aim-editor-column")
+      .forEach(column => this._bindColumnDropZone(column));
+  }
 
-    // Slot cards drag events
-    slotCards.forEach(card => {
-      card.addEventListener("dragstart", (e) => {
-        const slotId = card.dataset.slotId;
-        const column = card.dataset.column;
-        e.dataTransfer.setData("text/plain", JSON.stringify({ slotId, sourceColumn: column }));
-        e.dataTransfer.effectAllowed = "move";
-        card.classList.add("is-dragging");
-      });
+  _readDraggedSlotId(dataTransfer) {
+    const raw = dataTransfer.getData("text/plain");
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw).slotId || null;
+    } catch (err) {
+      LOG.error("Failed to parse drag data", err);
+      return null;
+    }
+  }
 
-      card.addEventListener("dragend", () => {
-        card.classList.remove("is-dragging");
-        this.element.querySelectorAll(".aim-drag-over-column, .aim-drag-over-card").forEach(el => {
-          el.classList.remove("aim-drag-over-column", "aim-drag-over-card");
-        });
-      });
-
-      card.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        e.dataTransfer.dropEffect = "move";
-        card.classList.add("aim-drag-over-card");
-      });
-
-      card.addEventListener("dragleave", (e) => {
-        card.classList.remove("aim-drag-over-card");
-      });
-
-      card.addEventListener("drop", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        card.classList.remove("aim-drag-over-card");
-
-        const raw = e.dataTransfer.getData("text/plain");
-        if (!raw) return;
-
-        try {
-          const { slotId } = JSON.parse(raw);
-          const targetSlotId = card.dataset.slotId;
-          const targetColumn = card.dataset.column;
-
-          if (slotId && targetSlotId && slotId !== targetSlotId) {
-            this._moveSlotBefore(slotId, targetSlotId, targetColumn);
-          }
-        } catch (err) {
-          LOG.error("Failed to parse drag data", err);
-        }
-      });
+  _clearDragIndicators() {
+    this.element.querySelectorAll(".aim-drag-over-column, .aim-drag-over-card").forEach(element => {
+      element.classList.remove("aim-drag-over-column", "aim-drag-over-card");
     });
+  }
 
-    // Column drop zones
-    columns.forEach(col => {
-      col.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-        col.classList.add("aim-drag-over-column");
-      });
+  _bindSlotCardDragDrop(card) {
+    card.addEventListener("dragstart", event => {
+      event.dataTransfer.setData("text/plain", JSON.stringify({
+        slotId: card.dataset.slotId,
+        sourceColumn: card.dataset.column
+      }));
+      event.dataTransfer.effectAllowed = "move";
+      card.classList.add("is-dragging");
+    });
+    card.addEventListener("dragend", () => {
+      card.classList.remove("is-dragging");
+      this._clearDragIndicators();
+    });
+    card.addEventListener("dragover", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      event.dataTransfer.dropEffect = "move";
+      card.classList.add("aim-drag-over-card");
+    });
+    card.addEventListener("dragleave", () => card.classList.remove("aim-drag-over-card"));
+    card.addEventListener("drop", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      card.classList.remove("aim-drag-over-card");
+      const slotId = this._readDraggedSlotId(event.dataTransfer);
+      const targetSlotId = card.dataset.slotId;
+      if (slotId && targetSlotId && slotId !== targetSlotId) {
+        this._moveSlotBefore(slotId, targetSlotId, card.dataset.column);
+      }
+    });
+  }
 
-      col.addEventListener("dragleave", (e) => {
-        if (!col.contains(e.relatedTarget)) {
-          col.classList.remove("aim-drag-over-column");
-        }
-      });
-
-      col.addEventListener("drop", (e) => {
-        e.preventDefault();
-        col.classList.remove("aim-drag-over-column");
-
-        const raw = e.dataTransfer.getData("text/plain");
-        if (!raw) return;
-
-        try {
-          const { slotId } = JSON.parse(raw);
-          const targetColumn = col.dataset.column;
-          if (slotId && targetColumn) {
-            this._moveSlotToColumn(slotId, targetColumn);
-          }
-        } catch (err) {
-          LOG.error("Failed to parse drag data", err);
-        }
-      });
+  _bindColumnDropZone(column) {
+    column.addEventListener("dragover", event => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      column.classList.add("aim-drag-over-column");
+    });
+    column.addEventListener("dragleave", event => {
+      if (!column.contains(event.relatedTarget)) column.classList.remove("aim-drag-over-column");
+    });
+    column.addEventListener("drop", event => {
+      event.preventDefault();
+      column.classList.remove("aim-drag-over-column");
+      const slotId = this._readDraggedSlotId(event.dataTransfer);
+      if (slotId && column.dataset.column) this._moveSlotToColumn(slotId, column.dataset.column);
     });
   }
 
@@ -281,22 +266,26 @@ export class PaperdollEditorApp extends ApplicationBase {
   }
 
   _reindexSlots() {
-    let leftOrder = 10;
-    let centerOrder = 10;
-    let rightOrder = 10;
-
+    const nextOrder = { left: 10, center: 10, right: 10 };
     for (const slot of this.workingSlots) {
-      if (slot.column === "left") {
-        slot.order = leftOrder;
-        leftOrder += 10;
-      } else if (slot.column === "right") {
-        slot.order = rightOrder;
-        rightOrder += 10;
-      } else {
-        slot.order = centerOrder;
-        centerOrder += 10;
-      }
+      const column = slot.column === "left" || slot.column === "right" ? slot.column : "center";
+      slot.order = nextOrder[column];
+      nextOrder[column] += 10;
     }
+  }
+
+  _moveSlotByOffset(slotId, offset) {
+    const slot = this.workingSlots.find(candidate => candidate.id === slotId);
+    if (!slot) return;
+    const columnSlots = this.workingSlots.filter(candidate => candidate.column === slot.column);
+    const currentIndex = columnSlots.findIndex(candidate => candidate.id === slotId);
+    const swapWith = columnSlots[currentIndex + offset];
+    if (!swapWith) return;
+
+    [slot.order, swapWith.order] = [swapWith.order, slot.order];
+    this.workingSlots.sort((a, b) => (a.order ?? 50) - (b.order ?? 50));
+    this.isCustomWorking = true;
+    this.render(false);
   }
 
   // --- Static Actions ---
@@ -536,39 +525,11 @@ export class PaperdollEditorApp extends ApplicationBase {
   }
 
   static _onMoveSlotUp(event, target) {
-    const slotId = target.dataset.slotId;
-    const slot = this.workingSlots.find(s => s.id === slotId);
-    if (!slot) return;
-
-    const columnSlots = this.workingSlots.filter(s => s.column === slot.column);
-    const indexInCol = columnSlots.findIndex(s => s.id === slotId);
-    if (indexInCol > 0) {
-      const prevSlot = columnSlots[indexInCol - 1];
-      const tempOrder = slot.order;
-      slot.order = prevSlot.order;
-      prevSlot.order = tempOrder;
-      this.workingSlots.sort((a, b) => (a.order ?? 50) - (b.order ?? 50));
-      this.isCustomWorking = true;
-      this.render(false);
-    }
+    this._moveSlotByOffset(target.dataset.slotId, -1);
   }
 
   static _onMoveSlotDown(event, target) {
-    const slotId = target.dataset.slotId;
-    const slot = this.workingSlots.find(s => s.id === slotId);
-    if (!slot) return;
-
-    const columnSlots = this.workingSlots.filter(s => s.column === slot.column);
-    const indexInCol = columnSlots.findIndex(s => s.id === slotId);
-    if (indexInCol < columnSlots.length - 1) {
-      const nextSlot = columnSlots[indexInCol + 1];
-      const tempOrder = slot.order;
-      slot.order = nextSlot.order;
-      nextSlot.order = tempOrder;
-      this.workingSlots.sort((a, b) => (a.order ?? 50) - (b.order ?? 50));
-      this.isCustomWorking = true;
-      this.render(false);
-    }
+    this._moveSlotByOffset(target.dataset.slotId, 1);
   }
 }
 

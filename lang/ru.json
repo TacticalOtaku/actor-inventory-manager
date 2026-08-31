@@ -209,6 +209,7 @@
       "unattunedSuccess": "Настройка на {item} разорвана",
       "rulesViolated": "Нарушение правил экипировки: {reason}",
       "noValidSlot": "Нельзя экипировать '{item}': нет подходящего или свободного слота (Допустимые: {valid}).",
+      "slotOccupied": "Нельзя экипировать '{item}': целевой слот занят предметом '{conflict}'.",
       "offhandBlockedBy2H": "Нельзя экипировать '{item}' во вторую руку: основное оружие '{conflict}' является двуручным.",
       "armorAlreadyEquipped": "Нельзя экипировать '{item}': доспех '{conflict}' уже надет в слот брони.",
       "shieldAlreadyEquipped": "Нельзя экипировать '{item}': щит '{conflict}' уже экипирован."

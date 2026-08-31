@@ -129,3 +129,19 @@ test("Item Classifier: Custom Slots & Russian Items (Pants, Bracelets, Underarmo
   assert.equal(validBraceletSlots.includes("bracelet_slot"), true);
   assert.equal(isItemCompatibleWithSlot(bracelet, "bracelet_slot", customActor), true);
 });
+
+test("Item Classifier: specific wearable names win over generic armor metadata", () => {
+  const gambeson = {
+    name: "Гамбезон ученика",
+    type: "equipment",
+    system: { type: { value: "heavy" }, armor: { type: "heavy" } }
+  };
+  const armoredBoots = {
+    name: "Armored Boots",
+    type: "equipment",
+    system: { type: { value: "clothing" }, armor: { type: "clothing" } }
+  };
+
+  assert.equal(classifyItem(gambeson), "underarmor");
+  assert.equal(classifyItem(armoredBoots), "feet");
+});

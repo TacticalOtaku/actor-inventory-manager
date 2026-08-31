@@ -82,8 +82,6 @@ Hooks.once("init", () => {
 });
 
 Hooks.once("ready", () => {
-  registerHandlebarsHelpers();
-  preloadTemplates();
   registerEnforcementHooks();
   registerSheetInjectionHooks();
 

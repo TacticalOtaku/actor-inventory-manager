@@ -87,17 +87,29 @@ export function handlePreUpdateItem(item, changes, options, userId) {
   // Handle auto-swap items if any
   if (result.autoSwapItems && result.autoSwapItems.length > 0) {
     if (mode === ENFORCEMENT_MODES.AUTO_SWAP) {
-      for (const swapItem of result.autoSwapItems) {
-        if (swapItem.id !== item.id) {
-          LOG.info("Auto-swapping conflicting item", {
-            unequipping: swapItem.name,
-            equipping: item.name
-          });
-          // Asynchronously unequip the old item
-          swapItem.update({
+      const conflictingItems = result.autoSwapItems.filter(i => i.id !== item.id);
+      if (conflictingItems.length > 0) {
+        LOG.info("Auto-swapping conflicting item(s)", {
+          unequipping: conflictingItems.map(i => i.name).join(", "),
+          equipping: item.name
+        });
+
+        if (typeof actor.updateEmbeddedDocuments === "function") {
+          const updates = conflictingItems.map(swapItem => ({
+            _id: swapItem.id,
             "system.equipped": false,
             [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: null
-          }).catch(err => LOG.error("Failed to unequip swapped item", err));
+          }));
+          actor.updateEmbeddedDocuments("Item", updates).catch(err => {
+            LOG.error("Failed to batch unequip swapped items", err);
+          });
+        } else {
+          for (const swapItem of conflictingItems) {
+            swapItem.update({
+              "system.equipped": false,
+              [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: null
+            }).catch(err => LOG.error("Failed to unequip swapped item", err));
+          }
         }
       }
     } else if (mode === ENFORCEMENT_MODES.BLOCK && !result.valid) {

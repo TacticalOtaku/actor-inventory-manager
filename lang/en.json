@@ -57,7 +57,8 @@
       "normal": "Normal Load",
       "encumbered": "Encumbered (-10 ft Speed)",
       "heavily_encumbered": "Heavily Encumbered (-20 ft, Disadvantage)",
-      "overburdened": "Overburdened (Cannot Move)"
+      "overburdened": "Overburdened (Cannot Move)",
+      "pushDrag": "Push / Drag / Lift"
     },
     "currency": {
       "totalValue": "Total Wealth"
@@ -128,7 +129,8 @@
       "use": "Use / Roll",
       "delete": "Delete Item",
       "shortRest": "Short Rest",
-      "longRest": "Long Rest"
+      "longRest": "Long Rest",
+      "close": "Close"
     },
     "attunement": {
       "title": "Attuned Items",
@@ -187,13 +189,21 @@
         "bonus": "Bonus Actions",
         "reaction": "Reactions",
         "passive": "Passives & Traits"
-      }
+      },
+      "alwaysPrepared": "Always Prepared"
     },
     "containers": {
       "title": "Bags & Containers",
       "empty": "Empty container",
       "reductionTooltip": "Weight reduction applied to items inside",
-      "rulesConfig": "Configure Container Rules (Weighty Containers)"
+      "rulesConfig": "Configure Container Rules (Weighty Containers)",
+      "dropRejected": "{container} does not accept {item}.",
+      "typeNotAllowed": "{container} does not allow item type \"{type}\".",
+      "subtypeNotAllowed": "{container} does not allow subtype \"{subtype}\".",
+      "forbiddenProperty": "{item} has the property \"{property}\", which {container} forbids.",
+      "missingRequiredProperty": "{item} lacks the property \"{property}\" required by {container}.",
+      "weightyInactive": "The Weighty Containers module is not active.",
+      "loadTooltip": "Carried weight in this container, after weight reduction"
     },
     "dialogs": {
       "deleteItem": {
@@ -250,6 +260,10 @@
         "info": "Info",
         "debug": "Debug",
         "trace": "Trace"
+      },
+      "customTemplates": {
+        "name": "Custom Paperdoll Templates",
+        "hint": "Internal storage for paperdoll templates saved in this world."
       }
     },
     "keybindings": {

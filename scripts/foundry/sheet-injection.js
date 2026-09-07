@@ -218,27 +218,8 @@ export function registerSheetInjectionHooks() {
     });
   }
 
-  // Register Keybinding to open inventory of selected token or assigned character
-  try {
-    game.keybindings?.register?.(MODULE_ID, "openInventoryKey", {
-      name: "AIM.keybindings.openInventory.name",
-      hint: "AIM.keybindings.openInventory.hint",
-      editable: [
-        { key: "KeyI", modifiers: ["Shift"] }
-      ],
-      onDown: () => {
-        const token = canvas?.tokens?.controlled?.[0];
-        const actor = token?.actor ?? game.user?.character;
-        if (actor) {
-          openActorInventory(actor);
-          return true;
-        }
-        return false;
-      }
-    });
-  } catch (err) {
-    LOG.debug("Keybinding registration skipped", err);
-  }
+  // NOTE: keybindings must be registered during "init" (Foundry throws otherwise).
+  // The inventory hotkey lives in foundry/settings.js.
 
   LOG.info("Sheet injection hooks registered");
 }

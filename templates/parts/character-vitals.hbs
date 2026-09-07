@@ -92,6 +92,10 @@
     </div>
     <div class="aim-meter aim-encumbrance-meter {{encumbrance.tierClass}}">
       <div class="aim-meter-fill" style="width: {{encumbrance.pct}}%;"></div>
+      <span class="aim-meter-stop" style="left: {{encumbrance.stops.encumbered}}%;"
+            title="{{localize 'AIM.encumbrance.encumbered'}}: {{encumbrance.thresholds.encumbered}} {{encumbrance.unit}}"></span>
+      <span class="aim-meter-stop" style="left: {{encumbrance.stops.heavilyEncumbered}}%;"
+            title="{{localize 'AIM.encumbrance.heavily_encumbered'}}: {{encumbrance.thresholds.heavilyEncumbered}} {{encumbrance.unit}}"></span>
     </div>
     <div class="aim-enc-status {{encumbrance.tierClass}}">
       {{localize encumbrance.tierLabelKey}}

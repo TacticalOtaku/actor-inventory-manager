@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { FLAGS, MODULE_ID } from "../constants.js";
+import { isItemAttuned } from "../core/attunement.js";
 import { equipmentRuleEngine, getActorEquippedMap } from "../core/equipment-rules.js";
 import { findBestSlotForEquipping, getValidSlotsForItem } from "../core/item-classifier.js";
 import { LOG } from "../foundry/logger.js";
@@ -94,13 +95,16 @@ export async function toggleItemEquipped(actor, item) {
 }
 
 /**
- * Use or roll an item (attack, damage, spell, consumable)
+ * Use or roll an item (attack, damage, spell, consumable).
+ * Passing the originating event lets dnd5e honour Shift to fast-forward and
+ * prompt for the activity when an item defines more than one.
  * @param {Object} item
+ * @param {Event} [event]
  */
-export async function useItem(item) {
+export async function useItem(item, event = undefined) {
   if (!item) return;
   if (typeof item.use === "function") {
-    return item.use();
+    return item.use({ event });
   }
   if (typeof item.roll === "function") {
     return item.roll();
@@ -117,65 +121,51 @@ export async function useItem(item) {
 export async function toggleAttunement(item) {
   if (!item) return;
   const actor = item.parent;
-  const current = item.system?.attunement;
-  const isAttuned = item.system?.attuned === true || current === 2 || current === "attuned" || current === "ATTUNED" || String(current).toLowerCase() === "attuned";
 
-  if (!isAttuned) {
-    // Determine max attunement limit
-    let maxAttunement = 3;
+  // dnd5e 5.x keeps the requirement in `system.attunement` ("" | "required" |
+  // "optional") and the state in the boolean `system.attuned`. Older versions
+  // encoded both in the numeric `system.attunement` (0 none / 1 required / 2 attuned).
+  const usesBooleanState = typeof item.system?.attuned === "boolean";
+
+  if (!isItemAttuned(item)) {
+    const maxAttunement = getActorAttunementMax(actor);
     if (actor) {
-      try {
-        const customTemplate = actor.getFlag?.(MODULE_ID, FLAGS.CUSTOM_TEMPLATE) || actor.flags?.[MODULE_ID]?.[FLAGS.CUSTOM_TEMPLATE];
-        if (customTemplate?.attunementMax !== undefined) {
-          maxAttunement = customTemplate.attunementMax;
-        } else {
-          maxAttunement = actor.system?.attributes?.attunement?.max ?? 3;
-        }
-      } catch {
-        maxAttunement = actor.system?.attributes?.attunement?.max ?? 3;
-      }
-
-      // Count currently attuned items on actor
-      const currentlyAttuned = Array.from(actor.items.values()).filter(i => {
-        const att = i.system?.attunement;
-        return (i.system?.attuned === true || att === 2 || att === "attuned" || att === "ATTUNED" || String(att).toLowerCase() === "attuned") && i.id !== item.id;
-      }).length;
+      const currentlyAttuned = Array.from(actor.items.values())
+        .filter(i => i.id !== item.id && isItemAttuned(i)).length;
 
       if (currentlyAttuned >= maxAttunement) {
         ui.notifications?.warn(
-          game.i18n.format("AIM.notifications.maxAttunementReached", { max: maxAttunement }) ||
-          `Cannot attune: Maximum attunement limit reached (${maxAttunement}/${maxAttunement}).`
+          game.i18n.format("AIM.notifications.maxAttunementReached", { max: maxAttunement })
         );
         return;
       }
     }
 
-    // Set attuned state
-    const updateData = {};
-    if (typeof current === "string") {
-      updateData["system.attunement"] = "attuned";
-    } else {
-      updateData["system.attunement"] = 2;
-    }
-    if (item.system?.attuned !== undefined) {
-      updateData["system.attuned"] = true;
-    }
-    await item.update(updateData);
-    ui.notifications?.info(game.i18n.format("AIM.notifications.attunedSuccess", { item: item.name }) || `Attuned to ${item.name}`);
-  } else {
-    // End attunement state
-    const updateData = {};
-    if (typeof current === "string") {
-      updateData["system.attunement"] = "required";
-    } else {
-      updateData["system.attunement"] = 1;
-    }
-    if (item.system?.attuned !== undefined) {
-      updateData["system.attuned"] = false;
-    }
-    await item.update(updateData);
-    ui.notifications?.info(game.i18n.format("AIM.notifications.unattunedSuccess", { item: item.name }) || `Ended attunement to ${item.name}`);
+    await item.update(usesBooleanState
+      ? { "system.attuned": true }
+      : { "system.attunement": 2 });
+    ui.notifications?.info(game.i18n.format("AIM.notifications.attunedSuccess", { item: item.name }));
+    return;
   }
+
+  await item.update(usesBooleanState
+    ? { "system.attuned": false }
+    : { "system.attunement": 1 });
+  ui.notifications?.info(game.i18n.format("AIM.notifications.unattunedSuccess", { item: item.name }));
+}
+
+/**
+ * Resolve the attunement cap for an actor, honouring a custom paperdoll template.
+ * @param {Object} actor
+ * @returns {number}
+ */
+export function getActorAttunementMax(actor) {
+  if (!actor) return 3;
+  const customTemplate = actor.getFlag?.(MODULE_ID, FLAGS.CUSTOM_TEMPLATE)
+    ?? actor.flags?.[MODULE_ID]?.[FLAGS.CUSTOM_TEMPLATE];
+  if (typeof customTemplate?.attunementMax === "number") return customTemplate.attunementMax;
+  const systemMax = actor.system?.attributes?.attunement?.max;
+  return typeof systemMax === "number" ? systemMax : 3;
 }
 
 /**

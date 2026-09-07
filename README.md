@@ -57,5 +57,24 @@ https://raw.githubusercontent.com/TacticalOtaku/actor-inventory-manager/main/mod
 
 ---
 
+---
+
+## Development
+
+```bash
+npm test        # run the unit tests (no Foundry required)
+npm run sync    # copy the module into the local Foundry data directory
+```
+
+`npm run sync` targets `%LOCALAPPDATA%\FoundryVTT` by default; override it with
+`--data <path>` or the `FOUNDRY_DATA` environment variable. Reload Foundry (F5)
+afterwards.
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the module layout, the public API and
+hooks, how to register custom slots and equipment rules, and the dnd5e data-shape
+differences the code adapts to.
+
+---
+
 ## License
 This project is licensed under the [MIT License](LICENSE).

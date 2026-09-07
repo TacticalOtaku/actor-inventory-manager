@@ -124,7 +124,7 @@
   box-shadow: 0 16px 56px rgba(0, 0, 0, 0.9), 0 0 0 1px var(--aim-border-main);
   border: 2px solid var(--aim-border-gold);
   border-radius: 8px;
-  transition: background 0.3s ease, color 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
   overflow: visible !important;
   display: flex !important;
   flex-direction: column !important;
@@ -155,7 +155,9 @@
 /* Master Multi-Column Layout */
 .aim-window-content {
   display: grid;
-  grid-template-columns: 285px 350px 1fr;
+  /* The inventory list is the primary content, so the side columns shrink
+     before it does. */
+  grid-template-columns: minmax(240px, 285px) minmax(300px, 350px) minmax(300px, 1fr);
   height: 100%;
   max-height: 100%;
   min-height: 0;
@@ -169,15 +171,15 @@
 }
 
 .aim-window-content.is-paperdoll-collapsed {
-  grid-template-columns: 285px 44px 1fr;
+  grid-template-columns: minmax(240px, 285px) 44px minmax(300px, 1fr);
 }
 
 .aim-window-content.is-spells-open {
-  grid-template-columns: 285px 350px 1fr 380px;
+  grid-template-columns: minmax(240px, 285px) minmax(300px, 350px) minmax(320px, 1fr) minmax(320px, 380px);
 }
 
 .aim-window-content.is-paperdoll-collapsed.is-spells-open {
-  grid-template-columns: 285px 44px 1fr 380px;
+  grid-template-columns: minmax(240px, 285px) 44px minmax(320px, 1fr) minmax(320px, 380px);
 }
 
 .aim-column {
@@ -188,12 +190,18 @@
   box-sizing: border-box;
   box-shadow: var(--aim-card-shadow);
   position: relative;
-  transition: background 0.3s, border-color 0.3s;
+  transition: background-color 0.3s, border-color 0.3s;
   min-height: 0;
   max-height: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+/* Establishes the container query used to compact the item-row controls. */
+.aim-inventory-column {
+  container-type: inline-size;
+  container-name: aim-inventory;
 }
 
 /* ─────────────────────────────────────────────────────────
@@ -353,6 +361,24 @@
 .aim-hp-meter .aim-meter-fill {
   background: linear-gradient(90deg, #962d22 0%, #c0392b 60%, #e74c3c 100%);
   box-shadow: 0 0 8px rgba(231, 76, 60, 0.5);
+}
+
+/* Threshold ticks drawn over the encumbrance meter. */
+.aim-meter-stop {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  margin-left: -1px;
+  background: rgba(255, 255, 255, 0.45);
+  pointer-events: auto;
+  cursor: help;
+}
+
+.aim-meter-stop::after {
+  content: "";
+  position: absolute;
+  inset: -3px -3px -3px -4px;
 }
 
 .aim-vital-badges-grid {
@@ -581,11 +607,20 @@
   letter-spacing: 0.04em;
 }
 
-/* Rest Buttons */
+/* Rest Buttons - pinned to the bottom of the scrolling vitals column so they
+   stay reachable when the panel content is taller than the window. */
 .aim-rest-buttons {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+  position: sticky;
+  bottom: -14px;
+  margin-top: auto;
+  padding: 8px 0 14px;
+  margin-bottom: -14px;
+  background: var(--aim-bg-panel);
+  box-shadow: 0 -10px 12px -6px var(--aim-bg-panel);
+  z-index: 2;
 }
 
 .aim-btn {
@@ -1255,6 +1290,20 @@
   display: flex;
   align-items: center;
   gap: 5px;
+  flex: 0 0 auto;
+}
+
+/* In a narrow inventory column the controls must not starve the item name,
+   so they tighten up before the name starts truncating. */
+@container aim-inventory (max-width: 380px) {
+  .aim-item-controls {
+    gap: 2px;
+  }
+  .aim-item-controls .aim-btn-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 0.72rem;
+  }
 }
 
 .aim-btn-icon {
@@ -2195,7 +2244,7 @@
   cursor: pointer;
   z-index: 99;
   user-select: none;
-  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 /* Hover when CLOSED: Slides OUTWARD to the right (Inviting to expand drawer) */
@@ -2267,7 +2316,7 @@
   border-radius: 50%;
   box-shadow: 0 0 6px #f1c40f;
   flex-shrink: 0;
-  transition: background 0.2s ease, box-shadow 0.2s ease;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* Light Theme Bookmark Tab */
@@ -2658,6 +2707,14 @@
 .aim-prep-btn.is-prepared {
   color: var(--aim-border-gold);
 }
+/* Always-prepared spells are a fixed property, so the marker is not a control. */
+.aim-prep-btn.is-always {
+  cursor: default;
+  opacity: 0.75;
+}
+.aim-prep-btn.is-always:hover {
+  color: var(--aim-border-gold);
+}
 
 .aim-spell-meta-row {
   display: flex;
@@ -2969,3 +3026,113 @@
 
 
 
+
+/* ─────────────────────────────────────────────────────────
+   BROKEN ART GUARD
+   Item art can 404 when a compendium or art module is removed. Without this
+   the browser lays out the alt text, which spills across the paperdoll.
+   ───────────────────────────────────────────────────────── */
+.actor-inventory-manager-app img.aim-slot-img,
+.actor-inventory-manager-app img.aim-item-img,
+.actor-inventory-manager-app img.aim-item-thumb,
+.actor-inventory-manager-app img.aim-container-img,
+.actor-inventory-manager-app .aim-attune-socket img,
+.actor-inventory-manager-app .aim-spell-thumb-wrapper img,
+.actor-inventory-manager-app .aim-action-thumb img {
+  overflow: hidden;
+  object-fit: cover;
+  font-size: 0;
+  line-height: 0;
+  color: transparent;
+  text-indent: -9999px;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* ─────────────────────────────────────────────────────────
+   THEME-AWARE ACCENT TEXT
+   Rarity and spell-school colours are chosen to glow on the dark parchment.
+   On the light theme the very same values drop to ~2:1 contrast, so text that
+   carries them is darkened towards the ink colour. The hue is preserved, only
+   the lightness is pulled down.
+   ───────────────────────────────────────────────────────── */
+.aim-item-title,
+.aim-item-name {
+  color: var(--rarity-color, var(--aim-text-heading));
+}
+
+.aim-spell-name,
+.aim-spell-school {
+  color: var(--spell-school-color, var(--aim-text-heading));
+}
+
+.actor-inventory-manager-app[data-theme="light"] .aim-item-title,
+.actor-inventory-manager-app[data-theme="light"] .aim-item-name {
+  color: color-mix(in srgb, var(--rarity-color, #3a260f) 62%, #17100a);
+}
+
+.actor-inventory-manager-app[data-theme="light"] .aim-spell-name,
+.actor-inventory-manager-app[data-theme="light"] .aim-spell-school {
+  color: color-mix(in srgb, var(--spell-school-color, #3a260f) 62%, #17100a);
+}
+
+/* Status accents that were tuned for the dark background. */
+.actor-inventory-manager-app[data-theme="light"] .aim-hp-header {
+  color: #8a1c13;
+}
+
+.actor-inventory-manager-app[data-theme="light"] .aim-enc-status.is-normal { color: #15582f; }
+.actor-inventory-manager-app[data-theme="light"] .aim-enc-status.is-encumbered { color: #6b4a00; }
+.actor-inventory-manager-app[data-theme="light"] .aim-enc-status.is-heavily-encumbered { color: #7d3a04; }
+.actor-inventory-manager-app[data-theme="light"] .aim-enc-status.is-overburdened { color: #8a1c13; }
+
+/* Applied while the theme swaps. A transition driven by a custom-property
+   change never settles on the new value, so the swap must be instantaneous. */
+.actor-inventory-manager-app.aim-no-transitions,
+.actor-inventory-manager-app.aim-no-transitions *,
+.actor-inventory-manager-app.aim-no-transitions *::before,
+.actor-inventory-manager-app.aim-no-transitions *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* ─────────────────────────────────────────────────────────
+   CONTAINER LOAD (Weighty Containers integration)
+   ───────────────────────────────────────────────────────── */
+.aim-container-load {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--aim-badge-bg);
+  border: 1px solid var(--aim-border-main);
+  color: var(--aim-text-muted);
+}
+
+.aim-container-load.is-over {
+  color: #e74c3c;
+  border-color: #e74c3c;
+}
+
+.actor-inventory-manager-app[data-theme="light"] .aim-container-load.is-over {
+  color: #8a1c13;
+  border-color: #8a1c13;
+}
+
+.aim-container-meter {
+  height: 4px;
+  margin: 0 10px 6px;
+  border-radius: 2px;
+}
+
+.aim-container-meter .aim-meter-fill {
+  background: linear-gradient(90deg, #4a7c59 0%, #6aa84f 100%);
+}
+
+.aim-container-meter.is-over .aim-meter-fill {
+  background: linear-gradient(90deg, #962d22 0%, #e74c3c 100%);
+}

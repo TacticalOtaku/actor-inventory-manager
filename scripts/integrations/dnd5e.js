@@ -2,15 +2,11 @@
 // Actor Inventory Manager - DnD5e Integration Adapter
 // ─────────────────────────────────────────────────────────
 
-import { ITEM_RARITY_COLORS } from "../constants.js";
+// (rarity + school colours are resolved through the sc-rarity-colors adapter)
+import { countAttunedItems, getAttunementStatus } from "../core/attunement.js";
 import { num } from "../core/weight-calculator.js";
 import { computeActorCurrency } from "./item-piles.js";
-import {
-  getItemRarityVisuals,
-  getRarityColor,
-  getSpellSchoolColor,
-  getSpellSchoolVisuals
-} from "./sc-rarity-colors.js";
+import { getItemRarityVisuals, getSpellSchoolVisuals } from "./sc-rarity-colors.js";
 
 /**
  * Get DnD5e config object safely
@@ -86,11 +82,8 @@ export function extractActorVitals(actor) {
   const speedDisplay = speeds.length > 0 ? speeds.join(", ") : `${movement.walk ?? 30} ${speedUnit}`;
 
   // Attunement calculation
-  const attunedItemsCount = Array.from(actor.items.values()).filter(i => {
-    const att = i.system?.attunement;
-    return i.system?.attuned === true || att === 2 || att === "attuned" || att === "ATTUNED" || String(att).toLowerCase() === "attuned";
-  }).length;
-  const attunementMax = attributes.attunement?.max ?? 3;
+  const attunedItemsCount = countAttunedItems(actor);
+  const attunementMax = num(attributes.attunement?.max, 3);
 
   return {
     name: actor.name,
@@ -146,22 +139,9 @@ export function formatItemForDisplay(item) {
   const priceDenom = system.price?.denomination ?? "gp";
 
   // Attunement state
-  let attunementStatus = "none";
-  let requiresAttunement = false;
-  let isAttuned = false;
-
-  const att = system.attunement;
-  const attuned = system.attuned;
-
-  if (attuned === true || att === 2 || att === "attuned" || att === "ATTUNED" || String(att).toLowerCase() === "attuned") {
-    attunementStatus = "attuned";
-    isAttuned = true;
-    requiresAttunement = true;
-  } else if (att === 1 || att === "required" || att === "optional" || String(att).toLowerCase() === "required" || String(att).toLowerCase() === "optional") {
-    attunementStatus = "required";
-    isAttuned = false;
-    requiresAttunement = true;
-  }
+  const attunementStatus = getAttunementStatus(item);
+  const isAttuned = attunementStatus === "attuned";
+  const requiresAttunement = attunementStatus !== "none";
 
   // Properties array/list
   const properties = [];
@@ -216,6 +196,22 @@ export const SPELL_SCHOOL_COLORS = {
 };
 
 /**
+ * Resolve the usable maximum for a spell slot entry.
+ * `override` is a nullable NumberField in dnd5e - only an explicit number wins
+ * over the derived `max`.
+ * @param {Object} slotData
+ * @returns {number}
+ */
+export function resolveSpellSlotMax(slotData) {
+  const override = slotData?.override;
+  if (override !== null && override !== undefined && override !== "") {
+    const parsed = Number(override);
+    if (Number.isFinite(parsed)) return Math.max(0, parsed);
+  }
+  return Math.max(0, num(slotData?.max, 0));
+}
+
+/**
  * Extract active spell slots for an actor
  * @param {Object} actor
  * @returns {Array<Object>}
@@ -225,39 +221,148 @@ export function extractSpellSlots(actor) {
   const spells = actor.system?.spells ?? {};
   const slots = [];
 
-  // Pact Magic (Warlock)
-  if (spells.pact && (num(spells.pact.max, 0) > 0 || num(spells.pact.override, 0) > 0)) {
-    const max = num(spells.pact.override, spells.pact.max);
-    const value = Math.max(0, Math.min(max, num(spells.pact.value, 0)));
-    slots.push({
-      key: "pact",
-      label: globalThis.game?.i18n?.localize("AIM.spells.pact") || "Pact",
-      level: spells.pact.level || 1,
+  const buildSlot = (key, data, label, level) => {
+    const max = resolveSpellSlotMax(data);
+    if (max <= 0) return null;
+    const value = Math.max(0, Math.min(max, num(data.value, 0)));
+    return {
+      key,
+      label,
+      level,
       value,
       max,
+      isEmpty: value === 0,
+      isFull: value === max,
       pips: Array.from({ length: max }, (_, i) => ({ index: i, filled: i < value }))
-    });
-  }
+    };
+  };
+
+  // Pact Magic (Warlock)
+  const pactSlot = buildSlot(
+    "pact",
+    spells.pact ?? {},
+    globalThis.game?.i18n?.localize("AIM.spells.pact") || "Pact",
+    num(spells.pact?.level, 1)
+  );
+  if (pactSlot) slots.push(pactSlot);
 
   // Regular Spell Slots (1st to 9th circle)
   for (let lvl = 1; lvl <= 9; lvl++) {
     const key = `spell${lvl}`;
-    const data = spells[key];
-    if (data && (num(data.max, 0) > 0 || num(data.override, 0) > 0)) {
-      const max = num(data.override, data.max);
-      const value = Math.max(0, Math.min(max, num(data.value, 0)));
-      slots.push({
-        key,
-        label: globalThis.game?.i18n?.format("AIM.spells.levelSlot", { level: lvl }) || `Lvl ${lvl}`,
-        level: lvl,
-        value,
-        max,
-        pips: Array.from({ length: max }, (_, i) => ({ index: i, filled: i < value }))
-      });
-    }
+    const slot = buildSlot(
+      key,
+      spells[key] ?? {},
+      globalThis.game?.i18n?.format("AIM.spells.levelSlot", { level: lvl }) || `Lvl ${lvl}`,
+      lvl
+    );
+    if (slot) slots.push(slot);
   }
 
   return slots;
+}
+
+/**
+ * Resolve the preparation state of a spell across dnd5e versions.
+ * @param {Object} spellItem
+ * @returns {{ method: string, prepared: number, isPrepared: boolean, isAlways: boolean, canPrepare: boolean }}
+ */
+export function resolveSpellPreparation(spellItem) {
+  const system = spellItem?.system ?? {};
+  const level = num(system.level, 0);
+
+  // dnd5e 5.x
+  if (system.method !== undefined || typeof system.prepared === "number") {
+    const method = system.method || "";
+    const prepared = num(system.prepared, 0);
+    const spellcasting = getDnd5eConfig().spellcasting ?? {};
+    // `prepares` is declared for the "spell" and "pact" methods.
+    const methodPrepares = spellcasting[method]
+      ? Boolean(spellcasting[method].prepares)
+      : (method === "spell" || method === "pact");
+    return {
+      method,
+      prepared,
+      isPrepared: prepared >= 1 || level === 0,
+      isAlways: prepared >= 2,
+      canPrepare: methodPrepares && level > 0
+    };
+  }
+
+  // dnd5e 3.x / 4.x
+  const mode = system.preparation?.mode || "prepared";
+  const prepared = Boolean(system.preparation?.prepared);
+  const isAlways = mode === "always";
+  return {
+    method: mode,
+    prepared: prepared ? 1 : 0,
+    isPrepared: prepared || isAlways || mode === "atwill" || mode === "innate" || level === 0,
+    isAlways,
+    canPrepare: (mode === "prepared" || mode === "pact") && level > 0
+  };
+}
+
+/**
+ * Resolve the activation descriptor of an item across dnd5e versions.
+ * dnd5e 5.x moved activation onto activities; only spells keep `system.activation`.
+ * @param {Object} item
+ * @returns {{ type: string, value: number|null, config: Object }}
+ */
+export function resolveItemActivation(item) {
+  const system = item?.system ?? {};
+  const activities = system.activities;
+
+  // dnd5e 5.x - read the first usable activity.
+  if (activities) {
+    const list = activities.contents ?? (Array.isArray(activities) ? activities : Array.from(activities ?? []));
+    const first = list?.[0];
+    if (first?.activation?.type) {
+      const type = first.activation.type;
+      return {
+        type,
+        value: first.activation.value ?? null,
+        config: getDnd5eConfig().activityActivationTypes?.[type] ?? {}
+      };
+    }
+  }
+
+  // Legacy shape
+  const act = system.activation ?? {};
+  const type = act.type || "";
+  return {
+    type,
+    value: act.cost ?? act.value ?? null,
+    config: getDnd5eConfig().activityActivationTypes?.[type] ?? {}
+  };
+}
+
+/**
+ * Resolve limited-use and recharge state across dnd5e versions.
+ * dnd5e 5.x replaced `system.recharge` with a `uses.recovery` entry.
+ * @param {Object} item
+ * @returns {{ hasUses: boolean, usesDisplay: string, hasRecharge: boolean, rechargeDisplay: string, isCharged: boolean }}
+ */
+export function resolveItemUses(item) {
+  const system = item?.system ?? {};
+  const uses = system.uses ?? {};
+  const max = num(uses.max, 0);
+  const value = num(uses.value, Math.max(0, max - num(uses.spent, 0)));
+  const hasUses = max > 0;
+
+  const recovery = Array.isArray(uses.recovery) ? uses.recovery : [];
+  const rechargeEntry = recovery.find(entry => entry?.period === "recharge");
+  const legacyRecharge = system.recharge ?? {};
+  const rechargeFormula = rechargeEntry?.formula ?? legacyRecharge.value;
+  const hasRecharge = Boolean(rechargeFormula);
+  const threshold = num(rechargeFormula, 6);
+
+  return {
+    hasUses,
+    usesDisplay: hasUses ? `${value} / ${max}` : "",
+    hasRecharge,
+    rechargeDisplay: hasRecharge ? `${threshold}${threshold < 6 ? "+" : ""}` : "",
+    // Legacy flag; in 5.x a recharging item is "spent" when it has no uses left.
+    isCharged: legacyRecharge.charged !== undefined ? Boolean(legacyRecharge.charged) : value > 0
+  };
 }
 
 /**
@@ -293,24 +398,18 @@ export function extractActorSpells(actor, searchFilter = "") {
     const schoolVisuals = getSpellSchoolVisuals(schoolKey, lvl, SPELL_SCHOOL_COLORS);
     const schoolColor = schoolVisuals.color;
 
-    // Preparation status (dnd5e 5.1+ uses system.method & system.prepared)
-    const mode = system.method ?? (system.preparation?.mode || "prepared");
-    const preparedVal = system.prepared ?? system.preparation?.prepared;
-    const isAlwaysOrInnate = mode === "always" || mode === "atwill" || mode === "innate" || mode === "pact";
-    const isPrepared = Boolean(preparedVal || isAlwaysOrInnate || lvl === 0);
-    const canTogglePrep = mode === "prepared" && lvl > 0;
+    // Preparation status. dnd5e 5.x: system.method ("spell"|"pact"|"atwill"|
+    // "innate"|"ritual") plus numeric system.prepared (0 unprepared, 1 prepared,
+    // 2 always prepared). Older versions used system.preparation.{mode,prepared}.
+    const prep = resolveSpellPreparation(spell);
+    const mode = prep.method;
+    const isPrepared = prep.isPrepared;
+    const isAlwaysPrepared = prep.isAlways;
+    const canTogglePrep = prep.canPrepare;
 
     // Activation info
-    const act = system.activation ?? {};
-    let activationLabel = "";
-    if (act.type) {
-      if (act.type === "action") activationLabel = "1 Action";
-      else if (act.type === "bonus") activationLabel = "Bonus";
-      else if (act.type === "reaction") activationLabel = "Reaction";
-      else if (act.type === "minute") activationLabel = `${act.cost || 1} min`;
-      else if (act.type === "hour") activationLabel = `${act.cost || 1} hr`;
-      else activationLabel = act.type;
-    }
+    const activation = resolveItemActivation(spell);
+    const activationLabel = formatActivationLabel(activation);
 
     // Components & Properties
     const propSet = system.properties;
@@ -345,10 +444,11 @@ export function extractActorSpells(actor, searchFilter = "") {
       schoolColor,
       cssVars: schoolVisuals.cssVars,
       isPrepared,
+      isAlwaysPrepared,
       canTogglePrep,
       mode,
       activationLabel,
-      activationType: act.type || "special",
+      activationType: activation.type || "special",
       rangeDisplay,
       components: {
         v: isVocal,
@@ -388,6 +488,20 @@ export function extractActorSpells(actor, searchFilter = "") {
 }
 
 /**
+ * Build a human-readable activation label.
+ * @param {{ type: string, value: number|null, config: Object }} activation
+ * @returns {string}
+ */
+export function formatActivationLabel(activation) {
+  if (!activation?.type) return "";
+  const localize = key => globalThis.game?.i18n?.localize?.(key);
+  const label = activation.config?.label ? localize(activation.config.label) : null;
+  const base = label && !label.startsWith("DND5E.") ? label : activation.type;
+  const count = num(activation.value, 0);
+  return count > 1 ? `${count} ${base}` : base;
+}
+
+/**
  * Extract active and passive features/actions from an actor
  * @param {Object} actor
  * @param {string} searchFilter
@@ -410,18 +524,15 @@ export function extractActorActions(actor, searchFilter = "") {
 
   for (const feat of featItems) {
     const system = feat.system ?? {};
-    const act = system.activation ?? {};
-    const uses = system.uses ?? {};
-    const recharge = system.recharge ?? {};
-
-    const hasUses = Boolean(uses.max && uses.max > 0);
-    const usesDisplay = hasUses ? `${uses.value ?? 0} / ${uses.max}` : "";
-
-    const hasRecharge = Boolean(recharge.value);
-    const rechargeDisplay = hasRecharge ? `${recharge.value}+` : "";
+    const activation = resolveItemActivation(feat);
+    const uses = resolveItemUses(feat);
 
     let sourceLabel = system.type?.label || system.source?.custom || system.source || "Feature";
     if (typeof sourceLabel !== "string") sourceLabel = "Feature";
+
+    // Mirrors the dnd5e sheet: "trait" property or a passive activation type.
+    const isTrait = system.properties?.has?.("trait") ?? false;
+    const isPassiveActivation = Boolean(activation.config?.passive) || !activation.type;
 
     const formattedFeat = {
       id: feat.id,
@@ -430,22 +541,22 @@ export function extractActorActions(actor, searchFilter = "") {
       img: feat.img || "icons/svg/aura.svg",
       type: system.type?.value || "feat",
       sourceLabel,
-      activationType: act.type || "none",
-      hasUses,
-      usesDisplay,
-      hasRecharge,
-      rechargeDisplay,
-      isCharged: Boolean(recharge.charged)
+      activationType: activation.type || "none",
+      activationLabel: formatActivationLabel(activation),
+      ...uses
     };
 
-    if (act.type === "action") {
+    if (isTrait || isPassiveActivation) {
+      passives.push(formattedFeat);
+    } else if (activation.type === "action") {
       actions.push(formattedFeat);
-    } else if (act.type === "bonus") {
+    } else if (activation.type === "bonus") {
       bonus.push(formattedFeat);
-    } else if (act.type === "reaction") {
+    } else if (activation.type === "reaction") {
       reactions.push(formattedFeat);
     } else {
-      passives.push(formattedFeat);
+      // legendary / lair / minute / hour / ... still belong to the active list.
+      actions.push(formattedFeat);
     }
   }
 
@@ -471,7 +582,7 @@ export async function updateSpellSlot(actor, slotKey, delta) {
   const currentSlot = spells[slotKey];
   if (!currentSlot) return;
 
-  const max = num(currentSlot.override, currentSlot.max);
+  const max = resolveSpellSlotMax(currentSlot);
   const currentVal = num(currentSlot.value, 0);
   const newVal = Math.max(0, Math.min(max, currentVal + delta));
 
@@ -487,15 +598,16 @@ export async function updateSpellSlot(actor, slotKey, delta) {
 export async function toggleSpellPreparation(spellItem) {
   if (!spellItem || spellItem.type !== "spell") return;
   const system = spellItem.system ?? {};
-  const currentPrepared = Boolean(system.prepared ?? system.preparation?.prepared);
-  const next = !currentPrepared;
+  const prep = resolveSpellPreparation(spellItem);
 
-  const updateData = {};
-  if (system.prepared !== undefined || system.method !== undefined) {
-    updateData["system.prepared"] = next;
-  } else {
-    updateData["system.preparation.prepared"] = next;
+  // "Always prepared" is a property of the spell, not a per-day choice.
+  if (prep.isAlways) return;
+  if (!prep.canPrepare) return;
+
+  // dnd5e 5.x stores a numeric state (0 unprepared / 1 prepared / 2 always).
+  if (system.method !== undefined || typeof system.prepared === "number") {
+    return spellItem.update({ "system.prepared": prep.prepared >= 1 ? 0 : 1 });
   }
-  await spellItem.update(updateData);
+  return spellItem.update({ "system.preparation.prepared": !prep.prepared });
 }
 

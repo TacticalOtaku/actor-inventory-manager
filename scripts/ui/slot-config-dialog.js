@@ -177,17 +177,30 @@ export class SlotConfigDialog extends ApplicationBase {
       rules
     };
 
-    if (this._resolve) {
-      this._resolve(result);
-    }
+    this._settle(result);
     this.close();
   }
 
   static _onCancel(event, target) {
-    if (this._resolve) {
-      this._resolve(null);
-    }
+    this._settle(null);
     this.close();
+  }
+
+  /**
+   * Resolve the pending configureSlot() promise exactly once.
+   * @param {Object|null} result
+   */
+  _settle(result) {
+    const resolve = this._resolve;
+    this._resolve = null;
+    resolve?.(result);
+  }
+
+  /** @inheritDoc */
+  async close(options = {}) {
+    // Dismissing the window (X, Escape) must not leave the caller awaiting forever.
+    this._settle(null);
+    return super.close(options);
   }
 
   /**

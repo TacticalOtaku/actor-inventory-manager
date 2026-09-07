@@ -141,6 +141,15 @@ Hooks.once("ready", () => {
   }
   globalThis.ActorInventoryManager = api;
 
+  /**
+   * Fired once the public API is available.
+   * Register custom slots (`api.slotRegistry.register`) and equipment rules
+   * (`api.equipmentRuleEngine.registerRule`) from here.
+   * @event actorInventoryManager.ready
+   * @param {Object} api
+   */
+  Hooks.callAll(`${MODULE_ID}.ready`, api);
+
   LOG.info("Actor Inventory Manager ready", {
     version: module?.version ?? "1.0.0",
     foundryVersion: game.version,

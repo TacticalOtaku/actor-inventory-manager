@@ -37,11 +37,11 @@
   <div class="aim-filter-bar">
     <div class="aim-search-wrapper">
       <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" class="aim-search-input" data-search-input="true" placeholder="{{localize 'AIM.filters.searchPlaceholder'}}" value="{{searchFilter}}" />
+      <input type="text" id="aim-inv-search" name="aim-inv-search" class="aim-search-input" data-search-input="true" autocomplete="off" placeholder="{{localize 'AIM.filters.searchPlaceholder'}}" value="{{searchFilter}}" />
     </div>
 
     <div class="aim-sort-wrapper">
-      <select class="aim-sort-select" data-sort-select="true">
+      <select id="aim-inv-sort" name="aim-inv-sort" class="aim-sort-select" data-sort-select="true">
         <option value="name" {{#if (eq sortBy 'name')}}selected{{/if}}>{{localize "AIM.sort.name"}}</option>
         <option value="weight" {{#if (eq sortBy 'weight')}}selected{{/if}}>{{localize "AIM.sort.weight"}}</option>
         <option value="value" {{#if (eq sortBy 'value')}}selected{{/if}}>{{localize "AIM.sort.value"}}</option>
@@ -72,7 +72,7 @@
           </div>
 
           <div class="aim-item-details" data-action="openItem" data-item-id="{{this.id}}">
-            <div class="aim-item-title" style="color: {{this.rarityColor}};">
+            <div class="aim-item-title">
               {{this.name}}
               {{#if this.isAttuned}}
                 <span class="aim-attuned-badge-pill" title="{{localize 'AIM.items.attuned'}}">

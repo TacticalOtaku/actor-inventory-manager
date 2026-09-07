@@ -37,7 +37,7 @@
   <!-- Search Filter -->
   <div class="aim-spells-search-wrapper">
     <i class="fa-solid fa-magnifying-glass"></i>
-    <input type="text" class="aim-spells-search-input" data-spells-search="true" placeholder="{{localize 'AIM.spells.searchPlaceholder'}}" value="{{spellsSearchFilter}}" />
+    <input type="text" id="aim-spells-search" name="aim-spells-search" class="aim-spells-search-input" data-spells-search="true" autocomplete="off" placeholder="{{localize 'AIM.spells.searchPlaceholder'}}" value="{{spellsSearchFilter}}" />
   </div>
 
   <!-- Scrollable Contents -->
@@ -101,8 +101,12 @@
 
                 <div class="aim-spell-info" data-action="openItem" data-item-id="{{this.id}}">
                   <div class="aim-spell-name-row">
-                    <span class="aim-spell-name" style="color: {{this.schoolColor}};">{{this.name}}</span>
-                    {{#if this.canTogglePrep}}
+                    <span class="aim-spell-name">{{this.name}}</span>
+                    {{#if this.isAlwaysPrepared}}
+                      <span class="aim-prep-btn is-prepared is-always" title="{{localize 'AIM.spells.alwaysPrepared'}}">
+                        <i class="fa-solid fa-lock"></i>
+                      </span>
+                    {{else if this.canTogglePrep}}
                       <button type="button" class="aim-prep-btn {{#if this.isPrepared}}is-prepared{{/if}}"
                               data-action="toggleSpellPrep"
                               data-item-id="{{this.id}}"
@@ -113,7 +117,7 @@
                   </div>
 
                   <div class="aim-spell-meta-row">
-                    <span class="aim-spell-school" style="color: {{this.schoolColor}};">{{this.schoolLabel}}</span>
+                    <span class="aim-spell-school">{{this.schoolLabel}}</span>
                     {{#if this.activationLabel}}
                       <span class="aim-action-pill {{this.activationType}}">{{this.activationLabel}}</span>
                     {{/if}}
@@ -170,6 +174,7 @@
               <span class="aim-action-name">{{this.name}}</span>
               <div class="aim-action-meta">
                 <span class="aim-source-label">{{this.sourceLabel}}</span>
+                {{#if this.activationLabel}}<span class="aim-action-pill {{this.activationType}}">{{this.activationLabel}}</span>{{/if}}
                 {{#if this.hasUses}}<span class="aim-uses-badge">{{this.usesDisplay}}</span>{{/if}}
                 {{#if this.hasRecharge}}<span class="aim-recharge-badge"><i class="fa-solid fa-arrows-rotate"></i> {{this.rechargeDisplay}}</span>{{/if}}
               </div>
@@ -201,6 +206,7 @@
               <span class="aim-action-name">{{this.name}}</span>
               <div class="aim-action-meta">
                 <span class="aim-source-label">{{this.sourceLabel}}</span>
+                {{#if this.activationLabel}}<span class="aim-action-pill {{this.activationType}}">{{this.activationLabel}}</span>{{/if}}
                 {{#if this.hasUses}}<span class="aim-uses-badge">{{this.usesDisplay}}</span>{{/if}}
                 {{#if this.hasRecharge}}<span class="aim-recharge-badge"><i class="fa-solid fa-arrows-rotate"></i> {{this.rechargeDisplay}}</span>{{/if}}
               </div>
@@ -232,6 +238,7 @@
               <span class="aim-action-name">{{this.name}}</span>
               <div class="aim-action-meta">
                 <span class="aim-source-label">{{this.sourceLabel}}</span>
+                {{#if this.activationLabel}}<span class="aim-action-pill {{this.activationType}}">{{this.activationLabel}}</span>{{/if}}
                 {{#if this.hasUses}}<span class="aim-uses-badge">{{this.usesDisplay}}</span>{{/if}}
                 {{#if this.hasRecharge}}<span class="aim-recharge-badge"><i class="fa-solid fa-arrows-rotate"></i> {{this.rechargeDisplay}}</span>{{/if}}
               </div>
@@ -265,6 +272,7 @@
               <span class="aim-action-name">{{this.name}}</span>
               <div class="aim-action-meta">
                 <span class="aim-source-label">{{this.sourceLabel}}</span>
+                {{#if this.activationLabel}}<span class="aim-action-pill {{this.activationType}}">{{this.activationLabel}}</span>{{/if}}
                 {{#if this.hasUses}}<span class="aim-uses-badge">{{this.usesDisplay}}</span>{{/if}}
               </div>
             </div>

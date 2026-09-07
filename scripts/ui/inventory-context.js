@@ -1,3 +1,4 @@
+import { isItemAttuned } from "../core/attunement.js";
 import { isBodyArmor, isShield } from "../core/item-classifier.js";
 import { num } from "../core/weight-calculator.js";
 
@@ -57,12 +58,7 @@ export function buildInventoryCounts(items, containers) {
 }
 
 export function buildAttunementSlots(items, count, formatItem) {
-  const attunedItems = items.filter(item => {
-    const attunement = item.system?.attunement;
-    return item.system?.attuned === true ||
-      attunement === 2 ||
-      String(attunement).toLowerCase() === "attuned";
-  });
+  const attunedItems = items.filter(isItemAttuned);
 
   return Array.from({ length: count }, (_, index) => {
     const item = attunedItems[index] ?? null;

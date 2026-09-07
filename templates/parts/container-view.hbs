@@ -8,6 +8,13 @@
     </div>
 
     <div class="aim-container-badges">
+      {{#if hasLoad}}
+        <span class="aim-container-load {{#if load.isOver}}is-over{{/if}}"
+              title="{{localize 'AIM.containers.loadTooltip'}}">
+          <i class="fa-solid fa-weight-hanging"></i> {{loadDisplay}}
+        </span>
+      {{/if}}
+
       {{#if hasReduction}}
         <span class="aim-reduction-badge" title="{{localize 'AIM.containers.reductionTooltip'}}">
           <i class="fa-solid fa-feather"></i> -{{reductionPct}}%
@@ -21,6 +28,13 @@
       {{/if}}
     </div>
   </div>
+
+  {{#if hasCapacity}}
+    <div class="aim-meter aim-container-meter {{#if load.isOver}}is-over{{/if}}"
+         title="{{loadDisplay}}">
+      <div class="aim-meter-fill" style="width: {{load.pct}}%;"></div>
+    </div>
+  {{/if}}
 
   {{#unless isCollapsed}}
   <div class="aim-container-contents">
@@ -37,7 +51,7 @@
           <div class="aim-item-main" data-action="openItem" data-item-id="{{this.id}}">
             <img class="aim-item-thumb" src="{{this.img}}" alt="{{this.name}}" style="border-color: {{this.rarityColor}};" />
             <div class="aim-item-info">
-              <span class="aim-item-name" style="color: {{this.rarityColor}};">{{this.name}}</span>
+              <span class="aim-item-name">{{this.name}}</span>
               <span class="aim-item-meta">{{this.weightDisplay}} {{#if this.priceDisplay}}• {{this.priceDisplay}}{{/if}}</span>
             </div>
           </div>

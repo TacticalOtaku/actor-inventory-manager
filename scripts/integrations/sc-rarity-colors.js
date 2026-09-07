@@ -67,7 +67,35 @@ export function normalizeRarityKey(rarity) {
  * @param {Object} [item]
  * @returns {string} Hex or CSS color string
  */
+/**
+ * Resolved colours are stable for the lifetime of a render pass but must not
+ * outlive a settings change, so the cache is versioned and cleared on demand.
+ */
+const RARITY_COLOR_CACHE = new Map();
+
+/** Drop memoized rarity/school colours (call when SC settings or the theme change). */
+export function invalidateRarityColorCache() {
+  RARITY_COLOR_CACHE.clear();
+}
+
+/**
+ * Memoized wrapper around {@link resolveRarityColor}.
+ * Resolution walks module settings and computed CSS variables, which is far too
+ * expensive to repeat for every item on every re-render.
+ * @param {string} rarity
+ * @param {Object} [item]
+ * @returns {string}
+ */
 export function getRarityColor(rarity, item = null) {
+  const normKey = normalizeRarityKey(rarity);
+  // Items only affect the result through the SC API, which is keyed by rarity.
+  if (RARITY_COLOR_CACHE.has(normKey)) return RARITY_COLOR_CACHE.get(normKey);
+  const color = resolveRarityColor(rarity, item);
+  RARITY_COLOR_CACHE.set(normKey, color);
+  return color;
+}
+
+function resolveRarityColor(rarity, item = null) {
   const normKey = normalizeRarityKey(rarity);
 
   // 1. Check SC - Item Rarity Colors API if exposed
@@ -90,6 +118,8 @@ export function getRarityColor(rarity, item = null) {
     try {
       const settingsKeys = ["rarity-colors", "rarities", "colors", "custom-rarities"];
       for (const sk of settingsKeys) {
+        // game.settings.get throws for unregistered keys - skip those quietly.
+        if (!globalThis.game?.settings?.settings?.has?.(`${SC_MODULE_ID}.${sk}`)) continue;
         const val = globalThis.game?.settings?.get?.(SC_MODULE_ID, sk);
         if (val && typeof val === "object") {
           const directMatch = val[normKey] || val[rarity];
@@ -205,7 +235,9 @@ export function getSpellSchoolColor(school, level = 0, defaultColors = {}) {
       const spellConfig = globalThis.CONFIG?.DND5E?.spellSchools;
       if (spellConfig?.[s]?.color) return spellConfig[s].color;
 
-      const scSpellColors = globalThis.game?.settings?.get?.(SC_MODULE_ID, "spell-colors");
+      const scSpellColors = globalThis.game?.settings?.settings?.has?.(`${SC_MODULE_ID}.spell-colors`)
+        ? globalThis.game.settings.get(SC_MODULE_ID, "spell-colors")
+        : null;
       if (scSpellColors?.[s]) {
         return typeof scSpellColors[s] === "string" ? scSpellColors[s] : scSpellColors[s].color;
       }

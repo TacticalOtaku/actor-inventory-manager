@@ -17,9 +17,13 @@ const SIZE_MULTIPLIERS = {
 };
 
 /**
- * Parse numeric value safely
+ * Parse numeric value safely.
+ * `null`, `undefined` and empty strings count as "absent" and yield the fallback.
+ * Number(null) is 0 and finite, which would otherwise swallow nullable dnd5e
+ * fields such as `system.spells.spell1.override`.
  */
 export function num(val, fallback = 0) {
+  if (val === null || val === undefined || val === "") return fallback;
   const n = Number(val);
   return Number.isFinite(n) ? n : fallback;
 }
@@ -190,46 +194,107 @@ export function getContainerCapacityInUnit(container, targetUnit = null) {
 }
 
 /**
+ * Per-point-of-STR encumbrance thresholds used by dnd5e.
+ * Metric is NOT a unit conversion of the imperial values - the system defines
+ * its own rounder metric numbers (CONFIG.DND5E.encumbrance.threshold).
+ */
+const THRESHOLD_PER_STR = {
+  lb: { encumbered: 5, heavilyEncumbered: 10, maximum: 15, pushDrag: 30 },
+  kg: { encumbered: 2.5, heavilyEncumbered: 5, maximum: 7.5, pushDrag: 15 }
+};
+
+function thresholdConfig(unit) {
+  const fromSystem = globalThis.CONFIG?.DND5E?.encumbrance?.threshold;
+  const key = unit === "kg" ? "metric" : "imperial";
+  const fallback = THRESHOLD_PER_STR[unit === "kg" ? "kg" : "lb"];
+  if (!fromSystem) return fallback;
+  return {
+    encumbered: num(fromSystem.encumbered?.[key], fallback.encumbered),
+    heavilyEncumbered: num(fromSystem.heavilyEncumbered?.[key], fallback.heavilyEncumbered),
+    maximum: num(fromSystem.maximum?.[key], fallback.maximum),
+    pushDrag: num(fromSystem.maximum?.[key], fallback.maximum) * 2
+  };
+}
+
+/**
+ * Read the encumbrance block dnd5e derives on the actor.
+ * This is the authoritative source: it accounts for the metric/imperial variant,
+ * size and Powerful Build, encumbrance bonuses/multipliers from items and effects,
+ * optional currency weight, and any patches applied by other modules
+ * (Weighty Containers rewrites `.value` and `.pct` there).
+ * @param {Object} actor
+ * @returns {Object|null}
+ */
+export function getSystemEncumbrance(actor) {
+  const enc = actor?.system?.attributes?.encumbrance;
+  if (!enc) return null;
+  const max = Number(enc.max);
+  const value = Number(enc.value);
+  if (!Number.isFinite(max) || max <= 0 || !Number.isFinite(value)) return null;
+  return enc;
+}
+
+/**
  * Calculate base carrying capacity and encumbrance tiers for an actor in dnd5e
  * @param {Object} actor
  * @param {string} [unit="lb"]
  * @returns {Object}
  */
 export function computeActorCapacity(actor, unit = "lb") {
+  // Prefer the system's own derived thresholds when available.
+  const systemEnc = getSystemEncumbrance(actor);
+  if (systemEnc) {
+    const thresholds = systemEnc.thresholds ?? {};
+    const maxVal = num(systemEnc.max, 0);
+    const encumberedVal = num(thresholds.encumbered, maxVal / 3);
+    const heavyVal = num(thresholds.heavilyEncumbered, (maxVal / 3) * 2);
+    return {
+      max: Number(maxVal.toFixed(1)),
+      encumbered: Number(encumberedVal.toFixed(1)),
+      heavilyEncumbered: Number(heavyVal.toFixed(1)),
+      maxPushDrag: Number((maxVal * 2).toFixed(1)),
+      unit,
+      fromSystem: true,
+      raw: {
+        maxLbs: convertWeight(maxVal, unit, "lb"),
+        encumberedLbs: convertWeight(encumberedVal, unit, "lb"),
+        heavilyEncumberedLbs: convertWeight(heavyVal, unit, "lb"),
+        maxPushDragLbs: convertWeight(maxVal * 2, unit, "lb")
+      }
+    };
+  }
+
   const str = num(actor?.system?.abilities?.str?.value, 10);
   const size = actor?.system?.traits?.size ?? "med";
   const sizeMult = SIZE_MULTIPLIERS[size] ?? 1;
 
-  // Powerful build / countAsTrait check
+  // Powerful Build bumps the actor one size category up for carrying purposes.
   const powerfulBuild = Boolean(
     actor?.system?.traits?.traits?.powerfulBuild ||
-    actor?.flags?.dnd5e?.powerfulBuild ||
-    actor?.system?.attributes?.encumbrance?.multiplier > 1
+    actor?.flags?.dnd5e?.powerfulBuild
   );
   const effectiveSizeMult = powerfulBuild ? sizeMult * 2 : sizeMult;
 
-  // Standard 5e carrying capacity in lbs:
-  // Max = STR * 15 * sizeMult
-  // Variant encumbrance:
-  // Encumbered = STR * 5 * sizeMult
-  // Heavily Encumbered = STR * 10 * sizeMult
-  // Push/Drag/Lift = STR * 30 * sizeMult
-  const maxLbs = str * 15 * effectiveSizeMult;
-  const encumberedLbs = str * 5 * effectiveSizeMult;
-  const heavilyEncumberedLbs = str * 10 * effectiveSizeMult;
-  const maxPushDragLbs = str * 30 * effectiveSizeMult;
+  // Fallback tiers computed directly in the display unit, matching the
+  // per-STR thresholds the system uses for that unit system.
+  const t = thresholdConfig(unit);
+  const max = str * t.maximum * effectiveSizeMult;
+  const encumbered = str * t.encumbered * effectiveSizeMult;
+  const heavilyEncumbered = str * t.heavilyEncumbered * effectiveSizeMult;
+  const maxPushDrag = str * t.pushDrag * effectiveSizeMult;
 
   return {
-    max: formatWeight(maxLbs, unit),
-    encumbered: formatWeight(encumberedLbs, unit),
-    heavilyEncumbered: formatWeight(heavilyEncumberedLbs, unit),
-    maxPushDrag: formatWeight(maxPushDragLbs, unit),
+    max: Number(max.toFixed(1)),
+    encumbered: Number(encumbered.toFixed(1)),
+    heavilyEncumbered: Number(heavilyEncumbered.toFixed(1)),
+    maxPushDrag: Number(maxPushDrag.toFixed(1)),
     unit,
+    fromSystem: false,
     raw: {
-      maxLbs,
-      encumberedLbs,
-      heavilyEncumberedLbs,
-      maxPushDragLbs
+      maxLbs: convertWeight(max, unit, "lb"),
+      encumberedLbs: convertWeight(encumbered, unit, "lb"),
+      heavilyEncumberedLbs: convertWeight(heavilyEncumbered, unit, "lb"),
+      maxPushDragLbs: convertWeight(maxPushDrag, unit, "lb")
     }
   };
 }
@@ -245,13 +310,13 @@ export function computeActorEncumbrance(actor, options = {}) {
   const capacity = computeActorCapacity(actor, unit);
 
   // If actor has system encumbrance pre-calculated (or patched by weighty-containers)
-  const systemEnc = actor?.system?.attributes?.encumbrance;
+  const systemEnc = getSystemEncumbrance(actor);
   let totalValueDisplay = 0;
 
   if (typeof options.overrideCarriedLbs === "number") {
     totalValueDisplay = formatWeight(options.overrideCarriedLbs, unit);
-  } else if (systemEnc && typeof systemEnc.value === "number" && !options.recalculateRaw) {
-    totalValueDisplay = Number(systemEnc.value.toFixed(1));
+  } else if (systemEnc && !options.recalculateRaw) {
+    totalValueDisplay = Number(num(systemEnc.value, 0).toFixed(1));
   } else {
     // Recalculate raw item weights from actor.items
     let totalLbs = 0;
@@ -298,10 +363,17 @@ export function computeActorEncumbrance(actor, options = {}) {
     isEncumbered,
     isHeavilyEncumbered,
     isOverMax,
+    fromSystem: Boolean(capacity.fromSystem),
     thresholds: {
       encumbered: capacity.encumbered,
       heavilyEncumbered: capacity.heavilyEncumbered,
-      max: capacity.max
+      max: capacity.max,
+      maxPushDrag: capacity.maxPushDrag
+    },
+    // Percentage offsets for drawing tier markers on the meter.
+    stops: {
+      encumbered: Math.min(100, Math.max(0, Math.round((capacity.encumbered / maxCapacity) * 100))),
+      heavilyEncumbered: Math.min(100, Math.max(0, Math.round((capacity.heavilyEncumbered / maxCapacity) * 100)))
     }
   };
 }

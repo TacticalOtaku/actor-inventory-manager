@@ -194,9 +194,30 @@ function isShieldSlotMatch(slot, slotId, slotCategory) {
 }
 
 /**
- * Match a 2-handed weapon slot
+ * Does this slot represent an off hand?
+ * Off-hand slots are excluded for two-handed weapons.
  */
-function isTwoHandedWeaponSlotMatch(slot, slotId, slotCategory) {
+function isOffHandSlot(slot, slotId, slotLabel) {
+  return Boolean(
+    slotId === SLOTS.OFF_HAND ||
+    slot.rules?.isShield ||
+    slotId.includes("offhand") ||
+    slotId.includes("off_hand") ||
+    slotId.includes("off-hand") ||
+    slotLabel.includes("off hand") ||
+    slotLabel.includes("off-hand") ||
+    slotLabel.includes("щит") ||
+    slotLabel.includes("лев")
+  );
+}
+
+/**
+ * Match a 2-handed weapon slot.
+ * A two-handed weapon only ever goes in a main hand - offering the off hand
+ * makes auto-equip pick a slot the rule engine then refuses.
+ */
+function isTwoHandedWeaponSlotMatch(slot, slotId, slotCategory, slotLabel = "") {
+  if (isOffHandSlot(slot, slotId, slotLabel)) return false;
   return Boolean(
     slotId === SLOTS.MAIN_HAND ||
     slot.rules?.locksOffHandOn2H ||
@@ -408,7 +429,7 @@ export function getValidSlotsForItem(item, actor = null) {
 
           // 3. Check 2H weapon
           if (isTwoHandedWeapon(item)) {
-            if (isTwoHandedWeaponSlotMatch(slot, slotId, slotCategory)) {
+            if (isTwoHandedWeaponSlotMatch(slot, slotId, slotCategory, slotLabel)) {
               primaryMatches.push(slot.id);
             }
             continue;
@@ -466,7 +487,11 @@ export function isItemCompatibleWithSlot(item, slotId, actor = null) {
         return false;
       }
       // 2. If 2H weapon, cannot put in offhand or shield-only slot
-      if (isTwoHandedWeapon(item) && (slotId === SLOTS.OFF_HAND || targetSlot.rules?.isShield)) {
+      if (isTwoHandedWeapon(item) && isOffHandSlot(
+        targetSlot,
+        slotId.toLowerCase(),
+        (targetSlot.label ?? targetSlot.labelKey ?? "").toLowerCase()
+      )) {
         return false;
       }
       // 3. If body armor, cannot put in non-armor slots (head, ring, hands, feet, etc.)

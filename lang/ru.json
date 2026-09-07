@@ -57,7 +57,8 @@
       "normal": "Нормальная нагрузка",
       "encumbered": "Нагрузка (-10 фт скорости)",
       "heavily_encumbered": "Тяжелая нагрузка (-20 фт, помеха на броски)",
-      "overburdened": "Превышение веса (Невозможно двигаться)"
+      "overburdened": "Превышение веса (Невозможно двигаться)",
+      "pushDrag": "Толкать / тащить / поднять"
     },
     "currency": {
       "totalValue": "Общее состояние"
@@ -128,7 +129,8 @@
       "use": "Использовать / Бросок",
       "delete": "Удалить предмет",
       "shortRest": "Короткий отдых",
-      "longRest": "Длинный отдых"
+      "longRest": "Длинный отдых",
+      "close": "Закрыть"
     },
     "attunement": {
       "title": "Настроенные предметы",
@@ -187,13 +189,21 @@
         "bonus": "Бонусные действия",
         "reaction": "Реакции",
         "passive": "Пассивные черты"
-      }
+      },
+      "alwaysPrepared": "Всегда подготовлено"
     },
     "containers": {
       "title": "Сумки и контейнеры",
       "empty": "Контейнер пуст",
       "reductionTooltip": "Снижение веса предметов внутри",
-      "rulesConfig": "Настроить правила контейнера (Weighty Containers)"
+      "rulesConfig": "Настроить правила контейнера (Weighty Containers)",
+      "dropRejected": "{container} не принимает предмет «{item}».",
+      "typeNotAllowed": "{container} не допускает предметы типа «{type}».",
+      "subtypeNotAllowed": "{container} не допускает подтип «{subtype}».",
+      "forbiddenProperty": "У предмета «{item}» есть свойство «{property}», запрещённое для {container}.",
+      "missingRequiredProperty": "У предмета «{item}» нет свойства «{property}», обязательного для {container}.",
+      "weightyInactive": "Модуль Weighty Containers не активен.",
+      "loadTooltip": "Вес содержимого контейнера с учётом снижения веса"
     },
     "dialogs": {
       "deleteItem": {
@@ -250,6 +260,10 @@
         "info": "Информация",
         "debug": "Отладка",
         "trace": "Трассировка"
+      },
+      "customTemplates": {
+        "name": "Пользовательские шаблоны экипировки",
+        "hint": "Внутреннее хранилище шаблонов экипировки, сохранённых в этом мире."
       }
     },
     "keybindings": {

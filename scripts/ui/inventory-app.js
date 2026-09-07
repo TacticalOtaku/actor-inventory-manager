@@ -17,9 +17,11 @@ import {
   updateSpellSlot
 } from "../integrations/dnd5e.js";
 import {
+  getContainerLoad,
   getContainerWeightReductionPct,
   isWeightyContainersActive,
-  openWeightyContainersDialog
+  openWeightyContainersDialog,
+  watchContainerRules
 } from "../integrations/weighty-containers.js";
 import { LOG } from "../foundry/logger.js";
 import { getActorPaperdollTemplate, getActorSlots } from "../core/paperdoll-templates.js";
@@ -71,6 +73,35 @@ export async function preloadTemplates() {
 
 const OPEN_INVENTORY_APPS = new Map();
 
+/** Delay before a filter keystroke triggers a re-render. */
+const SEARCH_DEBOUNCE_MS = 180;
+
+/** Shown in place of item art that fails to load. */
+const BROKEN_IMAGE_FALLBACK = "icons/svg/item-bag.svg";
+
+/**
+ * Preferred window width per layout, before clamping to the viewport.
+ * Keyed by `${spellsOpen}|${paperdollCollapsed}`.
+ */
+const WINDOW_WIDTHS = {
+  "true|false": 1460,
+  "true|true": 1160,
+  "false|false": 1060,
+  "false|true": 780
+};
+
+/**
+ * Resolve the window width for a layout, never exceeding the viewport.
+ * @param {boolean} spellsOpen
+ * @param {boolean} paperdollCollapsed
+ * @returns {number}
+ */
+export function resolveWindowWidth(spellsOpen, paperdollCollapsed) {
+  const preferred = WINDOW_WIDTHS[`${Boolean(spellsOpen)}|${Boolean(paperdollCollapsed)}`] ?? 1060;
+  const available = (globalThis.window?.innerWidth ?? preferred) - 40;
+  return Math.max(760, Math.min(preferred, available));
+}
+
 const InventoryApplicationBase = foundry.applications.api.HandlebarsApplicationMixin(
   foundry.applications.api.ApplicationV2
 );
@@ -113,7 +144,15 @@ export class ActorInventoryApp extends InventoryApplicationBase {
 
   static PARTS = {
     main: {
-      template: `modules/${MODULE_ID}/templates/inventory-app.hbs`
+      template: `modules/${MODULE_ID}/templates/inventory-app.hbs`,
+      // Preserved across re-renders by ApplicationV2 so equipping an item or
+      // typing in the search box does not scroll the panels back to the top.
+      scrollable: [
+        ".aim-items-scroll-area",
+        ".aim-spells-scroll-area",
+        ".aim-vitals-panel",
+        ".aim-paperdoll-stage"
+      ]
     }
   };
 
@@ -208,6 +247,10 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       const reductionPct = getContainerWeightReductionPct(container);
       const isCollapsed = this.collapsedContainers.has(container.id);
 
+      // Weighty Containers owns the adjusted load: it applies the reduction and
+      // walks nested containers, so its numbers are the ones worth showing.
+      const load = getContainerLoad(actor, container.id);
+
       return {
         id: container.id,
         name: container.name,
@@ -217,7 +260,15 @@ export class ActorInventoryApp extends InventoryApplicationBase {
         reductionPct,
         hasReduction: reductionPct > 0,
         isCollapsed,
-        weightyContainersActive: isWeightyContainersActive()
+        weightyContainersActive: isWeightyContainersActive(),
+        load,
+        hasLoad: Boolean(load),
+        hasCapacity: Boolean(load?.hasCapacity),
+        loadDisplay: load
+          ? (load.hasCapacity
+            ? `${load.load} / ${load.capacity} ${load.unit}`
+            : `${load.load} ${load.unit}`)
+          : ""
       };
     });
 
@@ -238,7 +289,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       key => game.i18n.localize(key)
     );
 
-    return {
+    const prepared = {
       ...context,
       actor,
       vitals,
@@ -271,6 +322,18 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       actionsData,
       spellsCounts
     };
+
+    /**
+     * Lets other modules read or augment the inventory render context.
+     * Mutate `context` in place; the returned value is ignored.
+     * @event actorInventoryManager.prepareContext
+     * @param {ActorInventoryApp} app
+     * @param {Object} context
+     * @param {Actor} actor
+     */
+    Hooks.callAll(`${MODULE_ID}.prepareContext`, this, prepared, actor);
+
+    return prepared;
   }
 
   async _onRender(context, options) {
@@ -279,29 +342,12 @@ export class ActorInventoryApp extends InventoryApplicationBase {
 
     // Apply active theme attribute
     const theme = context.theme || "dark";
-    this.element.setAttribute("data-theme", theme);
-    const windowApp = this.element.closest(".window-app");
-    if (windowApp) {
-      windowApp.setAttribute("data-theme", theme);
-    }
+    this._applyTheme(theme);
 
-    // Search input binding
-    const searchInput = this.element.querySelector("[data-search-input]");
-    if (searchInput) {
-      searchInput.addEventListener("input", e => {
-        this.searchFilter = e.target.value.trim();
-        this.render(false);
-      });
-    }
-
-    // Spells search input binding
-    const spellsSearchInput = this.element.querySelector("[data-spells-search]");
-    if (spellsSearchInput) {
-      spellsSearchInput.addEventListener("input", e => {
-        this.spellsSearchFilter = e.target.value.trim();
-        this.render(false);
-      });
-    }
+    // Search input bindings. Re-rendering on every keystroke is wasteful and
+    // fights the caret, so filtering is debounced.
+    this._bindSearchInput("[data-search-input]", value => { this.searchFilter = value; });
+    this._bindSearchInput("[data-spells-search]", value => { this.spellsSearchFilter = value; });
 
     // Sort select binding
     const sortSelect = this.element.querySelector("[data-sort-select]");
@@ -312,8 +358,102 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       });
     }
 
+    this._restoreCaret();
+    this._bindBrokenImageFallback();
+
     // Bind real-time actor update hook once
     this._bindActorHooks();
+
+    /**
+     * Fired after the inventory window has rendered and its listeners are bound.
+     * Use this to inject controls or decorate rows.
+     * @event actorInventoryManager.renderInventory
+     * @param {ActorInventoryApp} app
+     * @param {HTMLElement} element
+     * @param {Object} context
+     */
+    Hooks.callAll(`${MODULE_ID}.renderInventory`, this, this.element, context);
+  }
+
+  /**
+   * Swap art that fails to load for a placeholder.
+   * Items whose image came from a removed compendium or art module would
+   * otherwise render their alt text, which spills across the paperdoll.
+   */
+  _bindBrokenImageFallback() {
+    // `error` does not bubble, so listen during the capture phase.
+    this.element.addEventListener("error", event => {
+      const img = event.target;
+      if (!(img instanceof HTMLImageElement)) return;
+      if (img.dataset.aimFallbackApplied) return;
+      img.dataset.aimFallbackApplied = "true";
+      img.src = BROKEN_IMAGE_FALLBACK;
+      img.alt = "";
+    }, true);
+  }
+
+  /**
+   * Wire a debounced filter input.
+   * @param {string} selector
+   * @param {(value: string) => void} apply
+   */
+  _bindSearchInput(selector, apply) {
+    const input = this.element.querySelector(selector);
+    if (!input) return;
+    input.addEventListener("input", e => {
+      const value = e.target.value.trim();
+      // ApplicationV2 restores focus after a re-render but not the caret, which
+      // would otherwise snap to 0 and reverse everything typed afterwards.
+      this._caretState = { selector, start: e.target.selectionStart, end: e.target.selectionEnd };
+      clearTimeout(this._searchDebounce);
+      this._searchDebounce = setTimeout(() => {
+        apply(value);
+        if (this.rendered) this.render(false);
+      }, SEARCH_DEBOUNCE_MS);
+    });
+  }
+
+  /**
+   * Stamp the theme on the window root.
+   *
+   * Panel colours come from CSS custom properties, and several rules transition
+   * `background`/`all`. A transition started by a custom-property change never
+   * settles on the new value, which used to leave panels painted in the previous
+   * theme until the window was reopened. Suppressing transitions across the swap
+   * makes the change atomic.
+   *
+   * @param {string} theme
+   */
+  _applyTheme(theme) {
+    const root = this.element;
+    const changed = root.getAttribute("data-theme") !== theme;
+    if (changed) root.classList.add("aim-no-transitions");
+
+    root.setAttribute("data-theme", theme);
+    // ApplicationV2 renders into `.application`; keep the v1 frame in sync too.
+    const frame = root.closest(".window-app");
+    if (frame) frame.setAttribute("data-theme", theme);
+
+    if (!changed) return;
+    void root.offsetHeight; // flush the suppressed styles before re-enabling
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      root.classList.remove("aim-no-transitions");
+    }));
+  }
+
+  /** Put the caret back where the user left it before the re-render. */
+  _restoreCaret() {
+    const state = this._caretState;
+    if (!state) return;
+    const input = this.element.querySelector(state.selector);
+    if (!input || input !== document.activeElement) return;
+    const end = Math.min(state.end ?? input.value.length, input.value.length);
+    const start = Math.min(state.start ?? end, end);
+    try {
+      input.setSelectionRange(start, end);
+    } catch {
+      // Not all input types support selection ranges.
+    }
   }
 
   _bindActorHooks() {
@@ -322,33 +462,38 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       if (this.rendered) this.render(false);
     };
 
-    const updateActorHook = Hooks.on("updateActor", (actor) => {
-      if (actor.id === this.actor.id) rerender();
-    });
-    const updateItemHook = Hooks.on("updateItem", (item) => {
+    const onItem = item => {
       if (item.parent?.id === this.actor.id) rerender();
-    });
-    const createItemHook = Hooks.on("createItem", (item) => {
-      if (item.parent?.id === this.actor.id) rerender();
-    });
-    const deleteItemHook = Hooks.on("deleteItem", (item) => {
-      if (item.parent?.id === this.actor.id) rerender();
-    });
+    };
 
-    this._hooks = [updateActorHook, updateItemHook, createItemHook, deleteItemHook];
+    this._hooks = [
+      ["updateActor", Hooks.on("updateActor", actor => {
+        if (actor.id === this.actor.id) rerender();
+      })],
+      ["updateItem", Hooks.on("updateItem", onItem)],
+      ["createItem", Hooks.on("createItem", onItem)],
+      ["deleteItem", Hooks.on("deleteItem", onItem)]
+    ];
+
+    // Weighty Containers announces its own saves; without this the load meter
+    // would lag behind a rules change made from its dialog.
+    const wcHook = watchContainerRules(container => {
+      if (!container || container.parent?.id === this.actor.id) rerender();
+    });
+    if (wcHook !== null) {
+      this._hooks.push(["weighty-containers.updateContainerRules", wcHook]);
+    }
   }
 
   _unbindActorHooks() {
-    for (const h of this._hooks) {
-      Hooks.off("updateActor", h);
-      Hooks.off("updateItem", h);
-      Hooks.off("createItem", h);
-      Hooks.off("deleteItem", h);
+    for (const [hookName, id] of this._hooks) {
+      Hooks.off(hookName, id);
     }
     this._hooks = [];
   }
 
   async close(options = {}) {
+    clearTimeout(this._searchDebounce);
     this.dragDrop.unbind();
     this._unbindActorHooks();
     OPEN_INVENTORY_APPS.delete(this.actor.id);
@@ -356,14 +501,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   }
 
   _syncWindowSize() {
-    let targetWidth = 1060;
-    if (this.isSpellsPanelOpen && !this.isPaperdollCollapsed) {
-      targetWidth = 1380;
-    } else if (this.isSpellsPanelOpen && this.isPaperdollCollapsed) {
-      targetWidth = 1100;
-    } else if (!this.isSpellsPanelOpen && this.isPaperdollCollapsed) {
-      targetWidth = 780;
-    }
+    const targetWidth = resolveWindowWidth(this.isSpellsPanelOpen, this.isPaperdollCollapsed);
 
     try {
       const screenWidth = window.innerWidth;
@@ -418,7 +556,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     const itemId = target.dataset.itemId;
     const item = this.actor.items.get(itemId);
     if (item) {
-      await useItem(item);
+      await useItem(item, event);
     }
   }
 
@@ -541,12 +679,9 @@ export async function openActorInventory(actor) {
 
   const isCollapsed = Boolean(actor.getFlag?.(MODULE_ID, FLAGS.PAPERDOLL_COLLAPSED));
   const isSpells = Boolean(actor.getFlag?.(MODULE_ID, FLAGS.SPELLS_PANEL_OPEN));
-  let width = 1060;
-  if (isSpells && !isCollapsed) width = 1380;
-  else if (isSpells && isCollapsed) width = 1100;
-  else if (!isSpells && isCollapsed) width = 780;
+  const width = resolveWindowWidth(isSpells, isCollapsed);
 
-  const height = 760;
+  const height = Math.max(560, Math.min(760, window.innerHeight - 60));
   const left = Math.max(20, Math.round((window.innerWidth - width) / 2));
   const top = Math.max(20, Math.round((window.innerHeight - height) / 2));
 

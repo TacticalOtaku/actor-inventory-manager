@@ -2367,6 +2367,47 @@
   box-sizing: border-box;
 }
 
+/* Trading shares the existing drawer grid and both theme palettes. */
+.aim-trade-bookmark-tab { top: 235px; }
+.aim-trade-bookmark-tab.has-trade .aim-bookmark-gem { background: var(--aim-accent-green); box-shadow: 0 0 8px var(--aim-accent-green); }
+.aim-trade-panel { display: flex; flex-direction: column; height: 100%; min-height: 0; color: var(--aim-text-main); }
+.aim-trade-scroll-area { flex: 1; min-height: 0; overflow-y: auto; padding: 14px; scrollbar-width: thin; }
+.aim-trade-meta, .aim-trade-confirmations { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--aim-text-muted); }
+.aim-trade-confirmations { padding: 10px 0; border-bottom: 1px solid var(--aim-border-main); }
+.aim-trade-confirmations .fa-check { color: var(--aim-accent-green); }
+.aim-trade-panel h3 { margin: 14px 0 4px; font-size: 17px; color: var(--aim-text-heading); overflow-wrap: anywhere; }
+.aim-trade-panel h4 { margin: 16px 0 8px; font-size: 13px; color: var(--aim-text-gold); }
+.aim-trade-hint { font-size: 12px; line-height: 1.5; color: var(--aim-text-muted); }
+.aim-trade-notice { padding: 10px; border: 1px solid var(--aim-border-gold); font-size: 12px; line-height: 1.5; }
+.aim-trade-notice[hidden] { display: none; }
+.aim-trade-target { display: grid; gap: 8px; margin: 20px 0; }
+.aim-trade-panel select, .aim-trade-panel input { background: var(--aim-bg-input); border: 1px solid var(--aim-border-main); color: var(--aim-text-main); border-radius: 4px; min-height: 32px; width: 100%; }
+.aim-trade-panel select { text-overflow: ellipsis; }
+.aim-trade-panel input { padding: 4px 6px; text-align: right; }
+.aim-trade-panel button { background: var(--aim-bg-input); color: var(--aim-text-main); border: 1px solid var(--aim-border-main); border-radius: 4px; padding: 7px 9px; cursor: pointer; white-space: normal; line-height: 1.3; }
+.aim-trade-panel button:hover:not(:disabled) { border-color: var(--aim-border-gold); }
+.aim-trade-panel button:disabled, .aim-trade-panel fieldset:disabled { opacity: 0.55; cursor: default; }
+.aim-trade-panel :is(button, input, select):focus-visible { outline: 2px solid var(--aim-border-gold-bright); outline-offset: 2px; }
+.aim-trade-fields { border: 0; padding: 0; margin: 16px 0 0; min-width: 0; }
+.aim-trade-fields legend, .aim-trade-fields h4 { margin: 12px 0 8px; font-size: 13px; color: var(--aim-text-gold); }
+.aim-trade-money { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+.aim-trade-money label { display: grid; gap: 4px; font-size: 12px; overflow-wrap: anywhere; }
+.aim-trade-money small { color: var(--aim-text-muted); }
+.aim-trade-item { display: grid; grid-template-columns: 30px minmax(0, 1fr) 64px; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--aim-border-light); font-size: 12px; }
+.aim-trade-item img { width: 30px; height: 30px; border-radius: 3px; object-fit: cover; }
+.aim-trade-item span { overflow-wrap: anywhere; }
+.aim-trade-item small { display: block; color: var(--aim-text-muted); font-size: 11px; margin-top: 3px; }
+.aim-trade-offer { padding: 0; margin: 0; list-style: none; }
+.aim-trade-offer li { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; font-size: 13px; overflow-wrap: anywhere; }
+.aim-trade-offer:empty::after { content: "—"; color: var(--aim-text-muted); }
+.aim-trade-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; border-top: 1px solid var(--aim-border-main); }
+.aim-trade-footer button:last-child { grid-column: 1 / -1; }
+.aim-trade-footer .aim-trade-confirm { border-color: var(--aim-border-gold); color: var(--aim-text-gold); }
+@media (max-width: 1050px) {
+  .aim-window-content.is-trade-open.is-paperdoll-collapsed { grid-template-columns: 44px minmax(260px, 1fr) minmax(300px, 380px); gap: 8px; padding: 10px; }
+  .aim-window-content.is-trade-open .aim-vitals-column { display: none; }
+}
+
 .aim-spells-panel {
   display: flex;
   flex-direction: column;

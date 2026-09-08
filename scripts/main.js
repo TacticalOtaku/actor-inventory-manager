@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { MODULE_ID, SLOTS, FLAGS, ENFORCEMENT_MODES } from "./constants.js";
+import { registerTradeService, registerTradeSettings } from "./trade/service.js";
 import { equipmentRuleEngine, getActorEquippedMap, isOffHandLockedBy2H } from "./core/equipment-rules.js";
 import {
   classifyItem,
@@ -81,11 +82,13 @@ registerFoundryPaperdollRuntime();
 registerModuleSettings();
 
 Hooks.once("init", () => {
+  registerTradeSettings();
   registerHandlebarsHelpers();
   preloadTemplates();
 });
 
 Hooks.once("ready", () => {
+  registerTradeService();
   registerEnforcementHooks();
   registerSheetInjectionHooks();
 

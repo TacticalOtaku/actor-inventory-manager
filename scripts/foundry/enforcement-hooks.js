@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { ENFORCEMENT_MODES, FLAGS, MODULE_ID } from "../constants.js";
+import { isSupportedActor } from "../core/actor-scope.js";
 import {
   equipmentRuleEngine,
   getActorEquippedMap
@@ -23,7 +24,9 @@ import { LOG } from "./logger.js";
  */
 export function handlePreUpdateItem(item, changes, options, userId) {
   const actor = item?.parent;
-  if (!actor || actor.documentName !== "Actor") return true;
+  if (!isSupportedActor(actor) || actor.documentName !== "Actor") return true;
+  // Recovery reinstates a saved loadout; equipment validation must not rewrite it.
+  if (options?.aimTradeRecovery && globalThis.game?.user?.isGM) return true;
 
   // Check if equipped status is being modified
   const equippedChanging = foundry.utils.hasProperty(changes, "system.equipped");

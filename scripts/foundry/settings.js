@@ -4,6 +4,7 @@
 
 import { ENFORCEMENT_MODES, LOG_LEVELS, MODULE_ID } from "../constants.js";
 import { LOG } from "./logger.js";
+import { isSupportedActor } from "../core/actor-scope.js";
 
 export function registerModuleSettings() {
   Hooks.once("init", () => {
@@ -125,6 +126,8 @@ export function registerModuleKeybindings() {
         return true;
       }
 
+      if (!isSupportedActor(targetActor)) return false;
+
       const app = globalThis.ActorInventoryManager?.toggleInventory
         ? globalThis.ActorInventoryManager.toggleInventory(targetActor)
         : (globalThis.ActorInventoryManager?.openInventory ? globalThis.ActorInventoryManager.openInventory(targetActor) : null);
@@ -135,4 +138,3 @@ export function registerModuleKeybindings() {
     precedence: globalThis.CONST?.KEYBINDING_PRECEDENCE?.NORMAL ?? 0
   });
 }
-

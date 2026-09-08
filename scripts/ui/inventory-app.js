@@ -3,6 +3,9 @@
 // ─────────────────────────────────────────────────────────
 
 import { FLAGS, MODULE_ID, SLOTS } from "../constants.js";
+import { isSupportedActor, isTradeActor } from "../core/actor-scope.js";
+import { bindTradeInputs, buildTradeContext, handleTradeAction } from "./trade-panel.js";
+import { TRADE_HOOK, sessionFor } from "../trade/service.js";
 import { getActorEquippedMap, isOffHandLockedBy2H } from "../core/equipment-rules.js";
 import { isPhysicalItem } from "../core/item-classifier.js";
 import { computeActorEncumbrance } from "../core/weight-calculator.js";
@@ -43,6 +46,7 @@ import {
 } from "./item-actions.js";
 
 export const AIM_TEMPLATES = [
+  `modules/${MODULE_ID}/templates/parts/trade.hbs`,
   `modules/${MODULE_ID}/templates/inventory-app.hbs`,
   `modules/${MODULE_ID}/templates/parts/character-vitals.hbs`,
   `modules/${MODULE_ID}/templates/parts/paperdoll.hbs`,
@@ -138,7 +142,9 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       toggleSpellsPanel: ActorInventoryApp._toggleSpellsPanel,
       switchSpellsTab: ActorInventoryApp._switchSpellsTab,
       updateSpellSlot: ActorInventoryApp._updateSpellSlot,
-      toggleSpellPrep: ActorInventoryApp._toggleSpellPrep
+      toggleSpellPrep: ActorInventoryApp._toggleSpellPrep,
+      toggleTradePanel: ActorInventoryApp._toggleTradePanel,
+      tradeAction: ActorInventoryApp._tradeAction
     }
   };
 
@@ -150,6 +156,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       scrollable: [
         ".aim-items-scroll-area",
         ".aim-spells-scroll-area",
+        ".aim-trade-scroll-area",
         ".aim-vitals-panel",
         ".aim-paperdoll-stage"
       ]
@@ -157,6 +164,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   };
 
   constructor(actor, options = {}) {
+    if (!isSupportedActor(actor)) throw new Error("AIM: unsupported actor");
     const title = `${actor.name} - ${game.i18n.localize("AIM.app.title")}`;
     super({
       ...options,
@@ -175,6 +183,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     this.isSpellsPanelOpen = Boolean(actor.getFlag?.(MODULE_ID, FLAGS.SPELLS_PANEL_OPEN));
     this.spellsTab = "all";
     this.spellsSearchFilter = "";
+    this.isTradePanelOpen = false;
 
     this.dragDrop = new DragDropController(this);
     this._hooks = [];
@@ -185,7 +194,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
 
     const context = await super._prepareContext(options);
     const actor = this.actor;
-    if (!actor) return context;
+    if (!isSupportedActor(actor)) return context;
 
     const vitals = extractActorVitals(actor);
     const encumbrance = computeActorEncumbrance(actor);
@@ -292,6 +301,10 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     const prepared = {
       ...context,
       actor,
+      trade: buildTradeContext(this),
+      isTradePanelOpen: this.isTradePanelOpen && isTradeActor(actor),
+      isSidePanelOpen: this.isSpellsPanelOpen || (this.isTradePanelOpen && isTradeActor(actor)),
+      hasTradeSession: Boolean(sessionFor(actor.id)),
       vitals,
       encumbrance,
       paperdollSlots: allSlots,
@@ -339,6 +352,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   async _onRender(context, options) {
     await super._onRender(context, options);
     this.dragDrop.bind(this.element);
+    bindTradeInputs(this);
 
     // Apply active theme attribute
     const theme = context.theme || "dark";
@@ -459,6 +473,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   _bindActorHooks() {
     this._unbindActorHooks();
     const rerender = () => {
+      if (!isSupportedActor(this.actor)) { this.close(); return; }
       if (this.rendered) this.render(false);
     };
 
@@ -467,6 +482,9 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     };
 
     this._hooks = [
+      [TRADE_HOOK, Hooks.on(TRADE_HOOK, rerender)],
+      ["updateUser", Hooks.on("updateUser", rerender)],
+      ["userConnected", Hooks.on("userConnected", rerender)],
       ["updateActor", Hooks.on("updateActor", actor => {
         if (actor.id === this.actor.id) rerender();
       })],
@@ -501,7 +519,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   }
 
   _syncWindowSize() {
-    const targetWidth = resolveWindowWidth(this.isSpellsPanelOpen, this.isPaperdollCollapsed);
+    const targetWidth = resolveWindowWidth(this.isSpellsPanelOpen || this.isTradePanelOpen, this.isPaperdollCollapsed);
 
     try {
       const screenWidth = window.innerWidth;
@@ -636,6 +654,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
 
   static async _toggleSpellsPanel(event, target) {
     this.isSpellsPanelOpen = !this.isSpellsPanelOpen;
+    if (this.isSpellsPanelOpen) this.isTradePanelOpen = false;
     await this.actor.setFlag(MODULE_ID, FLAGS.SPELLS_PANEL_OPEN, this.isSpellsPanelOpen);
     this._syncWindowSize();
     this.render(false);
@@ -644,6 +663,22 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   static _switchSpellsTab(event, target) {
     this.spellsTab = target.dataset.tab || "all";
     this.render(false);
+  }
+
+  static async _toggleTradePanel() {
+    if (!isTradeActor(this.actor)) return;
+    this.isTradePanelOpen = !this.isTradePanelOpen;
+    if (this.isTradePanelOpen) {
+      this.isSpellsPanelOpen = false;
+      if (window.innerWidth < 1320) this.isPaperdollCollapsed = true;
+      // Drawer choice is local UI state, so observers need no actor write permission.
+    }
+    this._syncWindowSize();
+    this.render(false);
+  }
+
+  static async _tradeAction(event, target) {
+    return handleTradeAction(this, target);
   }
 
   static async _updateSpellSlot(event, target) {
@@ -668,7 +703,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
  * @param {Object} actor
  */
 export async function openActorInventory(actor) {
-  if (!actor) return;
+  if (!isSupportedActor(actor)) return;
   await preloadTemplates();
 
   const existing = OPEN_INVENTORY_APPS.get(actor.id);
@@ -699,7 +734,7 @@ export async function openActorInventory(actor) {
  * @returns {Promise<ActorInventoryApp|null>}
  */
 export async function toggleActorInventory(actor) {
-  if (!actor) return null;
+  if (!isSupportedActor(actor)) return null;
   const existing = OPEN_INVENTORY_APPS.get(actor.id);
   if (existing?.rendered) {
     await existing.close();

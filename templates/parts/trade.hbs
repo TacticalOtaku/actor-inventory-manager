@@ -1,0 +1,62 @@
+<div class="aim-trade-panel">
+  <header class="aim-spells-header">
+    <span class="aim-spells-title"><i class="fa-solid fa-handshake"></i> {{localize "AIM.trade.title"}}</span>
+    <button type="button" class="aim-close-spells-btn" data-action="toggleTradePanel" aria-label="{{localize 'AIM.trade.close'}}"><i class="fa-solid fa-xmark"></i></button>
+  </header>
+  <div class="aim-trade-scroll-area">
+    <div class="aim-trade-meta"><span>{{trade.provider}}</span><span role="status">{{trade.status}}</span></div>
+    {{#unless trade.hasGM}}<p class="aim-trade-notice" role="alert">{{localize "AIM.trade.errors.noGM"}}</p>{{/unless}}
+    {{#if trade.error}}<p class="aim-trade-notice" role="alert">{{trade.error}}</p>{{/if}}
+    {{#if trade.session}}
+      <h3>{{localize "AIM.trade.with"}} {{trade.partner}}</h3>
+      <div class="aim-trade-confirmations" aria-live="polite">
+        <span><i class="fa-solid {{#if trade.mineConfirmed}}fa-check{{else}}fa-hourglass-half{{/if}}"></i> {{localize "AIM.trade.you"}}</span>
+        <span><i class="fa-solid {{#if trade.theirsConfirmed}}fa-check{{else}}fa-hourglass-half{{/if}}"></i> {{trade.partner}}</span>
+      </div>
+      <h4>{{localize "AIM.trade.theirOffer"}}</h4>
+      <ul class="aim-trade-offer">
+        {{#each trade.otherItems}}<li><span>{{name}}</span><b>×{{quantity}}</b></li>{{/each}}
+        {{#each trade.otherMoney}}<li><span>{{label}}</span><b>{{amount}}</b></li>{{/each}}
+      </ul>
+      <h4>{{localize "AIM.trade.yourOffer"}}</h4>
+      <ul class="aim-trade-offer">
+        {{#each trade.myItems}}<li><span>{{name}}</span><b>×{{quantity}}</b></li>{{/each}}
+        {{#each trade.myMoney}}<li><span>{{label}}</span><b>{{amount}}</b></li>{{/each}}
+      </ul>
+      {{#if trade.participant}}
+        <p class="aim-trade-hint">{{localize "AIM.trade.editHint"}}</p>
+        <fieldset class="aim-trade-fields" {{#unless trade.canEdit}}disabled{{/unless}}>
+          <legend>{{localize "AIM.trade.currencies"}}</legend>
+          <div class="aim-trade-money">
+            {{#each trade.money}}
+              <label><span>{{label}} <small>({{quantity}})</small></span><input type="number" min="0" step="{{step}}" value="{{amount}}" data-trade-money="{{key}}" aria-label="{{label}}"></label>
+            {{/each}}
+          </div>
+          <h4>{{localize "AIM.trade.items"}}</h4>
+          {{#each trade.items}}
+            <label class="aim-trade-item"><img src="{{img}}" alt="" loading="lazy"><span>{{name}}<small>{{localize "AIM.trade.available"}}: {{available}}</small></span><input type="number" min="0" max="{{available}}" step="1" value="{{quantity}}" data-trade-item="{{id}}" aria-label="{{name}}"></label>
+          {{else}}<p class="aim-trade-hint">{{localize "AIM.trade.noItems"}}</p>{{/each}}
+        </fieldset>
+        <p class="aim-trade-notice" data-trade-unsaved {{#unless trade.dirty}}hidden{{/unless}}>{{localize "AIM.trade.unsaved"}}</p>
+      {{/if}}
+      {{#if trade.recovery}}<button type="button" data-action="tradeAction" data-trade-op="recover" {{#if trade.busy}}disabled{{/if}}>{{localize "AIM.trade.recover"}}</button>{{/if}}
+    {{else}}
+      <p class="aim-trade-hint">{{localize "AIM.trade.intro"}}</p>
+      <label class="aim-trade-target">{{localize "AIM.trade.partner"}}
+        <select data-trade-target {{#unless trade.canStart}}disabled{{/unless}}>
+          {{#each trade.targets}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
+        </select>
+      </label>
+      {{#if trade.noTargets}}<p class="aim-trade-hint">{{localize "AIM.trade.noTargets"}}</p>{{else}}
+        <button type="button" data-action="tradeAction" data-trade-op="start" {{#unless trade.canStart}}disabled{{/unless}} {{#if trade.busy}}disabled{{/if}}><i class="fa-solid fa-handshake"></i> {{localize "AIM.trade.start"}}</button>
+      {{/if}}
+    {{/if}}
+  </div>
+  {{#if trade.participant}}
+    <footer class="aim-trade-footer">
+      <button type="button" data-action="tradeAction" data-trade-op="offer" {{#unless trade.canSave}}disabled{{/unless}}>{{localize "AIM.trade.save"}}</button>
+      <button type="button" class="aim-trade-confirm" data-action="tradeAction" data-trade-op="confirm" {{#unless trade.canConfirm}}disabled{{/unless}}>{{localize "AIM.trade.confirm"}}</button>
+      <button type="button" data-action="tradeAction" data-trade-op="cancel" {{#if trade.locked}}disabled{{/if}} {{#if trade.busy}}disabled{{/if}}>{{localize "AIM.trade.cancel"}}</button>
+    </footer>
+  {{/if}}
+</div>

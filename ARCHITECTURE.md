@@ -11,6 +11,7 @@ scripts/
   core/             pure logic - no game/ui/Hooks access, unit tested
   foundry/          adapters to the Foundry runtime (settings, hooks, logging)
   integrations/     adapters to the game system and to other modules
+  trade/            currency adapter, offer validation, transfers and GM coordinator
   ui/               ApplicationV2 windows and their controllers
   main.js           composition root: wires ports, registers hooks, exposes the API
 ```
@@ -21,6 +22,14 @@ The dependency direction is one-way: `ui` → `integrations` → `core`, with
 module needs something from the runtime, add a port (see
 `core/paperdoll-runtime.js` and its adapter `foundry/paperdoll-runtime.js`)
 rather than reaching for `game` directly.
+
+## Player trading
+
+`core/actor-scope.js` defines supported actors without touching runtime globals. NPCs without a player owner are excluded at UI and mutation boundaries. `trade/currencies.js` selects either the active Item Piles API or exact standard D&D5e denominations. `trade/offers.js` validates assets and offer revisions. `trade/transfer.js` handles item data cleanup and inventory snapshots.
+
+`trade/service.js` is the runtime coordinator. Requests are serialized JSON in the requesting User's AIM flag; `updateUser` supplies the authenticated initiating user ID. No module socket payload authorizes writes. One active GM serializes requests and retains its persisted coordinator ID while connected, so another GM joining cannot take over mid-transfer. The coordinator rechecks actor ownership and both users' confirmations and persists the editing lock before taking snapshots. Complete inventory snapshots live only in a private JournalEntry, never in the public session state; their contents are revalidated before any debit. Transfer and recovery writes check coordinator ownership across asynchronous boundaries. Persisted executing/recovery sessions cannot be resubmitted as transfers. The GM's explicit recovery action restores the saved inventories; interrupted preparation without a saved transfer phase can simply be unlocked.
+
+`ui/trade-panel.js` keeps local unsaved quantities separate from the accepted offer revision. Its drawer uses the existing spells-column layout and theme variables. `actor-inventory-manager.tradeState` updates open drawers when the saved session changes.
 
 ## Version-adapter rule
 

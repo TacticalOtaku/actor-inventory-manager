@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { FLAGS, MODULE_ID } from "../constants.js";
+import { isSupportedActor } from "../core/actor-scope.js";
 import { isItemAttuned } from "../core/attunement.js";
 import { equipmentRuleEngine, getActorEquippedMap } from "../core/equipment-rules.js";
 import { findBestSlotForEquipping, getValidSlotsForItem } from "../core/item-classifier.js";
@@ -15,7 +16,7 @@ import { LOG } from "../foundry/logger.js";
  * @param {string} targetSlotId
  */
 export async function equipItemToSlot(actor, item, targetSlotId) {
-  if (!actor || !item || !targetSlotId) return;
+  if (!isSupportedActor(actor) || !item || !targetSlotId) return;
 
   const currentSlotMap = getActorEquippedMap(actor);
   const validation = equipmentRuleEngine.validateEquip(actor, item, targetSlotId, {
@@ -57,7 +58,7 @@ export async function equipItemToSlot(actor, item, targetSlotId) {
  * @param {Object} item
  */
 export async function unequipItem(actor, item) {
-  if (!item) return;
+  if (!isSupportedActor(actor) || !item) return;
 
   await item.update({
     "system.equipped": false,
@@ -73,7 +74,7 @@ export async function unequipItem(actor, item) {
  * @param {Object} item
  */
 export async function toggleItemEquipped(actor, item) {
-  if (!actor || !item) return;
+  if (!isSupportedActor(actor) || !item) return;
 
   if (item.system?.equipped) {
     await unequipItem(actor, item);
@@ -103,6 +104,7 @@ export async function toggleItemEquipped(actor, item) {
  */
 export async function useItem(item, event = undefined) {
   if (!item) return;
+  if (item.parent?.documentName === "Actor" && !isSupportedActor(item.parent)) return;
   if (typeof item.use === "function") {
     return item.use({ event });
   }
@@ -121,6 +123,7 @@ export async function useItem(item, event = undefined) {
 export async function toggleAttunement(item) {
   if (!item) return;
   const actor = item.parent;
+  if (!isSupportedActor(actor)) return;
 
   // dnd5e 5.x keeps the requirement in `system.attunement` ("" | "required" |
   // "optional") and the state in the boolean `system.attuned`. Older versions
@@ -175,6 +178,7 @@ export function getActorAttunementMax(actor) {
  */
 export async function setItemContainer(item, containerId) {
   if (!item) return;
+  if (!isSupportedActor(item.parent)) return;
   await item.update({
     "system.container": containerId || null,
     // Unequip if moving into a container

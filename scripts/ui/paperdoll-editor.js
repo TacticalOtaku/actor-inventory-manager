@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { FLAGS, MODULE_ID, TEMPLATE_PRESETS } from "../constants.js";
+import { isSupportedActor } from "../core/actor-scope.js";
 import {
   deleteWorldCustomTemplate,
   exportTemplateJSON,
@@ -59,6 +60,7 @@ export class PaperdollEditorApp extends ApplicationBase {
   };
 
   constructor(actor, options = {}) {
+    if (!isSupportedActor(actor)) throw new Error("AIM: unsupported actor");
     const title = `${actor.name} - ${game.i18n.localize("AIM.editor.windowTitle")}`;
     super({
       ...options,
@@ -538,6 +540,7 @@ export class PaperdollEditorApp extends ApplicationBase {
  * @param {Object} actor
  */
 export function openPaperdollEditor(actor) {
+  if (!isSupportedActor(actor)) return;
   if (!globalThis.game?.user?.isGM) {
     ui.notifications?.warn("Only Game Master can access the Paperdoll Editor.");
     return;

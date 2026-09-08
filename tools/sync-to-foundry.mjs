@@ -7,7 +7,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const MODULE_ID = "actor-inventory-manager";
-const CONTENT = ["lang", "scripts", "styles", "templates", "module.json", "LICENSE", "README.md", "ARCHITECTURE.md"];
+const CONTENT = ["lang", "scripts", "styles", "templates", "module.json", "LICENSE", "README.md", "ARCHITECTURE.md", "CHANGELOG.md"];
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 

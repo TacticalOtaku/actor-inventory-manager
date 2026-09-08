@@ -4,6 +4,7 @@
 
 import { FLAGS, MODULE_ID, SLOTS, TEMPLATE_PRESETS } from "../constants.js";
 import { getPaperdollRuntime } from "./paperdoll-runtime.js";
+import { isSupportedActor } from "./actor-scope.js";
 
 /**
  * Built-in Preset: D&D 2024 Rules (Default)
@@ -438,7 +439,7 @@ export function getActorSlots(actor) {
  * @param {Object|null} customTemplateData
  */
 export async function setActorPaperdollTemplate(actor, templateId, customTemplateData = null) {
-  if (!actor) return;
+  if (!isSupportedActor(actor)) return;
   const runtime = getPaperdollRuntime();
   if (!runtime.isGM()) {
     runtime.notifyWarning(runtime.localize("AIM.editor.gmOnly", "Only GM can modify actor paperdoll templates"));

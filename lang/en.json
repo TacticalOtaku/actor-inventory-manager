@@ -1,5 +1,36 @@
 {
   "AIM": {
+    "trade": {
+      "title": "Trade", "close": "Close trade", "with": "Trading with", "you": "You",
+      "theirOffer": "Their offer", "yourOffer": "Your saved offer",
+      "editHint": "Choose item quantities and currency, then save your offer. Empty nonempty containers before trading them.",
+      "currencies": "Currency", "items": "Items", "available": "Available", "noItems": "No transferable items.",
+      "unsaved": "Unsaved changes. Save your offer before confirming.",
+      "intro": "Exchange items, pay with currency, or give a gift. Assets move only after both participants confirm.",
+      "partner": "Another player's character", "noTargets": "No other players' characters are available online.",
+      "start": "Offer trade", "save": "Save offer", "confirm": "Confirm", "cancel": "Cancel",
+      "invitation": "A trade is open. Open the Trade tab in your character's inventory.",
+      "recover": "Restore before trade",
+      "recoverWarning": "Both inventories and currency balances will be restored from their pre-trade snapshot. Later changes to those assets will be lost. Ensure nobody is editing either actor and the previous GM is no longer executing the trade. Continue?",
+      "status": { "idle": "Ready to trade", "open": "Negotiating", "executing": "Transferring / GM review", "complete": "Trade complete", "cancelled": "Trade cancelled", "failed": "Cancelled; assets restored", "recovery": "GM recovery required" },
+      "errors": {
+        "coordinator": "The trade coordinator disconnected or changed. Ask the active GM to inspect the trade state.",
+        "provider": "Could not read currencies or the active Item Piles API. Check its configuration.",
+        "providerChanged": "Currency providers or definitions changed or differ between participants. Cancel and start a new trade.",
+        "amount": "Enter a valid nonnegative currency amount.", "funds": "Insufficient funds or an invalid coin quantity.",
+        "item": "An item is missing, duplicated, contains other items, or has insufficient quantity.",
+        "stale": "The offer changed or this trade is closed. Review the current state.",
+        "changed": "An offered item changed. Save the offer and confirm again.",
+        "transfer": "The trade operation failed. Check the trade state and GM log.",
+        "noGM": "An active GM is required to safely transfer assets between characters.",
+        "permission": "A participant is unavailable or does not own this actor.",
+        "partner": "Select an available character belonging to another online player.", "busy": "This character is already trading or awaiting recovery.",
+        "empty": "Offer at least one item or some currency.", "request": "Unknown trade operation.",
+        "timeout": "The GM did not respond in time. Check the trade state before trying again.",
+        "rolledBack": "The transfer failed. Inventories and currencies were restored to their pre-trade state.",
+        "recovery": "The transfer was interrupted. A GM must inspect the saved snapshot and restore the trade. Further trading is blocked."
+      }
+    },
     "app": {
       "title": "Actor Inventory & Paperdoll"
     },

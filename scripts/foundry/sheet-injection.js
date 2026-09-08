@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { MODULE_ID } from "../constants.js";
+import { isSupportedActor } from "../core/actor-scope.js";
 import { openActorInventory } from "../ui/inventory-app.js";
 import { LOG } from "./logger.js";
 
@@ -26,7 +27,7 @@ function isPrimaryActorSheet(app) {
 
   // Check document
   const actor = app.document ?? app.actor;
-  if (!actor || actor.documentName !== "Actor" || actor.type === "group") {
+  if (!isSupportedActor(actor) || actor.documentName !== "Actor") {
     return false;
   }
 

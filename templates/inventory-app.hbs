@@ -1,4 +1,4 @@
-<div class="aim-window-content {{#if isPaperdollCollapsed}}is-paperdoll-collapsed{{/if}} {{#if isSpellsPanelOpen}}is-spells-open{{/if}}">
+<div class="aim-window-content {{#if isPaperdollCollapsed}}is-paperdoll-collapsed{{/if}} {{#if isSidePanelOpen}}is-spells-open{{/if}} {{#if isTradePanelOpen}}is-trade-open{{/if}}">
   <!-- Left Column: Character Vitals & Progression -->
   <aside class="aim-column aim-vitals-column">
     {{> "modules/actor-inventory-manager/templates/parts/character-vitals.hbs"}}
@@ -37,6 +37,18 @@
   {{/if}}
 
   <!-- Ornate RPG Bookmark Tab on the Right Edge -->
+  {{#if isTradePanelOpen}}
+    <section class="aim-column aim-spells-column aim-trade-column">
+      {{> "modules/actor-inventory-manager/templates/parts/trade.hbs"}}
+    </section>
+  {{/if}}
+  {{#if trade.available}}
+    <button type="button" class="aim-spells-bookmark-tab aim-trade-bookmark-tab {{#if isTradePanelOpen}}is-open{{/if}} {{#if hasTradeSession}}has-trade{{/if}}" data-action="toggleTradePanel" title="{{localize 'AIM.trade.title'}}" aria-expanded="{{isTradePanelOpen}}">
+      <div class="aim-bookmark-icon"><i class="fa-solid fa-handshake"></i></div>
+      <div class="aim-bookmark-text"><span>{{localize "AIM.trade.title"}}</span></div>
+      <div class="aim-bookmark-gem"></div>
+    </button>
+  {{/if}}
   <button type="button"
           class="aim-spells-bookmark-tab {{#if isSpellsPanelOpen}}is-open{{/if}}"
           data-action="toggleSpellsPanel"

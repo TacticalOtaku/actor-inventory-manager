@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { FLAGS, MODULE_ID, SLOTS } from "../constants.js";
+import { isSupportedActor } from "./actor-scope.js";
 import {
   classifyItem,
   getItemAssignedSlot,
@@ -43,7 +44,7 @@ export class ValidationResult {
  */
 export function getActorEquippedMap(actor) {
   const slotMap = new Map();
-  if (!actor || !actor.items) return slotMap;
+  if (!isSupportedActor(actor) || !actor.items) return slotMap;
 
   const equippedItems = Array.from(actor.items.values()).filter(i => (
     i?.system?.equipped === true && !i?.system?.container
@@ -260,6 +261,7 @@ export class EquipmentRuleEngine {
     if (!actor || !item || !targetSlotId) {
       return ValidationResult.fail("Missing actor, item, or targetSlotId", "INVALID_ARGUMENTS");
     }
+    if (!isSupportedActor(actor)) return ValidationResult.success();
 
     const slotMap = options.slotMap ?? getActorEquippedMap(actor);
     const accumulatedAutoSwap = [];

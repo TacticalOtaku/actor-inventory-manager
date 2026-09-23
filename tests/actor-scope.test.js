@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { handlePreUpdateItem } from "../scripts/foundry/enforcement-hooks.js";
-import { isSupportedActor, isTradeActor } from "../scripts/core/actor-scope.js";
+import { canEditActor, canViewActor, isSupportedActor, isTradeActor } from "../scripts/core/actor-scope.js";
 import { equipItemToSlot, unequipItem, toggleItemEquipped, toggleAttunement, setItemContainer, useItem } from "../scripts/ui/item-actions.js";
 import { setActorPaperdollTemplate } from "../scripts/core/paperdoll-templates.js";
 import { getActorEquippedMap, equipmentRuleEngine } from "../scripts/core/equipment-rules.js";
@@ -44,4 +44,15 @@ test("direct equipment rules do not impose paperdoll constraints on GM NPCs", ()
   const actor = { type: "npc", hasPlayerOwner: false, items: new Map() };
   assert.equal(getActorEquippedMap(actor).size, 0);
   assert.equal(equipmentRuleEngine.validateEquip(actor, { name: "NPC weapon", type: "weapon", system: {} }, "not-a-paperdoll-slot").valid, true);
+});
+
+
+test("the inventory needs Observer to view and Owner to edit", () => {
+  const permissions = { limited: ["LIMITED"], observer: ["LIMITED", "OBSERVER"], owner: ["LIMITED", "OBSERVER", "OWNER"] };
+  const actor = { type: "character", hasPlayerOwner: true, testUserPermission: (user, level) => permissions[user.id].includes(level) };
+  assert.equal(canViewActor(actor, { id: "limited" }), false);
+  assert.equal(canViewActor(actor, { id: "observer" }), true);
+  assert.equal(canEditActor(actor, { id: "observer" }), false);
+  assert.equal(canEditActor(actor, { id: "owner" }), true);
+  assert.equal(canEditActor(actor, { id: "limited", isGM: true }), true);
 });

@@ -2,7 +2,19 @@
 // Actor Inventory Manager - Weight & Encumbrance Calculator
 // ─────────────────────────────────────────────────────────
 
-import { LBS_PER_KG } from "../constants.js";
+/**
+ * Pounds per unit when dnd5e's table is unavailable. dnd5e (and Weighty
+ * Containers, which adopts the same table) uses the DMG's round metric
+ * conversion: a kilogram is 2.5 lb, not the physical 2.20462. Using any other
+ * factor makes every number here disagree with the sheet next to it.
+ */
+const DEFAULT_LBS_PER_UNIT = {
+  lb: 1, lbs: 1, pound: 1, pounds: 1,
+  kg: 2.5, kgs: 2.5, kilogram: 2.5, kilograms: 2.5, "кг": 2.5, "килограмм": 2.5,
+  tn: 2000, ton: 2000, tons: 2000,
+  mg: 2500,
+  oz: 1 / 16, ounce: 1 / 16, ounces: 1 / 16
+};
 
 /**
  * Size multiplier for carrying capacity in dnd5e
@@ -41,6 +53,20 @@ export function getSystemWeightUnit() {
 }
 
 /**
+ * Pounds in one of `unit`, read from CONFIG.DND5E.weightUnits when present.
+ * Unknown units count as pounds, matching dnd5e's non-strict conversion.
+ * @param {string} unit
+ * @returns {number}
+ */
+export function lbsPerUnit(unit) {
+  const key = String(unit || "lb").toLowerCase().trim();
+  const entry = globalThis.CONFIG?.DND5E?.weightUnits?.[key];
+  const fromSystem = typeof entry === "number" ? entry : Number(entry?.conversion);
+  if (Number.isFinite(fromSystem) && fromSystem > 0) return fromSystem;
+  return DEFAULT_LBS_PER_UNIT[key] ?? 1;
+}
+
+/**
  * Convert any numeric weight from a source unit to a target unit
  * @param {number} value
  * @param {string} [sourceUnit="lb"]
@@ -49,29 +75,16 @@ export function getSystemWeightUnit() {
  */
 export function convertWeight(value, sourceUnit = "lb", targetUnit = "lb") {
   const n = num(value, 0);
-  const src = (sourceUnit || "lb").toLowerCase().trim();
-  const tgt = (targetUnit || "lb").toLowerCase().trim();
-
-  const srcIsKg = src === "kg" || src === "kgs" || src === "килограмм" || src === "кг";
-  const tgtIsKg = tgt === "kg" || tgt === "kgs" || tgt === "килограмм" || tgt === "кг";
-
-  if (srcIsKg === tgtIsKg) return n;
-
-  if (srcIsKg && !tgtIsKg) {
-    // kg -> lb
-    return n * LBS_PER_KG;
-  } else {
-    // lb -> kg
-    return n / LBS_PER_KG;
-  }
+  const source = lbsPerUnit(sourceUnit);
+  const target = lbsPerUnit(targetUnit);
+  return source === target ? n : (n * source) / target;
 }
 
 /**
  * Convert pounds (lbs) to display unit (lbs or kg)
  */
 export function formatWeight(lbs, unit = "lb") {
-  const value = unit === "kg" ? lbs / LBS_PER_KG : lbs;
-  return Number(value.toFixed(1));
+  return Number(convertWeight(lbs, "lb", unit).toFixed(1));
 }
 
 /**
@@ -85,7 +98,8 @@ export function getItemWeightInUnit(item, targetUnit = null) {
   const tgt = targetUnit ?? getSystemWeightUnit();
   const rawWeight = num(item.system?.weight?.value ?? item.system?.weight, 0);
   const itemUnits = (item.system?.weight?.units || "lb").toLowerCase();
-  const qty = Math.max(1, num(item.system?.quantity, 1));
+  // dnd5e does not multiply a container's own weight by its quantity.
+  const qty = item.type === "container" ? 1 : Math.max(0, num(item.system?.quantity, 1));
 
   const converted = convertWeight(rawWeight, itemUnits, tgt);
   return converted * qty;
@@ -96,101 +110,6 @@ export function getItemWeightInUnit(item, targetUnit = null) {
  */
 export function getItemWeightLbs(item) {
   return getItemWeightInUnit(item, "lb");
-}
-
-/**
- * Extract container maximum capacity and convert to target unit
- * @param {Object} container
- * @param {string} [targetUnit] "lb" | "kg"
- * @returns {{ maxCapacity: number, capacityType: string, originalUnits: string }}
- */
-export function getContainerCapacityInUnit(container, targetUnit = null) {
-  if (!container) return { maxCapacity: 0, capacityType: "weight", originalUnits: "" };
-  const tgt = targetUnit ?? getSystemWeightUnit();
-  const system = container.system ?? {};
-  const cap = system.capacity;
-
-  let rawMax = 0;
-  let capacityType = "weight";
-  let rawUnits = "";
-
-  if (typeof cap === "number") {
-    rawMax = cap;
-    rawUnits = "lb";
-  } else if (cap && typeof cap === "object") {
-    if (cap.weight !== undefined) {
-      if (typeof cap.weight === "object" && cap.weight !== null) {
-        rawMax = num(cap.weight.value ?? cap.weight.max, 0);
-        rawUnits = cap.weight.units || "";
-      } else {
-        rawMax = num(cap.weight, 0);
-      }
-      capacityType = "weight";
-    }
-
-    if (!rawMax && cap.value !== undefined) {
-      rawMax = num(cap.value, 0);
-      rawUnits = cap.units || "";
-      capacityType = cap.type || "weight";
-    }
-
-    if (!rawMax && cap.max !== undefined) {
-      rawMax = num(cap.max, 0);
-    }
-
-    if (!rawMax && cap.count !== undefined && cap.count !== null) {
-      rawMax = num(cap.count, 0);
-      capacityType = "items";
-    }
-  }
-
-  // Weighty Containers flags
-  const wcFlags = container.flags?.["weighty-containers"];
-  if (wcFlags && !rawMax) {
-    rawMax = num(wcFlags.maxWeight ?? wcFlags.capacity ?? wcFlags.rules?.maxWeight, 0);
-    rawUnits = wcFlags.units || "";
-  }
-
-  // Fallback defaults for standard 5e containers (all standard 5e values are in lbs)
-  if (!rawMax) {
-    const nameLower = (container.name || "").toLowerCase();
-    if (nameLower.includes("pouch") || nameLower.includes("поясная сумка") || nameLower.includes("кошель")) {
-      rawMax = 6;
-      rawUnits = "lb";
-    } else if (nameLower.includes("chest") || nameLower.includes("сундук")) {
-      rawMax = 300;
-      rawUnits = "lb";
-    } else if (nameLower.includes("barrel") || nameLower.includes("бочка")) {
-      rawMax = 200;
-      rawUnits = "lb";
-    } else if (nameLower.includes("basket") || nameLower.includes("корзина")) {
-      rawMax = 40;
-      rawUnits = "lb";
-    } else if (nameLower.includes("bag of holding") || nameLower.includes("бездонная сумка")) {
-      rawMax = 500;
-      rawUnits = "lb";
-    } else if (nameLower.includes("haversack") || nameLower.includes("походная сумка")) {
-      rawMax = 120;
-      rawUnits = "lb";
-    } else if (container.type === "container" || container.type === "backpack" || system.type?.value === "container") {
-      rawMax = 30;
-      rawUnits = "lb";
-    }
-  }
-
-  if (capacityType === "items" || rawMax === 0) {
-    return { maxCapacity: rawMax, capacityType, originalUnits: rawUnits };
-  }
-
-  // If unit wasn't specified, assume "lb"
-  const sourceUnit = rawUnits || "lb";
-  const convertedMax = convertWeight(rawMax, sourceUnit, tgt);
-
-  return {
-    maxCapacity: Math.round(convertedMax * 10) / 10,
-    capacityType,
-    originalUnits: rawUnits || sourceUnit
-  };
 }
 
 /**
@@ -300,6 +219,44 @@ export function computeActorCapacity(actor, unit = "lb") {
 }
 
 /**
+ * The dnd5e encumbrance rule in force: "none", "normal" or "variant".
+ * Without the system setting (tests, other systems) the variant tiers are shown.
+ * @returns {"none"|"normal"|"variant"}
+ */
+export function getEncumbranceRule() {
+  try {
+    const settings = globalThis.game?.settings;
+    if (!settings?.settings?.has?.("dnd5e.encumbrance")) return "variant";
+    const rule = settings.get("dnd5e", "encumbrance");
+    return ["none", "normal", "variant"].includes(rule) ? rule : "variant";
+  } catch {
+    return "variant";
+  }
+}
+
+/**
+ * Is the item inside a container flagged with dnd5e's `weightlessContents`?
+ * @param {Object} actor
+ * @param {Object} item
+ * @returns {boolean}
+ */
+function isInsideWeightlessContainer(actor, item) {
+  const visited = new Set();
+  let containerId = item.system?.container;
+  while (containerId && !visited.has(containerId)) {
+    visited.add(containerId);
+    const container = actor.items.get?.(containerId);
+    if (!container) return false;
+    const props = container.system?.properties;
+    const weightless = props instanceof Set ? props.has("weightlessContents")
+      : Array.isArray(props) ? props.includes("weightlessContents") : Boolean(props?.weightlessContents);
+    if (weightless) return true;
+    containerId = container.system?.container;
+  }
+  return false;
+}
+
+/**
  * Compute total carried weight and encumbrance status for an actor
  * @param {Object} actor
  * @param {Object} [options={}]
@@ -307,6 +264,7 @@ export function computeActorCapacity(actor, unit = "lb") {
  */
 export function computeActorEncumbrance(actor, options = {}) {
   const unit = options.unit ?? getSystemWeightUnit();
+  const rule = options.rule ?? getEncumbranceRule();
   const capacity = computeActorCapacity(actor, unit);
 
   // If actor has system encumbrance pre-calculated (or patched by weighty-containers)
@@ -322,6 +280,7 @@ export function computeActorEncumbrance(actor, options = {}) {
     let totalLbs = 0;
     if (actor?.items) {
       for (const item of actor.items.values()) {
+        if (isInsideWeightlessContainer(actor, item)) continue;
         totalLbs += getItemWeightLbs(item);
       }
     }
@@ -330,9 +289,13 @@ export function computeActorEncumbrance(actor, options = {}) {
 
   const maxCapacity = capacity.max > 0 ? capacity.max : 1;
   const pct = Math.min(100, Math.max(0, Math.round((totalValueDisplay / maxCapacity) * 100)));
-  const isOverMax = totalValueDisplay > capacity.max;
-  const isHeavilyEncumbered = totalValueDisplay > capacity.heavilyEncumbered;
-  const isEncumbered = totalValueDisplay > capacity.encumbered;
+  // The standard rule only cares about the carrying capacity; the lower
+  // tiers exist in the variant rule alone, and "none" disables tracking.
+  const tracked = rule !== "none";
+  const variant = rule === "variant";
+  const isOverMax = tracked && totalValueDisplay > capacity.max;
+  const isHeavilyEncumbered = variant && totalValueDisplay > capacity.heavilyEncumbered;
+  const isEncumbered = variant && totalValueDisplay > capacity.encumbered;
 
   let tier = "normal";
   let tierLabelKey = "AIM.encumbrance.normal";
@@ -364,6 +327,8 @@ export function computeActorEncumbrance(actor, options = {}) {
     isHeavilyEncumbered,
     isOverMax,
     fromSystem: Boolean(capacity.fromSystem),
+    rule,
+    showTierStops: variant,
     thresholds: {
       encumbered: capacity.encumbered,
       heavilyEncumbered: capacity.heavilyEncumbered,

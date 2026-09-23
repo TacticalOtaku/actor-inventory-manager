@@ -2,29 +2,29 @@
   <form class="aim-slot-config-form" autocomplete="off">
     <div class="aim-form-group">
       <label>{{localize "AIM.editor.slot.id"}}</label>
-      <input type="text" name="id" value="{{slot.id}}" {{#if isEditing}}readonly class="is-readonly"{{/if}} required placeholder="e.g. tattoo1" />
+      <input type="text" name="id" value="{{slot.id}}" {{#if isEditing}}readonly class="is-readonly"{{/if}} required placeholder="{{localize 'AIM.editor.slot.idPlaceholder'}}" />
       <p class="aim-form-hint">{{localize "AIM.editor.slot.idHint"}}</p>
     </div>
 
     <div class="aim-form-group">
       <label>{{localize "AIM.editor.slot.label"}}</label>
-      <input type="text" name="label" value="{{slot.label}}" required placeholder="e.g. Magic Tattoo" />
+      <input type="text" name="label" value="{{slot.label}}" required placeholder="{{localize 'AIM.editor.slot.labelPlaceholder'}}" />
     </div>
 
     <div class="aim-form-row">
       <div class="aim-form-group flex-1">
-        <label>{{localize "AIM.editor.slot.icon"}} (FontAwesome / PNG)</label>
+        <label>{{localize "AIM.editor.slot.icon"}}</label>
         <div class="aim-icon-input-wrapper">
           <div class="aim-icon-preview-box">
             {{#if isImageIcon}}
-              <img src="{{slot.icon}}" class="aim-icon-img-preview" alt="Preview" />
+              <img src="{{slot.icon}}" class="aim-icon-img-preview" alt="" />
               <i class="aim-icon-preview" style="display: none;"></i>
             {{else}}
-              <img src="" class="aim-icon-img-preview" style="display: none;" alt="Preview" />
+              <img src="" class="aim-icon-img-preview" style="display: none;" alt="" />
               <i class="{{slot.icon}} aim-icon-preview"></i>
             {{/if}}
           </div>
-          <input type="text" name="icon" value="{{slot.icon}}" placeholder="fa-solid fa-gem or path/to/icon.png" />
+          <input type="text" name="icon" value="{{slot.icon}}" placeholder="{{localize 'AIM.editor.slot.iconPlaceholder'}}" />
           <button type="button" class="aim-filepicker-btn" title="{{localize 'AIM.editor.browseFile'}}">
             <i class="fa-solid fa-folder-open"></i>
           </button>
@@ -46,30 +46,30 @@
       <div class="aim-checkbox-grid">
         <label class="aim-checkbox-label">
           <input type="checkbox" name="type_equipment" {{#if hasTypeEquipment}}checked{{/if}} />
-          <span>Equipment</span>
+          <span>{{localize "AIM.editor.itemTypes.equipment"}}</span>
         </label>
         <label class="aim-checkbox-label">
           <input type="checkbox" name="type_weapon" {{#if hasTypeWeapon}}checked{{/if}} />
-          <span>Weapon</span>
+          <span>{{localize "AIM.editor.itemTypes.weapon"}}</span>
         </label>
         <label class="aim-checkbox-label">
           <input type="checkbox" name="type_consumable" {{#if hasTypeConsumable}}checked{{/if}} />
-          <span>Consumable</span>
+          <span>{{localize "AIM.editor.itemTypes.consumable"}}</span>
         </label>
         <label class="aim-checkbox-label">
           <input type="checkbox" name="type_tool" {{#if hasTypeTool}}checked{{/if}} />
-          <span>Tool</span>
+          <span>{{localize "AIM.editor.itemTypes.tool"}}</span>
         </label>
         <label class="aim-checkbox-label">
           <input type="checkbox" name="type_loot" {{#if hasTypeLoot}}checked{{/if}} />
-          <span>Loot</span>
+          <span>{{localize "AIM.editor.itemTypes.loot"}}</span>
         </label>
       </div>
     </div>
 
     <div class="aim-form-group">
       <label>{{localize "AIM.editor.slot.accepts"}}</label>
-      <input type="text" name="accepts" value="{{acceptsString}}" placeholder="e.g. tattoo, amulet, ring, potion" />
+      <input type="text" name="accepts" value="{{acceptsString}}" placeholder="{{localize 'AIM.editor.slot.acceptsPlaceholder'}}" />
       <p class="aim-form-hint">{{localize "AIM.editor.slot.acceptsHint"}}</p>
     </div>
 

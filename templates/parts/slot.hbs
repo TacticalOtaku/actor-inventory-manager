@@ -1,12 +1,12 @@
-<div class="aim-slot {{#if hasItem}}has-item rarity-{{item.rarity}}{{else}}is-empty{{/if}} {{#if isLocked}}is-locked{{/if}} {{#if item.hasGlow}}has-rarity-glow{{/if}} aim-slot-{{id}}"
+<div class="aim-slot {{#if hasItem}}has-item rarity-{{item.rarityKey}}{{else}}is-empty{{/if}} {{#if isLocked}}is-locked{{/if}} {{#if item.hasGlow}}has-rarity-glow{{/if}} aim-slot-{{id}}"
      data-drop-target="slot"
      data-slot-id="{{id}}"
-     {{#if hasItem}}data-rarity="{{item.rarity}}" data-item-rarity="{{item.rarity}}"{{/if}}
+     {{#if hasItem}}data-rarity="{{item.rarityKey}}" data-item-rarity="{{item.rarityKey}}"{{/if}}
      title="{{#if isLocked}}{{lockReason}}{{else if hasItem}}{{item.name}}{{else}}{{label}}{{/if}}">
 
   <div class="aim-slot-socket"
-       style="{{#if hasItem}}--slot-rarity-color: {{item.rarityColor}}; border-color: {{item.rarityColor}}; box-shadow: 0 0 10px {{item.rarityColor}}50;{{/if}}"
-       {{#if hasItem}}data-drag-item="true" data-item-id="{{item.id}}" data-item-uuid="{{item.uuid}}" data-slot-id="{{id}}"{{/if}}>
+       style="{{#if hasItem}}{{item.cssVars}} --slot-rarity-color: var(--rarity-color); border-color: var(--rarity-color); box-shadow: 0 0 10px var(--rarity-glow-soft);{{/if}}"
+       {{#if hasItem}}{{#if canEdit}}data-drag-item="true"{{/if}} data-item-id="{{item.id}}" data-item-uuid="{{item.uuid}}" data-slot-id="{{id}}"{{/if}}>
 
     <!-- Ornate Gothic Corner Filigree -->
     <span class="aim-socket-corner tl"></span>
@@ -22,9 +22,11 @@
       {{#if item.isAttuned}}
         <span class="aim-attuned-badge" title="{{localize 'AIM.items.attuned'}}"><i class="fa-solid fa-sun"></i></span>
       {{/if}}
+      {{#if canEdit}}
       <button type="button" class="aim-slot-unequip-btn" data-action="unequipSlot" data-slot-id="{{id}}" title="{{localize 'AIM.actions.unequip'}}">
         <i class="fa-solid fa-xmark"></i>
       </button>
+      {{/if}}
     {{else}}
       <div class="aim-slot-placeholder">
         {{#if isImageIcon}}
@@ -38,7 +40,7 @@
     {{#if isLocked}}
       <div class="aim-slot-lock-overlay" title="{{lockReason}}">
         <i class="fa-solid fa-lock"></i>
-        <span class="aim-lock-text">2H</span>
+        <span class="aim-lock-text">{{localize "AIM.slots.twoHandedShort"}}</span>
       </div>
     {{/if}}
   </div>

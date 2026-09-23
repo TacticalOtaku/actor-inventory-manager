@@ -296,6 +296,8 @@ export const DND_2014_TEMPLATE = {
   ]
 };
 
+const COLUMNS = ["left", "center", "right"];
+
 export const PRESET_TEMPLATES = {
   [TEMPLATE_PRESETS.DND_2024]: DND_2024_TEMPLATE,
   [TEMPLATE_PRESETS.DND_2014]: DND_2014_TEMPLATE
@@ -356,32 +358,24 @@ export function getTemplateById(templateId) {
  * Get an actor's active paperdoll template and grouped slot structure.
  * Default fallback is D&D 2024 Rules.
  * @param {Object} actor
- * @returns {Object} { template, slots, leftSlots, centerSlots, rightSlots, attunementMax }
+ * @returns {Object} { templateId, isActorCustom, slots, leftSlots, centerSlots, rightSlots, attunementMax }
  */
 export function getActorPaperdollTemplate(actor) {
   if (!actor) {
     return formatTemplateContext(DND_2024_TEMPLATE);
   }
 
-  // 1. Check if actor has custom template data stored directly on actor flags
-  const customTemplateData = (actor.getFlag ? (actor.getFlag(MODULE_ID, FLAGS.CUSTOM_TEMPLATE) || actor.getFlag(MODULE_ID, "customTemplate")) : null) ||
-    actor.flags?.[MODULE_ID]?.[FLAGS.CUSTOM_TEMPLATE] ||
-    actor.flags?.[MODULE_ID]?.customTemplate ||
-    actor.flags?.[MODULE_ID]?.paperdollCustomTemplate;
+  const flags = actor.flags?.[MODULE_ID] ?? {};
 
+  // 1. Per-actor template stored directly on the actor (current and legacy flag names)
+  const customTemplateData = flags[FLAGS.CUSTOM_TEMPLATE] || flags.customTemplate;
   if (customTemplateData && Array.isArray(customTemplateData.slots) && customTemplateData.slots.length > 0) {
-    return formatTemplateContext(customTemplateData);
+    return { ...formatTemplateContext({ ...customTemplateData, id: "custom" }), isActorCustom: true };
   }
 
-  // 2. Check if actor has a templateId assigned
-  const templateId = (actor.getFlag ? (actor.getFlag(MODULE_ID, FLAGS.TEMPLATE_ID) || actor.getFlag(MODULE_ID, "templateId")) : null) ||
-    actor.flags?.[MODULE_ID]?.[FLAGS.TEMPLATE_ID] ||
-    actor.flags?.[MODULE_ID]?.templateId ||
-    actor.flags?.[MODULE_ID]?.paperdollTemplateId;
-
-  const template = getTemplateById(templateId || TEMPLATE_PRESETS.DND_2024);
-
-  return formatTemplateContext(template);
+  // 2. A preset or world template linked by id
+  const templateId = flags[FLAGS.TEMPLATE_ID] || flags.templateId;
+  return formatTemplateContext(getTemplateById(templateId || TEMPLATE_PRESETS.DND_2024));
 }
 
 /**
@@ -399,7 +393,7 @@ function formatTemplateContext(template) {
     return {
       ...s,
       label: localizedLabel,
-      column: s.column || "center",
+      column: COLUMNS.includes(s.column) ? s.column : "center",
       order: s.order ?? 50,
       rules: s.rules || {}
     };
@@ -415,6 +409,7 @@ function formatTemplateContext(template) {
       ? runtime.localize(template.nameKey, template.name || template.id)
       : (template.name || template.id),
     isPreset: Boolean(template.isPreset),
+    isActorCustom: false,
     attunementMax: template.attunementMax ?? 3,
     slots,
     leftSlots,
@@ -433,6 +428,29 @@ export function getActorSlots(actor) {
 }
 
 /**
+ * Write the template's attunement cap to the actor, where the system has one.
+ * @param {Object} actor
+ * @param {number|undefined} attunementMax
+ */
+async function applyAttunementMax(actor, attunementMax) {
+  if (typeof attunementMax !== "number" || typeof actor.update !== "function") return;
+  if (!actor.system?.attributes?.attunement) return;
+  try {
+    await actor.update({ "system.attributes.attunement.max": attunementMax });
+  } catch (error) {
+    getPaperdollRuntime().logWarn("Could not update the actor's attunement maximum", error);
+  }
+}
+
+/** Remove a per-actor template, including the legacy flag name. */
+async function clearActorCustomTemplate(actor) {
+  const flags = actor.flags?.[MODULE_ID] ?? {};
+  for (const key of [FLAGS.CUSTOM_TEMPLATE, "customTemplate"]) {
+    if (key in flags) await actor.unsetFlag(MODULE_ID, key);
+  }
+}
+
+/**
  * Assign a template or custom configuration to an actor (GM Only)
  * @param {Object} actor
  * @param {string} templateId
@@ -447,25 +465,82 @@ export async function setActorPaperdollTemplate(actor, templateId, customTemplat
   }
 
   if (customTemplateData) {
-    await actor.setFlag(MODULE_ID, FLAGS.CUSTOM_TEMPLATE, customTemplateData);
-    await actor.setFlag(MODULE_ID, FLAGS.TEMPLATE_ID, "custom");
-    if (customTemplateData.attunementMax !== undefined && actor.update && actor.system?.attributes?.attunement) {
-      try {
-        await actor.update({ "system.attributes.attunement.max": customTemplateData.attunementMax });
-      } catch {}
-    }
+    // Drop the previous copy first: a merge would keep keys the new one no longer has.
+    await clearActorCustomTemplate(actor);
+    await actor.update({
+      [`flags.${MODULE_ID}.${FLAGS.CUSTOM_TEMPLATE}`]: { ...customTemplateData, id: "custom" },
+      [`flags.${MODULE_ID}.${FLAGS.TEMPLATE_ID}`]: "custom"
+    });
+    await applyAttunementMax(actor, customTemplateData.attunementMax);
   } else {
-    await actor.unsetFlag(MODULE_ID, FLAGS.CUSTOM_TEMPLATE);
+    await clearActorCustomTemplate(actor);
     await actor.setFlag(MODULE_ID, FLAGS.TEMPLATE_ID, templateId);
-    const template = getTemplateById(templateId);
-    if (template?.attunementMax !== undefined && actor.update && actor.system?.attributes?.attunement) {
-      try {
-        await actor.update({ "system.attributes.attunement.max": template.attunementMax });
-      } catch {}
-    }
+    await applyAttunementMax(actor, getTemplateById(templateId)?.attunementMax);
   }
 
   runtime.logInfo("Actor paperdoll template updated", { actorId: actor.id, templateId });
+}
+
+/**
+ * Is this id reserved by a built-in preset (or the per-actor "custom" marker)?
+ * @param {string} templateId
+ * @returns {boolean}
+ */
+export function isReservedTemplateId(templateId) {
+  return Boolean(PRESET_TEMPLATES[templateId]) || templateId === "custom";
+}
+
+/**
+ * Validate and normalise template data coming from the editor or an import.
+ * @param {Object} data
+ * @returns {Object}
+ */
+export function normalizeTemplateData(data) {
+  const runtime = getPaperdollRuntime();
+  const fail = (key, fallback, info = {}) => {
+    throw new Error(runtime.format(`AIM.editor.errors.${key}`, info, fallback));
+  };
+
+  if (!data || typeof data !== "object") fail("invalid", "Invalid template data.");
+  const id = typeof data.id === "string" ? data.id.trim() : "";
+  if (!id) fail("missingId", "The template needs an id.");
+  if (isReservedTemplateId(id)) fail("reservedId", "The id '{id}' is reserved by a built-in template.", { id });
+  if (!Array.isArray(data.slots) || data.slots.length === 0) fail("noSlots", "The template has no slots.");
+
+  const seen = new Set();
+  const slots = data.slots.map((slot, index) => {
+    const slotId = typeof slot?.id === "string" ? slot.id.trim() : "";
+    if (!slotId) fail("slotMissingId", "Slot #{index} has no id.", { index: index + 1 });
+    if (seen.has(slotId)) fail("duplicateSlot", "Slot id '{id}' is used more than once.", { id: slotId });
+    seen.add(slotId);
+    const strings = value => (Array.isArray(value) ? value.filter(v => typeof v === "string" && v.trim()).map(v => v.trim()) : []);
+    return {
+      id: slotId,
+      ...(typeof slot.labelKey === "string" ? { labelKey: slot.labelKey } : {}),
+      label: typeof slot.label === "string" && slot.label.trim() ? slot.label.trim() : slotId,
+      icon: typeof slot.icon === "string" && slot.icon.trim() ? slot.icon.trim() : "fa-solid fa-gem",
+      column: COLUMNS.includes(slot.column) ? slot.column : "center",
+      category: typeof slot.category === "string" ? slot.category : "equipment",
+      accepts: strings(slot.accepts).map(v => v.toLowerCase()),
+      itemTypes: strings(slot.itemTypes),
+      order: Number.isFinite(Number(slot.order)) ? Number(slot.order) : 50,
+      rules: {
+        singlePerActor: Boolean(slot.rules?.singlePerActor),
+        locksOffHandOn2H: Boolean(slot.rules?.locksOffHandOn2H),
+        isArmor: Boolean(slot.rules?.isArmor),
+        isShield: Boolean(slot.rules?.isShield)
+      }
+    };
+  });
+
+  const attunementMax = Number(data.attunementMax);
+  return {
+    id,
+    name: typeof data.name === "string" && data.name.trim() ? data.name.trim() : id,
+    ...(typeof data.description === "string" ? { description: data.description } : {}),
+    attunementMax: Number.isFinite(attunementMax) ? Math.max(0, Math.min(9, Math.round(attunementMax))) : 3,
+    slots
+  };
 }
 
 /**
@@ -475,17 +550,17 @@ export async function setActorPaperdollTemplate(actor, templateId, customTemplat
 export async function saveWorldCustomTemplate(templateData) {
   const runtime = getPaperdollRuntime();
   if (!runtime.isGM()) return;
-  if (!templateData || !templateData.id) throw new Error("Template must have a unique ID");
+  const template = normalizeTemplateData(templateData);
 
-  const custom = getWorldCustomTemplates();
-  custom[templateData.id] = {
-    ...templateData,
+  const custom = { ...getWorldCustomTemplates() };
+  custom[template.id] = {
+    ...template,
     isPreset: false,
     updatedAt: Date.now()
   };
 
   await runtime.setCustomTemplates(custom);
-  runtime.logInfo("Saved custom template to world", { templateId: templateData.id });
+  runtime.logInfo("Saved custom template to world", { templateId: template.id });
 }
 
 /**
@@ -499,10 +574,20 @@ export async function deleteWorldCustomTemplate(templateId) {
     throw new Error("Cannot delete built-in preset templates");
   }
 
-  const custom = getWorldCustomTemplates();
+  const custom = { ...getWorldCustomTemplates() };
+  if (!(templateId in custom)) return;
   delete custom[templateId];
   await runtime.setCustomTemplates(custom);
   runtime.logInfo("Deleted custom template from world", { templateId });
+}
+
+/**
+ * Is this a template stored in the world settings?
+ * @param {string} templateId
+ * @returns {boolean}
+ */
+export function isWorldCustomTemplate(templateId) {
+  return !isReservedTemplateId(templateId) && Boolean(getWorldCustomTemplates()[templateId]);
 }
 
 /**
@@ -521,10 +606,14 @@ export function exportTemplateJSON(templateId) {
  * @returns {Promise<Object>}
  */
 export async function importTemplateJSON(jsonString) {
-  const data = JSON.parse(jsonString);
-  if (!data.id || !Array.isArray(data.slots)) {
-    throw new Error("Invalid template JSON structure: missing 'id' or 'slots'");
+  let data;
+  try {
+    data = JSON.parse(jsonString);
+  } catch {
+    const runtime = getPaperdollRuntime();
+    throw new Error(runtime.localize("AIM.editor.errors.invalidJSON", "The text is not valid JSON."));
   }
-  await saveWorldCustomTemplate(data);
-  return data;
+  const template = normalizeTemplateData(data);
+  await saveWorldCustomTemplate(template);
+  return template;
 }

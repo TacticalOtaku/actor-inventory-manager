@@ -15,25 +15,27 @@ export function isScRarityColorsActive() {
 }
 
 /**
- * Convert HEX color string to RGB comma-separated values
- * @param {string} hex
+ * Convert a CSS colour (hex or rgb()/rgba()) to comma-separated RGB values
+ * @param {string} color
  * @returns {string} e.g. "211, 84, 0"
  */
-export function hexToRgb(hex) {
-  if (!hex || typeof hex !== "string") return "127, 140, 141";
-  let c = hex.replace("#", "").trim();
-  if (c.length === 3) {
-    c = c.split("").map(x => x + x).join("");
+export function hexToRgb(color) {
+  const fallback = "127, 140, 141";
+  if (!color || typeof color !== "string") return fallback;
+  const value = color.trim();
+
+  const rgbMatch = value.match(/^rgba?\(\s*(\d{1,3})[\s,]+(\d{1,3})[\s,]+(\d{1,3})/i);
+  if (rgbMatch) return rgbMatch.slice(1, 4).map(n => Math.min(255, Number(n))).join(", ");
+
+  let c = value.replace(/^#/, "");
+  if (!/^[0-9a-f]+$/i.test(c)) return fallback;
+  if (c.length === 3 || c.length === 4) {
+    c = c.slice(0, 3).split("").map(x => x + x).join("");
+  } else if (c.length === 8) {
+    c = c.slice(0, 6);
   }
-  if (c.length === 6) {
-    const r = parseInt(c.substring(0, 2), 16);
-    const g = parseInt(c.substring(2, 4), 16);
-    const b = parseInt(c.substring(4, 6), 16);
-    if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
-      return `${r}, ${g}, ${b}`;
-    }
-  }
-  return "127, 140, 141";
+  if (c.length !== 6) return fallback;
+  return [0, 2, 4].map(i => parseInt(c.substring(i, i + 2), 16)).join(", ");
 }
 
 /**
@@ -60,13 +62,6 @@ export function normalizeRarityKey(rarity) {
   return rarity.trim();
 }
 
-/**
- * Get the color associated with an item rarity, prioritizing SC - Item Rarity Colors,
- * then CONFIG.DND5E.itemRarity, then CSS variables, and finally default fallbacks.
- * @param {string} rarity
- * @param {Object} [item]
- * @returns {string} Hex or CSS color string
- */
 /**
  * Resolved colours are stable for the lifetime of a render pass but must not
  * outlive a settings change, so the cache is versioned and cleared on demand.
@@ -95,6 +90,13 @@ export function getRarityColor(rarity, item = null) {
   return color;
 }
 
+/**
+ * Get the color associated with an item rarity, prioritizing SC - Item Rarity Colors,
+ * then CONFIG.DND5E.itemRarity, then CSS variables, and finally default fallbacks.
+ * @param {string} rarity
+ * @param {Object} [item]
+ * @returns {string} Hex or CSS color string
+ */
 function resolveRarityColor(rarity, item = null) {
   const normKey = normalizeRarityKey(rarity);
 
@@ -202,10 +204,12 @@ export function getItemRarityVisuals(rarity, item = null) {
   const glow = hasRarityGlow(rarity);
   const normKey = normalizeRarityKey(rarity);
 
+  // color-mix works for every CSS colour format, unlike appending an alpha to a hex.
   const cssVars = [
     `--rarity-color: ${color}`,
     `--rarity-rgb: ${rgb}`,
-    `--rarity-glow: rgba(${rgb}, 0.5)`
+    `--rarity-glow: color-mix(in srgb, ${color} 50%, transparent)`,
+    `--rarity-glow-soft: color-mix(in srgb, ${color} 35%, transparent)`
   ].join("; ") + ";";
 
   return {

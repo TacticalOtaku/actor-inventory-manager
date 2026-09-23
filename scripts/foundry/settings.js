@@ -2,9 +2,24 @@
 // Actor Inventory Manager - Settings
 // ─────────────────────────────────────────────────────────
 
-import { ENFORCEMENT_MODES, LOG_LEVELS, MODULE_ID } from "../constants.js";
+import { ENFORCEMENT_MODES, LOG_LEVELS, MODULE_ID, REFRESH_HOOK } from "../constants.js";
 import { LOG } from "./logger.js";
-import { isSupportedActor } from "../core/actor-scope.js";
+import { canViewActor, isSupportedActor } from "../core/actor-scope.js";
+
+/** Decorative fonts used by the theme. Loaded on demand so the world works offline. */
+const WEB_FONTS_URL = "https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Cormorant+SC:wght@500;600;700&family=Cormorant:ital,wght@0,500;0,600;0,700;1,400&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=Philosopher:wght@400;700&family=Marcellus&display=swap&subset=cyrillic,cyrillic-ext,latin,latin-ext";
+
+const refreshInventories = () => Hooks.callAll(REFRESH_HOOK);
+
+/** Add the web-font stylesheet once, without blocking the page. */
+function loadWebFonts() {
+  if (typeof document === "undefined" || document.getElementById(`${MODULE_ID}-web-fonts`)) return;
+  const link = document.createElement("link");
+  link.id = `${MODULE_ID}-web-fonts`;
+  link.rel = "stylesheet";
+  link.href = WEB_FONTS_URL;
+  document.head.appendChild(link);
+}
 
 export function registerModuleSettings() {
   Hooks.once("init", () => {
@@ -34,7 +49,18 @@ export function registerModuleSettings() {
         light: "AIM.settings.theme.light",
         auto: "AIM.settings.theme.auto"
       },
-      default: "dark"
+      default: "dark",
+      onChange: refreshInventories
+    });
+
+    game.settings.register(MODULE_ID, "useWebFonts", {
+      name: "AIM.settings.useWebFonts.name",
+      hint: "AIM.settings.useWebFonts.hint",
+      scope: "client",
+      config: true,
+      type: Boolean,
+      default: true,
+      requiresReload: true
     });
 
     game.settings.register(MODULE_ID, "showSheetButton", {
@@ -52,7 +78,8 @@ export function registerModuleSettings() {
       scope: "world",
       config: false,
       type: Object,
-      default: {}
+      default: {},
+      onChange: refreshInventories
     });
 
     game.settings.register(MODULE_ID, "showActorPortraitBackdrop", {
@@ -61,7 +88,8 @@ export function registerModuleSettings() {
       scope: "world",
       config: true,
       type: Boolean,
-      default: true
+      default: true,
+      onChange: refreshInventories
     });
 
     game.settings.register(MODULE_ID, "autoReconcileSlots", {
@@ -71,7 +99,8 @@ export function registerModuleSettings() {
       config: true,
       restricted: true,
       type: Boolean,
-      default: true
+      default: true,
+      onChange: refreshInventories
     });
 
     game.settings.register(MODULE_ID, "logLevel", {
@@ -85,9 +114,8 @@ export function registerModuleSettings() {
       onChange: val => LOG.setLevel(val)
     });
 
-    try {
-      LOG.setLevel(game.settings.get(MODULE_ID, "logLevel"));
-    } catch {}
+    LOG.setLevel(game.settings.get(MODULE_ID, "logLevel"));
+    if (game.settings.get(MODULE_ID, "useWebFonts")) loadWebFonts();
 
     // Register Keybindings
     registerModuleKeybindings();
@@ -119,19 +147,16 @@ export function registerModuleKeybindings() {
       }
 
       if (!targetActor) {
-        globalThis.ui?.notifications?.warn(
-          globalThis.game?.i18n?.localize("AIM.keybindings.noActorSelected") ||
-          "Please select a token on the canvas or assign a character to open inventory."
-        );
+        globalThis.ui?.notifications?.warn(globalThis.game?.i18n?.localize("AIM.keybindings.noActorSelected"));
         return true;
       }
 
-      if (!isSupportedActor(targetActor)) return false;
+      if (!isSupportedActor(targetActor) || !canViewActor(targetActor, globalThis.game?.user)) {
+        globalThis.ui?.notifications?.warn(globalThis.game?.i18n?.localize("AIM.keybindings.unsupportedActor"));
+        return true;
+      }
 
-      const app = globalThis.ActorInventoryManager?.toggleInventory
-        ? globalThis.ActorInventoryManager.toggleInventory(targetActor)
-        : (globalThis.ActorInventoryManager?.openInventory ? globalThis.ActorInventoryManager.openInventory(targetActor) : null);
-
+      globalThis.ActorInventoryManager?.toggleInventory?.(targetActor);
       return true;
     },
     restricted: false,

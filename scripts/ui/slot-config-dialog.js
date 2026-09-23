@@ -3,6 +3,22 @@
 // ─────────────────────────────────────────────────────────
 
 import { MODULE_ID } from "../constants.js";
+import { isImagePath } from "./html.js";
+
+/** Foundry 13 moved FilePicker under foundry.applications.apps. */
+function filePickerClass() {
+  return foundry.applications?.apps?.FilePicker?.implementation ?? globalThis.FilePicker ?? null;
+}
+
+/**
+ * Slot category: held-item slots are "hand", ring slots "ring"; otherwise the
+ * category the slot already had is kept.
+ */
+function resolveCategory(previous, rules, accepts) {
+  if (rules.isShield || rules.locksOffHandOn2H) return "hand";
+  if (accepts.includes("ring")) return "ring";
+  return previous || "equipment";
+}
 
 const ApplicationBase = foundry.applications.api.HandlebarsApplicationMixin(
   foundry.applications.api.ApplicationV2
@@ -59,15 +75,7 @@ export class SlotConfigDialog extends ApplicationBase {
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const itemTypes = this.slot.itemTypes || [];
-    const isImageIcon = Boolean(
-      this.slot.icon && (
-        this.slot.icon.includes("/") ||
-        this.slot.icon.endsWith(".png") ||
-        this.slot.icon.endsWith(".webp") ||
-        this.slot.icon.endsWith(".svg") ||
-        this.slot.icon.endsWith(".jpg")
-      )
-    );
+    const isImageIcon = isImagePath(this.slot.icon);
 
     return {
       ...context,
@@ -100,8 +108,7 @@ export class SlotConfigDialog extends ApplicationBase {
 
       const updatePreview = (val) => {
         const trimmed = (val || "").trim();
-        const isImg = trimmed.includes("/") || trimmed.endsWith(".png") || trimmed.endsWith(".webp") || trimmed.endsWith(".svg") || trimmed.endsWith(".jpg");
-        if (isImg) {
+        if (isImagePath(trimmed)) {
           if (iconImgPreview) {
             iconImgPreview.src = trimmed;
             iconImgPreview.style.display = "block";
@@ -122,8 +129,9 @@ export class SlotConfigDialog extends ApplicationBase {
 
       if (filePickerBtn && iconInput) {
         filePickerBtn.addEventListener("click", () => {
-          if (typeof FilePicker !== "undefined") {
-            const fp = new FilePicker({
+          const Picker = filePickerClass();
+          if (Picker) {
+            const fp = new Picker({
               type: "image",
               current: iconInput.value,
               callback: (path) => {
@@ -140,8 +148,13 @@ export class SlotConfigDialog extends ApplicationBase {
 
   _onSubmit(form) {
     const formData = new FormData(form);
-    const id = (formData.get("id") || this.slot.id || "").trim().replace(/[^a-zA-Z0-9_-]/g, "");
-    const label = (formData.get("label") || id).trim();
+    const id = String(formData.get("id") || this.slot.id || "").trim().replace(/[^\p{L}\p{N}_-]/gu, "");
+    if (!id) {
+      ui.notifications?.warn(game.i18n.localize("AIM.editor.errors.slotInvalidId"));
+      form.querySelector('input[name="id"]')?.focus();
+      return;
+    }
+    const label = String(formData.get("label") || id).trim();
     const icon = (formData.get("icon") || "fa-solid fa-gem").trim();
     const column = formData.get("column") || "center";
 
@@ -170,7 +183,7 @@ export class SlotConfigDialog extends ApplicationBase {
       label,
       icon,
       column,
-      category: itemTypes.includes("weapon") ? "hand" : (accepts.includes("ring") ? "ring" : "equipment"),
+      category: resolveCategory(this.slot.category, rules, accepts),
       itemTypes: itemTypes.length > 0 ? itemTypes : ["equipment"],
       accepts,
       order: this.slot.order ?? 50,

@@ -12,6 +12,8 @@
  * These helpers are the single place that knows about both shapes.
  */
 
+import { getActorPaperdollTemplate } from "./paperdoll-templates.js";
+
 const LEGACY_ATTUNED = 2;
 const LEGACY_REQUIRED = 1;
 
@@ -70,11 +72,19 @@ export function countAttunedItems(actor) {
 }
 
 /**
- * List the items an actor is currently attuned to, in a stable order.
+ * Resolve the attunement cap for an actor.
+ * The system value is authoritative: applying a paperdoll template writes its
+ * cap there, and features such as Magic Item Adept raise it through effects.
+ * The template's cap is only a fallback for actors without the system field.
  * @param {Object} actor
- * @returns {Array<Object>}
+ * @returns {number}
  */
-export function getAttunedItems(actor) {
-  if (!actor?.items) return [];
-  return Array.from(actor.items.values()).filter(isItemAttuned);
+export function getActorAttunementMax(actor) {
+  if (!actor) return 3;
+  const systemMax = actor.system?.attributes?.attunement?.max;
+  if (systemMax !== null && systemMax !== undefined && systemMax !== "") {
+    const parsed = Number(systemMax);
+    if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+  }
+  return getActorPaperdollTemplate(actor).attunementMax ?? 3;
 }

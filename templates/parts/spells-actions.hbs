@@ -37,7 +37,7 @@
   <!-- Search Filter -->
   <div class="aim-spells-search-wrapper">
     <i class="fa-solid fa-magnifying-glass"></i>
-    <input type="text" id="aim-spells-search" name="aim-spells-search" class="aim-spells-search-input" data-spells-search="true" autocomplete="off" placeholder="{{localize 'AIM.spells.searchPlaceholder'}}" value="{{spellsSearchFilter}}" />
+    <input type="text" id="{{appId}}-spells-search" name="aim-spells-search" class="aim-spells-search-input" data-spells-search="true" autocomplete="off" placeholder="{{localize 'AIM.spells.searchPlaceholder'}}" value="{{spellsSearchFilter}}" />
   </div>
 
   <!-- Scrollable Contents -->
@@ -59,16 +59,18 @@
             <div class="aim-slot-pips-row">
               {{#each this.pips}}
                 <span class="aim-slot-pip {{#if this.filled}}is-filled{{/if}}"
-                      data-action="updateSpellSlot"
+                      {{#if @root.canEdit}}data-action="updateSpellSlot"{{/if}}
                       data-slot-key="{{../key}}"
                       data-delta="{{#if this.filled}}-1{{else}}1{{/if}}"
-                      title="{{#if this.filled}}Spend Slot{{else}}Restore Slot{{/if}}"></span>
+                      title="{{#if this.filled}}{{localize 'AIM.spells.spendSlot'}}{{else}}{{localize 'AIM.spells.restoreSlot'}}{{/if}}"></span>
               {{/each}}
             </div>
+            {{#if @root.canEdit}}
             <div class="aim-slot-quick-btns">
-              <button type="button" class="aim-slot-btn" data-action="updateSpellSlot" data-slot-key="{{this.key}}" data-delta="-1" title="-1 Slot" {{#if (eq this.value 0)}}disabled{{/if}}>-</button>
-              <button type="button" class="aim-slot-btn" data-action="updateSpellSlot" data-slot-key="{{this.key}}" data-delta="1" title="+1 Slot" {{#if (eq this.value this.max)}}disabled{{/if}}>+</button>
+              <button type="button" class="aim-slot-btn" data-action="updateSpellSlot" data-slot-key="{{this.key}}" data-delta="-1" title="{{localize 'AIM.spells.spendSlot'}}" {{#if (eq this.value 0)}}disabled{{/if}}>-</button>
+              <button type="button" class="aim-slot-btn" data-action="updateSpellSlot" data-slot-key="{{this.key}}" data-delta="1" title="{{localize 'AIM.spells.restoreSlot'}}" {{#if (eq this.value this.max)}}disabled{{/if}}>+</button>
             </div>
+            {{/if}}
           </div>
           {{/each}}
         </div>
@@ -89,7 +91,7 @@
             <div class="aim-spells-group-items">
               {{#each this.spells}}
               <div class="aim-spell-card school-{{this.school}} level-{{this.level}}"
-                   data-drag-item="true"
+                   {{#if @root.canEdit}}data-drag-item="true"{{/if}}
                    data-item-id="{{this.id}}"
                    data-item-uuid="{{this.uuid}}"
                    data-school="{{this.school}}"
@@ -106,7 +108,7 @@
                       <span class="aim-prep-btn is-prepared is-always" title="{{localize 'AIM.spells.alwaysPrepared'}}">
                         <i class="fa-solid fa-lock"></i>
                       </span>
-                    {{else if this.canTogglePrep}}
+                    {{else if (and this.canTogglePrep @root.canEdit)}}
                       <button type="button" class="aim-prep-btn {{#if this.isPrepared}}is-prepared{{/if}}"
                               data-action="toggleSpellPrep"
                               data-item-id="{{this.id}}"
@@ -127,18 +129,20 @@
                   </div>
 
                   <div class="aim-spell-components-row">
-                    {{#if this.components.v}}<span class="aim-comp-chip" title="Vocal">V</span>{{/if}}
-                    {{#if this.components.s}}<span class="aim-comp-chip" title="Somatic">S</span>{{/if}}
-                    {{#if this.components.m}}<span class="aim-comp-chip" title="Material">M</span>{{/if}}
-                    {{#if this.components.concentration}}<span class="aim-comp-chip conc" title="Concentration"><i class="fa-solid fa-brain"></i></span>{{/if}}
-                    {{#if this.components.ritual}}<span class="aim-comp-chip ritual" title="Ritual"><i class="fa-solid fa-scroll"></i></span>{{/if}}
+                    {{#if this.components.v}}<span class="aim-comp-chip" title="{{localize 'AIM.spells.components.vocal'}}">{{localize "AIM.spells.components.vocalAbbr"}}</span>{{/if}}
+                    {{#if this.components.s}}<span class="aim-comp-chip" title="{{localize 'AIM.spells.components.somatic'}}">{{localize "AIM.spells.components.somaticAbbr"}}</span>{{/if}}
+                    {{#if this.components.m}}<span class="aim-comp-chip" title="{{localize 'AIM.spells.components.material'}}">{{localize "AIM.spells.components.materialAbbr"}}</span>{{/if}}
+                    {{#if this.components.concentration}}<span class="aim-comp-chip conc" title="{{localize 'AIM.spells.components.concentration'}}"><i class="fa-solid fa-brain"></i></span>{{/if}}
+                    {{#if this.components.ritual}}<span class="aim-comp-chip ritual" title="{{localize 'AIM.spells.components.ritual'}}"><i class="fa-solid fa-scroll"></i></span>{{/if}}
                   </div>
                 </div>
 
                 <div class="aim-spell-actions">
+                  {{#if @root.canEdit}}
                   <button type="button" class="aim-btn-icon aim-btn-cast" data-action="useItem" data-item-id="{{this.id}}" title="{{localize 'AIM.spells.cast'}}">
                     <i class="fa-solid fa-wand-magic-sparkles"></i>
                   </button>
+                  {{/if}}
                 </div>
               </div>
               {{/each}}
@@ -166,7 +170,7 @@
         </div>
         <div class="aim-action-items">
           {{#each actionsData.actions}}
-          <div class="aim-action-card" data-drag-item="true" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}">
+          <div class="aim-action-card" {{#if @root.canEdit}}data-drag-item="true"{{/if}} data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}">
             <div class="aim-action-thumb" data-action="openItem" data-item-id="{{this.id}}">
               <img src="{{this.img}}" alt="{{this.name}}" />
             </div>
@@ -180,9 +184,11 @@
               </div>
             </div>
             <div class="aim-action-controls">
+              {{#if @root.canEdit}}
               <button type="button" class="aim-btn-icon" data-action="useItem" data-item-id="{{this.id}}" title="{{localize 'AIM.actions.use'}}">
                 <i class="fa-solid fa-dice-d20"></i>
               </button>
+              {{/if}}
             </div>
           </div>
           {{/each}}
@@ -198,7 +204,7 @@
         </div>
         <div class="aim-action-items">
           {{#each actionsData.bonus}}
-          <div class="aim-action-card" data-drag-item="true" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}">
+          <div class="aim-action-card" {{#if @root.canEdit}}data-drag-item="true"{{/if}} data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}">
             <div class="aim-action-thumb" data-action="openItem" data-item-id="{{this.id}}">
               <img src="{{this.img}}" alt="{{this.name}}" />
             </div>
@@ -212,9 +218,11 @@
               </div>
             </div>
             <div class="aim-action-controls">
+              {{#if @root.canEdit}}
               <button type="button" class="aim-btn-icon" data-action="useItem" data-item-id="{{this.id}}" title="{{localize 'AIM.actions.use'}}">
                 <i class="fa-solid fa-dice-d20"></i>
               </button>
+              {{/if}}
             </div>
           </div>
           {{/each}}
@@ -230,7 +238,7 @@
         </div>
         <div class="aim-action-items">
           {{#each actionsData.reactions}}
-          <div class="aim-action-card" data-drag-item="true" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}">
+          <div class="aim-action-card" {{#if @root.canEdit}}data-drag-item="true"{{/if}} data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}">
             <div class="aim-action-thumb" data-action="openItem" data-item-id="{{this.id}}">
               <img src="{{this.img}}" alt="{{this.name}}" />
             </div>
@@ -244,9 +252,11 @@
               </div>
             </div>
             <div class="aim-action-controls">
+              {{#if @root.canEdit}}
               <button type="button" class="aim-btn-icon" data-action="useItem" data-item-id="{{this.id}}" title="{{localize 'AIM.actions.use'}}">
                 <i class="fa-solid fa-dice-d20"></i>
               </button>
+              {{/if}}
             </div>
           </div>
           {{/each}}
@@ -264,7 +274,7 @@
         </div>
         <div class="aim-action-items">
           {{#each actionsData.passives}}
-          <div class="aim-action-card is-passive" data-drag-item="true" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}">
+          <div class="aim-action-card is-passive" {{#if @root.canEdit}}data-drag-item="true"{{/if}} data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}">
             <div class="aim-action-thumb" data-action="openItem" data-item-id="{{this.id}}">
               <img src="{{this.img}}" alt="{{this.name}}" />
             </div>
@@ -277,9 +287,11 @@
               </div>
             </div>
             <div class="aim-action-controls">
+              {{#if @root.canEdit}}
               <button type="button" class="aim-btn-icon" data-action="useItem" data-item-id="{{this.id}}" title="{{localize 'AIM.actions.use'}}">
                 <i class="fa-solid fa-dice-d20"></i>
               </button>
+              {{/if}}
             </div>
           </div>
           {{/each}}

@@ -20,7 +20,7 @@
   <div class="aim-paperdoll-stage">
     <!-- Character Backdrop Graphic & Runic Overlay -->
     {{#if showActorPortraitBackdrop}}
-      <div class="aim-actor-portrait-bg" style="background-image: url('{{actorImg}}');"></div>
+      <div class="aim-actor-portrait-bg" style='background-image: {{actorImgCss}};'></div>
     {{else}}
       <div class="aim-silhouette-bg"></div>
     {{/if}}
@@ -54,18 +54,20 @@
   <!-- Attunement Bar -->
   <div class="aim-attunement-bar">
     <div class="aim-attunement-title">
-      <i class="fa-solid fa-sun"></i> {{localize "AIM.attunement.title"}} <span>({{vitals.attunement.value}} / {{attunementSlots.length}})</span>
+      <i class="fa-solid fa-sun"></i> {{localize "AIM.attunement.title"}} <span class="{{#if vitals.attunement.isOver}}is-over{{/if}}">({{vitals.attunement.value}} / {{vitals.attunement.max}})</span>
     </div>
     <div class="aim-attunement-sockets">
       {{#each attunementSlots}}
-      <div class="aim-attune-socket {{#if this.hasItem}}has-item rarity-{{this.item.rarity}}{{else}}is-empty{{/if}} {{#if this.item.hasGlow}}has-rarity-glow{{/if}}"
-           {{#if this.hasItem}}data-rarity="{{this.item.rarity}}" data-item-rarity="{{this.item.rarity}}" style="border-color: {{this.item.rarityColor}}; {{#if this.item.hasGlow}}box-shadow: 0 0 8px {{this.item.rarityColor}}66;{{/if}}"{{/if}}
-           title="{{#if this.hasItem}}{{this.item.name}}{{else}}{{localize 'AIM.attunement.empty'}}{{/if}}">
+      <div class="aim-attune-socket {{#if this.hasItem}}has-item rarity-{{this.item.rarityKey}}{{else}}is-empty{{/if}} {{#if this.item.hasGlow}}has-rarity-glow{{/if}} {{#if this.isOverLimit}}is-over-limit{{/if}}"
+           {{#if this.hasItem}}data-rarity="{{this.item.rarityKey}}" data-item-rarity="{{this.item.rarityKey}}" style="{{this.item.cssVars}} border-color: var(--rarity-color);{{#if this.item.hasGlow}} box-shadow: 0 0 8px var(--rarity-glow-soft);{{/if}}"{{/if}}
+           title="{{#if this.hasItem}}{{this.item.name}}{{#if this.isOverLimit}} — {{localize 'AIM.attunement.overLimit'}}{{/if}}{{else}}{{localize 'AIM.attunement.empty'}}{{/if}}">
         {{#if this.hasItem}}
           <img src="{{this.item.img}}" alt="{{this.item.name}}" data-action="openItem" data-item-id="{{this.item.id}}" />
+          {{#if @root.canEdit}}
           <button type="button" class="aim-attune-toggle" data-action="toggleAttune" data-item-id="{{this.item.id}}" title="{{localize 'AIM.attunement.break'}}">
             <i class="fa-solid fa-link-slash"></i>
           </button>
+          {{/if}}
         {{else}}
           <i class="fa-solid fa-sun-plant-wilt"></i>
         {{/if}}

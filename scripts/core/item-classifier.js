@@ -6,7 +6,9 @@ import { FLAGS, MODULE_ID, SLOTS } from "../constants.js";
 import {
   matchPreArmorClassification,
   matchesFocusClassification,
-  matchWearableClassification
+  matchWearableClassification,
+  nameHasAnyToken,
+  nameHasToken
 } from "./item-classification-rules.js";
 import { getActorSlots } from "./paperdoll-templates.js";
 import { slotRegistry } from "./slot-definitions.js";
@@ -25,11 +27,51 @@ export const PHYSICAL_ITEM_TYPES = new Set([
 ]);
 
 /**
+ * Classifications that name a specific place on the body or in the hands.
+ * Everything else ("equipment", "loot", "tool", "consumable", ...) is generic.
+ */
+const SPECIFIC_CLASSIFICATIONS = new Set([
+  "weapon", "weapon_two_handed", "shield", "armor",
+  "head", "neck", "cloak", "hands", "waist", "feet", "ring",
+  "legs", "bracelet", "underarmor", "badge", "focus", "container"
+]);
+
+const ARMOR_TYPES = ["light", "medium", "heavy", "natural"];
+
+/** Names that are clothing but never the body-armor layer. */
+const NOT_BODY_ARMOR_TOKENS = [
+  "pants", "trousers", "штан", "брюк",
+  "bracelet", "браслет",
+  "shirt", "рубах", "рубашк", "поддоспешник",
+  "cloak", "cape", "плащ", "верхняя одежда",
+  "helm", "helmet", "шлем",
+  "boot", "сапог",
+  "glove", "перчатк",
+  "belt", "пояс"
+];
+
+/** Clothing names that do occupy the body-armor layer. */
+const BODY_CLOTHING_TOKENS = [
+  "доспех", "латы", "кольчуг", "панцир", "кирас", "роба", "одежд", "костюм",
+  "robe", "vestment", "clothes", "outfit", "garb", "attire"
+];
+
+/**
  * Check if item is a physical inventory item (not a feat, spell, class, or race)
  */
 export function isPhysicalItem(item) {
   if (!item) return false;
   return PHYSICAL_ITEM_TYPES.has(item.type);
+}
+
+/**
+ * Can this item be marked as equipped at all?
+ * dnd5e only gives `system.equipped` to equippable item types (not to loot).
+ * @param {Object} item
+ * @returns {boolean}
+ */
+export function canItemBeEquipped(item) {
+  return typeof item?.system?.equipped === "boolean";
 }
 
 /**
@@ -70,39 +112,28 @@ export function isShield(item) {
   return typeVal === "shield" || armorType === "shield" || item.type === "shield";
 }
 
+/** Does the item carry a real armor category (light/medium/heavy/natural)? */
+function hasArmorCategory(item) {
+  const armorType = item.system?.type?.value ?? item.system?.armor?.type ?? "";
+  const subType = item.system?.type?.subtype ?? "";
+  return ARMOR_TYPES.includes(armorType) || ARMOR_TYPES.includes(subType);
+}
+
 /**
  * Check if item is a body armor
  */
 export function isBodyArmor(item) {
-  if (!item || item.type !== "equipment") return false;
-  const armorType = item.system?.type?.value ?? item.system?.armor?.type ?? "";
-  const subType = item.system?.type?.subtype ?? "";
+  if (!item || item.type !== "equipment" || isShield(item)) return false;
+
+  // A real armor category always wins over the name: "Chain Shirt" is medium armor.
+  if (hasArmorCategory(item)) return true;
+
+  const armorType = String(item.system?.type?.value ?? item.system?.armor?.type ?? "");
   const name = (item.name ?? "").toLowerCase();
+  if (nameHasAnyToken(name, NOT_BODY_ARMOR_TOKENS)) return false;
 
-  // If item is specifically pants, shirt, bracelet, cloak, head, etc., it's not body armor
-  if (
-    name.includes("штаны") || name.includes("pants") || name.includes("trousers") || name.includes("брюки") ||
-    name.includes("браслет") || name.includes("bracelet") ||
-    name.includes("рубаха") || name.includes("поддоспешник") || name.includes("shirt") ||
-    name.includes("плащ") || name.includes("cloak") || name.includes("cape") ||
-    name.includes("шлем") || name.includes("helm") || name.includes("сапоги") || name.includes("boots") ||
-    name.includes("перчатки") || name.includes("gloves") || name.includes("пояс") || name.includes("belt")
-  ) {
-    return false;
-  }
-
-  return (
-    ["light", "medium", "heavy", "natural"].includes(armorType) ||
-    ["light", "medium", "heavy"].includes(subType) ||
-    armorType.includes("Armor") ||
-    armorType.includes("armor") ||
-    (armorType === "clothing" && (
-      name.includes("доспех") || name.includes("латы") || name.includes("кольчуга") ||
-      name.includes("панцирь") || name.includes("кираса") || name.includes("роба") ||
-      name.includes("robe") || name.includes("одежда") || name.includes("vestment") ||
-      name.includes("костюм")
-    ))
-  );
+  return /armou?r/i.test(armorType) ||
+    (armorType === "clothing" && nameHasAnyToken(name, BODY_CLOTHING_TOKENS));
 }
 
 /**
@@ -112,8 +143,8 @@ export function classifyItem(item) {
   if (!item) return "misc";
 
   const type = item.type;
-  const systemType = (item.system?.type?.value ?? "").toLowerCase();
-  const subType = (item.system?.type?.subtype ?? "").toLowerCase();
+  const systemType = String(item.system?.type?.value ?? "").toLowerCase();
+  const subType = String(item.system?.type?.subtype ?? "").toLowerCase();
   const name = (item.name ?? "").toLowerCase();
 
   // Weapon
@@ -125,6 +156,11 @@ export function classifyItem(item) {
   // Shield
   if (isShield(item)) {
     return "shield";
+  }
+
+  // Real armor, whatever it is called
+  if (type === "equipment" && hasArmorCategory(item)) {
+    return "armor";
   }
 
   const descriptor = { systemType, subType, name };
@@ -159,56 +195,97 @@ export function classifyItem(item) {
   return type;
 }
 
-export const classifyItemType = classifyItem;
+/**
+ * Is this a generic classification (no dedicated body location)?
+ * @param {string} classification
+ * @returns {boolean}
+ */
+export function isGenericClassification(classification) {
+  return !SPECIFIC_CLASSIFICATIONS.has(classification);
+}
 
-/**
- * Get all allowable slot IDs for a given item, optionally resolved against an actor's active template
- * @param {Object} item
- * @param {Object} [actor=null]
- * @returns {Array<string>}
- */
-/**
- * Match a body armor slot
- */
-function isArmorSlotMatch(slot, slotId, slotLabel) {
-  return Boolean(
-    slot.rules?.isArmor ||
-    slotId === SLOTS.ARMOR ||
-    slotId.includes("armor") ||
-    slotLabel.includes("доспех") ||
-    slot.accepts?.includes("armor")
-  );
+// ── Slot descriptors ─────────────────────────────────────
+
+/** Split a slot id into lowercase words: "bodyArmor" -> ["body", "armor"]. */
+function slotIdWords(slot) {
+  return String(slot?.id ?? "")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean);
+}
+
+function slotLabel(slot) {
+  return String(slot?.label ?? slot?.labelKey ?? "").toLowerCase();
+}
+
+function slotAccepts(slot, tag) {
+  return Array.isArray(slot?.accepts) && slot.accepts.some(t => String(t).toLowerCase() === tag.toLowerCase());
 }
 
 /**
- * Match a shield slot
+ * Does the slot accept this document type? A slot without type filters takes any type.
+ * @param {Object} slot
+ * @param {Object} item
+ * @returns {boolean}
  */
-function isShieldSlotMatch(slot, slotId, slotCategory) {
+export function slotAllowsItemType(slot, item) {
+  if (!Array.isArray(slot?.itemTypes) || slot.itemTypes.length === 0) return true;
+  return slot.itemTypes.includes(item?.type);
+}
+
+/** Is this the body-armor slot? */
+export function isArmorSlot(slot) {
+  if (!slot) return false;
+  const words = slotIdWords(slot);
   return Boolean(
-    slot.rules?.isShield ||
-    slotId === SLOTS.OFF_HAND ||
-    slotId === SLOTS.MAIN_HAND ||
-    slotCategory === "hand" ||
-    slot.accepts?.includes("shield")
+    slot.rules?.isArmor ||
+    slot.id === SLOTS.ARMOR ||
+    words.includes("armor") || words.includes("armour") || words.includes("bodyarmor") ||
+    slotAccepts(slot, "armor") || slotAccepts(slot, "bodyArmor") ||
+    nameHasToken(slotLabel(slot), "доспех")
   );
+}
+
+/** Does this slot hold something in a hand (weapon, shield, focus)? */
+export function isHandHoldSlot(slot) {
+  if (!slot) return false;
+  return Boolean(
+    String(slot.category ?? "").toLowerCase() === "hand" ||
+    slot.id === SLOTS.MAIN_HAND ||
+    slot.id === SLOTS.OFF_HAND ||
+    slot.rules?.locksOffHandOn2H ||
+    slot.rules?.isShield
+  );
+}
+
+/** Can a shield go into this slot? */
+export function isShieldSlot(slot) {
+  if (!slot) return false;
+  return Boolean(isHandHoldSlot(slot) || slotAccepts(slot, "shield"));
 }
 
 /**
  * Does this slot represent an off hand?
- * Off-hand slots are excluded for two-handed weapons.
+ * Off-hand slots are excluded for two-handed weapons and locked by them.
  */
-function isOffHandSlot(slot, slotId, slotLabel) {
+export function isOffHandSlot(slot) {
+  if (!slot) return false;
+  const words = slotIdWords(slot);
+  const label = slotLabel(slot);
   return Boolean(
-    slotId === SLOTS.OFF_HAND ||
+    slot.id === SLOTS.OFF_HAND ||
     slot.rules?.isShield ||
-    slotId.includes("offhand") ||
-    slotId.includes("off_hand") ||
-    slotId.includes("off-hand") ||
-    slotLabel.includes("off hand") ||
-    slotLabel.includes("off-hand") ||
-    slotLabel.includes("щит") ||
-    slotLabel.includes("лев")
+    words.includes("offhand") ||
+    (words.includes("off") && words.includes("hand")) ||
+    nameHasAnyToken(label, ["off hand", "off-hand", "offhand", "щит", "лев"])
   );
+}
+
+/** Is this a main-hand slot (the one a two-handed weapon occupies)? */
+export function isMainHandSlot(slot) {
+  if (!slot || isOffHandSlot(slot)) return false;
+  return Boolean(slot.id === SLOTS.MAIN_HAND || slot.rules?.locksOffHandOn2H);
 }
 
 /**
@@ -216,115 +293,85 @@ function isOffHandSlot(slot, slotId, slotLabel) {
  * A two-handed weapon only ever goes in a main hand - offering the off hand
  * makes auto-equip pick a slot the rule engine then refuses.
  */
-function isTwoHandedWeaponSlotMatch(slot, slotId, slotCategory, slotLabel = "") {
-  if (isOffHandSlot(slot, slotId, slotLabel)) return false;
-  return Boolean(
-    slotId === SLOTS.MAIN_HAND ||
-    slot.rules?.locksOffHandOn2H ||
-    slotCategory === "hand"
-  );
+function isTwoHandedWeaponSlotMatch(slot) {
+  if (isOffHandSlot(slot)) return false;
+  return Boolean(isMainHandSlot(slot) || String(slot.category ?? "").toLowerCase() === "hand");
 }
 
 /**
- * Match slot accepts array against item properties
+ * Match the slot's `accepts` tags against the item.
+ * Items with a specific body location match on that classification only, so
+ * a cloak never lands in the armor slot because its name contains "light".
  */
-function matchesSlotAccepts(slot, classification, systemType, subType, itemName) {
+function matchesSlotAccepts(slot, item) {
   if (!Array.isArray(slot.accepts) || slot.accepts.length === 0) return false;
   return slot.accepts.some(tag => {
-    const t = (tag || "").toLowerCase();
-    return t === classification || t === systemType || t === subType || itemName.includes(t);
+    const t = String(tag || "").toLowerCase();
+    if (!t) return false;
+    if (t === item.classification) return true;
+    if (!item.generic) return false;
+    return t === item.systemType || t === item.subType || nameHasToken(item.name, t);
   });
 }
 
 /**
- * Semantic keyword matching for custom and preset slots
+ * Semantic keyword matching for custom and preset slots.
+ * The item side uses the classification only; the slot side reads the
+ * GM-authored id and label.
  */
-function matchesSemanticSlot(slot, slotId, slotLabel, slotCategory, classification, itemName) {
-  // Legs / Pants
-  if (classification === "legs" || itemName.includes("штаны") || itemName.includes("брюки") || itemName.includes("pants") || itemName.includes("trousers")) {
-    if (slotId.includes("pant") || slotId.includes("leg") || slotId.includes("штаны") || slotId.includes("брюки") || slotLabel.includes("штаны") || slotLabel.includes("брюки") || slotLabel.includes("ноги")) {
-      return true;
-    }
-  }
+function matchesSemanticSlot(slot, classification) {
+  const slotId = String(slot.id ?? "").toLowerCase();
+  const label = slotLabel(slot);
+  const category = String(slot.category ?? "").toLowerCase();
+  const has = (text, parts) => parts.some(part => text.includes(part));
 
-  // Bracelet / Wrist
-  if (classification === "bracelet" || itemName.includes("браслет") || itemName.includes("bracelet") || itemName.includes("wrist")) {
-    if (slotId.includes("brace") || slotId.includes("wrist") || slotId.includes("браслет") || slotLabel.includes("браслет") || slotLabel.includes("запястье") || slotLabel.includes("наруч")) {
-      return true;
-    }
+  switch (classification) {
+    case "legs":
+      return has(slotId, ["pant", "leg", "штаны", "брюки"]) || has(label, ["штаны", "брюки", "ноги"]);
+    case "bracelet":
+      return has(slotId, ["brace", "wrist", "браслет"]) || has(label, ["браслет", "запястье", "наруч"]);
+    case "underarmor":
+      return has(slotId, ["under", "shirt", "поддоспешник"]) || has(label, ["поддоспешник", "рубаха"]);
+    case "badge":
+      return has(slotId, ["badge", "medal", "наград", "медал"]) || has(label, ["наград", "медал", "лент", "нашивк"]);
+    case "head":
+      return slotId === SLOTS.HEAD || has(slotId, ["head", "helm"]) || has(label, ["голов", "шлем", "шапк"]);
+    case "neck":
+      return slotId === SLOTS.NECK || has(slotId, ["neck", "amulet"]) || has(label, ["шея", "амулет", "ожерелье", "кулон"]);
+    case "cloak":
+      return slotId === SLOTS.CLOAK || has(slotId, ["cloak", "cape"]) || has(label, ["плащ", "одежда", "накидка", "мантия"]);
+    case "hands":
+      // "mainHand"/"offHand" contain "hand" too; gloves never go there.
+      if (isHandHoldSlot(slot)) return false;
+      return slotId === SLOTS.HANDS || has(slotId, ["hand", "glove", "gauntlet"]) || has(label, ["руки", "перчатк", "рукавиц"]);
+    case "waist":
+      return slotId === SLOTS.WAIST || has(slotId, ["waist", "belt"]) || has(label, ["пояс", "ремень"]);
+    case "feet":
+      return slotId === SLOTS.FEET || has(slotId, ["feet", "boot"]) || has(label, ["сапог", "обувь", "ботинок"]);
+    case "ring":
+      return category === "ring" || slotId.includes("ring") || has(label, ["кольц", "перстен"]);
+    case "weapon":
+    case "focus":
+      return category === "hand" || slotId === SLOTS.MAIN_HAND || slotId === SLOTS.OFF_HAND ||
+        slotId.includes("weapon") || has(label, ["рука", "оружие"]);
+    default:
+      return false;
   }
-
-  // Underarmor / Shirt
-  if (classification === "underarmor" || itemName.includes("поддоспешник") || itemName.includes("рубаха") || itemName.includes("shirt")) {
-    if (slotId.includes("under") || slotId.includes("shirt") || slotId.includes("поддоспешник") || slotLabel.includes("поддоспешник") || slotLabel.includes("рубаха")) {
-      return true;
-    }
-  }
-
-  // Badge / Medal / Ribbon
-  if (classification === "badge" || itemName.includes("награда") || itemName.includes("медаль") || itemName.includes("лента") || itemName.includes("нашивка") || itemName.includes("badge") || itemName.includes("medal")) {
-    if (slotId.includes("badge") || slotId.includes("medal") || slotId.includes("наград") || slotId.includes("медал") || slotLabel.includes("наград") || slotLabel.includes("медал") || slotLabel.includes("лент") || slotLabel.includes("нашивк")) {
-      return true;
-    }
-  }
-
-  // Head
-  if (classification === "head" && (slotId === SLOTS.HEAD || slotId.includes("head") || slotId.includes("helm") || slotLabel.includes("голов") || slotLabel.includes("шлем") || slotLabel.includes("шапк"))) {
-    return true;
-  }
-
-  // Neck
-  if (classification === "neck" && (slotId === SLOTS.NECK || slotId.includes("neck") || slotId.includes("amulet") || slotLabel.includes("шея") || slotLabel.includes("амулет") || slotLabel.includes("ожерелье") || slotLabel.includes("кулон"))) {
-    return true;
-  }
-
-  // Cloak / Outerwear
-  if (classification === "cloak" && (slotId === SLOTS.CLOAK || slotId.includes("cloak") || slotId.includes("cape") || slotLabel.includes("плащ") || slotLabel.includes("одежда") || slotLabel.includes("накидка") || slotLabel.includes("мантия"))) {
-    return true;
-  }
-
-  // Hands / Gloves
-  if (classification === "hands" && (slotId === SLOTS.HANDS || slotId.includes("hand") || slotId.includes("glove") || slotLabel.includes("руки") || slotLabel.includes("перчатк") || slotLabel.includes("рукавиц"))) {
-    return true;
-  }
-
-  // Waist / Belt
-  if (classification === "waist" && (slotId === SLOTS.WAIST || slotId.includes("waist") || slotId.includes("belt") || slotLabel.includes("пояс") || slotLabel.includes("ремень"))) {
-    return true;
-  }
-
-  // Feet / Boots
-  if (classification === "feet" && (slotId === SLOTS.FEET || slotId.includes("feet") || slotId.includes("boot") || slotLabel.includes("сапог") || slotLabel.includes("обувь") || slotLabel.includes("ботинок"))) {
-    return true;
-  }
-
-  // Rings
-  if (classification === "ring" && (slotCategory === "ring" || slotId.includes("ring") || slotLabel.includes("кольц") || slotLabel.includes("перстен"))) {
-    return true;
-  }
-
-  // Weapons & Hands
-  if ((classification === "weapon" || classification === "focus") && (slotCategory === "hand" || slotId === SLOTS.MAIN_HAND || slotId === SLOTS.OFF_HAND || slotId.includes("weapon") || slotLabel.includes("рука") || slotLabel.includes("оружие"))) {
-    return true;
-  }
-
-  return false;
 }
 
 /**
  * Match generic equipment and trinket slots
  */
-function matchesGenericSlot(slot, slotLabel, itemType) {
+function matchesGenericSlot(slot, item) {
+  const label = slotLabel(slot);
   // Generic custom slots (Wondrous, Magic, Trinket)
-  if (slotLabel.includes("чудесн") || slotLabel.includes("магическ") || slotLabel.includes("wondrous") || slotLabel.includes("magic") || slotLabel.includes("trinket") || slotLabel.includes("безделушк")) {
-    return (itemType === "equipment" || itemType === "loot" || itemType === "consumable");
+  if (["чудесн", "магическ", "wondrous", "magic", "trinket", "безделушк"].some(part => label.includes(part))) {
+    return ["equipment", "loot", "consumable"].includes(item.type);
   }
 
-  // If slot has empty accepts and matches item.type without specific restrictions
-  if ((!slot.accepts || slot.accepts.length === 0) && slot.itemTypes?.includes(itemType)) {
-    if (!slotLabel.includes("амулет") && !slotLabel.includes("шлем") && !slotLabel.includes("голова") && !slotLabel.includes("кольцо")) {
-      return true;
-    }
+  // A slot without accepts tags takes anything its type filter allows
+  if (!Array.isArray(slot.accepts) || slot.accepts.length === 0) {
+    return !["амулет", "шлем", "голова", "кольцо"].some(part => label.includes(part));
   }
 
   return false;
@@ -333,7 +380,7 @@ function matchesGenericSlot(slot, slotLabel, itemType) {
 /**
  * Standard fallback slots for item classification
  */
-export function getDefaultSlotsForClassification(classification, item) {
+export function getDefaultSlotsForClassification(classification) {
   switch (classification) {
     case "weapon_two_handed":
       return [SLOTS.MAIN_HAND];
@@ -358,22 +405,90 @@ export function getDefaultSlotsForClassification(classification, item) {
     case "ring":
       return [SLOTS.RING_1, SLOTS.RING_2];
     case "legs":
-      return ["pants", "legs", SLOTS.FEET];
+      return [SLOTS.FEET];
     case "bracelet":
-      return ["bracelet", "wrist", SLOTS.HANDS, SLOTS.RING_1, SLOTS.RING_2];
+      return [SLOTS.HANDS, SLOTS.RING_1, SLOTS.RING_2];
     case "underarmor":
-      return ["underarmor", "shirt", SLOTS.ARMOR, SLOTS.CLOAK];
+      return [SLOTS.ARMOR, SLOTS.CLOAK];
     case "badge":
-      return ["badge", "medal", SLOTS.CLOAK, SLOTS.NECK];
+      return [SLOTS.CLOAK, SLOTS.NECK];
     case "focus":
-      return [SLOTS.MAIN_HAND, SLOTS.OFF_HAND];
     case "consumable":
-      return [SLOTS.QUICK_1, SLOTS.QUICK_2, SLOTS.QUICK_3, SLOTS.QUICK_4, SLOTS.MAIN_HAND, SLOTS.OFF_HAND];
+      return [SLOTS.MAIN_HAND, SLOTS.OFF_HAND];
     default:
-      return slotRegistry.getAll()
-        .filter(slot => slot.itemTypes.includes(item?.type))
-        .map(slot => slot.id);
+      // Unclassified items have no natural place on the paperdoll.
+      return [];
   }
+}
+
+/**
+ * The slots an actor actually has: its paperdoll template, or the registry.
+ * @param {Object|null} actor
+ * @returns {Array<Object>}
+ */
+function resolveKnownSlots(actor) {
+  const templateSlots = actor ? getActorSlots(actor) : null;
+  return Array.isArray(templateSlots) && templateSlots.length > 0 ? templateSlots : slotRegistry.getAll();
+}
+
+function resolveEffectiveActor(item, actor) {
+  return actor || (item?.parent?.documentName === "Actor" ? item.parent : null);
+}
+
+function describeItem(item) {
+  const classification = classifyItem(item);
+  return {
+    type: item.type,
+    classification,
+    generic: isGenericClassification(classification),
+    systemType: String(item.system?.type?.value ?? "").toLowerCase(),
+    subType: String(item.system?.type?.subtype ?? "").toLowerCase(),
+    name: (item.name ?? "").toLowerCase()
+  };
+}
+
+/**
+ * Split the known slots into primary (made for this item) and generic
+ * (accepts anything of its type) matches.
+ * @param {Object} item
+ * @param {Array<Object>} slots
+ * @returns {{ primary: Array<string>, generic: Array<string> }}
+ */
+function resolveSlotMatches(item, slots) {
+  const primary = [];
+  const generic = [];
+  const descriptor = describeItem(item);
+  const bodyArmor = isBodyArmor(item);
+  const shield = isShield(item);
+  const twoHanded = isTwoHandedWeapon(item);
+
+  for (const slot of slots) {
+    if (!slotAllowsItemType(slot, item)) continue;
+
+    if (bodyArmor) {
+      if (isArmorSlot(slot)) primary.push(slot.id);
+      continue;
+    }
+    if (shield) {
+      if (isShieldSlot(slot)) primary.push(slot.id);
+      continue;
+    }
+    if (twoHanded) {
+      if (isTwoHandedWeaponSlotMatch(slot)) primary.push(slot.id);
+      continue;
+    }
+
+    if (matchesSlotAccepts(slot, descriptor) || matchesSemanticSlot(slot, descriptor.classification)) {
+      primary.push(slot.id);
+      continue;
+    }
+
+    if (matchesGenericSlot(slot, item) && !isArmorSlot(slot)) {
+      generic.push(slot.id);
+    }
+  }
+
+  return { primary, generic };
 }
 
 /**
@@ -385,86 +500,14 @@ export function getDefaultSlotsForClassification(classification, item) {
 export function getValidSlotsForItem(item, actor = null) {
   if (!item) return [];
 
-  // Fallback to item parent if actor is not explicitly supplied
-  const effectiveActor = actor || (item.parent?.documentName === "Actor" ? item.parent : null);
-  const classification = classifyItem(item);
-  const systemType = (item.system?.type?.value ?? "").toLowerCase();
-  const subType = (item.system?.type?.subtype ?? "").toLowerCase();
-  const itemName = (item.name ?? "").toLowerCase();
+  const slots = resolveKnownSlots(resolveEffectiveActor(item, actor));
+  const { primary, generic } = resolveSlotMatches(item, slots);
+  if (primary.length > 0) return primary;
+  if (generic.length > 0) return generic;
 
-  // If actor is available, check actor's template slots first
-  if (effectiveActor) {
-    try {
-      const templateSlots = getActorSlots ? getActorSlots(effectiveActor) : null;
-
-      if (Array.isArray(templateSlots) && templateSlots.length > 0) {
-        const primaryMatches = [];
-        const genericMatches = [];
-
-        for (const slot of templateSlots) {
-          // Check item types filter
-          if (slot.itemTypes && !slot.itemTypes.includes(item.type)) {
-            continue;
-          }
-
-          const slotId = (slot.id ?? "").toLowerCase();
-          const slotLabel = (slot.label ?? slot.labelKey ?? "").toLowerCase();
-          const slotCategory = (slot.category ?? "").toLowerCase();
-
-          // 1. Check body armor
-          if (isBodyArmor(item)) {
-            if (isArmorSlotMatch(slot, slotId, slotLabel)) {
-              primaryMatches.push(slot.id);
-            }
-            continue;
-          }
-
-          // 2. Check shield
-          if (isShield(item)) {
-            if (isShieldSlotMatch(slot, slotId, slotCategory)) {
-              primaryMatches.push(slot.id);
-            }
-            continue;
-          }
-
-          // 3. Check 2H weapon
-          if (isTwoHandedWeapon(item)) {
-            if (isTwoHandedWeaponSlotMatch(slot, slotId, slotCategory, slotLabel)) {
-              primaryMatches.push(slot.id);
-            }
-            continue;
-          }
-
-          // 4. Check explicit accepts array
-          if (matchesSlotAccepts(slot, classification, systemType, subType, itemName)) {
-            primaryMatches.push(slot.id);
-            continue;
-          }
-
-          // 5. Semantic matching for custom and preset slots
-          if (matchesSemanticSlot(slot, slotId, slotLabel, slotCategory, classification, itemName)) {
-            primaryMatches.push(slot.id);
-            continue;
-          }
-
-          // 6. Generic custom slots (Wondrous, Magic, Trinket)
-          if (matchesGenericSlot(slot, slotLabel, item.type)) {
-            genericMatches.push(slot.id);
-          }
-        }
-
-        if (primaryMatches.length > 0) {
-          return primaryMatches;
-        }
-        if (genericMatches.length > 0) {
-          return genericMatches;
-        }
-      }
-    } catch {}
-  }
-
-  // Standard fallback
-  return getDefaultSlotsForClassification(classification, item);
+  // Standard fallback, restricted to slots that exist and take this item type.
+  return getDefaultSlotsForClassification(classifyItem(item))
+    .filter(slotId => slots.some(slot => slot.id === slotId && slotAllowsItemType(slot, item)));
 }
 
 /**
@@ -477,63 +520,24 @@ export function getValidSlotsForItem(item, actor = null) {
 export function isItemCompatibleWithSlot(item, slotId, actor = null) {
   if (!item || !slotId) return false;
 
-  const effectiveActor = actor || (item.parent?.documentName === "Actor" ? item.parent : null);
-  if (effectiveActor) {
-    const actorSlots = getActorSlots ? getActorSlots(effectiveActor) : [];
-    const targetSlot = actorSlots.find(s => s.id === slotId);
-    if (targetSlot) {
-      // 1. If slot itemTypes does not include item document type, reject
-      if (targetSlot.itemTypes && !targetSlot.itemTypes.includes(item.type)) {
-        return false;
-      }
-      // 2. If 2H weapon, cannot put in offhand or shield-only slot
-      if (isTwoHandedWeapon(item) && isOffHandSlot(
-        targetSlot,
-        slotId.toLowerCase(),
-        (targetSlot.label ?? targetSlot.labelKey ?? "").toLowerCase()
-      )) {
-        return false;
-      }
-      // 3. If body armor, cannot put in non-armor slots (head, ring, hands, feet, etc.)
-      if (isBodyArmor(item)) {
-        const isArmorSlot = Boolean(
-          targetSlot.rules?.isArmor ||
-          targetSlot.id === SLOTS.ARMOR ||
-          targetSlot.id.includes("armor") ||
-          targetSlot.accepts?.includes("armor") ||
-          (targetSlot.label && targetSlot.label.toLowerCase().includes("доспех"))
-        );
-        if (!isArmorSlot) {
-          return false;
-        }
-      }
-      // 4. If shield, cannot put in non-hand/shield slots
-      if (isShield(item)) {
-        const isShieldSlot = Boolean(
-          targetSlot.category === "hand" ||
-          targetSlot.rules?.isShield ||
-          targetSlot.id === SLOTS.OFF_HAND ||
-          targetSlot.id === SLOTS.MAIN_HAND ||
-          targetSlot.accepts?.includes("shield")
-        );
-        if (!isShieldSlot) {
-          return false;
-        }
-      }
+  const slots = resolveKnownSlots(resolveEffectiveActor(item, actor));
+  const targetSlot = slots.find(slot => slot.id === slotId);
+  if (!targetSlot) return false;
+  if (!slotAllowsItemType(targetSlot, item)) return false;
 
-      // Check if slot specifically matches valid slots for this item
-      const validSlots = getValidSlotsForItem(item, effectiveActor);
-      if (validSlots.includes(slotId)) return true;
+  if (isTwoHandedWeapon(item) && isOffHandSlot(targetSlot)) return false;
+  if (isBodyArmor(item)) return isArmorSlot(targetSlot);
+  if (isShield(item)) return isShieldSlot(targetSlot);
 
-      // Allow direct drop if the target slot accepts this itemType and has no strict disqualification
-      if (targetSlot.itemTypes?.includes(item.type)) {
-        return true;
-      }
-    }
-  }
+  const { primary, generic } = resolveSlotMatches(item, slots);
+  if (primary.includes(slotId) || generic.includes(slotId)) return true;
 
-  const validSlots = getValidSlotsForItem(item, effectiveActor);
-  return validSlots.includes(slotId);
+  const fallback = getDefaultSlotsForClassification(classifyItem(item));
+  if (fallback.includes(slotId)) return true;
+
+  // Items with no body location of their own may be placed by hand in any
+  // slot that takes their type - but never in the body-armor slot.
+  return isGenericClassification(classifyItem(item)) && !isArmorSlot(targetSlot);
 }
 
 /**
@@ -542,11 +546,7 @@ export function isItemCompatibleWithSlot(item, slotId, actor = null) {
  * @returns {string|null}
  */
 export function getItemAssignedSlot(item) {
-  return (
-    item?.flags?.[MODULE_ID]?.[FLAGS.SLOT] ??
-    item?.flags?.[MODULE_ID]?.slot ??
-    null
-  );
+  return item?.flags?.[MODULE_ID]?.[FLAGS.SLOT] ?? null;
 }
 
 /**

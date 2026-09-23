@@ -3,27 +3,45 @@
 // ─────────────────────────────────────────────────────────
 
 // (rarity + school colours are resolved through the sc-rarity-colors adapter)
-import { countAttunedItems, getAttunementStatus } from "../core/attunement.js";
-import { num } from "../core/weight-calculator.js";
+import { SPELL_SCHOOL_COLORS } from "../constants.js";
+import { countAttunedItems, getActorAttunementMax, getAttunementStatus } from "../core/attunement.js";
+import { canItemBeEquipped } from "../core/item-classifier.js";
+import { getSystemWeightUnit, num } from "../core/weight-calculator.js";
 import { computeActorCurrency } from "./item-piles.js";
 import { getItemRarityVisuals, getSpellSchoolVisuals } from "./sc-rarity-colors.js";
+
+export { getSystemWeightUnit, SPELL_SCHOOL_COLORS };
+
+/**
+ * Localize a key, falling back to English when there is no translation (or no Foundry).
+ * @param {string} key
+ * @param {string} fallback
+ * @returns {string}
+ */
+function localizeOr(key, fallback) {
+  const value = globalThis.game?.i18n?.localize?.(key);
+  return value && value !== key ? value : fallback;
+}
+
+/**
+ * Short label for a unit from a CONFIG.DND5E unit table (movementUnits,
+ * distanceUnits, weightUnits). dnd5e 4+ stores objects with an abbreviation;
+ * older versions only a label, in which case the key itself is shown.
+ * @param {string} tableName
+ * @param {string} unit
+ * @returns {string}
+ */
+export function unitAbbreviation(tableName, unit) {
+  const entry = getDnd5eConfig()[tableName]?.[unit];
+  const abbreviation = typeof entry === "object" ? entry?.abbreviation : null;
+  return abbreviation ? localizeOr(abbreviation, abbreviation) : unit;
+}
 
 /**
  * Get DnD5e config object safely
  */
 export function getDnd5eConfig() {
   return globalThis.CONFIG?.DND5E ?? {};
-}
-
-/**
- * Get system weight unit ("kg" or "lb")
- */
-export function getSystemWeightUnit() {
-  try {
-    return globalThis.game?.settings?.get("dnd5e", "metricWeightUnits") ? "kg" : "lb";
-  } catch {
-    return "lb";
-  }
 }
 
 /**
@@ -74,16 +92,16 @@ export function extractActorVitals(actor) {
 
   // Movement speed string
   const speeds = [];
-  const speedUnit = movement.units || "ft";
+  const speedUnit = unitAbbreviation("movementUnits", movement.units || "ft");
   if (movement.walk) speeds.push(`${movement.walk} ${speedUnit}`);
-  if (movement.fly) speeds.push(`Fly ${movement.fly} ${speedUnit}`);
-  if (movement.swim) speeds.push(`Swim ${movement.swim} ${speedUnit}`);
-  if (movement.climb) speeds.push(`Climb ${movement.climb} ${speedUnit}`);
+  for (const [mode, label] of [["fly", "Fly"], ["swim", "Swim"], ["climb", "Climb"], ["burrow", "Burrow"]]) {
+    if (movement[mode]) speeds.push(`${localizeOr(`AIM.vitals.movement.${mode}`, label)} ${movement[mode]} ${speedUnit}`);
+  }
   const speedDisplay = speeds.length > 0 ? speeds.join(", ") : `${movement.walk ?? 30} ${speedUnit}`;
 
   // Attunement calculation
   const attunedItemsCount = countAttunedItems(actor);
-  const attunementMax = num(attributes.attunement?.max, 3);
+  const attunementMax = getActorAttunementMax(actor);
 
   return {
     name: actor.name,
@@ -113,7 +131,8 @@ export function extractActorVitals(actor) {
     attunement: {
       value: attunedItemsCount,
       max: attunementMax,
-      pct: attunementMax > 0 ? Math.round((attunedItemsCount / attunementMax) * 100) : 0
+      isOver: attunedItemsCount > attunementMax,
+      pct: attunementMax > 0 ? Math.min(100, Math.round((attunedItemsCount / attunementMax) * 100)) : 0
     }
   };
 }
@@ -134,7 +153,7 @@ export function formatItemForDisplay(item) {
   const isEquipped = Boolean(system.equipped);
   const qty = num(system.quantity, 1);
   const weight = num(system.weight?.value ?? system.weight, 0);
-  const weightUnits = system.weight?.units ?? getSystemWeightUnit();
+  const weightUnits = unitAbbreviation("weightUnits", system.weight?.units ?? getSystemWeightUnit());
   const priceVal = num(system.price?.value ?? system.price, 0);
   const priceDenom = system.price?.denomination ?? "gp";
 
@@ -172,6 +191,7 @@ export function formatItemForDisplay(item) {
     hasGlow,
     cssVars: rarityVisuals.cssVars,
     isEquipped,
+    canEquip: canItemBeEquipped(item),
     quantity: qty,
     hasMultiple: qty > 1,
     isAttuned,
@@ -183,17 +203,6 @@ export function formatItemForDisplay(item) {
     description: system.description?.value ?? ""
   };
 }
-
-export const SPELL_SCHOOL_COLORS = {
-  abj: "#3498db", // Abjuration: Blue
-  con: "#f39c12", // Conjuration: Amber
-  div: "#9b59b6", // Divination: Purple
-  enc: "#e91e63", // Enchantment: Pink
-  evo: "#e74c3c", // Evocation: Red
-  ill: "#1abc9c", // Illusion: Teal
-  nec: "#2ecc71", // Necromancy: Green
-  trs: "#d35400"  // Transmutation: Dark Orange
-};
 
 /**
  * Resolve the usable maximum for a spell slot entry.
@@ -429,9 +438,9 @@ export function extractActorSpells(actor, searchFilter = "") {
     // Range display
     const range = system.range ?? {};
     let rangeDisplay = "";
-    if (range.units === "self") rangeDisplay = "Self";
-    else if (range.units === "touch") rangeDisplay = "Touch";
-    else if (range.value) rangeDisplay = `${range.value} ${range.units || "ft"}`;
+    if (range.units === "self") rangeDisplay = localizeOr("AIM.spells.range.self", "Self");
+    else if (range.units === "touch") rangeDisplay = localizeOr("AIM.spells.range.touch", "Touch");
+    else if (range.value) rangeDisplay = `${range.value} ${unitAbbreviation("movementUnits", range.units || "ft")}`;
 
     const formattedSpell = {
       id: spell.id,
@@ -527,8 +536,9 @@ export function extractActorActions(actor, searchFilter = "") {
     const activation = resolveItemActivation(feat);
     const uses = resolveItemUses(feat);
 
-    let sourceLabel = system.type?.label || system.source?.custom || system.source || "Feature";
-    if (typeof sourceLabel !== "string") sourceLabel = "Feature";
+    const featureLabel = localizeOr("AIM.spells.feature", "Feature");
+    let sourceLabel = system.type?.label || system.source?.custom || system.source || featureLabel;
+    if (typeof sourceLabel !== "string") sourceLabel = featureLabel;
 
     // Mirrors the dnd5e sheet: "trait" property or a passive activation type.
     const isTrait = system.properties?.has?.("trait") ?? false;

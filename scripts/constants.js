@@ -17,6 +17,12 @@ export const FLAGS = {
   SPELLS_TAB: "spellsTab"
 };
 
+/** Update option telling the enforcement hook the inventory window already validated an equip. */
+export const AIM_EQUIP_OPTION = "aimEquip";
+
+/** Called when a setting changes that every open inventory window has to redraw for. */
+export const REFRESH_HOOK = `${MODULE_ID}.refresh`;
+
 export const TEMPLATE_PRESETS = {
   DND_2024: "dnd2024",
   DND_2014: "dnd2014"
@@ -56,8 +62,6 @@ export const THEMES = {
 };
 
 export const LOG_LEVELS = ["none", "error", "warn", "info", "debug", "trace"];
-
-export const LBS_PER_KG = 2.20462262185;
 
 export const ITEM_RARITY_COLORS = {
   common: "#7f8c8d",

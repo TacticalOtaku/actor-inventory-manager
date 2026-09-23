@@ -2,7 +2,7 @@
 // Actor Inventory Manager - Main Entry Point
 // ─────────────────────────────────────────────────────────
 
-import { MODULE_ID, SLOTS, FLAGS, ENFORCEMENT_MODES } from "./constants.js";
+import { MODULE_ID, SLOTS, FLAGS, ENFORCEMENT_MODES, REFRESH_HOOK } from "./constants.js";
 import { registerTradeService, registerTradeSettings } from "./trade/service.js";
 import { equipmentRuleEngine, getActorEquippedMap, isOffHandLockedBy2H } from "./core/equipment-rules.js";
 import {
@@ -44,6 +44,22 @@ import { openPaperdollEditor } from "./ui/paperdoll-editor.js";
 import { openActorInventory, toggleActorInventory, ActorInventoryApp, preloadTemplates } from "./ui/inventory-app.js";
 import { equipItemToSlot, unequipItem, toggleItemEquipped, useItem, toggleAttunement } from "./ui/item-actions.js";
 import { isItemPilesActive, computeActorCurrency } from "./integrations/item-piles.js";
+import { SC_MODULE_ID, invalidateRarityColorCache } from "./integrations/sc-rarity-colors.js";
+
+/**
+ * Rarity colours are memoized; drop them and redraw open windows whenever
+ * SC - Item Rarity Colors changes a setting.
+ */
+function watchRarityColourSettings() {
+  const onChange = key => {
+    if (!String(key ?? "").startsWith(`${SC_MODULE_ID}.`)) return;
+    invalidateRarityColorCache();
+    Hooks.callAll(REFRESH_HOOK);
+  };
+  Hooks.on("createSetting", setting => onChange(setting?.key));
+  Hooks.on("updateSetting", setting => onChange(setting?.key));
+  Hooks.on("clientSettingChanged", key => onChange(key));
+}
 
 function registerHandlebarsHelpers() {
   if (typeof globalThis.Handlebars === "undefined") return;
@@ -91,6 +107,7 @@ Hooks.once("ready", () => {
   registerTradeService();
   registerEnforcementHooks();
   registerSheetInjectionHooks();
+  watchRarityColourSettings();
 
   // Create and expose Public API
   const api = {

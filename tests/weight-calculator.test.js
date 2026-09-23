@@ -140,3 +140,45 @@ describe("computeActorEncumbrance", () => {
     assert.equal(enc.tier, "normal");
   });
 });
+
+describe("encumbrance rules", () => {
+  const actor = value => ({
+    system: { attributes: { encumbrance: { value, max: 150, thresholds: { encumbered: 50, heavilyEncumbered: 100, maximum: 150 } } } }
+  });
+
+  it("only reports over-capacity under the standard rule", () => {
+    const enc = computeActorEncumbrance(actor(120), { unit: "lb", rule: "normal" });
+    assert.equal(enc.tier, "normal");
+    assert.equal(enc.showTierStops, false);
+    assert.equal(computeActorEncumbrance(actor(160), { unit: "lb", rule: "normal" }).tier, "overburdened");
+  });
+
+  it("tracks nothing when encumbrance is disabled", () => {
+    assert.equal(computeActorEncumbrance(actor(500), { unit: "lb", rule: "none" }).tier, "normal");
+  });
+});
+
+describe("unit conversion matches dnd5e and Weighty Containers", () => {
+  it("uses dnd5e's 2.5 lb kilogram by default", () => {
+    assert.equal(convertWeight(10, "kg", "lb"), 25);
+  });
+
+  it("reads CONFIG.DND5E.weightUnits when present", () => {
+    globalThis.CONFIG = { DND5E: { weightUnits: { kg: { conversion: 2 }, lb: { conversion: 1 } } } };
+    try {
+      assert.equal(convertWeight(10, "kg", "lb"), 20);
+    } finally {
+      delete globalThis.CONFIG;
+    }
+  });
+
+  it("does not count contents of weightless containers in the raw fallback", () => {
+    const items = new Map([
+      ["bag", { id: "bag", type: "container", system: { weight: { value: 5, units: "lb" }, properties: new Set(["weightlessContents"]) } }],
+      ["rock", { id: "rock", type: "loot", system: { container: "bag", quantity: 2, weight: { value: 10, units: "lb" } } }],
+      ["sword", { id: "sword", type: "weapon", system: { quantity: 1, weight: { value: 3, units: "lb" } } }]
+    ]);
+    const enc = computeActorEncumbrance({ items, system: { abilities: { str: { value: 10 } } } }, { unit: "lb", rule: "variant" });
+    assert.equal(enc.value, 8);
+  });
+});

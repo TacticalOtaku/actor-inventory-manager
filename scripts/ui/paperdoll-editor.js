@@ -2,21 +2,37 @@
 // Actor Inventory Manager - GM Paperdoll Editor (ApplicationV2)
 // ─────────────────────────────────────────────────────────
 
-import { FLAGS, MODULE_ID, TEMPLATE_PRESETS } from "../constants.js";
+import { MODULE_ID, TEMPLATE_PRESETS } from "../constants.js";
 import { isSupportedActor } from "../core/actor-scope.js";
 import {
   deleteWorldCustomTemplate,
-  exportTemplateJSON,
   getAllTemplates,
   getActorPaperdollTemplate,
   getTemplateById,
   importTemplateJSON,
-  PRESET_TEMPLATES,
+  isReservedTemplateId,
+  isWorldCustomTemplate,
   saveWorldCustomTemplate,
   setActorPaperdollTemplate
 } from "../core/paperdoll-templates.js";
 import { LOG } from "../foundry/logger.js";
+import { escapeHTML, isImagePath } from "./html.js";
 import { SlotConfigDialog } from "./slot-config-dialog.js";
+
+/** Open editors, keyed by actor UUID. */
+const OPEN_EDITORS = new Map();
+
+const localize = key => game.i18n.localize(key);
+const format = (key, data) => game.i18n.format(key, data);
+
+/** DialogV2 that resolves to null when dismissed, on every Foundry version. */
+function dialogPrompt(options) {
+  return foundry.applications.api.DialogV2.prompt({ rejectClose: false, ...options });
+}
+
+function dialogConfirm(options) {
+  return foundry.applications.api.DialogV2.confirm({ rejectClose: false, ...options });
+}
 
 const ApplicationBase = foundry.applications.api.HandlebarsApplicationMixin(
   foundry.applications.api.ApplicationV2
@@ -44,7 +60,6 @@ export class PaperdollEditorApp extends ApplicationBase {
       deleteTemplate: PaperdollEditorApp._onDeleteTemplate,
       exportJSON: PaperdollEditorApp._onExportJSON,
       importJSON: PaperdollEditorApp._onImportJSON,
-      changeAttunement: PaperdollEditorApp._onChangeAttunement,
       addSlot: PaperdollEditorApp._onAddSlot,
       editSlot: PaperdollEditorApp._onEditSlot,
       deleteSlot: PaperdollEditorApp._onDeleteSlot,
@@ -64,42 +79,31 @@ export class PaperdollEditorApp extends ApplicationBase {
     const title = `${actor.name} - ${game.i18n.localize("AIM.editor.windowTitle")}`;
     super({
       ...options,
-      id: `${MODULE_ID}-editor-${actor.id}`,
+      id: `${MODULE_ID}-editor-${String(actor.uuid ?? actor.id).replace(/[^\w-]/g, "-")}`,
       window: { ...options.window, title }
     });
 
     this.actor = actor;
+    this.actorKey = actor.uuid ?? actor.id;
 
     // Load initial actor template state
     const actorTemplateCtx = getActorPaperdollTemplate(actor);
     this.activeTemplateId = actorTemplateCtx.templateId;
     this.workingSlots = actorTemplateCtx.slots.map(s => ({ ...s, rules: { ...s.rules } }));
     this.attunementMax = actorTemplateCtx.attunementMax;
-    this.isCustomWorking = this.activeTemplateId === "custom" || !actorTemplateCtx.isPreset;
+    // "Custom" means an actor-only layout; a world template stays linked by id.
+    this.isCustomWorking = Boolean(actorTemplateCtx.isActorCustom);
   }
 
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
-    const templates = getAllTemplates();
+    const templates = getAllTemplates().map(template => ({
+      ...template,
+      selected: !this.isCustomWorking && template.id === this.activeTemplateId
+    }));
 
-    const enrichedSlots = this.workingSlots.map(s => {
-      const isImageIcon = Boolean(
-        s.icon && (
-          s.icon.includes("/") ||
-          s.icon.endsWith(".png") ||
-          s.icon.endsWith(".webp") ||
-          s.icon.endsWith(".svg") ||
-          s.icon.endsWith(".jpg")
-        )
-      );
-      return { ...s, isImageIcon };
-    });
-
-    const leftSlots = enrichedSlots.filter(s => s.column === "left");
-    const centerSlots = enrichedSlots.filter(s => s.column === "center");
-    const rightSlots = enrichedSlots.filter(s => s.column === "right");
-
-    const isPresetTemplate = Boolean(PRESET_TEMPLATES[this.activeTemplateId]);
+    const enrichedSlots = this.workingSlots.map(s => ({ ...s, isImageIcon: isImagePath(s.icon) }));
+    const canUpdateTemplate = isWorldCustomTemplate(this.activeTemplateId);
 
     return {
       ...context,
@@ -107,12 +111,12 @@ export class PaperdollEditorApp extends ApplicationBase {
       templates,
       activeTemplateId: this.activeTemplateId,
       isCustomTemplate: this.isCustomWorking,
-      isPresetTemplate,
+      canUpdateTemplate,
       attunementMax: this.attunementMax,
       slots: enrichedSlots,
-      leftSlots,
-      centerSlots,
-      rightSlots
+      leftSlots: enrichedSlots.filter(s => s.column === "left"),
+      centerSlots: enrichedSlots.filter(s => s.column === "center"),
+      rightSlots: enrichedSlots.filter(s => s.column === "right")
     };
   }
 
@@ -130,10 +134,10 @@ export class PaperdollEditorApp extends ApplicationBase {
     // Attunement input change listener
     const attunementInput = this.element.querySelector(".aim-attunement-input");
     if (attunementInput) {
+      // A changed cap is detected on apply, so the template stays selected.
       const handleAttChange = (e) => {
         const val = parseInt(e.target.value, 10);
         this.attunementMax = isNaN(val) ? 3 : Math.max(0, Math.min(9, val));
-        this.isCustomWorking = true;
       };
       attunementInput.addEventListener("input", handleAttChange);
       attunementInput.addEventListener("change", handleAttChange);
@@ -157,7 +161,7 @@ export class PaperdollEditorApp extends ApplicationBase {
         rules: { ...(s.rules || {}) }
       }));
       this.attunementMax = template.attunementMax ?? 3;
-      this.isCustomWorking = !template.isPreset;
+      this.isCustomWorking = false;
       this._reindexSlots();
       this.render(false);
     }
@@ -290,240 +294,247 @@ export class PaperdollEditorApp extends ApplicationBase {
     this.render(false);
   }
 
+  /** Read the attunement input, which may not have fired a change event yet. */
+  _readAttunementInput() {
+    const parsed = parseInt(this.element.querySelector(".aim-attunement-input")?.value, 10);
+    if (!isNaN(parsed)) this.attunementMax = Math.max(0, Math.min(9, parsed));
+  }
+
+  _workingTemplate(id, name) {
+    return { id, name, attunementMax: this.attunementMax, slots: this.workingSlots };
+  }
+
   // --- Static Actions ---
 
-  static async _onApplyToActor(event, target) {
+  static async _onApplyToActor() {
     if (!game.user.isGM) return;
+    this._readAttunementInput();
 
-    const attInput = this.element.querySelector(".aim-attunement-input");
-    if (attInput) {
-      const parsed = parseInt(attInput.value, 10);
-      if (!isNaN(parsed)) this.attunementMax = Math.max(0, Math.min(9, parsed));
-    }
+    const baseTemplate = getTemplateById(this.activeTemplateId);
+    const hasModifiedAttunement = (baseTemplate?.attunementMax ?? 3) !== this.attunementMax;
 
-    const currentPreset = getTemplateById(this.activeTemplateId);
-    const hasModifiedAttunement = currentPreset && currentPreset.attunementMax !== this.attunementMax;
-
-    if (this.isCustomWorking || this.activeTemplateId === "custom" || hasModifiedAttunement) {
-      const customData = {
+    if (this.isCustomWorking || hasModifiedAttunement) {
+      await setActorPaperdollTemplate(this.actor, "custom", {
         id: "custom",
-        name: `${this.actor.name} Custom Paperdoll`,
+        name: format("AIM.editor.customPaperdollName", { actor: this.actor.name }),
         attunementMax: this.attunementMax,
         slots: this.workingSlots
-      };
-      await setActorPaperdollTemplate(this.actor, "custom", customData);
+      });
     } else {
+      // Linked by id, so later edits of a world template reach this actor too.
       await setActorPaperdollTemplate(this.actor, this.activeTemplateId, null);
     }
 
-    ui.notifications.info(game.i18n.format("AIM.editor.appliedSuccess", { actor: this.actor.name }));
+    ui.notifications.info(format("AIM.editor.appliedSuccess", { actor: this.actor.name }));
     this.close();
   }
 
-  static async _onSaveAsNewTemplate(event, target) {
+  static async _onSaveAsNewTemplate() {
     if (!game.user.isGM) return;
+    this._readAttunementInput();
 
-    const attInput = this.element.querySelector(".aim-attunement-input");
-    if (attInput) {
-      const parsed = parseInt(attInput.value, 10);
-      if (!isNaN(parsed)) this.attunementMax = Math.max(0, Math.min(9, parsed));
-    }
-
-    const result = await foundry.applications.api.DialogV2.prompt({
-      window: { title: game.i18n.localize("AIM.editor.saveAsNew") },
+    const result = await dialogPrompt({
+      window: { title: localize("AIM.editor.saveAsNew") },
       content: `
         <div class="aim-form-group" style="margin-bottom: 8px;">
-          <label>Template Name:</label>
-          <input type="text" name="templateName" value="Custom Template" required />
+          <label>${escapeHTML(localize("AIM.editor.templateName"))}</label>
+          <input type="text" name="templateName" value="${escapeHTML(localize("AIM.editor.defaultTemplateName"))}" required />
         </div>
         <div class="aim-form-group">
-          <label>Template ID:</label>
+          <label>${escapeHTML(localize("AIM.editor.templateId"))}</label>
           <input type="text" name="templateId" value="custom-${Date.now().toString(36)}" required />
         </div>
       `,
       ok: {
-        label: game.i18n.localize("AIM.actions.save"),
-        callback: (event, button, dialog) => {
+        label: localize("AIM.actions.save"),
+        callback: (event, button) => {
           const form = button.form;
           return {
             name: form.elements.templateName.value.trim(),
-            id: form.elements.templateId.value.trim().replace(/[^a-zA-Z0-9_-]/g, "")
+            id: form.elements.templateId.value.trim().replace(/[^\p{L}\p{N}_-]/gu, "")
           };
         }
       }
     });
 
-    if (result && result.id && result.name) {
-      const templateData = {
-        id: result.id,
-        name: result.name,
-        description: `Custom paperdoll template created by ${game.user.name}`,
-        attunementMax: this.attunementMax,
-        slots: this.workingSlots
-      };
-
-      await saveWorldCustomTemplate(templateData);
-      this.activeTemplateId = result.id;
-      this.isCustomWorking = false;
-      ui.notifications.info(game.i18n.format("AIM.editor.savedTemplateSuccess", { name: result.name }));
-      this.render(false);
-    }
-  }
-
-  static async _onSaveCurrentTemplate(event, target) {
-    if (!game.user.isGM) return;
-    if (PRESET_TEMPLATES[this.activeTemplateId]) {
-      ui.notifications.warn("Cannot overwrite built-in presets. Use 'Save As New' instead.");
+    if (!result?.id || !result?.name) return;
+    if (isReservedTemplateId(result.id)) {
+      ui.notifications.warn(format("AIM.editor.errors.reservedId", { id: result.id }));
       return;
     }
-
-    const attInput = this.element.querySelector(".aim-attunement-input");
-    if (attInput) {
-      const parsed = parseInt(attInput.value, 10);
-      if (!isNaN(parsed)) this.attunementMax = Math.max(0, Math.min(9, parsed));
+    if (isWorldCustomTemplate(result.id)) {
+      const overwrite = await dialogConfirm({
+        window: { title: localize("AIM.editor.saveAsNew") },
+        content: `<p>${escapeHTML(format("AIM.editor.overwriteConfirm", { id: result.id }))}</p>`
+      });
+      if (!overwrite) return;
     }
 
-    const current = getTemplateById(this.activeTemplateId);
-    const templateData = {
-      ...current,
-      attunementMax: this.attunementMax,
-      slots: this.workingSlots
-    };
-
-    await saveWorldCustomTemplate(templateData);
-    ui.notifications.info(game.i18n.format("AIM.editor.savedTemplateSuccess", { name: templateData.name || templateData.id }));
+    try {
+      await saveWorldCustomTemplate({
+        ...this._workingTemplate(result.id, result.name),
+        description: format("AIM.editor.createdBy", { user: game.user.name })
+      });
+    } catch (err) {
+      ui.notifications.error(err.message);
+      return;
+    }
+    this.activeTemplateId = result.id;
+    this.isCustomWorking = false;
+    ui.notifications.info(format("AIM.editor.savedTemplateSuccess", { name: result.name }));
     this.render(false);
   }
 
-  static async _onDeleteTemplate(event, target) {
+  static async _onSaveCurrentTemplate() {
     if (!game.user.isGM) return;
-    if (PRESET_TEMPLATES[this.activeTemplateId]) return;
-
-    const confirmed = await foundry.applications.api.DialogV2.confirm({
-      window: { title: game.i18n.localize("AIM.editor.deleteTemplate") },
-      content: `<p>${game.i18n.format("AIM.editor.deleteTemplateConfirm", { id: this.activeTemplateId })}</p>`,
-      yes: { label: game.i18n.localize("AIM.actions.delete") },
-      no: { label: game.i18n.localize("AIM.actions.cancel") }
-    });
-
-    if (confirmed) {
-      await deleteWorldCustomTemplate(this.activeTemplateId);
-      this.activeTemplateId = TEMPLATE_PRESETS.DND_2024;
-      const t = getTemplateById(this.activeTemplateId);
-      this.workingSlots = t.slots.map(s => ({ ...s, rules: { ...s.rules } }));
-      this.attunementMax = t.attunementMax;
-      this.render(false);
+    // Presets and the actor-only layout are not world templates.
+    if (!isWorldCustomTemplate(this.activeTemplateId)) {
+      ui.notifications.warn(localize("AIM.editor.presetReadOnly"));
+      return;
     }
+    this._readAttunementInput();
+
+    const current = getTemplateById(this.activeTemplateId);
+    try {
+      await saveWorldCustomTemplate({ ...current, attunementMax: this.attunementMax, slots: this.workingSlots });
+    } catch (err) {
+      ui.notifications.error(err.message);
+      return;
+    }
+    this.isCustomWorking = false;
+    ui.notifications.info(format("AIM.editor.savedTemplateSuccess", { name: current.name || current.id }));
+    this.render(false);
   }
 
-  static async _onExportJSON(event, target) {
-    const templateData = {
-      id: this.activeTemplateId,
-      name: this.activeTemplateId,
-      attunementMax: this.attunementMax,
-      slots: this.workingSlots
-    };
-    const jsonStr = JSON.stringify(templateData, null, 2);
+  static async _onDeleteTemplate() {
+    if (!game.user.isGM || !isWorldCustomTemplate(this.activeTemplateId)) return;
 
-    await foundry.applications.api.DialogV2.prompt({
-      window: { title: game.i18n.localize("AIM.editor.exportJSON") },
-      content: `<textarea style="width: 100%; height: 260px; font-family: monospace; font-size: 0.75rem;" readonly>${jsonStr}</textarea>`,
-      ok: { label: "Close" }
+    const confirmed = await dialogConfirm({
+      window: { title: localize("AIM.editor.deleteTemplate") },
+      content: `<p>${escapeHTML(format("AIM.editor.deleteTemplateConfirm", { id: this.activeTemplateId }))}</p>`,
+      yes: { label: localize("AIM.editor.delete") },
+      no: { label: localize("AIM.actions.cancel") }
+    });
+    if (!confirmed) return;
+
+    await deleteWorldCustomTemplate(this.activeTemplateId);
+    this.activeTemplateId = TEMPLATE_PRESETS.DND_2024;
+    const t = getTemplateById(this.activeTemplateId);
+    this.workingSlots = t.slots.map(s => ({ ...s, rules: { ...s.rules } }));
+    this.attunementMax = t.attunementMax;
+    this.isCustomWorking = false;
+    this.render(false);
+  }
+
+  static async _onExportJSON() {
+    this._readAttunementInput();
+    const base = getTemplateById(this.activeTemplateId);
+    const id = this.isCustomWorking ? `${base.id}-custom` : this.activeTemplateId;
+    const name = this.isCustomWorking
+      ? format("AIM.editor.customPaperdollName", { actor: this.actor.name })
+      : (base.name || (base.nameKey ? localize(base.nameKey) : id));
+    const jsonStr = JSON.stringify(this._workingTemplate(id, name), null, 2);
+
+    await dialogPrompt({
+      window: { title: localize("AIM.editor.exportJSON") },
+      content: `<textarea style="width: 100%; height: 260px; font-family: monospace; font-size: 0.75rem;" readonly>${escapeHTML(jsonStr)}</textarea>`,
+      ok: { label: localize("AIM.actions.close") }
     });
   }
 
-  static async _onImportJSON(event, target) {
+  static async _onImportJSON() {
     if (!game.user.isGM) return;
 
-    const jsonStr = await foundry.applications.api.DialogV2.prompt({
-      window: { title: game.i18n.localize("AIM.editor.importJSON") },
+    const jsonStr = await dialogPrompt({
+      window: { title: localize("AIM.editor.importJSON") },
       content: `
-        <p>${game.i18n.localize("AIM.editor.importJSONHint")}:</p>
-        <textarea name="jsonInput" style="width: 100%; height: 220px; font-family: monospace; font-size: 0.75rem;" placeholder="Paste JSON here..."></textarea>
+        <p>${escapeHTML(localize("AIM.editor.importJSONHint"))}:</p>
+        <textarea name="jsonInput" style="width: 100%; height: 220px; font-family: monospace; font-size: 0.75rem;" placeholder="${escapeHTML(localize("AIM.editor.pastePlaceholder"))}"></textarea>
       `,
       ok: {
-        label: game.i18n.localize("AIM.editor.importJSON"),
+        label: localize("AIM.editor.importJSON"),
         callback: (event, button) => button.form.elements.jsonInput.value.trim()
       }
     });
+    if (!jsonStr) return;
 
-    if (jsonStr) {
-      try {
-        const imported = await importTemplateJSON(jsonStr);
-        this.activeTemplateId = imported.id;
-        this.workingSlots = imported.slots.map(s => ({ ...s, rules: { ...s.rules } }));
-        this.attunementMax = imported.attunementMax ?? 3;
-        this.render(false);
-        ui.notifications.info(`Successfully imported template: ${imported.name || imported.id}`);
-      } catch (err) {
-        ui.notifications.error(`Import failed: ${err.message}`);
-      }
+    try {
+      const imported = await importTemplateJSON(jsonStr);
+      this.activeTemplateId = imported.id;
+      this.workingSlots = imported.slots.map(s => ({ ...s, rules: { ...s.rules } }));
+      this.attunementMax = imported.attunementMax ?? 3;
+      this.isCustomWorking = false;
+      this.render(false);
+      ui.notifications.info(format("AIM.editor.importSuccess", { name: imported.name || imported.id }));
+    } catch (err) {
+      LOG.warn("Template import failed", err);
+      ui.notifications.error(format("AIM.editor.importFailed", { error: err.message }));
     }
   }
 
-  static _onChangeAttunement(event, target) {
-    this.attunementMax = Math.max(0, Math.min(6, parseInt(target.value, 10) || 3));
-    this.isCustomWorking = true;
+  /** A slot id not yet used by the working layout. */
+  _nextSlotId() {
+    let index = this.workingSlots.length + 1;
+    while (this.workingSlots.some(s => s.id === `custom_slot_${index}`)) index++;
+    return index;
   }
 
   static async _onAddSlot(event, target) {
     const column = target.dataset.column || "center";
-    const slotCount = this.workingSlots.length + 1;
-    const newSlotTemplate = {
-      id: `custom_slot_${slotCount}`,
-      label: `Custom Slot ${slotCount}`,
+    const index = this._nextSlotId();
+    const configured = await SlotConfigDialog.configureSlot({
+      id: `custom_slot_${index}`,
+      label: format("AIM.editor.customSlotLabel", { index }),
       icon: "fa-solid fa-gem",
       column,
       category: "equipment",
       itemTypes: ["equipment"],
       accepts: [],
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false }
-    };
+    });
+    if (!configured) return;
 
-    const configured = await SlotConfigDialog.configureSlot(newSlotTemplate);
-    if (configured) {
-      // Check for duplicate ID
-      if (this.workingSlots.some(s => s.id === configured.id)) {
-        ui.notifications.warn(`Slot ID '${configured.id}' already exists.`);
-        return;
-      }
-      this.workingSlots.push(configured);
-      this._reindexSlots();
-      this.isCustomWorking = true;
-      this.render(false);
+    if (this.workingSlots.some(s => s.id === configured.id)) {
+      ui.notifications.warn(format("AIM.editor.slotExists", { id: configured.id }));
+      return;
     }
+    this.workingSlots.push(configured);
+    this._reindexSlots();
+    this.isCustomWorking = true;
+    this.render(false);
   }
 
   static async _onEditSlot(event, target) {
-    const slotId = target.dataset.slotId;
-    const slotIndex = this.workingSlots.findIndex(s => s.id === slotId);
+    const slotIndex = this.workingSlots.findIndex(s => s.id === target.dataset.slotId);
     if (slotIndex === -1) return;
 
-    const currentSlot = this.workingSlots[slotIndex];
-    const configured = await SlotConfigDialog.configureSlot(currentSlot);
-    if (configured) {
-      this.workingSlots[slotIndex] = configured;
-      this._reindexSlots();
-      this.isCustomWorking = true;
-      this.render(false);
-    }
+    const current = this.workingSlots[slotIndex];
+    const configured = await SlotConfigDialog.configureSlot(current);
+    if (!configured) return;
+
+    // Keep the translation key so the preset label follows the user's language.
+    const keepsLabel = current.labelKey && configured.label === current.label;
+    this.workingSlots[slotIndex] = keepsLabel ? { ...configured, labelKey: current.labelKey } : configured;
+    this._reindexSlots();
+    this.isCustomWorking = true;
+    this.render(false);
   }
 
   static async _onDeleteSlot(event, target) {
     const slotId = target.dataset.slotId;
-    const confirmed = await foundry.applications.api.DialogV2.confirm({
-      window: { title: "Delete Slot" },
-      content: `<p>Are you sure you want to delete slot <strong>${slotId}</strong>?</p>`,
-      yes: { label: game.i18n.localize("AIM.actions.delete") },
-      no: { label: game.i18n.localize("AIM.actions.cancel") }
+    const slot = this.workingSlots.find(s => s.id === slotId);
+    const confirmed = await dialogConfirm({
+      window: { title: localize("AIM.editor.deleteSlot") },
+      content: `<p>${escapeHTML(format("AIM.editor.deleteSlotConfirm", { slot: slot?.label ?? slotId }))}</p>`,
+      yes: { label: localize("AIM.editor.delete") },
+      no: { label: localize("AIM.actions.cancel") }
     });
+    if (!confirmed) return;
 
-    if (confirmed) {
-      this.workingSlots = this.workingSlots.filter(s => s.id !== slotId);
-      this._reindexSlots();
-      this.isCustomWorking = true;
-      this.render(false);
-    }
+    this.workingSlots = this.workingSlots.filter(s => s.id !== slotId);
+    this._reindexSlots();
+    this.isCustomWorking = true;
+    this.render(false);
   }
 
   static _onMoveSlotUp(event, target) {
@@ -533,19 +544,32 @@ export class PaperdollEditorApp extends ApplicationBase {
   static _onMoveSlotDown(event, target) {
     this._moveSlotByOffset(target.dataset.slotId, 1);
   }
+
+  async close(options = {}) {
+    if (OPEN_EDITORS.get(this.actorKey) === this) OPEN_EDITORS.delete(this.actorKey);
+    return super.close(options);
+  }
 }
 
 /**
  * Open the Paperdoll Editor for an actor (GM Only)
  * @param {Object} actor
+ * @returns {PaperdollEditorApp|undefined}
  */
 export function openPaperdollEditor(actor) {
   if (!isSupportedActor(actor)) return;
   if (!globalThis.game?.user?.isGM) {
-    ui.notifications?.warn("Only Game Master can access the Paperdoll Editor.");
+    ui.notifications?.warn(localize("AIM.editor.gmOnly"));
     return;
   }
+  const key = actor.uuid ?? actor.id;
+  const existing = OPEN_EDITORS.get(key);
+  if (existing?.rendered) {
+    existing.bringToFront();
+    return existing;
+  }
   const app = new PaperdollEditorApp(actor);
+  OPEN_EDITORS.set(key, app);
   app.render({ force: true });
   return app;
 }

@@ -39,7 +39,9 @@ function changed(state) {
   Hooks.callAll(TRADE_HOOK, state);
   for (const session of state.sessions ?? []) {
     if (session.status !== "open" || notified.has(session.id)) continue;
-    if (!session.actors.some(id => ownsActor(game.actors.get(id), game.user))) continue;
+    // Only the invited player is told; the initiator and GMs already know.
+    if (session.users?.[1] !== game.user.id) continue;
+    if (!ownsActor(game.actors.get(session.actors[1]), game.user)) continue;
     notified.add(session.id);
     ui.notifications?.info(game.i18n.localize("AIM.trade.invitation"));
   }
@@ -150,7 +152,8 @@ async function settle(state, session) {
       session.error = "AIM.trade.errors.changed";
       await save(state);
       await journal.delete();
-      return;
+      // Report the cancellation to the requesting client instead of a silent success.
+      throw error?.message?.startsWith("AIM.trade.errors.") ? error : tradeError("changed");
     }
     LOG.error("Trade transfer failed; restoring saved inventories", error);
     try {
@@ -264,7 +267,8 @@ export function registerTradeService() {
   });
   // Prevent ordinary client edits while a saved exchange is being committed.
   const allowEdit = actor => {
-    if (!isSupportedActor(actor)) return true;
+    // Token actors share their base actor's id but never take part in a trade.
+    if (!isSupportedActor(actor) || actor.isToken) return true;
     const session = sessionFor(actor?.id);
     if (!session || !["executing", "recovery"].includes(session.status)) return true;
     if (session.status === "executing" && game.user.isGM && session.gmId === game.user.id) return true;

@@ -2,7 +2,7 @@
 // Actor Inventory Manager - Equipment Rules & Validation Engine
 // ─────────────────────────────────────────────────────────
 
-import { FLAGS, MODULE_ID, SLOTS } from "../constants.js";
+import { SLOTS } from "../constants.js";
 import { isSupportedActor } from "./actor-scope.js";
 import {
   classifyItem,
@@ -10,10 +10,13 @@ import {
   getValidSlotsForItem,
   isBodyArmor,
   isItemCompatibleWithSlot,
+  isMainHandSlot,
+  isOffHandSlot,
   isShield,
   isTwoHandedWeapon
 } from "./item-classifier.js";
 import { getActorSlots } from "./paperdoll-templates.js";
+import { getPaperdollRuntime } from "./paperdoll-runtime.js";
 import { slotRegistry } from "./slot-definitions.js";
 
 /**
@@ -37,6 +40,60 @@ export class ValidationResult {
   }
 }
 
+/** English fallbacks for the rule messages; translations live under AIM.rules.* */
+const RULE_MESSAGES = {
+  missingArguments: "Missing actor, item, or target slot.",
+  noTargetSlot: "Target slot is required.",
+  slotIncompatible: "'{item}' cannot be equipped in slot '{slot}'. Valid slots: {valid}",
+  armorAlreadyEquipped: "Cannot equip '{item}': '{conflict}' is already worn as body armor.",
+  offHandBlocked: "Cannot equip '{item}' in the off hand: '{conflict}' requires both hands.",
+  shieldAlreadyEquipped: "Cannot equip '{item}': shield '{conflict}' is already equipped.",
+  singlePerActor: "Cannot equip '{item}': '{conflict}' of the same kind is already equipped."
+};
+
+function ruleMessage(key, data = {}) {
+  return getPaperdollRuntime().format(`AIM.rules.${key}`, data, RULE_MESSAGES[key]);
+}
+
+/**
+ * The slot definitions that apply to an actor.
+ * @param {Object} actor
+ * @returns {Array<Object>}
+ */
+function actorSlotDefinitions(actor) {
+  const slots = actor ? getActorSlots(actor) : null;
+  return Array.isArray(slots) && slots.length > 0 ? slots : slotRegistry.getAll();
+}
+
+function slotDisplayName(actor, slotId) {
+  return actorSlotDefinitions(actor).find(slot => slot.id === slotId)?.label ?? slotId;
+}
+
+/**
+ * Which slots a two-handed weapon occupies and which it locks.
+ * Honours the `locksOffHandOn2H` / `isShield` flags of custom templates.
+ * @param {Object|null} actor
+ * @returns {{ mainSlotIds: Array<string>, offSlotIds: Array<string> }}
+ */
+export function getTwoHandLayout(actor = null) {
+  const slots = actorSlotDefinitions(actor);
+  const mainSlotIds = slots.filter(isMainHandSlot).map(slot => slot.id);
+  const offSlotIds = slots.filter(isOffHandSlot).map(slot => slot.id);
+  return {
+    mainSlotIds: mainSlotIds.length ? mainSlotIds : [SLOTS.MAIN_HAND],
+    offSlotIds: offSlotIds.length ? offSlotIds : [SLOTS.OFF_HAND]
+  };
+}
+
+/** The two-handed weapon held in any main-hand slot, if any. */
+function twoHandedWeaponIn(slotMap, layout) {
+  for (const slotId of layout.mainSlotIds) {
+    const item = slotMap.get(slotId);
+    if (item && isTwoHandedWeapon(item)) return item;
+  }
+  return null;
+}
+
 /**
  * Build Map of currently equipped slots for an actor
  * @param {Object} actor
@@ -50,13 +107,8 @@ export function getActorEquippedMap(actor) {
     i?.system?.equipped === true && !i?.system?.container
   ));
 
-  // Determine all valid slot IDs on this actor (including custom slots)
-  const actorSlots = getActorSlots ? getActorSlots(actor) : null;
-  const validSlotIdSet = new Set(
-    actorSlots && actorSlots.length > 0
-      ? actorSlots.map(s => s.id)
-      : slotRegistry.getAll().map(s => s.id)
-  );
+  const validSlotIdSet = new Set(actorSlotDefinitions(actor).map(s => s.id));
+  const layout = getTwoHandLayout(actor);
 
   // Step 1: Place items that have explicit slot flags
   const unassigned = [];
@@ -70,30 +122,14 @@ export function getActorEquippedMap(actor) {
   }
 
   // Step 2: Auto-reconcile unassigned equipped items into free valid slots
+  if (!getPaperdollRuntime().autoReconcileSlots()) return slotMap;
   for (const item of unassigned) {
-    const validSlots = getValidSlotsForItem(item, actor);
-    let assigned = false;
-    for (const sId of validSlots) {
-      if (!slotMap.has(sId)) {
-        // Check 2H conflict for offHand
-        if (sId === SLOTS.OFF_HAND) {
-          const mainItem = slotMap.get(SLOTS.MAIN_HAND);
-          if (mainItem && isTwoHandedWeapon(mainItem)) {
-            continue; // Cannot put into off-hand
-          }
-        }
-        slotMap.set(sId, item);
-        assigned = true;
-        break;
-      }
-    }
-    if (!assigned && validSlots.length > 0) {
-      // Slot collision in unassigned items
-      // Place in first valid slot if empty
-      const fallbackSlot = validSlots[0];
-      if (!slotMap.has(fallbackSlot)) {
-        slotMap.set(fallbackSlot, item);
-      }
+    for (const slotId of getValidSlotsForItem(item, actor)) {
+      if (slotMap.has(slotId)) continue;
+      // An off hand is not available while a two-handed weapon is held.
+      if (layout.offSlotIds.includes(slotId) && twoHandedWeaponIn(slotMap, layout)) continue;
+      slotMap.set(slotId, item);
+      break;
     }
   }
 
@@ -101,13 +137,13 @@ export function getActorEquippedMap(actor) {
 }
 
 /**
- * Check if the offHand is locked by a two-handed weapon in mainHand
+ * Check if the off hand is locked by a two-handed weapon in a main hand
  * @param {Map<string, Object>} slotMap
+ * @param {Object} [actor]
  * @returns {boolean}
  */
-export function isOffHandLockedBy2H(slotMap) {
-  const mainHandItem = slotMap.get(SLOTS.MAIN_HAND);
-  return Boolean(mainHandItem && isTwoHandedWeapon(mainHandItem));
+export function isOffHandLockedBy2H(slotMap, actor = null) {
+  return Boolean(twoHandedWeaponIn(slotMap, getTwoHandLayout(actor)));
 }
 
 /**
@@ -125,14 +161,18 @@ export class EquipmentRuleEngine {
       {
         id: "slot_compatibility",
         name: "Slot Compatibility",
-        validate: (actor, item, targetSlotId, slotMap) => {
+        validate: (actor, item, targetSlotId) => {
           if (!targetSlotId) {
-            return ValidationResult.fail("Target slot is required.", "NO_TARGET_SLOT");
+            return ValidationResult.fail(ruleMessage("noTargetSlot"), "NO_TARGET_SLOT");
           }
           if (!isItemCompatibleWithSlot(item, targetSlotId, actor)) {
-            const valid = getValidSlotsForItem(item, actor);
+            const valid = getValidSlotsForItem(item, actor).map(slotId => slotDisplayName(actor, slotId));
             return ValidationResult.fail(
-              `Item '${item.name}' cannot be equipped in slot '${targetSlotId}'. Valid slots: ${valid.join(", ")}`,
+              ruleMessage("slotIncompatible", {
+                item: item.name,
+                slot: slotDisplayName(actor, targetSlotId),
+                valid: valid.join(", ") || "—"
+              }),
               "SLOT_INCOMPATIBLE"
             );
           }
@@ -147,19 +187,14 @@ export class EquipmentRuleEngine {
         validate: (actor, item, targetSlotId, slotMap) => {
           if (!isBodyArmor(item)) return ValidationResult.success();
 
-          const currentArmor = slotMap.get(SLOTS.ARMOR);
-          if (currentArmor && currentArmor.id !== item.id) {
-            // There's already an armor equipped
-            if (targetSlotId === SLOTS.ARMOR) {
-              // Replacing armor in the armor slot is allowed via autoSwap
-              return ValidationResult.success({
-                autoSwapItems: [currentArmor]
-              });
-            }
+          for (const [slotId, worn] of slotMap) {
+            if (worn.id === item.id || !isBodyArmor(worn)) continue;
+            // Replacing the armor in its own slot is a swap.
+            if (slotId === targetSlotId) return ValidationResult.success({ autoSwapItems: [worn] });
             return ValidationResult.fail(
-              `Cannot equip '${item.name}': '${currentArmor.name}' is already equipped in Armor slot.`,
+              ruleMessage("armorAlreadyEquipped", { item: item.name, conflict: worn.name }),
               "ARMOR_ALREADY_EQUIPPED",
-              { conflictItem: currentArmor }
+              { conflictItem: worn }
             );
           }
           return ValidationResult.success();
@@ -171,26 +206,26 @@ export class EquipmentRuleEngine {
         id: "two_handed_weapon",
         name: "Two-Handed Weapon Lock",
         validate: (actor, item, targetSlotId, slotMap) => {
-          // Case A: Equipping an item into offHand while mainHand has 2H weapon
-          if (targetSlotId === SLOTS.OFF_HAND) {
-            const mainHandItem = slotMap.get(SLOTS.MAIN_HAND);
-            if (mainHandItem && mainHandItem.id !== item.id && isTwoHandedWeapon(mainHandItem)) {
+          const layout = getTwoHandLayout(actor);
+
+          // Case A: Equipping into an off hand while a main hand holds a 2H weapon
+          if (layout.offSlotIds.includes(targetSlotId)) {
+            const twoHanded = twoHandedWeaponIn(slotMap, layout);
+            if (twoHanded && twoHanded.id !== item.id) {
               return ValidationResult.fail(
-                `Cannot equip '${item.name}' in off-hand: Main hand weapon '${mainHandItem.name}' requires two hands.`,
+                ruleMessage("offHandBlocked", { item: item.name, conflict: twoHanded.name }),
                 "OFFHAND_BLOCKED_BY_2H",
-                { conflictItem: mainHandItem }
+                { conflictItem: twoHanded }
               );
             }
           }
 
-          // Case B: Equipping a 2H weapon into mainHand while offHand is occupied
-          if (targetSlotId === SLOTS.MAIN_HAND && isTwoHandedWeapon(item)) {
-            const offHandItem = slotMap.get(SLOTS.OFF_HAND);
-            if (offHandItem && offHandItem.id !== item.id) {
-              return ValidationResult.success({
-                autoSwapItems: [offHandItem]
-              });
-            }
+          // Case B: Equipping a 2H weapon into a main hand frees the off hands
+          if (layout.mainSlotIds.includes(targetSlotId) && isTwoHandedWeapon(item)) {
+            const offHandItems = layout.offSlotIds
+              .map(slotId => slotMap.get(slotId))
+              .filter(offHandItem => offHandItem && offHandItem.id !== item.id);
+            if (offHandItems.length) return ValidationResult.success({ autoSwapItems: offHandItems });
           }
 
           return ValidationResult.success();
@@ -204,33 +239,34 @@ export class EquipmentRuleEngine {
         validate: (actor, item, targetSlotId, slotMap) => {
           if (!isShield(item)) return ValidationResult.success();
 
-          // Check if another shield is equipped in the other hand
-          const otherHandSlot = targetSlotId === SLOTS.MAIN_HAND ? SLOTS.OFF_HAND : SLOTS.MAIN_HAND;
-          const otherHandItem = slotMap.get(otherHandSlot);
-          if (otherHandItem && otherHandItem.id !== item.id && isShield(otherHandItem)) {
+          for (const [slotId, other] of slotMap) {
+            if (slotId === targetSlotId || other.id === item.id || !isShield(other)) continue;
             return ValidationResult.fail(
-              `Cannot equip '${item.name}': Shield '${otherHandItem.name}' is already equipped in other hand.`,
+              ruleMessage("shieldAlreadyEquipped", { item: item.name, conflict: other.name }),
               "SHIELD_ALREADY_EQUIPPED",
-              { conflictItem: otherHandItem }
+              { conflictItem: other }
             );
           }
           return ValidationResult.success();
         }
       },
 
-      // Rule 5: Rings slot swap
+      // Rule 5: "Single per actor" slots allow one item of their kind
       {
-        id: "rings_allocation",
-        name: "Ring Allocation",
+        id: "single_per_actor",
+        name: "Single per Actor",
         validate: (actor, item, targetSlotId, slotMap) => {
-          const classification = classifyItem(item);
-          if (classification !== "ring") return ValidationResult.success();
+          const slot = actorSlotDefinitions(actor).find(s => s.id === targetSlotId);
+          if (!slot?.rules?.singlePerActor) return ValidationResult.success();
 
-          const existingItem = slotMap.get(targetSlotId);
-          if (existingItem && existingItem.id !== item.id) {
-            return ValidationResult.success({
-              autoSwapItems: [existingItem]
-            });
+          const kind = classifyItem(item);
+          for (const [slotId, other] of slotMap) {
+            if (slotId === targetSlotId || other.id === item.id || classifyItem(other) !== kind) continue;
+            return ValidationResult.fail(
+              ruleMessage("singlePerActor", { item: item.name, conflict: other.name }),
+              "SINGLE_PER_ACTOR",
+              { conflictItem: other }
+            );
           }
           return ValidationResult.success();
         }
@@ -259,7 +295,7 @@ export class EquipmentRuleEngine {
    */
   validateEquip(actor, item, targetSlotId, options = {}) {
     if (!actor || !item || !targetSlotId) {
-      return ValidationResult.fail("Missing actor, item, or targetSlotId", "INVALID_ARGUMENTS");
+      return ValidationResult.fail(ruleMessage("missingArguments"), "INVALID_ARGUMENTS");
     }
     if (!isSupportedActor(actor)) return ValidationResult.success();
 
@@ -291,3 +327,26 @@ export class EquipmentRuleEngine {
 }
 
 export const equipmentRuleEngine = new EquipmentRuleEngine();
+
+/**
+ * Pick the slot an item should be equipped into.
+ * Prefers a free slot the rules accept, then an occupied one the rules accept
+ * as a swap. When no slot passes, the first candidate is returned so the caller
+ * can report the rule failure.
+ * @param {Object} actor
+ * @param {Object} item
+ * @param {Map<string, Object>} [slotMap]
+ * @returns {string|null}
+ */
+export function findEquipSlot(actor, item, slotMap = getActorEquippedMap(actor)) {
+  const candidates = getValidSlotsForItem(item, actor);
+  if (!candidates.length) return null;
+
+  const passes = slotId => equipmentRuleEngine.validateEquip(actor, item, slotId, { slotMap }).valid;
+  const isFree = slotId => !slotMap.has(slotId) || slotMap.get(slotId)?.id === item.id;
+
+  return candidates.find(slotId => isFree(slotId) && passes(slotId))
+    ?? candidates.find(passes)
+    ?? candidates.find(isFree)
+    ?? candidates[0];
+}

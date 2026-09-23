@@ -2,12 +2,25 @@
 // Actor Inventory Manager - Item Actions Controller
 // ─────────────────────────────────────────────────────────
 
-import { FLAGS, MODULE_ID } from "../constants.js";
-import { isSupportedActor } from "../core/actor-scope.js";
-import { isItemAttuned } from "../core/attunement.js";
-import { equipmentRuleEngine, getActorEquippedMap } from "../core/equipment-rules.js";
-import { findBestSlotForEquipping, getValidSlotsForItem } from "../core/item-classifier.js";
+import { AIM_EQUIP_OPTION, FLAGS, MODULE_ID } from "../constants.js";
+import { canEditActor, isSupportedActor } from "../core/actor-scope.js";
+import { getActorAttunementMax, isItemAttuned, itemRequiresAttunement } from "../core/attunement.js";
+import { equipmentRuleEngine, findEquipSlot, getActorEquippedMap } from "../core/equipment-rules.js";
+import { canItemBeEquipped } from "../core/item-classifier.js";
 import { LOG } from "../foundry/logger.js";
+
+export { getActorAttunementMax };
+
+/**
+ * Warn and return false unless the current user may edit the actor.
+ * @param {Object} actor
+ * @returns {boolean}
+ */
+export function assertCanEdit(actor) {
+  if (canEditActor(actor, game.user)) return true;
+  ui.notifications?.warn(game.i18n.localize("AIM.notifications.noPermission"));
+  return false;
+}
 
 /**
  * Equip an item into a designated target slot
@@ -17,6 +30,11 @@ import { LOG } from "../foundry/logger.js";
  */
 export async function equipItemToSlot(actor, item, targetSlotId) {
   if (!isSupportedActor(actor) || !item || !targetSlotId) return;
+  if (!assertCanEdit(actor)) return;
+  if (!canItemBeEquipped(item)) {
+    ui.notifications?.warn(game.i18n.format("AIM.notifications.cannotEquip", { item: item.name }));
+    return;
+  }
 
   const currentSlotMap = getActorEquippedMap(actor);
   const validation = equipmentRuleEngine.validateEquip(actor, item, targetSlotId, {
@@ -29,25 +47,29 @@ export async function equipItemToSlot(actor, item, targetSlotId) {
     return;
   }
 
-  // Handle auto-swap items if any
-  if (validation.autoSwapItems && validation.autoSwapItems.length > 0) {
-    for (const swapItem of validation.autoSwapItems) {
-      if (swapItem.id !== item.id) {
-        LOG.info("Auto-swapping item from slot", { unequipping: swapItem.name });
-        await swapItem.update({
-          "system.equipped": false,
-          [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: null
-        });
-      }
-    }
-  }
+  // One batched write: displaced items and the new one change together, so a
+  // failure cannot leave the old item unequipped and the new one not worn.
+  const updates = (validation.autoSwapItems ?? [])
+    .filter(swapItem => swapItem.id !== item.id)
+    .map(swapItem => {
+      LOG.info("Auto-swapping item from slot", { unequipping: swapItem.name });
+      return {
+        _id: swapItem.id,
+        "system.equipped": false,
+        [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: null
+      };
+    });
 
-  // Equip target item
-  await item.update({
+  updates.push({
+    _id: item.id,
     "system.equipped": true,
+    // A worn item is not inside a bag.
+    ...(item.system?.container ? { "system.container": null } : {}),
     [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: targetSlotId,
     [`flags.${MODULE_ID}.${FLAGS.EQUIPPED_AT}`]: Date.now()
   });
+
+  await actor.updateEmbeddedDocuments("Item", updates, { [AIM_EQUIP_OPTION]: true });
 
   LOG.info("Item equipped to slot", { item: item.name, slot: targetSlotId, actor: actor.name });
 }
@@ -59,6 +81,7 @@ export async function equipItemToSlot(actor, item, targetSlotId) {
  */
 export async function unequipItem(actor, item) {
   if (!isSupportedActor(actor) || !item) return;
+  if (!assertCanEdit(actor)) return;
 
   await item.update({
     "system.equipped": false,
@@ -78,21 +101,27 @@ export async function toggleItemEquipped(actor, item) {
 
   if (item.system?.equipped) {
     await unequipItem(actor, item);
-  } else {
-    const currentSlotMap = getActorEquippedMap(actor);
-    const targetSlotId = findBestSlotForEquipping(actor, item, currentSlotMap);
-    if (!targetSlotId) {
-      const valid = getValidSlotsForItem(item);
-      ui.notifications?.warn(
-        game.i18n.format("AIM.notifications.noValidSlot", {
-          item: item.name,
-          valid: valid.join(", ")
-        })
-      );
-      return;
-    }
-    await equipItemToSlot(actor, item, targetSlotId);
+    return;
   }
+
+  const targetSlotId = findEquipSlot(actor, item, getActorEquippedMap(actor));
+  if (targetSlotId) {
+    await equipItemToSlot(actor, item, targetSlotId);
+    return;
+  }
+
+  // Items with no place on the paperdoll (Ioun stones, trinkets, ...) are
+  // still equippable in the system - they just do not occupy a slot.
+  if (!assertCanEdit(actor)) return;
+  if (!canItemBeEquipped(item)) {
+    ui.notifications?.warn(game.i18n.format("AIM.notifications.cannotEquip", { item: item.name }));
+    return;
+  }
+  await item.update({
+    "system.equipped": true,
+    ...(item.system?.container ? { "system.container": null } : {}),
+    [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: null
+  }, { [AIM_EQUIP_OPTION]: true });
 }
 
 /**
@@ -105,6 +134,7 @@ export async function toggleItemEquipped(actor, item) {
 export async function useItem(item, event = undefined) {
   if (!item) return;
   if (item.parent?.documentName === "Actor" && !isSupportedActor(item.parent)) return;
+  if (item.parent?.documentName === "Actor" && !assertCanEdit(item.parent)) return;
   if (typeof item.use === "function") {
     return item.use({ event });
   }
@@ -124,6 +154,7 @@ export async function toggleAttunement(item) {
   if (!item) return;
   const actor = item.parent;
   if (!isSupportedActor(actor)) return;
+  if (!assertCanEdit(actor)) return;
 
   // dnd5e 5.x keeps the requirement in `system.attunement` ("" | "required" |
   // "optional") and the state in the boolean `system.attuned`. Older versions
@@ -131,17 +162,20 @@ export async function toggleAttunement(item) {
   const usesBooleanState = typeof item.system?.attuned === "boolean";
 
   if (!isItemAttuned(item)) {
-    const maxAttunement = getActorAttunementMax(actor);
-    if (actor) {
-      const currentlyAttuned = Array.from(actor.items.values())
-        .filter(i => i.id !== item.id && isItemAttuned(i)).length;
+    if (!itemRequiresAttunement(item)) {
+      ui.notifications?.warn(game.i18n.format("AIM.notifications.attunementNotRequired", { item: item.name }));
+      return;
+    }
 
-      if (currentlyAttuned >= maxAttunement) {
-        ui.notifications?.warn(
-          game.i18n.format("AIM.notifications.maxAttunementReached", { max: maxAttunement })
-        );
-        return;
-      }
+    const maxAttunement = getActorAttunementMax(actor);
+    const currentlyAttuned = Array.from(actor.items.values())
+      .filter(i => i.id !== item.id && isItemAttuned(i)).length;
+
+    if (currentlyAttuned >= maxAttunement) {
+      ui.notifications?.warn(
+        game.i18n.format("AIM.notifications.maxAttunementReached", { max: maxAttunement })
+      );
+      return;
     }
 
     await item.update(usesBooleanState
@@ -158,17 +192,22 @@ export async function toggleAttunement(item) {
 }
 
 /**
- * Resolve the attunement cap for an actor, honouring a custom paperdoll template.
+ * Is `containerId` the item itself or one of the containers nested inside it?
+ * Moving a bag into its own contents would detach the whole branch.
  * @param {Object} actor
- * @returns {number}
+ * @param {Object} item
+ * @param {string} containerId
+ * @returns {boolean}
  */
-export function getActorAttunementMax(actor) {
-  if (!actor) return 3;
-  const customTemplate = actor.getFlag?.(MODULE_ID, FLAGS.CUSTOM_TEMPLATE)
-    ?? actor.flags?.[MODULE_ID]?.[FLAGS.CUSTOM_TEMPLATE];
-  if (typeof customTemplate?.attunementMax === "number") return customTemplate.attunementMax;
-  const systemMax = actor.system?.attributes?.attunement?.max;
-  return typeof systemMax === "number" ? systemMax : 3;
+export function wouldCreateContainerCycle(actor, item, containerId) {
+  let current = containerId;
+  const visited = new Set();
+  while (current && !visited.has(current)) {
+    if (current === item.id) return true;
+    visited.add(current);
+    current = actor.items.get(current)?.system?.container ?? null;
+  }
+  return false;
 }
 
 /**
@@ -178,7 +217,13 @@ export function getActorAttunementMax(actor) {
  */
 export async function setItemContainer(item, containerId) {
   if (!item) return;
-  if (!isSupportedActor(item.parent)) return;
+  const actor = item.parent;
+  if (!isSupportedActor(actor)) return;
+  if (!assertCanEdit(actor)) return;
+  if (containerId && wouldCreateContainerCycle(actor, item, containerId)) {
+    ui.notifications?.warn(game.i18n.format("AIM.containers.cycle", { item: item.name }));
+    return;
+  }
   await item.update({
     "system.container": containerId || null,
     // Unequip if moving into a container

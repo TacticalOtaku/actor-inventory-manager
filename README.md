@@ -57,8 +57,7 @@ https://raw.githubusercontent.com/TacticalOtaku/actor-inventory-manager/main/mod
 - **System**: D&D 5e (v3.0.0+)
 - **Optional Recommended Modules**:
   - *SC - Item Rarity Colors*
-  - *Weighty Containers*
-  - *lib-wrapper*
+  - *Weighty Containers* (3.5.0+ for API v2 weights)
 
 ---
 

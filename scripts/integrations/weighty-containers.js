@@ -15,9 +15,6 @@ export function isWeightyContainersActive() {
   return Boolean(globalThis.game?.modules?.get(WEIGHTY_CONTAINERS_MODULE_ID)?.active);
 }
 
-/** Minimum Weighty Containers API version this adapter understands. */
-export const REQUIRED_WC_API_VERSION = 1;
-
 /**
  * Resolve the Weighty Containers public API.
  *
@@ -32,6 +29,25 @@ export function getWeightyContainersApi() {
   return globalThis.game?.modules?.get(WEIGHTY_CONTAINERS_MODULE_ID)?.api
     ?? globalThis.weightyCont
     ?? null;
+}
+
+/**
+ * Total weight the actor carries with every container reduction applied,
+ * in the unit dnd5e displays. Used only when the system encumbrance block is
+ * unavailable - that block already includes Weighty Containers' reductions.
+ * @param {Object} actor
+ * @returns {number|null} pounds, or null without the module
+ */
+export function getActorCarriedLbs(actor) {
+  const api = getWeightyContainersApi();
+  if (typeof api?.computeActorCarriedLbs !== "function") return null;
+  try {
+    const lbs = Number(api.computeActorCarriedLbs(actor));
+    return Number.isFinite(lbs) ? lbs : null;
+  } catch (err) {
+    LOG.debug("Weighty Containers computeActorCarriedLbs failed", err);
+    return null;
+  }
 }
 
 /**
@@ -129,8 +145,7 @@ export function getContainerRulesConfig(containerItem) {
 }
 
 /**
- * Collect the lowercase tokens describing an item, mirroring how
- * Weighty Containers matches restrictions.
+ * Collect the lowercase property tokens of an item, mirroring Weighty Containers.
  * @param {Object} item
  * @returns {Set<string>}
  */
@@ -148,17 +163,75 @@ function getItemPropertyTokens(item) {
   return tokens;
 }
 
+/**
+ * Tokens a subtype restriction is matched against: type, subtype, base item,
+ * identifier, weapon-type alias and properties - the same set Weighty
+ * Containers uses.
+ * @param {Object} item
+ * @returns {Set<string>}
+ */
+function getItemMatchTokens(item) {
+  const tokens = new Set();
+  const add = value => {
+    const token = String(value ?? "").trim().toLowerCase();
+    if (token) tokens.add(token);
+  };
+  add(item?.type);
+  const typeData = item?.system?.type;
+  if (typeData && typeof typeData === "object") {
+    add(typeData.value);
+    add(typeData.subtype);
+    add(typeData.baseItem);
+    add(typeData.identifier);
+    add(globalThis.CONFIG?.DND5E?.weaponTypeMap?.[typeData.value]);
+  }
+  const attackType = item?.system?.attackType;
+  if (typeof attackType === "string") add(attackType);
+  for (const property of getItemPropertyTokens(item)) add(property);
+  return tokens;
+}
+
 function localizeReason(key, data) {
   return globalThis.game?.i18n?.format?.(key, data) ?? key;
+}
+
+/**
+ * Human-readable text for a Weighty Containers rejection code.
+ * The module's validator returns a code ("type" | "subtype" | "property" |
+ * "forbiddenProperty") together with the container's restrictions.
+ * @param {string} code
+ * @param {Object} containerItem
+ * @param {Object} droppedItem
+ * @param {Object} [restrictions]
+ * @returns {string}
+ */
+function describeRejection(code, containerItem, droppedItem, restrictions = {}) {
+  const container = containerItem?.name;
+  const item = droppedItem?.name;
+  const list = values => (Array.isArray(values) ? values.join(", ") : "");
+  switch (code) {
+    case "type":
+      return localizeReason("AIM.containers.typeNotAllowed", { container, item, type: droppedItem?.type, allowed: list(restrictions.allowedTypes) });
+    case "subtype":
+      return localizeReason("AIM.containers.subtypeNotAllowed", { container, item, subtype: droppedItem?.system?.type?.value ?? "", allowed: list(restrictions.allowedSubtypes) });
+    case "property":
+      return localizeReason("AIM.containers.missingRequiredProperty", { container, item, property: list(restrictions.requiredProperties) });
+    case "forbiddenProperty":
+      return localizeReason("AIM.containers.forbiddenProperty", { container, item, property: list(restrictions.forbiddenProperties) });
+    default:
+      return localizeReason("AIM.containers.dropRejected", { container, item });
+  }
 }
 
 /**
  * Validate moving an item into a container against Weighty Containers rules.
  * Delegates to the module's own validator when available so the two modules
  * cannot drift apart; otherwise applies an equivalent local check.
+ * Capacity is not checked here: Weighty Containers enforces it itself when the
+ * item's container changes, and reports the overflow in its own words.
  * @param {Object} containerItem
  * @param {Object} droppedItem
- * @returns {{ ok: boolean, reason?: string }}
+ * @returns {{ ok: boolean, code?: string, reason?: string }}
  */
 export function validateContainerDrop(containerItem, droppedItem) {
   if (!containerItem || !droppedItem) return { ok: true };
@@ -169,12 +242,11 @@ export function validateContainerDrop(containerItem, droppedItem) {
     try {
       const result = api.validateContainerRestrictions(containerItem, droppedItem);
       if (result && typeof result.ok === "boolean") {
+        if (result.ok) return { ok: true };
         return {
-          ok: result.ok,
-          reason: result.ok ? undefined : (result.reason || localizeReason("AIM.containers.dropRejected", {
-            item: droppedItem.name,
-            container: containerItem.name
-          }))
+          ok: false,
+          code: result.reason ?? null,
+          reason: describeRejection(result.reason, containerItem, droppedItem, result.restrictions)
         };
       }
     } catch (err) {
@@ -185,44 +257,26 @@ export function validateContainerDrop(containerItem, droppedItem) {
   const config = getContainerRulesConfig(containerItem);
   if (!config) return { ok: true };
 
+  const reject = code => ({ ok: false, code, reason: describeRejection(code, containerItem, droppedItem, config) });
   const itemType = String(droppedItem.type ?? "").toLowerCase();
-  const subType = String(
-    droppedItem.system?.type?.value ?? droppedItem.system?.armor?.type ?? ""
-  ).toLowerCase();
   const propTokens = getItemPropertyTokens(droppedItem);
 
-  const reject = (key, data) => ({ ok: false, reason: localizeReason(key, data) });
+  // Same order as Weighty Containers: type, subtype, required, forbidden.
+  if (config.allowedTypes.length > 0 && !config.allowedTypes.includes(itemType)) return reject("type");
 
-  if (config.allowedTypes.length > 0 && !config.allowedTypes.includes(itemType)) {
-    return reject("AIM.containers.typeNotAllowed", { container: containerItem.name, type: itemType });
-  }
-
-  if (config.allowedSubtypes.length > 0 && subType && !config.allowedSubtypes.includes(subType)) {
-    return reject("AIM.containers.subtypeNotAllowed", { container: containerItem.name, subtype: subType });
-  }
-
-  for (const forbidden of config.forbiddenProperties) {
-    if (propTokens.has(forbidden)) {
-      return reject("AIM.containers.forbiddenProperty", {
-        item: droppedItem.name,
-        container: containerItem.name,
-        property: forbidden
-      });
-    }
+  if (config.allowedSubtypes.length > 0) {
+    const matchTokens = getItemMatchTokens(droppedItem);
+    if (!config.allowedSubtypes.some(token => matchTokens.has(token))) return reject("subtype");
   }
 
   if (config.requiredProperties.length > 0) {
     const satisfied = config.propertyMatchMode === "any"
       ? config.requiredProperties.some(p => propTokens.has(p))
       : config.requiredProperties.every(p => propTokens.has(p));
-    if (!satisfied) {
-      return reject("AIM.containers.missingRequiredProperty", {
-        item: droppedItem.name,
-        container: containerItem.name,
-        property: config.requiredProperties.join(", ")
-      });
-    }
+    if (!satisfied) return reject("property");
   }
+
+  if (config.forbiddenProperties.some(forbidden => propTokens.has(forbidden))) return reject("forbiddenProperty");
 
   return { ok: true };
 }

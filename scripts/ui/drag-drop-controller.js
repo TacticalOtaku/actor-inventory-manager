@@ -2,9 +2,10 @@
 // Actor Inventory Manager - Drag & Drop Controller
 // ─────────────────────────────────────────────────────────
 
+import { isPhysicalItem } from "../core/item-classifier.js";
 import { validateContainerDrop } from "../integrations/weighty-containers.js";
 import { LOG } from "../foundry/logger.js";
-import { equipItemToSlot, setItemContainer, unequipItem } from "./item-actions.js";
+import { equipItemToSlot, setItemContainer, unequipItem, wouldCreateContainerCycle } from "./item-actions.js";
 
 export class DragDropController {
   constructor(app) {
@@ -39,6 +40,8 @@ export class DragDropController {
   }
 
   _onDragStart(event) {
+    // Nested rows sit inside draggable cards; only the innermost one starts the drag.
+    event.stopPropagation();
     const target = event.currentTarget;
     const itemId = target.dataset.itemId;
     const fromSlot = target.dataset.slotId;
@@ -49,6 +52,7 @@ export class DragDropController {
       uuid: target.dataset.itemUuid || (actor ? `${actor.uuid}.Item.${itemId}` : null),
       itemId,
       actorId: actor?.id,
+      actorUuid: actor?.uuid,
       fromSlot: fromSlot || null
     };
 
@@ -63,25 +67,30 @@ export class DragDropController {
 
   _onDragOver(event) {
     event.preventDefault();
+    // Containers sit inside the inventory area: highlight only the innermost target.
+    event.stopPropagation();
     event.dataTransfer.dropEffect = "move";
-    const dropTarget = event.currentTarget;
-    dropTarget.classList.add("drag-hover");
+    event.currentTarget.classList.add("drag-hover");
   }
 
   _onDragLeave(event) {
     const dropTarget = event.currentTarget;
+    // Moving onto a child element fires dragleave on the parent; ignore that flicker.
+    if (event.relatedTarget && dropTarget.contains(event.relatedTarget)) return;
     dropTarget.classList.remove("drag-hover");
   }
 
   async _onDrop(event) {
     event.preventDefault();
+    // Without this a drop on a container would also reach the inventory area
+    // around it and race a second, contradictory update.
+    event.stopPropagation();
     const dropTarget = event.currentTarget;
     dropTarget.classList.remove("drag-hover");
 
     let dragData = null;
     try {
-      const raw = event.dataTransfer.getData("text/plain");
-      dragData = JSON.parse(raw);
+      dragData = JSON.parse(event.dataTransfer.getData("text/plain"));
     } catch {
       return;
     }
@@ -91,35 +100,37 @@ export class DragDropController {
     const actor = this.app.actor;
     if (!actor) return;
 
-    const item = dragData.itemId ? actor.items.get(dragData.itemId) : await fromUuid(dragData.uuid);
-    if (!item) return;
-
-    // Check if item belongs to this actor or is being added to actor
-    if (item.parent?.id !== actor.id) {
-      // Dropping an item from world/compendium onto the actor
-      return;
-    }
+    // Only items of this very actor are rearranged here (token actors share ids).
+    const sameActor = !dragData.actorUuid || dragData.actorUuid === actor.uuid;
+    const item = sameActor && dragData.itemId ? actor.items.get(dragData.itemId) : null;
+    if (!item || item.parent !== actor) return;
 
     const dropType = dropTarget.dataset.dropTarget; // "slot", "container", "inventory"
 
     if (dropType === "slot") {
       const targetSlotId = dropTarget.dataset.slotId;
-      if (targetSlotId) {
-        await equipItemToSlot(actor, item, targetSlotId);
-      }
-    } else if (dropType === "container") {
+      if (targetSlotId) await equipItemToSlot(actor, item, targetSlotId);
+      return;
+    }
+
+    if (!isPhysicalItem(item)) return;
+
+    if (dropType === "container") {
       const containerId = dropTarget.dataset.containerId;
       const containerItem = actor.items.get(containerId);
-      if (containerItem && containerItem.id !== item.id) {
-        // Validate with Weighty Containers
-        const validation = validateContainerDrop(containerItem, item);
-        if (!validation.ok) {
-          ui.notifications?.warn(validation.reason);
-          LOG.warn("Container drop rejected by Weighty Containers rules", validation);
-          return;
-        }
-        await setItemContainer(item, containerId);
+      if (!containerItem || containerItem.id === item.id || item.system?.container === containerId) return;
+      if (wouldCreateContainerCycle(actor, item, containerId)) {
+        ui.notifications?.warn(game.i18n.format("AIM.containers.cycle", { item: item.name }));
+        return;
       }
+      // Weighty Containers' content rules; its capacity check runs in its own hook.
+      const validation = validateContainerDrop(containerItem, item);
+      if (!validation.ok) {
+        ui.notifications?.warn(validation.reason);
+        LOG.warn("Container drop rejected by Weighty Containers rules", validation);
+        return;
+      }
+      await setItemContainer(item, containerId);
     } else if (dropType === "inventory") {
       // Dropped into general inventory: unequip or remove from container
       if (item.system?.equipped) {

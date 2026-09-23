@@ -1,6 +1,16 @@
 // Runtime port used by paperdoll domain/application logic.
 // The Foundry adapter is registered from the composition root in scripts/main.js.
 
+/**
+ * Substitute `{name}` placeholders, mirroring Foundry's i18n.format.
+ * @param {string} template
+ * @param {Object} [data]
+ * @returns {string}
+ */
+export function formatTemplate(template, data = {}) {
+  return String(template ?? "").replace(/\{(\w+)\}/g, (match, key) => (key in data ? String(data[key]) : match));
+}
+
 const DEFAULT_RUNTIME = Object.freeze({
   getCustomTemplates: () => ({}),
   setCustomTemplates: async () => {
@@ -8,8 +18,11 @@ const DEFAULT_RUNTIME = Object.freeze({
   },
   isGM: () => false,
   localize: (key, fallback) => fallback ?? key,
+  format: (key, data, fallback) => formatTemplate(fallback ?? key, data),
   notifyWarning: () => {},
-  logInfo: () => {}
+  logInfo: () => {},
+  logWarn: () => {},
+  autoReconcileSlots: () => true
 });
 
 let runtime = { ...DEFAULT_RUNTIME };

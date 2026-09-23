@@ -110,10 +110,13 @@ export function computeActorCurrency(actor) {
               0
             );
           } else if (curr.type === "item") {
-            const items = Array.from(actor.items ? actor.items.values() : []).filter(i => (
-              (curr.data?.item && i.name === curr.data.item) ||
-              i.flags?.["item-piles"]?.currency === true
-            ));
+            // Item Piles stores the currency item's data, not just its name.
+            const definition = curr.data?.item;
+            const name = typeof definition === "string" ? definition : definition?.name;
+            const type = typeof definition === "object" ? definition?.type : null;
+            const items = name
+              ? Array.from(actor.items ? actor.items.values() : []).filter(i => i.name === name && (!type || i.type === type))
+              : [];
             for (const it of items) {
               qty += num(it.system?.quantity, 1);
             }
@@ -150,13 +153,15 @@ export function computeActorCurrency(actor) {
     baseValues.cp * 0.01
   );
   const formattedTotal = defaultTotal.toFixed(2);
+  const goldLabel = globalThis.game?.i18n?.localize?.("AIM.currency.gpAbbr");
+  const primaryName = goldLabel && goldLabel !== "AIM.currency.gpAbbr" ? goldLabel : "GP";
 
   return {
     ...baseValues,
     total: defaultTotal,
     totalGold: formattedTotal,
-    primaryName: "GP",
-    formatted: `${formattedTotal} GP`,
+    primaryName,
+    formatted: `${formattedTotal} ${primaryName}`,
     customCurrencies: []
   };
 }

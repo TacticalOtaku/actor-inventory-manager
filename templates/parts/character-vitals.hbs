@@ -92,10 +92,12 @@
     </div>
     <div class="aim-meter aim-encumbrance-meter {{encumbrance.tierClass}}">
       <div class="aim-meter-fill" style="width: {{encumbrance.pct}}%;"></div>
+      {{#if encumbrance.showTierStops}}
       <span class="aim-meter-stop" style="left: {{encumbrance.stops.encumbered}}%;"
             title="{{localize 'AIM.encumbrance.encumbered'}}: {{encumbrance.thresholds.encumbered}} {{encumbrance.unit}}"></span>
       <span class="aim-meter-stop" style="left: {{encumbrance.stops.heavilyEncumbered}}%;"
             title="{{localize 'AIM.encumbrance.heavily_encumbered'}}: {{encumbrance.thresholds.heavilyEncumbered}} {{encumbrance.unit}}"></span>
+      {{/if}}
     </div>
     <div class="aim-enc-status {{encumbrance.tierClass}}">
       {{localize encumbrance.tierLabelKey}}
@@ -105,11 +107,11 @@
   <!-- Currency Purse -->
   <div class="aim-currency-section">
     <div class="aim-currency-grid">
-      <div class="aim-coin aim-pp" title="Platinum"><span>PP</span> {{vitals.currency.pp}}</div>
-      <div class="aim-coin aim-gp" title="Gold"><span>GP</span> {{vitals.currency.gp}}</div>
-      <div class="aim-coin aim-ep" title="Electrum"><span>EP</span> {{vitals.currency.ep}}</div>
-      <div class="aim-coin aim-sp" title="Silver"><span>SP</span> {{vitals.currency.sp}}</div>
-      <div class="aim-coin aim-cp" title="Copper"><span>CP</span> {{vitals.currency.cp}}</div>
+      <div class="aim-coin aim-pp" title="{{localize 'AIM.currency.pp'}}"><span>{{localize "AIM.currency.ppAbbr"}}</span> {{vitals.currency.pp}}</div>
+      <div class="aim-coin aim-gp" title="{{localize 'AIM.currency.gp'}}"><span>{{localize "AIM.currency.gpAbbr"}}</span> {{vitals.currency.gp}}</div>
+      <div class="aim-coin aim-ep" title="{{localize 'AIM.currency.ep'}}"><span>{{localize "AIM.currency.epAbbr"}}</span> {{vitals.currency.ep}}</div>
+      <div class="aim-coin aim-sp" title="{{localize 'AIM.currency.sp'}}"><span>{{localize "AIM.currency.spAbbr"}}</span> {{vitals.currency.sp}}</div>
+      <div class="aim-coin aim-cp" title="{{localize 'AIM.currency.cp'}}"><span>{{localize "AIM.currency.cpAbbr"}}</span> {{vitals.currency.cp}}</div>
     </div>
     <div class="aim-total-gold">
       <i class="fa-solid fa-sack-dollar"></i> {{localize "AIM.currency.totalValue"}}: <strong>{{vitals.currency.formatted}}</strong>
@@ -117,6 +119,7 @@
   </div>
 
   <!-- Rest Controls -->
+  {{#if canEdit}}
   <div class="aim-rest-buttons">
     <button type="button" class="aim-btn aim-rest-btn" data-action="shortRest">
       <i class="fa-solid fa-mug-hot"></i>
@@ -127,4 +130,5 @@
       <span>{{localize "AIM.actions.longRest"}}</span>
     </button>
   </div>
+  {{/if}}
 </div>

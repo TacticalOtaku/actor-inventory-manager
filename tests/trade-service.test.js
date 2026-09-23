@@ -157,6 +157,8 @@ test("an in-flight pre-lock currency change is preserved when snapshot validatio
   assert.equal(actors.get("a").system.currency.gp, 15);
   assert.equal(actors.get("b").system.currency.gp, 10);
   assert.equal(tradeState().sessions[0].status, "cancelled");
+  // The confirming player is told the trade was cancelled, not that it succeeded.
+  assert.equal(tradeState().receipts.p2.error, "AIM.trade.errors.changed");
 });
 test("disconnected coordinator stops after debit and successor recovers from persisted state", async () => {
   const { actors, users } = setup(); await start();

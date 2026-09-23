@@ -116,7 +116,22 @@ describe("drop validation", () => {
     stubRuntime({ api: { validateContainerRestrictions: () => ({ ok: false, reason: "type" }) } });
     const result = validateContainerDrop({ name: "Quiver" }, { name: "Sword", type: "weapon" });
     assert.equal(result.ok, false);
-    assert.equal(result.reason, "type");
+    assert.equal(result.code, "type");
+    // The module returns a code; the player sees a sentence, not "type".
+    assert.ok(result.reason.startsWith("AIM.containers.typeNotAllowed:"));
+    assert.ok(result.reason.includes("Quiver"));
+  });
+
+  it("matches subtypes against base item and identifier like the module does", () => {
+    stubRuntime({ api: {} });
+    const quiver = {
+      name: "Quiver",
+      flags: { [WEIGHTY_CONTAINERS_MODULE_ID]: { allowedSubtypes: "arrow" } }
+    };
+    const arrows = { name: "Arrows", type: "consumable", system: { type: { value: "ammo", subtype: "arrow" } } };
+    const bolts = { name: "Bolts", type: "consumable", system: { type: { value: "ammo", subtype: "crossbowBolt" } } };
+    assert.equal(validateContainerDrop(quiver, arrows).ok, true);
+    assert.equal(validateContainerDrop(quiver, bolts).code, "subtype");
   });
 
   it("honours string-shaped restriction flags in the local fallback", () => {

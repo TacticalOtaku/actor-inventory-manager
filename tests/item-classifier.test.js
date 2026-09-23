@@ -110,3 +110,63 @@ describe("one-handed weapons and shields", () => {
     assert.equal(isItemCompatibleWithSlot(plate, "armor", actor), true);
   });
 });
+
+describe("whole-word name matching", () => {
+  const mk = (name, type, value, extra = {}) => ({ id: name, name, type, flags: {}, system: { type: { value }, ...extra } });
+
+  it("never offers weapon hands to gloves", () => {
+    const gauntlets = mk("Gauntlets of Ogre Power", "equipment", "trinket");
+    assert.deepEqual(getValidSlotsForItem(gauntlets, actor), ["hands"]);
+    assert.equal(isItemCompatibleWithSlot(gauntlets, "mainHand", actor), false);
+    assert.equal(isItemCompatibleWithSlot(gauntlets, "offHand", actor), false);
+  });
+
+  it("keeps clothing-typed wearables out of the armor slot", () => {
+    const gloves = mk("Gloves of Thievery", "equipment", "clothing");
+    assert.deepEqual(getValidSlotsForItem(gloves, actor), ["hands"]);
+  });
+
+  it("treats real armor as armor whatever its name", () => {
+    for (const name of ["Chain Shirt", "Кольчужная рубаха"]) {
+      const shirt = mk(name, "equipment", "medium");
+      assert.equal(isBodyArmor(shirt), true, name);
+      assert.equal(classifyItem(shirt), "armor", name);
+      assert.deepEqual(getValidSlotsForItem(shirt, actor), ["armor"], name);
+    }
+  });
+
+  it("does not read tokens inside longer words", () => {
+    assert.equal(classifyItem(mk("Bandage", "loot", "")), "loot");
+    assert.equal(classifyItem(mk("Headband of Intellect", "equipment", "trinket")), "head");
+    assert.deepEqual(getValidSlotsForItem(mk("Cloak of Light", "equipment", "clothing"), actor), ["cloak"]);
+  });
+
+  it("understands Russian inflections", () => {
+    assert.equal(classifyItem(mk("Сапоги скорости", "equipment", "trinket")), "feet");
+    assert.equal(classifyItem(mk("Кольцо невидимости", "equipment", "trinket")), "ring");
+    assert.equal(classifyItem(mk("Перчатки ловкости", "equipment", "trinket")), "hands");
+  });
+});
+
+describe("slot compatibility", () => {
+  const helm = { id: "helm", name: "Helm of Brilliance", type: "equipment", flags: {}, system: { type: { value: "trinket" } } };
+  const ioun = { id: "ioun", name: "Ioun Stone", type: "equipment", flags: {}, system: { type: { value: "trinket" } } };
+  const potion = { id: "potion", name: "Potion of Healing", type: "consumable", flags: {}, system: { type: { value: "potion" } } };
+
+  it("rejects wearables dropped on the wrong body part", () => {
+    assert.equal(isItemCompatibleWithSlot(helm, "head", actor), true);
+    assert.equal(isItemCompatibleWithSlot(helm, "feet", actor), false);
+    assert.equal(isItemCompatibleWithSlot(helm, "ring1", actor), false);
+  });
+
+  it("never returns slots the template does not have", () => {
+    assert.deepEqual(getValidSlotsForItem(potion, actor), ["mainHand", "offHand"]);
+    assert.equal(isItemCompatibleWithSlot(potion, "quick1", actor), false);
+  });
+
+  it("gives unclassified items no automatic slot but allows placing them by hand", () => {
+    assert.deepEqual(getValidSlotsForItem(ioun, actor), []);
+    assert.equal(isItemCompatibleWithSlot(ioun, "neck", actor), true);
+    assert.equal(isItemCompatibleWithSlot(ioun, "armor", actor), false);
+  });
+});

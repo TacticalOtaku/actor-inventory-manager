@@ -109,19 +109,6 @@ export const DEFAULT_SLOT_DEFINITIONS = [
   }
 ];
 
-export const ATTUNEMENT_SLOT_DEFINITIONS = [
-  { id: SLOTS.ATTUNEMENT_1, labelKey: "AIM.slots.attunement1", order: 201 },
-  { id: SLOTS.ATTUNEMENT_2, labelKey: "AIM.slots.attunement2", order: 202 },
-  { id: SLOTS.ATTUNEMENT_3, labelKey: "AIM.slots.attunement3", order: 203 }
-];
-
-export const QUICK_SLOT_DEFINITIONS = [
-  { id: SLOTS.QUICK_1, labelKey: "AIM.slots.quick1", order: 301 },
-  { id: SLOTS.QUICK_2, labelKey: "AIM.slots.quick2", order: 302 },
-  { id: SLOTS.QUICK_3, labelKey: "AIM.slots.quick3", order: 303 },
-  { id: SLOTS.QUICK_4, labelKey: "AIM.slots.quick4", order: 304 }
-];
-
 /**
  * Extensible Registry for Equipment Slots
  */

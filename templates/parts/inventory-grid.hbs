@@ -37,11 +37,11 @@
   <div class="aim-filter-bar">
     <div class="aim-search-wrapper">
       <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="aim-inv-search" name="aim-inv-search" class="aim-search-input" data-search-input="true" autocomplete="off" placeholder="{{localize 'AIM.filters.searchPlaceholder'}}" value="{{searchFilter}}" />
+      <input type="text" id="{{appId}}-search" name="aim-inv-search" class="aim-search-input" data-search-input="true" autocomplete="off" placeholder="{{localize 'AIM.filters.searchPlaceholder'}}" value="{{searchFilter}}" />
     </div>
 
     <div class="aim-sort-wrapper">
-      <select id="aim-inv-sort" name="aim-inv-sort" class="aim-sort-select" data-sort-select="true">
+      <select id="{{appId}}-sort" name="aim-inv-sort" class="aim-sort-select" data-sort-select="true">
         <option value="name" {{#if (eq sortBy 'name')}}selected{{/if}}>{{localize "AIM.sort.name"}}</option>
         <option value="weight" {{#if (eq sortBy 'weight')}}selected{{/if}}>{{localize "AIM.sort.weight"}}</option>
         <option value="value" {{#if (eq sortBy 'value')}}selected{{/if}}>{{localize "AIM.sort.value"}}</option>
@@ -56,15 +56,15 @@
     <div class="aim-items-list">
       {{#if items.length}}
         {{#each items}}
-        <div class="aim-item-card {{#if this.isEquipped}}is-equipped{{/if}} rarity-{{this.rarity}} {{#if this.hasGlow}}has-rarity-glow{{/if}}"
-             data-drag-item="true"
+        <div class="aim-item-card {{#if this.isEquipped}}is-equipped{{/if}} rarity-{{this.rarityKey}} {{#if this.hasGlow}}has-rarity-glow{{/if}}"
+             {{#if this.canEdit}}data-drag-item="true"{{/if}}
              data-item-id="{{this.id}}"
              data-item-uuid="{{this.uuid}}"
-             data-rarity="{{this.rarity}}"
-             data-item-rarity="{{this.rarity}}"
+             data-rarity="{{this.rarityKey}}"
+             data-item-rarity="{{this.rarityKey}}"
              style="{{this.cssVars}}">
 
-          <div class="aim-item-thumb-wrapper" data-action="openItem" data-item-id="{{this.id}}" style="border-color: {{this.rarityColor}};">
+          <div class="aim-item-thumb-wrapper" data-action="openItem" data-item-id="{{this.id}}" style="border-color: var(--rarity-color);">
             <img class="aim-item-img" src="{{this.img}}" alt="{{this.name}}" />
             {{#if this.hasMultiple}}
               <span class="aim-item-badge-qty">{{this.quantity}}</span>
@@ -97,8 +97,9 @@
             </div>
           </div>
 
+          {{#if this.canEdit}}
           <div class="aim-item-controls">
-            {{#if (ne this.type "container")}}
+            {{#if this.canEquip}}
               <button type="button" class="aim-btn-icon {{#if this.isEquipped}}is-active{{/if}}"
                       data-action="toggleEquip"
                       data-item-id="{{this.id}}"
@@ -124,6 +125,7 @@
               <i class="fa-regular fa-trash-can"></i>
             </button>
           </div>
+          {{/if}}
         </div>
         {{/each}}
       {{else}}

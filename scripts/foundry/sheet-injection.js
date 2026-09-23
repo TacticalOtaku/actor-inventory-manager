@@ -3,9 +3,17 @@
 // ─────────────────────────────────────────────────────────
 
 import { MODULE_ID } from "../constants.js";
-import { isSupportedActor } from "../core/actor-scope.js";
+import { canViewActor, isSupportedActor } from "../core/actor-scope.js";
 import { openActorInventory } from "../ui/inventory-app.js";
 import { LOG } from "./logger.js";
+
+/** Action id of the inventory entry in ApplicationV2 header menus. */
+const HEADER_ACTION = "aim-inventory";
+
+function isApplicationV2(app) {
+  const ApplicationV2 = globalThis.foundry?.applications?.api?.ApplicationV2;
+  return Boolean(ApplicationV2 && app instanceof ApplicationV2);
+}
 
 /**
  * Check if the application is a primary dnd5e Actor Sheet (Character or NPC)
@@ -25,9 +33,10 @@ function isPrimaryActorSheet(app) {
     return false;
   }
 
-  // Check document
+  // Check document. Limited permission shows only the biography, so the
+  // full inventory is offered to observers and owners alone.
   const actor = app.document ?? app.actor;
-  if (!isSupportedActor(actor) || actor.documentName !== "Actor") {
+  if (!isSupportedActor(actor) || actor.documentName !== "Actor" || !canViewActor(actor, game.user)) {
     return false;
   }
 
@@ -104,19 +113,20 @@ function patchSheetHeaderControls() {
       }
 
       const actor = this.document ?? this.actor;
-      if (!actor || actor.type === "group") return controls;
+      if (!game.settings.get(MODULE_ID, "showSheetButton")) return controls;
 
-      try {
-        if (!game.settings.get(MODULE_ID, "showSheetButton")) return controls;
-      } catch {}
+      // Header controls dispatch through the sheet's action table; register the
+      // handler there too for versions that ignore a control's onClick.
+      if (this.options?.actions && !this.options.actions[HEADER_ACTION]) {
+        this.options.actions[HEADER_ACTION] = () => openActorInventory(this.document ?? this.actor);
+      }
 
-      const hasAim = controls.some(c => c.action === "aim-inventory" || c.class?.includes?.("aim-open-inv"));
+      const hasAim = controls.some(c => c.action === HEADER_ACTION);
       if (!hasAim) {
         controls.unshift({
           icon: "fa-solid fa-shirt",
           label: game.i18n.localize("AIM.sheetButton.label"),
-          action: "aim-inventory",
-          class: "aim-open-inv-control",
+          action: HEADER_ACTION,
           onClick: (event) => {
             event?.preventDefault?.();
             openActorInventory(actor);
@@ -136,18 +146,15 @@ function patchSheetHeaderControls() {
  * Inject icon button into Actor Sheet Window Header Bar
  */
 function injectHeaderButton(app, htmlElement) {
-  try {
-    if (!game.settings.get(MODULE_ID, "showSheetButton")) return;
-  } catch {}
-
+  if (!game.settings.get(MODULE_ID, "showSheetButton")) return;
+  // ApplicationV1 sheets already get a labelled button from getActorSheetHeaderButtons.
+  if (!isApplicationV2(app)) return;
   if (!isPrimaryActorSheet(app)) return;
 
   const root = htmlElement instanceof HTMLElement ? htmlElement : htmlElement?.[0] ?? htmlElement;
   if (!(root instanceof HTMLElement)) return;
 
   const actor = app.document ?? app.actor;
-  if (!actor || actor.documentName !== "Actor" || actor.type === "group") return;
-
   const header = app.window?.header ?? root.querySelector(".window-header, header.window-header, header.sheet-header");
   if (!header || header.querySelector(".aim-window-header-btn")) return;
 
@@ -186,11 +193,7 @@ export function registerSheetInjectionHooks() {
   Hooks.on("getActorSheetHeaderButtons", (sheet, buttons) => {
     if (!isPrimaryActorSheet(sheet)) return;
     const actor = sheet.document ?? sheet.actor;
-    if (!actor || actor.type === "group") return;
-
-    try {
-      if (!game.settings.get(MODULE_ID, "showSheetButton")) return;
-    } catch {}
+    if (!game.settings.get(MODULE_ID, "showSheetButton")) return;
 
     if (!buttons.some(b => b.class === "aim-open-inventory-btn")) {
       buttons.unshift({

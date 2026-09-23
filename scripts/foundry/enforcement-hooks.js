@@ -2,17 +2,15 @@
 // Actor Inventory Manager - Enforcement & Synchronization Hooks
 // ─────────────────────────────────────────────────────────
 
-import { ENFORCEMENT_MODES, FLAGS, MODULE_ID } from "../constants.js";
+import { AIM_EQUIP_OPTION, ENFORCEMENT_MODES, FLAGS, MODULE_ID } from "../constants.js";
 import { isSupportedActor } from "../core/actor-scope.js";
 import {
   equipmentRuleEngine,
+  findEquipSlot,
   getActorEquippedMap
 } from "../core/equipment-rules.js";
-import {
-  findBestSlotForEquipping,
-  getItemAssignedSlot,
-  getValidSlotsForItem
-} from "../core/item-classifier.js";
+import { getActorSlots } from "../core/paperdoll-templates.js";
+import { getItemAssignedSlot } from "../core/item-classifier.js";
 import { LOG } from "./logger.js";
 
 /**
@@ -27,6 +25,8 @@ export function handlePreUpdateItem(item, changes, options, userId) {
   if (!isSupportedActor(actor) || actor.documentName !== "Actor") return true;
   // Recovery reinstates a saved loadout; equipment validation must not rewrite it.
   if (options?.aimTradeRecovery && globalThis.game?.user?.isGM) return true;
+  // The inventory window validated this change itself and wrote the slot flags.
+  if (options?.[AIM_EQUIP_OPTION]) return true;
 
   // Check if equipped status is being modified
   const equippedChanging = foundry.utils.hasProperty(changes, "system.equipped");
@@ -36,40 +36,30 @@ export function handlePreUpdateItem(item, changes, options, userId) {
 
   if (!isEquipping) {
     // Unequipping: clear slot assignment flag
-    changes.flags = changes.flags || {};
     foundry.utils.setProperty(changes, `flags.${MODULE_ID}.${FLAGS.SLOT}`, null);
     LOG.debug("Unequipped item, cleared slot flag", { item: item.name, actor: actor.name });
     return true;
   }
 
-  // Equipping item: determine target slot
+  // Equipping item: determine target slot. A leftover flag only counts while
+  // the actor's template still has that slot.
   const currentSlotMap = getActorEquippedMap(actor);
-  let targetSlotId = (
-    foundry.utils.getProperty(changes, `flags.${MODULE_ID}.${FLAGS.SLOT}`) ??
-    getItemAssignedSlot(item)
-  );
+  const knownSlotIds = new Set(getActorSlots(actor).map(slot => slot.id));
+  const requestedSlot = foundry.utils.getProperty(changes, `flags.${MODULE_ID}.${FLAGS.SLOT}`) ?? getItemAssignedSlot(item);
+  const targetSlotId = knownSlotIds.has(requestedSlot)
+    ? requestedSlot
+    : findEquipSlot(actor, item, currentSlotMap);
 
   if (!targetSlotId) {
-    targetSlotId = findBestSlotForEquipping(actor, item, currentSlotMap);
+    // No place on the paperdoll (Ioun stones, trinkets...): the system may
+    // still equip it, it just does not occupy a slot.
+    foundry.utils.setProperty(changes, `flags.${MODULE_ID}.${FLAGS.SLOT}`, null);
+    LOG.debug("Equipped item has no paperdoll slot", { item: item.name });
+    return true;
   }
-
-  if (!targetSlotId) {
-    const valid = getValidSlotsForItem(item);
-    const msg = game.i18n.format("AIM.notifications.noValidSlot", {
-      item: item.name,
-      valid: valid.join(", ")
-    });
-    LOG.warn("No valid slot found for item", { item: item.name, valid });
-    ui.notifications?.warn(msg);
-    return false;
-  }
-
-  // Run validation engine
-  const result = equipmentRuleEngine.validateEquip(actor, item, targetSlotId, {
-    slotMap: currentSlotMap
-  });
 
   const mode = game.settings?.get?.(MODULE_ID, "enforcementMode") ?? ENFORCEMENT_MODES.BLOCK;
+  const result = resolveEquipValidation(actor, item, targetSlotId, currentSlotMap, mode);
 
   if (!result.valid) {
     LOG.warn("Equip validation failed", {
@@ -78,13 +68,9 @@ export function handlePreUpdateItem(item, changes, options, userId) {
       error: result.error,
       mode
     });
-
-    if (mode === ENFORCEMENT_MODES.BLOCK) {
-      ui.notifications?.warn(result.error);
-      return false; // Blocks the preUpdate in Foundry
-    } else if (mode === ENFORCEMENT_MODES.WARN) {
-      ui.notifications?.warn(result.error);
-    }
+    ui.notifications?.warn(result.error);
+    // Warn mode reports the problem but lets the sheet change through.
+    if (mode !== ENFORCEMENT_MODES.WARN) return false;
   }
 
   // Handle auto-swap items if any
@@ -129,7 +115,6 @@ export function handlePreUpdateItem(item, changes, options, userId) {
   }
 
   // Set the assigned slot in changes
-  changes.flags = changes.flags || {};
   foundry.utils.setProperty(changes, `flags.${MODULE_ID}.${FLAGS.SLOT}`, targetSlotId);
   foundry.utils.setProperty(changes, `flags.${MODULE_ID}.${FLAGS.EQUIPPED_AT}`, Date.now());
 
@@ -140,6 +125,30 @@ export function handlePreUpdateItem(item, changes, options, userId) {
   });
 
   return true;
+}
+
+/**
+ * Validate an equip for the given enforcement mode.
+ * In auto-swap mode a rule failure caused by another item (a two-handed
+ * weapon, a second body armor, a second shield) swaps that item out instead of
+ * refusing; the rules are re-run without it until they pass.
+ * @returns {import("../core/equipment-rules.js").ValidationResult}
+ */
+function resolveEquipValidation(actor, item, targetSlotId, slotMap, mode) {
+  let result = equipmentRuleEngine.validateEquip(actor, item, targetSlotId, { slotMap });
+  if (result.valid || mode !== ENFORCEMENT_MODES.AUTO_SWAP) return result;
+
+  const displaced = [];
+  let remaining = slotMap;
+  for (let attempt = 0; attempt < 5 && !result.valid && result.conflictItem; attempt++) {
+    const conflict = result.conflictItem;
+    displaced.push(conflict);
+    remaining = new Map([...remaining].filter(([, equipped]) => equipped.id !== conflict.id));
+    result = equipmentRuleEngine.validateEquip(actor, item, targetSlotId, { slotMap: remaining });
+  }
+  if (!result.valid) return result;
+  result.autoSwapItems = [...displaced, ...(result.autoSwapItems ?? [])];
+  return result;
 }
 
 /**

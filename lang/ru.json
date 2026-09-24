@@ -283,6 +283,7 @@
       "pact": "Договор",
       "levelSlot": "{level} Круг",
       "levelGroup": "Заклинания {level} Круга",
+      "preparedGroup": "Подготовленные заклинания",
       "cantrips": "Фокусы",
       "cast": "Сотворить заклинание",
       "prepared": "Подготовлено",

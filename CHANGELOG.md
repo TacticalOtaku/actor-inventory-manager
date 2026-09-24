@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.5.1
+
+### Spells & Actions drawer
+- Spell and action cards no longer clip their details: the school, activation and range of a spell (e.g. "Self", "Bonus Action"), and the source, activation, uses and recharge of a feature wrap onto a second line in a narrow drawer instead of being cut off.
+- The spell level in the prepared segment moved from the meta row onto the corner of the spell icon, leaving the row its full width.
+- Activation pills (Action / Bonus Action / Reaction) are readable on the light theme.
+
+## 1.5.0
+
+### Spells
+- Prepared spells get their own segment at the top of the spell list. It holds every leveled spell prepared for the day, including always-prepared ones, sorted by level and then name, with the spell level on each card.
+- Prepared spells move out of their level groups instead of being listed twice; unpreparing a spell sends it back to its level. Cantrips stay in their own group.
+- The segment follows the spell search and disappears when nothing is prepared.
+
 ## 1.4.0
 
 ### Requirements

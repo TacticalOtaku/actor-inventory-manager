@@ -332,7 +332,19 @@ export function resolveItemUses(item) {
 }
 
 /**
- * Extract spells from an actor, grouped by circle/level
+ * Is the spell prepared for the day? Cantrips are always known, not prepared,
+ * so only leveled spells marked prepared or always prepared count.
+ * @param {Object} spellItem
+ * @returns {boolean}
+ */
+export function isSpellPreparedForDay(spellItem) {
+  return num(spellItem?.system?.level, 0) > 0 && resolveSpellPreparation(spellItem).prepared >= 1;
+}
+
+/**
+ * Extract spells from an actor, grouped by circle/level.
+ * Prepared spells leave their level group and lead the list in a group of
+ * their own (`isPreparedGroup`), ordered by level and then name.
  * @param {Object} actor
  * @param {string} searchFilter
  * @returns {Array<Object>}
@@ -351,6 +363,7 @@ export function extractActorSpells(actor, searchFilter = "") {
   });
 
   // Group by spell level (0 = cantrip, 1..9 = circle)
+  const preparedSpells = [];
   const grouped = new Map();
   for (let lvl = 0; lvl <= 9; lvl++) {
     grouped.set(lvl, []);
@@ -391,6 +404,7 @@ export function extractActorSpells(actor, searchFilter = "") {
       name: spell.name,
       img: spell.img || "icons/svg/daze.svg",
       level: lvl,
+      levelLabel: globalThis.game?.i18n?.format("AIM.spells.levelSlot", { level: lvl }) || `Lvl ${lvl}`,
       school: schoolKey,
       schoolLabel,
       schoolColor,
@@ -411,15 +425,27 @@ export function extractActorSpells(actor, searchFilter = "") {
       }
     };
 
-    if (grouped.has(lvl)) {
+    if (isSpellPreparedForDay(spell)) {
+      preparedSpells.push(formattedSpell);
+    } else if (grouped.has(lvl)) {
       grouped.get(lvl).push(formattedSpell);
     } else {
       grouped.set(lvl, [formattedSpell]);
     }
   }
 
-  // Format into level groups array
+  // Format into level groups array, prepared spells first
   const result = [];
+  if (preparedSpells.length > 0) {
+    preparedSpells.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
+    result.push({
+      level: "prepared",
+      isPreparedGroup: true,
+      title: localizeOr("AIM.spells.preparedGroup", "Prepared Spells"),
+      count: preparedSpells.length,
+      spells: preparedSpells
+    });
+  }
   for (const [lvl, spells] of grouped.entries()) {
     if (spells.length > 0) {
       spells.sort((a, b) => a.name.localeCompare(b.name));

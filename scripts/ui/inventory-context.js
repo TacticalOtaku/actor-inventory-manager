@@ -20,7 +20,7 @@ function rarityRank(item) {
 /** Unit price in gold pieces, so 1 pp outranks 5 gp. */
 function priceInGold(item) {
   const price = item.system?.price;
-  const value = num(price?.value ?? price, 0);
+  const value = num(price?.value, 0);
   const denomination = price?.denomination ?? "gp";
   const conversion = num(globalThis.CONFIG?.DND5E?.currencies?.[denomination]?.conversion, DEFAULT_COIN_CONVERSION[denomination] ?? 1);
   return conversion > 0 ? value / conversion : value;
@@ -45,7 +45,7 @@ function matchesInventoryTab(item, tab) {
   if (tab === "armor") return isArmorInventoryItem(item);
   if (tab === "consumables") return item.type === "consumable";
   if (tab === "containers") {
-    return item.type === "container" || item.type === "backpack" || item.system?.type?.value === "container";
+    return item.type === "container";
   }
   if (tab === "loot") return isLootInventoryItem(item);
   return true;

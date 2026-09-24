@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.4.0
+
+### Requirements
+- Foundry VTT **14** or newer. Foundry 12 and 13 are no longer supported.
+- D&D 5e **5.3.3** or newer. dnd5e 3.x, 4.x and 5.0–5.3.2 are no longer supported.
+- Item Piles (optional) **3.3.0** or newer.
+
+### Removed legacy code
+- Attunement reads only `system.attunement` (requirement) and `system.attuned` (state); the numeric 3.x/4.x encoding is gone, including in trades.
+- Spell preparation uses only `system.method` / `system.prepared`; the `system.preparation` fallback is gone.
+- Uses and recharge come from `system.uses` and `uses.recovery`; the old `system.recharge` object is no longer read.
+- Spell components come from `system.properties`; the old `system.components` object is no longer read.
+- Item properties, weight, price and armor category are read in the current dnd5e shapes only (`Set`, `{ value, units }`, `{ value, denomination }`, `system.type.value`). The `backpack` item type is no longer recognised.
+- Actor sheets: the ApplicationV1 header button (`getActorSheetHeaderButtons`) and the old dnd5e sheet render hooks were removed; one `renderActorSheetV2` hook covers every dnd5e sheet.
+- `loadTemplates`, `FilePicker` and `fromUuidSync` are used from the `foundry.*` namespaces only; the Foundry 12 globals are no longer looked up.
+- Item Piles: only `game.itempiles.API` is used; the `ItemPiles` global and the manual reading of the Item Piles currency settings were removed.
+- Pre-release paperdoll flags (`customTemplate`, `templateId`) are no longer read.
+- Application renders use the ApplicationV2 options object instead of the boolean argument.
+
 ## 1.3.0
 
 ### Equipment rules

@@ -25,15 +25,13 @@ function localizeOr(key, fallback) {
 
 /**
  * Short label for a unit from a CONFIG.DND5E unit table (movementUnits,
- * distanceUnits, weightUnits). dnd5e 4+ stores objects with an abbreviation;
- * older versions only a label, in which case the key itself is shown.
+ * distanceUnits, weightUnits). Unknown units show the key itself.
  * @param {string} tableName
  * @param {string} unit
  * @returns {string}
  */
 export function unitAbbreviation(tableName, unit) {
-  const entry = getDnd5eConfig()[tableName]?.[unit];
-  const abbreviation = typeof entry === "object" ? entry?.abbreviation : null;
+  const abbreviation = getDnd5eConfig()[tableName]?.[unit]?.abbreviation;
   return abbreviation ? localizeOr(abbreviation, abbreviation) : unit;
 }
 
@@ -57,7 +55,7 @@ export function extractActorVitals(actor) {
   const hp = attributes.hp ?? { value: 0, max: 0, temp: 0 };
   const ac = attributes.ac?.value ?? 10;
   const movement = attributes.movement ?? {};
-  const init = attributes.init?.total ?? attributes.init?.mod ?? 0;
+  const init = attributes.init?.total ?? 0;
 
   // Currency (calculated via Item Piles if active or standard dnd5e)
   const currencyData = computeActorCurrency(actor);
@@ -152,9 +150,9 @@ export function formatItemForDisplay(item) {
   const hasGlow = rarityVisuals.hasGlow;
   const isEquipped = Boolean(system.equipped);
   const qty = num(system.quantity, 1);
-  const weight = num(system.weight?.value ?? system.weight, 0);
+  const weight = num(system.weight?.value, 0);
   const weightUnits = unitAbbreviation("weightUnits", system.weight?.units ?? getSystemWeightUnit());
-  const priceVal = num(system.price?.value ?? system.price, 0);
+  const priceVal = num(system.price?.value, 0);
   const priceDenom = system.price?.denomination ?? "gp";
 
   // Attunement state
@@ -166,16 +164,8 @@ export function formatItemForDisplay(item) {
   const properties = [];
   const config = getDnd5eConfig();
   const itemProps = config.itemProperties ?? {};
-  const weaponProps = config.weaponProperties ?? {};
-  const armorProps = config.armorProperties ?? {};
-
-  const propSet = system.properties;
-  if (propSet) {
-    const keys = propSet instanceof Set ? Array.from(propSet) : Array.isArray(propSet) ? propSet : Object.keys(propSet).filter(k => propSet[k]);
-    for (const k of keys) {
-      const label = itemProps[k]?.label ?? weaponProps[k]?.label ?? armorProps[k]?.label ?? k;
-      properties.push(label);
-    }
+  for (const k of system.properties ?? []) {
+    properties.push(itemProps[k]?.label ?? k);
   }
 
   return {
@@ -271,82 +261,51 @@ export function extractSpellSlots(actor) {
 }
 
 /**
- * Resolve the preparation state of a spell across dnd5e versions.
+ * Resolve the preparation state of a spell: `system.method` ("spell" | "pact" |
+ * "atwill" | "innate" | "ritual") plus numeric `system.prepared`
+ * (0 unprepared, 1 prepared, 2 always prepared).
  * @param {Object} spellItem
  * @returns {{ method: string, prepared: number, isPrepared: boolean, isAlways: boolean, canPrepare: boolean }}
  */
 export function resolveSpellPreparation(spellItem) {
   const system = spellItem?.system ?? {};
   const level = num(system.level, 0);
-
-  // dnd5e 5.x
-  if (system.method !== undefined || typeof system.prepared === "number") {
-    const method = system.method || "";
-    const prepared = num(system.prepared, 0);
-    const spellcasting = getDnd5eConfig().spellcasting ?? {};
-    // `prepares` is declared for the "spell" and "pact" methods.
-    const methodPrepares = spellcasting[method]
-      ? Boolean(spellcasting[method].prepares)
-      : (method === "spell" || method === "pact");
-    return {
-      method,
-      prepared,
-      isPrepared: prepared >= 1 || level === 0,
-      isAlways: prepared >= 2,
-      canPrepare: methodPrepares && level > 0
-    };
-  }
-
-  // dnd5e 3.x / 4.x
-  const mode = system.preparation?.mode || "prepared";
-  const prepared = Boolean(system.preparation?.prepared);
-  const isAlways = mode === "always";
+  const method = system.method || "";
+  const prepared = num(system.prepared, 0);
+  const spellcasting = getDnd5eConfig().spellcasting ?? {};
+  // `prepares` is declared for the "spell" and "pact" methods.
+  const methodPrepares = spellcasting[method]
+    ? Boolean(spellcasting[method].prepares)
+    : (method === "spell" || method === "pact");
   return {
-    method: mode,
-    prepared: prepared ? 1 : 0,
-    isPrepared: prepared || isAlways || mode === "atwill" || mode === "innate" || level === 0,
-    isAlways,
-    canPrepare: (mode === "prepared" || mode === "pact") && level > 0
+    method,
+    prepared,
+    isPrepared: prepared >= 1 || level === 0,
+    isAlways: prepared >= 2,
+    canPrepare: methodPrepares && level > 0
   };
 }
 
 /**
- * Resolve the activation descriptor of an item across dnd5e versions.
- * dnd5e 5.x moved activation onto activities; only spells keep `system.activation`.
+ * Resolve the activation descriptor of an item.
+ * Activation lives on activities; spells without one still carry `system.activation`.
  * @param {Object} item
  * @returns {{ type: string, value: number|null, config: Object }}
  */
 export function resolveItemActivation(item) {
   const system = item?.system ?? {};
-  const activities = system.activities;
-
-  // dnd5e 5.x - read the first usable activity.
-  if (activities) {
-    const list = activities.contents ?? (Array.isArray(activities) ? activities : Array.from(activities ?? []));
-    const first = list?.[0];
-    if (first?.activation?.type) {
-      const type = first.activation.type;
-      return {
-        type,
-        value: first.activation.value ?? null,
-        config: getDnd5eConfig().activityActivationTypes?.[type] ?? {}
-      };
-    }
-  }
-
-  // Legacy shape
-  const act = system.activation ?? {};
-  const type = act.type || "";
+  const first = system.activities?.contents?.[0];
+  const activation = first?.activation?.type ? first.activation : (system.activation ?? {});
+  const type = activation.type || "";
   return {
     type,
-    value: act.cost ?? act.value ?? null,
+    value: activation.value ?? null,
     config: getDnd5eConfig().activityActivationTypes?.[type] ?? {}
   };
 }
 
 /**
- * Resolve limited-use and recharge state across dnd5e versions.
- * dnd5e 5.x replaced `system.recharge` with a `uses.recovery` entry.
+ * Resolve limited-use and recharge state. Recharge is a `uses.recovery` entry.
  * @param {Object} item
  * @returns {{ hasUses: boolean, usesDisplay: string, hasRecharge: boolean, rechargeDisplay: string, isCharged: boolean }}
  */
@@ -358,9 +317,7 @@ export function resolveItemUses(item) {
   const hasUses = max > 0;
 
   const recovery = Array.isArray(uses.recovery) ? uses.recovery : [];
-  const rechargeEntry = recovery.find(entry => entry?.period === "recharge");
-  const legacyRecharge = system.recharge ?? {};
-  const rechargeFormula = rechargeEntry?.formula ?? legacyRecharge.value;
+  const rechargeFormula = recovery.find(entry => entry?.period === "recharge")?.formula;
   const hasRecharge = Boolean(rechargeFormula);
   const threshold = num(rechargeFormula, 6);
 
@@ -369,8 +326,8 @@ export function resolveItemUses(item) {
     usesDisplay: hasUses ? `${value} / ${max}` : "",
     hasRecharge,
     rechargeDisplay: hasRecharge ? `${threshold}${threshold < 6 ? "+" : ""}` : "",
-    // Legacy flag; in 5.x a recharging item is "spent" when it has no uses left.
-    isCharged: legacyRecharge.charged !== undefined ? Boolean(legacyRecharge.charged) : value > 0
+    // A recharging item is "spent" when it has no uses left.
+    isCharged: value > 0
   };
 }
 
@@ -407,9 +364,7 @@ export function extractActorSpells(actor, searchFilter = "") {
     const schoolVisuals = getSpellSchoolVisuals(schoolKey, lvl, SPELL_SCHOOL_COLORS);
     const schoolColor = schoolVisuals.color;
 
-    // Preparation status. dnd5e 5.x: system.method ("spell"|"pact"|"atwill"|
-    // "innate"|"ritual") plus numeric system.prepared (0 unprepared, 1 prepared,
-    // 2 always prepared). Older versions used system.preparation.{mode,prepared}.
+    // Preparation status
     const prep = resolveSpellPreparation(spell);
     const mode = prep.method;
     const isPrepared = prep.isPrepared;
@@ -421,19 +376,7 @@ export function extractActorSpells(actor, searchFilter = "") {
     const activationLabel = formatActivationLabel(activation);
 
     // Components & Properties
-    const propSet = system.properties;
-    const hasProp = (k) => {
-      if (!propSet) return false;
-      if (propSet instanceof Set) return propSet.has(k);
-      if (Array.isArray(propSet)) return propSet.includes(k);
-      return Boolean(propSet[k]);
-    };
-
-    const isVocal = hasProp("vocal") || Boolean(system.components?.vocal || system.components?.v);
-    const isSomatic = hasProp("somatic") || Boolean(system.components?.somatic || system.components?.s);
-    const isMaterial = hasProp("material") || Boolean(system.components?.material || system.components?.m);
-    const isRitual = hasProp("ritual") || Boolean(system.components?.ritual);
-    const isConcentration = hasProp("concentration") || Boolean(system.components?.concentration);
+    const hasProp = k => Boolean(system.properties?.has?.(k));
 
     // Range display
     const range = system.range ?? {};
@@ -460,11 +403,11 @@ export function extractActorSpells(actor, searchFilter = "") {
       activationType: activation.type || "special",
       rangeDisplay,
       components: {
-        v: isVocal,
-        s: isSomatic,
-        m: isMaterial,
-        ritual: isRitual,
-        concentration: isConcentration
+        v: hasProp("vocal"),
+        s: hasProp("somatic"),
+        m: hasProp("material"),
+        ritual: hasProp("ritual"),
+        concentration: hasProp("concentration")
       }
     };
 
@@ -537,8 +480,7 @@ export function extractActorActions(actor, searchFilter = "") {
     const uses = resolveItemUses(feat);
 
     const featureLabel = localizeOr("AIM.spells.feature", "Feature");
-    let sourceLabel = system.type?.label || system.source?.custom || system.source || featureLabel;
-    if (typeof sourceLabel !== "string") sourceLabel = featureLabel;
+    const sourceLabel = system.type?.label || system.source?.custom || featureLabel;
 
     // Mirrors the dnd5e sheet: "trait" property or a passive activation type.
     const isTrait = system.properties?.has?.("trait") ?? false;
@@ -607,17 +549,12 @@ export async function updateSpellSlot(actor, slotKey, delta) {
  */
 export async function toggleSpellPreparation(spellItem) {
   if (!spellItem || spellItem.type !== "spell") return;
-  const system = spellItem.system ?? {};
   const prep = resolveSpellPreparation(spellItem);
 
   // "Always prepared" is a property of the spell, not a per-day choice.
   if (prep.isAlways) return;
   if (!prep.canPrepare) return;
 
-  // dnd5e 5.x stores a numeric state (0 unprepared / 1 prepared / 2 always).
-  if (system.method !== undefined || typeof system.prepared === "number") {
-    return spellItem.update({ "system.prepared": prep.prepared >= 1 ? 0 : 1 });
-  }
-  return spellItem.update({ "system.preparation.prepared": !prep.prepared });
+  return spellItem.update({ "system.prepared": prep.prepared >= 1 ? 0 : 1 });
 }
 

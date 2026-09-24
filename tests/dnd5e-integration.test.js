@@ -87,7 +87,7 @@ describe("extractSpellSlots", () => {
 });
 
 describe("resolveSpellPreparation", () => {
-  it("handles the dnd5e 5.x method/prepared pair", () => {
+  it("handles the method/prepared pair", () => {
     stubDnd5eConfig();
     const prepared = resolveSpellPreparation({ system: { level: 1, method: "spell", prepared: 1 } });
     assert.equal(prepared.isPrepared, true);
@@ -118,23 +118,16 @@ describe("resolveSpellPreparation", () => {
     assert.equal(resolveSpellPreparation({ system: { level: 0, method: "spell", prepared: 0 } }).isPrepared, true);
     assert.equal(resolveSpellPreparation({ system: { level: 2, method: "innate", prepared: 0 } }).canPrepare, false);
   });
-
-  it("falls back to the legacy preparation object", () => {
-    stubDnd5eConfig();
-    const legacy = resolveSpellPreparation({ system: { level: 1, preparation: { mode: "prepared", prepared: true } } });
-    assert.equal(legacy.isPrepared, true);
-    assert.equal(legacy.canPrepare, true);
-  });
 });
 
 describe("resolveItemActivation", () => {
-  it("reads the first activity in dnd5e 5.x", () => {
+  it("reads the first activity", () => {
     stubDnd5eConfig();
     const feat = { system: { activities: { contents: [{ activation: { type: "bonus", value: null } }] } } };
     assert.equal(resolveItemActivation(feat).type, "bonus");
   });
 
-  it("falls back to the legacy activation object", () => {
+  it("reads system.activation of a spell without activities", () => {
     stubDnd5eConfig();
     assert.equal(resolveItemActivation({ system: { activation: { type: "reaction" } } }).type, "reaction");
   });
@@ -146,7 +139,7 @@ describe("resolveItemActivation", () => {
 });
 
 describe("resolveItemUses", () => {
-  it("derives uses from the 5.x max/spent pair", () => {
+  it("derives uses from the max/spent pair", () => {
     const uses = resolveItemUses({ system: { uses: { max: 3, spent: 1, value: 2, recovery: [] } } });
     assert.equal(uses.hasUses, true);
     assert.equal(uses.usesDisplay, "2 / 3");
@@ -161,11 +154,12 @@ describe("resolveItemUses", () => {
     assert.equal(uses.rechargeDisplay, "5+");
   });
 
-  it("still understands the legacy recharge object", () => {
-    const uses = resolveItemUses({ system: { uses: {}, recharge: { value: 6, charged: true } } });
-    assert.equal(uses.hasRecharge, true);
+  it("marks a recharging item without uses left as spent", () => {
+    const uses = resolveItemUses({
+      system: { uses: { max: 1, spent: 1, value: 0, recovery: [{ period: "recharge", formula: "6" }] } }
+    });
     assert.equal(uses.rechargeDisplay, "6");
-    assert.equal(uses.isCharged, true);
+    assert.equal(uses.isCharged, false);
   });
 });
 

@@ -22,8 +22,7 @@ export const PHYSICAL_ITEM_TYPES = new Set([
   "consumable",
   "tool",
   "loot",
-  "container",
-  "backpack"
+  "container"
 ]);
 
 /**
@@ -75,23 +74,10 @@ export function canItemBeEquipped(item) {
 }
 
 /**
- * Check if item properties has a specific key/tag
- * Handles Set, Array, and Object formats across dnd5e versions (3.x, 4.x, 5.x)
+ * Does the item's `system.properties` set contain the key?
  */
 export function hasItemProperty(item, propKey) {
-  const props = item?.system?.properties;
-  if (!props) return false;
-
-  if (props instanceof Set) {
-    return props.has(propKey);
-  }
-  if (Array.isArray(props)) {
-    return props.includes(propKey);
-  }
-  if (typeof props === "object") {
-    return Boolean(props[propKey]);
-  }
-  return false;
+  return Boolean(item?.system?.properties?.has?.(propKey));
 }
 
 /**
@@ -107,14 +93,12 @@ export function isTwoHandedWeapon(item) {
  */
 export function isShield(item) {
   if (!item) return false;
-  const typeVal = item.system?.type?.value ?? item.system?.armor?.type ?? "";
-  const armorType = item.system?.armor?.type ?? "";
-  return typeVal === "shield" || armorType === "shield" || item.type === "shield";
+  return item.system?.type?.value === "shield";
 }
 
 /** Does the item carry a real armor category (light/medium/heavy/natural)? */
 function hasArmorCategory(item) {
-  const armorType = item.system?.type?.value ?? item.system?.armor?.type ?? "";
+  const armorType = item.system?.type?.value ?? "";
   const subType = item.system?.type?.subtype ?? "";
   return ARMOR_TYPES.includes(armorType) || ARMOR_TYPES.includes(subType);
 }
@@ -128,7 +112,7 @@ export function isBodyArmor(item) {
   // A real armor category always wins over the name: "Chain Shirt" is medium armor.
   if (hasArmorCategory(item)) return true;
 
-  const armorType = String(item.system?.type?.value ?? item.system?.armor?.type ?? "");
+  const armorType = String(item.system?.type?.value ?? "");
   const name = (item.name ?? "").toLowerCase();
   if (nameHasAnyToken(name, NOT_BODY_ARMOR_TOKENS)) return false;
 
@@ -176,7 +160,7 @@ export function classifyItem(item) {
   if (wearableClassification) return wearableClassification;
 
   // Containers
-  if (type === "container" || type === "backpack") {
+  if (type === "container") {
     return "container";
   }
 

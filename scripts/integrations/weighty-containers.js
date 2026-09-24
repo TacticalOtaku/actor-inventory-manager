@@ -150,15 +150,8 @@ export function getContainerRulesConfig(containerItem) {
  * @returns {Set<string>}
  */
 function getItemPropertyTokens(item) {
-  const properties = item?.system?.properties;
   const tokens = new Set();
-  if (properties instanceof Set || Array.isArray(properties)) {
-    for (const property of properties) tokens.add(String(property ?? "").trim().toLowerCase());
-  } else if (properties && typeof properties === "object") {
-    for (const [key, value] of Object.entries(properties)) {
-      if (value) tokens.add(key.trim().toLowerCase());
-    }
-  }
+  for (const property of item?.system?.properties ?? []) tokens.add(String(property ?? "").trim().toLowerCase());
   tokens.delete("");
   return tokens;
 }
@@ -302,7 +295,7 @@ export async function openWeightyContainersDialog(containerItem) {
     apiVersion: api?.apiVersion ?? null
   });
   if (typeof containerItem.sheet?.render === "function") {
-    containerItem.sheet.render(true);
+    containerItem.sheet.render({ force: true });
   }
 }
 

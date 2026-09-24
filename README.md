@@ -1,6 +1,6 @@
 # Actor Inventory Manager & Paperdoll (AIM)
 
-A modern, highly immersive RPG-style Actor Inventory Window & Equipment Paperdoll module for **Foundry VTT** (supporting D&D 5e v3.0+ through v5.3+ and Foundry v12 through v14+).
+A modern, highly immersive RPG-style Actor Inventory Window & Equipment Paperdoll module for **Foundry VTT** (D&D 5e v5.3.3+ on Foundry v14+).
 
 Release notes: [CHANGELOG.md](CHANGELOG.md).
 
@@ -53,9 +53,10 @@ https://raw.githubusercontent.com/TacticalOtaku/actor-inventory-manager/main/mod
 ---
 
 ## Requirements & Compatibility
-- **Foundry VTT**: v12, v13, v14+
-- **System**: D&D 5e (v3.0.0+)
+- **Foundry VTT**: v14+
+- **System**: D&D 5e (v5.3.3+)
 - **Optional Recommended Modules**:
+  - *Item Piles* (3.3.0+) for custom currencies and trading
   - *SC - Item Rarity Colors*
   - *Weighty Containers* (3.5.0+ for API v2 weights)
 

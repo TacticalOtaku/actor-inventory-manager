@@ -3,7 +3,7 @@ import { isItemPilesActive } from "../integrations/item-piles.js";
 export const COINS = ["pp", "gp", "ep", "sp", "cp"];
 export const tradeError = key => new Error(`AIM.trade.errors.${key}`);
 export function pilesAPI() {
-  return globalThis.game?.itempiles?.API ?? globalThis.ItemPiles?.API;
+  return globalThis.game?.itempiles?.API;
 }
 
 /** The signature excludes balances but includes all conversion definitions. */

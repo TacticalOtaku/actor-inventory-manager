@@ -1,7 +1,12 @@
 # Architecture
 
-A map of the module for anyone extending it, plus the rules that keep it working
-across Foundry and dnd5e versions.
+A map of the module for anyone extending it, plus the rules that keep its reads
+of the dnd5e data model in one place.
+
+Supported platform: Foundry 14+, dnd5e 5.3.3+, Item Piles 3.3.0+ (optional).
+Older versions are not supported and there are no compatibility branches for
+them - code targets the current APIs directly (`foundry.applications.*`,
+ApplicationV2 sheets, `game.itempiles.API`).
 
 ## Layering
 
@@ -31,11 +36,11 @@ rather than reaching for `game` directly.
 
 `ui/trade-panel.js` keeps local unsaved quantities separate from the accepted offer revision. Its drawer uses the existing spells-column layout and theme variables. `actor-inventory-manager.tradeState` updates open drawers when the saved session changes.
 
-## Version-adapter rule
+## Data-model adapter rule
 
 dnd5e reshapes its data model between major versions. Every place that reads a
-version-sensitive field goes through a named helper so there is exactly one
-place to update. Never inline these checks at a call site.
+field dnd5e has moved before goes through a named helper so there is exactly
+one place to update when it moves again. Never inline these reads at a call site.
 
 | Concern | Helper | Where |
 | --- | --- | --- |
@@ -46,19 +51,22 @@ place to update. Never inline these checks at a call site.
 | Limited uses / recharge | `resolveItemUses` | `integrations/dnd5e.js` |
 | Carrying capacity | `getSystemEncumbrance`, `computeActorCapacity` | `core/weight-calculator.js` |
 
-Shapes currently handled (verified against dnd5e 5.3.3):
+Shapes handled (dnd5e 5.3.3):
 
-- **Attunement** — 5.x: `system.attunement` is the *requirement*
+- **Attunement** — `system.attunement` is the *requirement*
   (`"" | "required" | "optional"`) and `system.attuned` is the boolean state.
-  3.x/4.x: numeric `system.attunement` (`0` none, `1` required, `2` attuned).
   Writing `"attuned"` into `system.attunement` corrupts the item.
-- **Spell preparation** — 5.x: `system.method` (`"spell" | "pact" | "atwill" |
+- **Spell preparation** — `system.method` (`"spell" | "pact" | "atwill" |
   "innate" | "ritual"`) plus numeric `system.prepared` (`0/1/2`, where `2` is
-  always-prepared). There is no `"prepared"` method. 3.x/4.x used
-  `system.preparation.{mode,prepared}`.
-- **Activation** — 5.x moved activation onto activities:
+  always-prepared). There is no `"prepared"` method.
+- **Activation** — activation lives on activities:
   `system.activities.contents[0].activation.type`. Only spells still carry
   `system.activation`.
+- **Uses / recharge** — `system.uses.{max,spent,value}`; recharge is a
+  `uses.recovery` entry with `period: "recharge"`.
+- **Properties** — `system.properties` is a `Set`; read it with
+  `hasItemProperty`. Weight and price are `{ value, units }` /
+  `{ value, denomination }` objects; armor category is `system.type.value`.
 - **Spell slots** — `override` is a *nullable* number. `Number(null)` is `0` and
   finite, so a plain numeric coercion silently zeroes every slot.
 - **Encumbrance** — always prefer `actor.system.attributes.encumbrance`. It
@@ -221,8 +229,8 @@ Two constraints, both learned the hard way:
 
 `npm test` runs the Node test runner over `tests/`. Everything under `core/`
 and the pure helpers in `integrations/dnd5e.js` are testable without Foundry;
-new version-adapter helpers should arrive with a test that pins both the current
-and the legacy data shape.
+new data-model helpers should arrive with a test that pins the dnd5e 5.3.3 data
+shape.
 
 ## Local development
 

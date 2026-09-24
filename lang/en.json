@@ -283,6 +283,7 @@
       "pact": "Pact",
       "levelSlot": "Lvl {level}",
       "levelGroup": "Level {level} Spells",
+      "preparedGroup": "Prepared Spells",
       "cantrips": "Cantrips",
       "cast": "Cast Spell",
       "prepared": "Prepared",

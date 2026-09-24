@@ -2705,6 +2705,38 @@
   font-size: 0.72rem;
 }
 
+/* Prepared spells lead the list in a segment of their own. */
+.aim-spell-level-group.is-prepared-group {
+  padding: 8px;
+  border: 1px solid var(--aim-border-gold);
+  border-radius: 8px;
+  box-shadow: inset 0 0 12px var(--aim-gold-glow);
+  margin-bottom: 8px;
+}
+.aim-spell-level-group.is-prepared-group .aim-spell-group-header {
+  border-bottom-color: var(--aim-border-gold);
+}
+.aim-spell-level-group.is-prepared-group .aim-spell-group-header i {
+  margin-right: 4px;
+}
+/* Spell level on the thumbnail corner, so the meta row keeps its width. */
+.aim-spell-level-badge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  min-width: 14px;
+  padding: 0 3px;
+  border-top-left-radius: 4px;
+  background: rgba(0, 0, 0, 0.8);
+  color: var(--aim-border-gold-bright);
+  font-family: var(--aim-font-display);
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 14px;
+  text-align: center;
+  pointer-events: none;
+}
+
 .aim-spells-group-items {
   display: flex;
   flex-direction: column;
@@ -2729,6 +2761,7 @@
 }
 
 .aim-spell-thumb-wrapper {
+  position: relative;
   width: 36px;
   height: 36px;
   border-radius: 6px;
@@ -2794,15 +2827,17 @@
   color: var(--aim-border-gold);
 }
 
+/* Wraps instead of clipping: school, activation and range stay readable in a narrow drawer. */
 .aim-spell-meta-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 2px 6px;
   font-size: 0.7rem;
   color: var(--aim-text-muted);
+}
+.aim-spell-meta-row > * {
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .aim-spell-school {
@@ -2826,6 +2861,10 @@
 .aim-action-pill.action { border-color: rgba(52, 152, 219, 0.5); color: #54a0ff; }
 .aim-action-pill.bonus { border-color: rgba(243, 156, 18, 0.5); color: #f1c40f; }
 .aim-action-pill.reaction { border-color: rgba(231, 76, 60, 0.5); color: #ff6b6b; }
+/* The pill colours are tuned for the dark theme; darken them on parchment. */
+.actor-inventory-manager-app[data-theme="light"] .aim-action-pill.action { border-color: #1f5f99; color: #1a4f80; }
+.actor-inventory-manager-app[data-theme="light"] .aim-action-pill.bonus { border-color: #9a6a00; color: #7a4f00; }
+.actor-inventory-manager-app[data-theme="light"] .aim-action-pill.reaction { border-color: #a93226; color: #8e2a1f; }
 
 .aim-spell-components-row {
   display: flex;
@@ -2938,10 +2977,14 @@
 
 .aim-action-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 2px 6px;
   font-size: 0.7rem;
   color: var(--aim-text-muted);
+}
+.aim-action-meta > * {
+  white-space: nowrap;
 }
 
 .aim-source-label {

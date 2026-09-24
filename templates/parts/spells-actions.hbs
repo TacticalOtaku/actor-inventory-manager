@@ -83,9 +83,9 @@
       {{#if spellGroups.length}}
         <div class="aim-spells-list-section">
           {{#each spellGroups}}
-          <div class="aim-spell-level-group">
+          <div class="aim-spell-level-group {{#if this.isPreparedGroup}}is-prepared-group{{/if}}">
             <div class="aim-spell-group-header">
-              <span>{{this.title}}</span>
+              <span>{{#if this.isPreparedGroup}}<i class="fa-solid fa-book-bookmark"></i> {{/if}}{{this.title}}</span>
               <span class="aim-group-count">({{this.count}})</span>
             </div>
             <div class="aim-spells-group-items">
@@ -99,6 +99,7 @@
                    style="--spell-school-color: {{this.schoolColor}};">
                 <div class="aim-spell-thumb-wrapper" data-action="openItem" data-item-id="{{this.id}}" style="border-color: {{this.schoolColor}};">
                   <img src="{{this.img}}" alt="{{this.name}}" />
+                  {{#if ../isPreparedGroup}}<span class="aim-spell-level-badge" title="{{this.levelLabel}}">{{this.level}}</span>{{/if}}
                 </div>
 
                 <div class="aim-spell-info" data-action="openItem" data-item-id="{{this.id}}">

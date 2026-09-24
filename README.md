@@ -8,6 +8,7 @@ Release notes: [CHANGELOG.md](CHANGELOG.md).
 
 ## Features
 
+- **Prepared Spells**: the Spells drawer opens with a segment of the spells prepared for the day (including always-prepared ones), ordered by level, above the regular level groups.
 - **Player Trading**: a second expandable drawer beside Spells, with two-sided item and currency offers, partial stacks, gifts, and confirmation by both participants. Active Item Piles supplies custom currency definitions and payment/transfer calculations. Without Item Piles, trading uses standard D&D5e denominations.
 - **Actor Scope**: GM-only NPCs are excluded from sheet buttons, hotkeys, inventory/editor entry points, item actions, and equipment enforcement. Player-owned NPCs remain supported.
 

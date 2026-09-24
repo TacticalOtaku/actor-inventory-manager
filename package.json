@@ -1,0 +1,11 @@
+{
+  "name": "actor-inventory-manager",
+  "version": "1.5.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check scripts/main.js && node --test",
+    "sync": "node tools/sync-to-foundry.mjs"
+  }
+}

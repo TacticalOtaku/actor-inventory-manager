@@ -10,7 +10,7 @@ import {
 } from "../scripts/core/attunement.js";
 import { buildAttunementSlots } from "../scripts/ui/inventory-context.js";
 
-describe("attunement (dnd5e 5.x shape)", () => {
+describe("attunement", () => {
   it("reads the boolean state, not the requirement string", () => {
     assert.equal(isItemAttuned({ system: { attunement: "required", attuned: true } }), true);
     assert.equal(isItemAttuned({ system: { attunement: "required", attuned: false } }), false);
@@ -30,23 +30,13 @@ describe("attunement (dnd5e 5.x shape)", () => {
   });
 });
 
-describe("attunement (legacy dnd5e 3.x/4.x shape)", () => {
-  it("maps the numeric encoding", () => {
-    assert.equal(isItemAttuned({ system: { attunement: 2 } }), true);
-    assert.equal(isItemAttuned({ system: { attunement: 1 } }), false);
-    assert.equal(isItemAttuned({ system: { attunement: 0 } }), false);
-    assert.equal(itemRequiresAttunement({ system: { attunement: 1 } }), true);
-    assert.equal(itemRequiresAttunement({ system: { attunement: 0 } }), false);
-  });
-});
-
 describe("countAttunedItems", () => {
   it("counts only attuned items on the actor", () => {
     const actor = {
       items: new Map([
         ["a", { system: { attunement: "required", attuned: true } }],
         ["b", { system: { attunement: "required", attuned: false } }],
-        ["c", { system: { attunement: 2 } }],
+        ["c", { system: { attunement: "optional", attuned: true } }],
         ["d", { system: {} }]
       ])
     };

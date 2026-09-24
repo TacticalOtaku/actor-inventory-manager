@@ -367,14 +367,14 @@ export function getActorPaperdollTemplate(actor) {
 
   const flags = actor.flags?.[MODULE_ID] ?? {};
 
-  // 1. Per-actor template stored directly on the actor (current and legacy flag names)
-  const customTemplateData = flags[FLAGS.CUSTOM_TEMPLATE] || flags.customTemplate;
+  // 1. Per-actor template stored directly on the actor
+  const customTemplateData = flags[FLAGS.CUSTOM_TEMPLATE];
   if (customTemplateData && Array.isArray(customTemplateData.slots) && customTemplateData.slots.length > 0) {
     return { ...formatTemplateContext({ ...customTemplateData, id: "custom" }), isActorCustom: true };
   }
 
   // 2. A preset or world template linked by id
-  const templateId = flags[FLAGS.TEMPLATE_ID] || flags.templateId;
+  const templateId = flags[FLAGS.TEMPLATE_ID];
   return formatTemplateContext(getTemplateById(templateId || TEMPLATE_PRESETS.DND_2024));
 }
 
@@ -442,12 +442,9 @@ async function applyAttunementMax(actor, attunementMax) {
   }
 }
 
-/** Remove a per-actor template, including the legacy flag name. */
+/** Remove a per-actor template. */
 async function clearActorCustomTemplate(actor) {
-  const flags = actor.flags?.[MODULE_ID] ?? {};
-  for (const key of [FLAGS.CUSTOM_TEMPLATE, "customTemplate"]) {
-    if (key in flags) await actor.unsetFlag(MODULE_ID, key);
-  }
+  if (FLAGS.CUSTOM_TEMPLATE in (actor.flags?.[MODULE_ID] ?? {})) await actor.unsetFlag(MODULE_ID, FLAGS.CUSTOM_TEMPLATE);
 }
 
 /**

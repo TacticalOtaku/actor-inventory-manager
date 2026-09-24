@@ -1,21 +1,14 @@
 // ─────────────────────────────────────────────────────────
-// Actor Inventory Manager - Attunement State (version-agnostic)
+// Actor Inventory Manager - Attunement State
 // ─────────────────────────────────────────────────────────
 
 /**
- * Attunement is modelled differently across dnd5e versions:
- *
- * - 5.x: `system.attunement` is a requirement string ("" | "required" | "optional")
- *        and `system.attuned` is the boolean state.
- * - 3.x/4.x: `system.attunement` is numeric (0 none / 1 required / 2 attuned).
- *
- * These helpers are the single place that knows about both shapes.
+ * `system.attunement` is the requirement ("" | "required" | "optional") and
+ * `system.attuned` is the boolean state. These helpers are the single place
+ * that reads them.
  */
 
 import { getActorPaperdollTemplate } from "./paperdoll-templates.js";
-
-const LEGACY_ATTUNED = 2;
-const LEGACY_REQUIRED = 1;
 
 /**
  * Is the item currently attuned to its owner?
@@ -23,12 +16,7 @@ const LEGACY_REQUIRED = 1;
  * @returns {boolean}
  */
 export function isItemAttuned(item) {
-  if (!item) return false;
-  const system = item.system ?? {};
-  if (typeof system.attuned === "boolean") return system.attuned;
-  const legacy = system.attunement;
-  if (typeof legacy === "number") return legacy === LEGACY_ATTUNED;
-  return String(legacy ?? "").toLowerCase() === "attuned";
+  return item?.system?.attuned === true;
 }
 
 /**
@@ -37,14 +25,8 @@ export function isItemAttuned(item) {
  * @returns {boolean}
  */
 export function itemRequiresAttunement(item) {
-  if (!item) return false;
-  const system = item.system ?? {};
-  const value = system.attunement;
-  if (typeof value === "number") return value >= LEGACY_REQUIRED;
-  const normalized = String(value ?? "").toLowerCase();
-  if (normalized === "required" || normalized === "optional") return true;
-  // A legacy document already flipped to "attuned" still requires attunement.
-  return normalized === "attuned";
+  const value = item?.system?.attunement;
+  return value === "required" || value === "optional";
 }
 
 /**

@@ -7,13 +7,8 @@ import { canViewActor, isSupportedActor } from "../core/actor-scope.js";
 import { openActorInventory } from "../ui/inventory-app.js";
 import { LOG } from "./logger.js";
 
-/** Action id of the inventory entry in ApplicationV2 header menus. */
+/** Action id of the inventory entry in the sheet header menu. */
 const HEADER_ACTION = "aim-inventory";
-
-function isApplicationV2(app) {
-  const ApplicationV2 = globalThis.foundry?.applications?.api?.ApplicationV2;
-  return Boolean(ApplicationV2 && app instanceof ApplicationV2);
-}
 
 /**
  * Check if the application is a primary dnd5e Actor Sheet (Character or NPC)
@@ -57,15 +52,8 @@ function isPrimaryActorSheet(app) {
   const dnd5eActorApps = globalThis.dnd5e?.applications?.actor ?? {};
   const isDnd5eActorClass = Object.values(dnd5eActorApps).some(cls => typeof cls === "function" && app instanceof cls);
 
-  const ActorSheetV2 = globalThis.foundry?.applications?.sheets?.ActorSheetV2;
-  const ActorSheetV1 = globalThis.foundry?.appv1?.sheets?.ActorSheet;
-  const isActorSheetInstance = (
-    (ActorSheetV2 && app instanceof ActorSheetV2) ||
-    (ActorSheetV1 && app instanceof ActorSheetV1)
-  );
-
   const isStandardActorSheet = (
-    isActorSheetInstance ||
+    app instanceof foundry.applications.sheets.ActorSheetV2 ||
     app.options?.classes?.includes?.("character") ||
     app.options?.classes?.includes?.("npc") ||
     app.options?.classes?.includes?.("dnd5e2")
@@ -75,7 +63,7 @@ function isPrimaryActorSheet(app) {
 }
 
 /**
- * Patch ApplicationV2 and dnd5e Actor Sheets to inject Header Controls in the 3-dots dropdown menu
+ * Patch dnd5e actor sheets to inject a header control into the 3-dots dropdown menu
  */
 function patchSheetHeaderControls() {
   const sheetClasses = new Set();
@@ -115,8 +103,7 @@ function patchSheetHeaderControls() {
       const actor = this.document ?? this.actor;
       if (!game.settings.get(MODULE_ID, "showSheetButton")) return controls;
 
-      // Header controls dispatch through the sheet's action table; register the
-      // handler there too for versions that ignore a control's onClick.
+      // Header controls dispatch through the sheet's action table.
       if (this.options?.actions && !this.options.actions[HEADER_ACTION]) {
         this.options.actions[HEADER_ACTION] = () => openActorInventory(this.document ?? this.actor);
       }
@@ -145,17 +132,12 @@ function patchSheetHeaderControls() {
 /**
  * Inject icon button into Actor Sheet Window Header Bar
  */
-function injectHeaderButton(app, htmlElement) {
+function injectHeaderButton(app) {
   if (!game.settings.get(MODULE_ID, "showSheetButton")) return;
-  // ApplicationV1 sheets already get a labelled button from getActorSheetHeaderButtons.
-  if (!isApplicationV2(app)) return;
   if (!isPrimaryActorSheet(app)) return;
 
-  const root = htmlElement instanceof HTMLElement ? htmlElement : htmlElement?.[0] ?? htmlElement;
-  if (!(root instanceof HTMLElement)) return;
-
   const actor = app.document ?? app.actor;
-  const header = app.window?.header ?? root.querySelector(".window-header, header.window-header, header.sheet-header");
+  const header = app.window?.header;
   if (!header || header.querySelector(".aim-window-header-btn")) return;
 
   const headerBtn = document.createElement("button");
@@ -186,41 +168,11 @@ function injectHeaderButton(app, htmlElement) {
  * Register sheet hooks and keybinding
  */
 export function registerSheetInjectionHooks() {
-  // Patch ApplicationV2 classes for dropdown menu
+  // Patch sheet classes for the dropdown menu
   patchSheetHeaderControls();
 
-  // Legacy header buttons hook for ApplicationV1 actor sheets
-  Hooks.on("getActorSheetHeaderButtons", (sheet, buttons) => {
-    if (!isPrimaryActorSheet(sheet)) return;
-    const actor = sheet.document ?? sheet.actor;
-    if (!game.settings.get(MODULE_ID, "showSheetButton")) return;
-
-    if (!buttons.some(b => b.class === "aim-open-inventory-btn")) {
-      buttons.unshift({
-        label: "AIM.sheetButton.label",
-        class: "aim-open-inventory-btn",
-        icon: "fa-solid fa-shirt",
-        onclick: () => openActorInventory(actor)
-      });
-    }
-  });
-
-  // Render hooks for dnd5e Actor sheet variants only
-  const sheetRenderHooks = [
-    "renderActorSheet",
-    "renderActorSheet5e",
-    "renderActorSheet5eCharacter",
-    "renderActorSheet5eCharacter2",
-    "renderActorSheet5eNPC",
-    "renderActorSheet5eNPC2",
-    "renderActorSheetV2"
-  ];
-
-  for (const hookName of sheetRenderHooks) {
-    Hooks.on(hookName, (app, element) => {
-      injectHeaderButton(app, element);
-    });
-  }
+  // Every dnd5e actor sheet is an ActorSheetV2, so this one hook covers them all.
+  Hooks.on("renderActorSheetV2", app => injectHeaderButton(app));
 
   // NOTE: keybindings must be registered during "init" (Foundry throws otherwise).
   // The inventory hotkey lives in foundry/settings.js.

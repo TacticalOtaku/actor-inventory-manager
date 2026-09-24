@@ -63,18 +63,10 @@ export const AIM_TEMPLATES = [
 
 let templatesPreloaded = null;
 
-/**
- * Load every template and register the parts as partials.
- * Foundry 13 moved `loadTemplates` under `foundry.applications.handlebars`;
- * Foundry 12 only has the global.
- */
+/** Load every template and register the parts as partials. */
 export function preloadTemplates() {
   templatesPreloaded ??= (async () => {
-    const loadTemplatesFn = foundry?.applications?.handlebars?.loadTemplates ?? globalThis.loadTemplates;
-    if (typeof loadTemplatesFn !== "function") {
-      throw new Error("Foundry's loadTemplates is not available");
-    }
-    await loadTemplatesFn(AIM_TEMPLATES);
+    await foundry.applications.handlebars.loadTemplates(AIM_TEMPLATES);
     LOG.debug("Templates preloaded successfully");
   })().catch(err => {
     templatesPreloaded = null; // allow a retry on the next render
@@ -163,7 +155,7 @@ function appIdFor(actor) {
 }
 
 function isContainerItem(item) {
-  return item.type === "container" || item.type === "backpack" || item.system?.type?.value === "container";
+  return item.type === "container";
 }
 
 const InventoryApplicationBase = foundry.applications.api.HandlebarsApplicationMixin(
@@ -261,7 +253,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     await preloadTemplates();
 
     // Token actors can be rebuilt by Foundry; always render the live document.
-    const live = globalThis.fromUuidSync?.(this.actorKey);
+    const live = foundry.utils.fromUuidSync(this.actorKey);
     if (live && live.documentName === "Actor") this.actor = live;
 
     const context = await super._prepareContext(options);
@@ -472,7 +464,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     if (sortSelect) {
       sortSelect.addEventListener("change", e => {
         this.sortBy = e.target.value;
-        this.render(false);
+        this.render();
       });
     }
 
@@ -540,7 +532,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       clearTimeout(this._searchDebounce);
       this._searchDebounce = setTimeout(() => {
         apply(value);
-        if (this.rendered) this.render(false);
+        if (this.rendered) this.render();
       }, SEARCH_DEBOUNCE_MS);
     });
   }
@@ -562,9 +554,6 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     if (changed) root.classList.add("aim-no-transitions");
 
     root.setAttribute("data-theme", theme);
-    // ApplicationV2 renders into `.application`; keep the v1 frame in sync too.
-    const frame = root.closest(".window-app");
-    if (frame) frame.setAttribute("data-theme", theme);
 
     if (!changed) return;
     void root.offsetHeight; // flush the suppressed styles before re-enabling
@@ -597,7 +586,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
         this.close();
         return;
       }
-      if (this.rendered) this.render(false);
+      if (this.rendered) this.render();
     }, RENDER_COALESCE_MS);
   }
 
@@ -708,7 +697,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
 
   static _switchTab(event, target) {
     this.currentTab = target.dataset.tab;
-    this.render(false);
+    this.render();
   }
 
   static async _toggleEquip(event, target) {
@@ -723,7 +712,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
 
   static _openItem(event, target) {
     const item = this.actor.items.get(target.dataset.itemId);
-    if (item?.sheet?.render) item.sheet.render(true);
+    if (item?.sheet?.render) item.sheet.render({ force: true });
   }
 
   static async _useItem(event, target) {
@@ -758,7 +747,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     } else {
       this.collapsedContainers.add(containerId);
     }
-    this.render(false);
+    this.render();
   }
 
   static async _openContainerRules(event, target) {
@@ -788,7 +777,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     this.isPaperdollCollapsed = !this.isPaperdollCollapsed;
     this._paperdollAutoCollapsed = false;
     this._syncWindowSize();
-    this.render(false);
+    this.render();
     await this._savePreference(FLAGS.PAPERDOLL_COLLAPSED, this.isPaperdollCollapsed);
   }
 
@@ -798,13 +787,13 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     if (this.isSpellsPanelOpen) this.isTradePanelOpen = false;
     if (!wasTradeOpen || !this.isSpellsPanelOpen) this._makeRoomForSidePanel(this.isSpellsPanelOpen);
     this._syncWindowSize();
-    this.render(false);
+    this.render();
     await this._savePreference(FLAGS.SPELLS_PANEL_OPEN, this.isSpellsPanelOpen);
   }
 
   static _switchSpellsTab(event, target) {
     this.spellsTab = target.dataset.tab || "all";
-    this.render(false);
+    this.render();
   }
 
   static async _toggleTradePanel() {
@@ -815,7 +804,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     if (this.isTradePanelOpen) this.isSpellsPanelOpen = false;
     if (!wasSpellsOpen || !this.isTradePanelOpen) this._makeRoomForSidePanel(this.isTradePanelOpen);
     this._syncWindowSize();
-    this.render(false);
+    this.render();
   }
 
   static async _tradeAction(event, target) {

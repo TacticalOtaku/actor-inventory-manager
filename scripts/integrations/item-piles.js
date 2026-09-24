@@ -13,21 +13,7 @@ export function isItemPilesActive() {
 }
 
 /**
- * Get Item Piles currency configuration from game settings
- * @returns {Array<Object>|null}
- */
-export function getItemPilesCurrenciesSetting() {
-  if (!isItemPilesActive()) return null;
-  try {
-    const currencies = globalThis.game?.settings?.get("item-piles", "currencies");
-    return Array.isArray(currencies) && currencies.length > 0 ? currencies : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Compute total actor currency value using Item Piles settings or API
+ * Compute total actor currency value using the Item Piles API
  * @param {Object} actor
  * @returns {Object} { total: number, formatted: string, primaryName: string, pp: number, gp: number, ep: number, sp: number, cp: number }
  */
@@ -58,71 +44,16 @@ export function computeActorCurrency(actor) {
     cp: num(systemCurrency.cp, 0)
   };
 
-  // If Item Piles is active, try to resolve currencies using Item Piles API or Settings
+  // With Item Piles active, its API resolves the configured currencies.
   if (isItemPilesActive()) {
     try {
-      const itemPilesAPI = globalThis.game?.itempiles?.API || globalThis.ItemPiles?.API;
-
-      // 1. Try Item Piles API getActorCurrencies
-      if (itemPilesAPI?.getActorCurrencies) {
-        const actorCurrencies = itemPilesAPI.getActorCurrencies(actor);
-        if (Array.isArray(actorCurrencies) && actorCurrencies.length > 0) {
-          let total = 0;
-          let primaryName = "GP";
-
-          for (const curr of actorCurrencies) {
-            const qty = num(curr.quantity ?? curr.amount ?? curr.value, 0);
-            const rate = num(curr.exchangeRate, 1);
-            total += qty * rate;
-            if (curr.primary) {
-              const rawAbbr = curr.abbreviation || curr.name || "GP";
-              primaryName = rawAbbr.replace("{#}", "").trim() || "GP";
-            }
-          }
-
-          const formattedTotal = total.toFixed(2);
-          return {
-            ...baseValues,
-            total,
-            totalGold: formattedTotal,
-            primaryName,
-            formatted: `${formattedTotal} ${primaryName}`,
-            customCurrencies: actorCurrencies
-          };
-        }
-      }
-
-      // 2. Try Item Piles configured currencies settings
-      const configuredCurrencies = getItemPilesCurrenciesSetting();
-      if (configuredCurrencies) {
+      const actorCurrencies = globalThis.game?.itempiles?.API?.getActorCurrencies(actor);
+      if (Array.isArray(actorCurrencies) && actorCurrencies.length > 0) {
         let total = 0;
         let primaryName = "GP";
 
-        for (const curr of configuredCurrencies) {
-          const rate = num(curr.exchangeRate, 1);
-          let qty = 0;
-
-          if (curr.type === "attribute" && curr.data?.path) {
-            qty = num(
-              globalThis.foundry?.utils?.getProperty
-                ? globalThis.foundry.utils.getProperty(actor, curr.data.path)
-                : actor.system?.currency?.[curr.data.path.split(".").pop()],
-              0
-            );
-          } else if (curr.type === "item") {
-            // Item Piles stores the currency item's data, not just its name.
-            const definition = curr.data?.item;
-            const name = typeof definition === "string" ? definition : definition?.name;
-            const type = typeof definition === "object" ? definition?.type : null;
-            const items = name
-              ? Array.from(actor.items ? actor.items.values() : []).filter(i => i.name === name && (!type || i.type === type))
-              : [];
-            for (const it of items) {
-              qty += num(it.system?.quantity, 1);
-            }
-          }
-
-          total += qty * rate;
+        for (const curr of actorCurrencies) {
+          total += num(curr.quantity, 0) * num(curr.exchangeRate, 1);
           if (curr.primary) {
             const rawAbbr = curr.abbreviation || curr.name || "GP";
             primaryName = rawAbbr.replace("{#}", "").trim() || "GP";
@@ -136,7 +67,7 @@ export function computeActorCurrency(actor) {
           totalGold: formattedTotal,
           primaryName,
           formatted: `${formattedTotal} ${primaryName}`,
-          customCurrencies: []
+          customCurrencies: actorCurrencies
         };
       }
     } catch (err) {

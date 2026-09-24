@@ -128,9 +128,7 @@ export function registerModuleSettings() {
  * Register module keybindings (e.g. 'I' key for toggling inventory)
  */
 export function registerModuleKeybindings() {
-  if (!globalThis.game?.keybindings?.register) return;
-
-  globalThis.game.keybindings.register(MODULE_ID, "openInventory", {
+  game.keybindings.register(MODULE_ID, "openInventory", {
     name: "AIM.keybindings.openInventory.name",
     hint: "AIM.keybindings.openInventory.hint",
     editable: [
@@ -160,6 +158,6 @@ export function registerModuleKeybindings() {
       return true;
     },
     restricted: false,
-    precedence: globalThis.CONST?.KEYBINDING_PRECEDENCE?.NORMAL ?? 0
+    precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL
   });
 }

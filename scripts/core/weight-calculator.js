@@ -61,7 +61,7 @@ export function getSystemWeightUnit() {
 export function lbsPerUnit(unit) {
   const key = String(unit || "lb").toLowerCase().trim();
   const entry = globalThis.CONFIG?.DND5E?.weightUnits?.[key];
-  const fromSystem = typeof entry === "number" ? entry : Number(entry?.conversion);
+  const fromSystem = Number(entry?.conversion);
   if (Number.isFinite(fromSystem) && fromSystem > 0) return fromSystem;
   return DEFAULT_LBS_PER_UNIT[key] ?? 1;
 }
@@ -96,7 +96,7 @@ export function formatWeight(lbs, unit = "lb") {
 export function getItemWeightInUnit(item, targetUnit = null) {
   if (!item) return 0;
   const tgt = targetUnit ?? getSystemWeightUnit();
-  const rawWeight = num(item.system?.weight?.value ?? item.system?.weight, 0);
+  const rawWeight = num(item.system?.weight?.value, 0);
   const itemUnits = (item.system?.weight?.units || "lb").toLowerCase();
   // dnd5e does not multiply a container's own weight by its quantity.
   const qty = item.type === "container" ? 1 : Math.max(0, num(item.system?.quantity, 1));
@@ -247,10 +247,7 @@ function isInsideWeightlessContainer(actor, item) {
     visited.add(containerId);
     const container = actor.items.get?.(containerId);
     if (!container) return false;
-    const props = container.system?.properties;
-    const weightless = props instanceof Set ? props.has("weightlessContents")
-      : Array.isArray(props) ? props.includes("weightlessContents") : Boolean(props?.weightlessContents);
-    if (weightless) return true;
+    if (container.system?.properties?.has?.("weightlessContents")) return true;
     containerId = container.system?.container;
   }
   return false;

@@ -25,7 +25,7 @@ const OPEN_EDITORS = new Map();
 const localize = key => game.i18n.localize(key);
 const format = (key, data) => game.i18n.format(key, data);
 
-/** DialogV2 that resolves to null when dismissed, on every Foundry version. */
+/** DialogV2 that resolves to null when dismissed. */
 function dialogPrompt(options) {
   return foundry.applications.api.DialogV2.prompt({ rejectClose: false, ...options });
 }
@@ -149,7 +149,7 @@ export class PaperdollEditorApp extends ApplicationBase {
   _handleTemplateChange(templateId) {
     if (templateId === "custom") {
       this.isCustomWorking = true;
-      this.render(false);
+      this.render();
       return;
     }
 
@@ -163,7 +163,7 @@ export class PaperdollEditorApp extends ApplicationBase {
       this.attunementMax = template.attunementMax ?? 3;
       this.isCustomWorking = false;
       this._reindexSlots();
-      this.render(false);
+      this.render();
     }
   }
 
@@ -248,7 +248,7 @@ export class PaperdollEditorApp extends ApplicationBase {
       slot.column = targetColumn;
       this._reindexSlots();
       this.isCustomWorking = true;
-      this.render(false);
+      this.render();
     }
   }
 
@@ -268,7 +268,7 @@ export class PaperdollEditorApp extends ApplicationBase {
 
     this._reindexSlots();
     this.isCustomWorking = true;
-    this.render(false);
+    this.render();
   }
 
   _reindexSlots() {
@@ -291,7 +291,7 @@ export class PaperdollEditorApp extends ApplicationBase {
     [slot.order, swapWith.order] = [swapWith.order, slot.order];
     this.workingSlots.sort((a, b) => (a.order ?? 50) - (b.order ?? 50));
     this.isCustomWorking = true;
-    this.render(false);
+    this.render();
   }
 
   /** Read the attunement input, which may not have fired a change event yet. */
@@ -382,7 +382,7 @@ export class PaperdollEditorApp extends ApplicationBase {
     this.activeTemplateId = result.id;
     this.isCustomWorking = false;
     ui.notifications.info(format("AIM.editor.savedTemplateSuccess", { name: result.name }));
-    this.render(false);
+    this.render();
   }
 
   static async _onSaveCurrentTemplate() {
@@ -403,7 +403,7 @@ export class PaperdollEditorApp extends ApplicationBase {
     }
     this.isCustomWorking = false;
     ui.notifications.info(format("AIM.editor.savedTemplateSuccess", { name: current.name || current.id }));
-    this.render(false);
+    this.render();
   }
 
   static async _onDeleteTemplate() {
@@ -423,7 +423,7 @@ export class PaperdollEditorApp extends ApplicationBase {
     this.workingSlots = t.slots.map(s => ({ ...s, rules: { ...s.rules } }));
     this.attunementMax = t.attunementMax;
     this.isCustomWorking = false;
-    this.render(false);
+    this.render();
   }
 
   static async _onExportJSON() {
@@ -464,7 +464,7 @@ export class PaperdollEditorApp extends ApplicationBase {
       this.workingSlots = imported.slots.map(s => ({ ...s, rules: { ...s.rules } }));
       this.attunementMax = imported.attunementMax ?? 3;
       this.isCustomWorking = false;
-      this.render(false);
+      this.render();
       ui.notifications.info(format("AIM.editor.importSuccess", { name: imported.name || imported.id }));
     } catch (err) {
       LOG.warn("Template import failed", err);
@@ -501,7 +501,7 @@ export class PaperdollEditorApp extends ApplicationBase {
     this.workingSlots.push(configured);
     this._reindexSlots();
     this.isCustomWorking = true;
-    this.render(false);
+    this.render();
   }
 
   static async _onEditSlot(event, target) {
@@ -517,7 +517,7 @@ export class PaperdollEditorApp extends ApplicationBase {
     this.workingSlots[slotIndex] = keepsLabel ? { ...configured, labelKey: current.labelKey } : configured;
     this._reindexSlots();
     this.isCustomWorking = true;
-    this.render(false);
+    this.render();
   }
 
   static async _onDeleteSlot(event, target) {
@@ -534,7 +534,7 @@ export class PaperdollEditorApp extends ApplicationBase {
     this.workingSlots = this.workingSlots.filter(s => s.id !== slotId);
     this._reindexSlots();
     this.isCustomWorking = true;
-    this.render(false);
+    this.render();
   }
 
   static _onMoveSlotUp(event, target) {

@@ -2,9 +2,9 @@
   "id": "actor-inventory-manager",
   "title": "Actor Inventory Manager & Paperdoll",
   "description": "RPG-style Actor Inventory Window with Paperdoll equipment slots, bidirectional rules enforcement with character sheets, and seamless Weighty Containers integration.",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "compatibility": {
-    "minimum": "12",
+    "minimum": "14",
     "verified": "14.367"
   },
   "authors": [
@@ -18,7 +18,7 @@
         "id": "dnd5e",
         "type": "system",
         "compatibility": {
-          "minimum": "3.0.0",
+          "minimum": "5.3.3",
           "verified": "5.3.3"
         }
       }
@@ -28,7 +28,7 @@
         "id": "item-piles",
         "type": "module",
         "compatibility": {
-          "minimum": "2.8.0"
+          "minimum": "3.3.0"
         }
       },
       {
@@ -61,6 +61,6 @@
   ],
   "url": "https://github.com/TacticalOtaku/actor-inventory-manager",
   "manifest": "https://raw.githubusercontent.com/TacticalOtaku/actor-inventory-manager/main/module.json",
-  "download": "https://github.com/TacticalOtaku/actor-inventory-manager/releases/download/v1.3.0/actor-inventory-manager-v1.3.0.zip",
+  "download": "https://github.com/TacticalOtaku/actor-inventory-manager/releases/download/v1.4.0/actor-inventory-manager-v1.4.0.zip",
   "socket": true
 }

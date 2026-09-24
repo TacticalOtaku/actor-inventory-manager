@@ -5,11 +5,6 @@
 import { MODULE_ID } from "../constants.js";
 import { isImagePath } from "./html.js";
 
-/** Foundry 13 moved FilePicker under foundry.applications.apps. */
-function filePickerClass() {
-  return foundry.applications?.apps?.FilePicker?.implementation ?? globalThis.FilePicker ?? null;
-}
-
 /**
  * Slot category: held-item slots are "hand", ring slots "ring"; otherwise the
  * category the slot already had is kept.
@@ -129,18 +124,15 @@ export class SlotConfigDialog extends ApplicationBase {
 
       if (filePickerBtn && iconInput) {
         filePickerBtn.addEventListener("click", () => {
-          const Picker = filePickerClass();
-          if (Picker) {
-            const fp = new Picker({
-              type: "image",
-              current: iconInput.value,
-              callback: (path) => {
-                iconInput.value = path;
-                updatePreview(path);
-              }
-            });
-            fp.render(true);
-          }
+          const FilePicker = foundry.applications.apps.FilePicker.implementation;
+          new FilePicker({
+            type: "image",
+            current: iconInput.value,
+            callback: (path) => {
+              iconInput.value = path;
+              updatePreview(path);
+            }
+          }).render({ force: true });
         });
       }
     }

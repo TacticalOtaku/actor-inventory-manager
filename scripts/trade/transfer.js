@@ -62,7 +62,6 @@ export async function transferItems(source, target, items, guard = () => {}) {
     data.system.equipped = false;
     data.system.container = null;
     if ("attuned" in data.system) data.system.attuned = false;
-    if (typeof data.system.attunement === "number" && data.system.attunement === 2) data.system.attunement = 1;
     if (data.flags) delete data.flags[MODULE_ID];
     // Debit first; a failed credit is recovered from the persisted snapshot.
     if (quantity === entry.quantity) await source.deleteEmbeddedDocuments("Item", [item.id]);

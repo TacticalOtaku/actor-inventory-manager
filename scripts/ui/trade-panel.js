@@ -110,13 +110,13 @@ export async function handleTradeAction(app, target) {
   }
   app.tradeBusy = true;
   // Preserve the visible draft while the coordinator acknowledges the request.
-  app.render(false);
+  app.render();
   try {
     await requestTrade(app.actor, action, data);
   } catch (error) {
     ui.notifications?.warn(game.i18n.localize(error.message?.startsWith("AIM.") ? error.message : "AIM.trade.errors.transfer"));
   } finally {
     app.tradeBusy = false;
-    if (app.rendered) app.render(false);
+    if (app.rendered) app.render();
   }
 }

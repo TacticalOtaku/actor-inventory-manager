@@ -142,7 +142,7 @@ export async function useItem(item, event = undefined) {
     return item.roll();
   }
   if (typeof item.sheet?.render === "function") {
-    item.sheet.render(true);
+    item.sheet.render({ force: true });
   }
 }
 
@@ -155,11 +155,6 @@ export async function toggleAttunement(item) {
   const actor = item.parent;
   if (!isSupportedActor(actor)) return;
   if (!assertCanEdit(actor)) return;
-
-  // dnd5e 5.x keeps the requirement in `system.attunement` ("" | "required" |
-  // "optional") and the state in the boolean `system.attuned`. Older versions
-  // encoded both in the numeric `system.attunement` (0 none / 1 required / 2 attuned).
-  const usesBooleanState = typeof item.system?.attuned === "boolean";
 
   if (!isItemAttuned(item)) {
     if (!itemRequiresAttunement(item)) {
@@ -178,16 +173,12 @@ export async function toggleAttunement(item) {
       return;
     }
 
-    await item.update(usesBooleanState
-      ? { "system.attuned": true }
-      : { "system.attunement": 2 });
+    await item.update({ "system.attuned": true });
     ui.notifications?.info(game.i18n.format("AIM.notifications.attunedSuccess", { item: item.name }));
     return;
   }
 
-  await item.update(usesBooleanState
-    ? { "system.attuned": false }
-    : { "system.attunement": 1 });
+  await item.update({ "system.attuned": false });
   ui.notifications?.info(game.i18n.format("AIM.notifications.unattunedSuccess", { item: item.name }));
 }
 

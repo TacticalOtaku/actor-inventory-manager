@@ -54,10 +54,11 @@
       }
     },
     "app": {
-      "title": "Actor Inventory & Paperdoll"
+      "title": "Actor Inventory & Paperdoll",
+      "sidePanels": "Side panels"
     },
     "paperdoll": {
-      "title": "Equipment Paperdoll",
+      "title": "Equipment",
       "collapseTooltip": "Collapse Paperdoll Panel",
       "expandTooltip": "Expand Paperdoll Panel"
     },
@@ -113,7 +114,7 @@
       "switchToDark": "Switch to Dark Theme (Fantasy)"
     },
     "encumbrance": {
-      "title": "Carrying Capacity",
+      "title": "Load",
       "normal": "Normal Load",
       "encumbered": "Encumbered (-10 ft Speed)",
       "heavily_encumbered": "Heavily Encumbered (-20 ft, Disadvantage)",

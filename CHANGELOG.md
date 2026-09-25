@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.6.0
+
+### Window layout
+- The Spells and Trade switches moved from tabs hanging outside the window into a slim rail inside its right edge. They no longer cover Foundry's sidebar, overlap each other with longer translations, or turn red on hover. An open trade shows as a dot on the Trade button.
+- All inventory and spell categories are visible at once. The tab rows wrap instead of hiding categories behind a scrollbar, and in a narrow column inactive tabs show only their icon and count, with the name in the tooltip.
+- A side panel left open no longer pushes the window past a small screen: the paperdoll folds away for the session when both do not fit, and the window's content never spills past its frame.
+- The folded paperdoll shows an icon and the attunement count instead of sideways text.
+
+### Character column
+- The column fits the default window height without scrolling, so the purse is no longer hidden under the rest buttons. AC, initiative and speed share one strip, and each ability shows its modifier and save on one line.
+- Long character names wrap onto a second line instead of being cut to a few letters, and letters with descenders are no longer clipped.
+- Shorter headings that stay on one line: "Load", "Equipment" and, in Russian, "Характеристики".
+
+### Spells & Actions drawer
+- Spell slots take one row per level. The pips are buttons — a filled pip spends a slot, an empty one restores it — so the separate − and + buttons are gone, and the slots stay usable from the keyboard.
+- Long spell names wrap onto a second line, and a long drawer title no longer runs under the close button.
+- Activation labels (Action, Bonus Action, Reaction, …) come from the module's own translations, so they are no longer English in a world without a dnd5e translation.
+
+### Items
+- Item weights are shown in the world's unit. With metric weights enabled, rows used to print the unit stored on each item (lb next to kg totals).
+- Property chips wrap onto a second line instead of being cut mid-word.
+- Paperdoll slot labels stay readable over the portrait backdrop, and the light theme no longer draws the paperdoll on a dark background.
+
+### Trade
+- With no other players' characters online, the drawer shows just that message instead of an empty partner list.
+
 ## 1.5.1
 
 ### Spells & Actions drawer

@@ -299,6 +299,14 @@
         "reaction": "Reactions",
         "passive": "Passives & Traits"
       },
+      "activation": {
+        "action": "Action",
+        "bonus": "Bonus Action",
+        "reaction": "Reaction",
+        "special": "Special",
+        "legendary": "Legendary Action",
+        "lair": "Lair Action"
+      },
       "alwaysPrepared": "Always Prepared",
       "range": {
         "self": "Self",

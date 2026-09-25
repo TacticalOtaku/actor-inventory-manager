@@ -1,34 +1,34 @@
 <div class="aim-inventory-panel">
   <!-- Top Bar: Navigation Tabs with Count Badges -->
   <nav class="aim-inv-tabs">
-    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'all')}}is-active{{/if}}" data-action="switchTab" data-tab="all">
+    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'all')}}is-active{{/if}}" data-action="switchTab" data-tab="all" data-tooltip="{{localize 'AIM.tabs.all'}}" aria-label="{{localize 'AIM.tabs.all'}}">
       <i class="fa-solid fa-boxes-stacked"></i>
-      <span>{{localize "AIM.tabs.all"}}</span>
+      <span class="aim-tab-label">{{localize "AIM.tabs.all"}}</span>
       <span class="aim-tab-count">{{counts.all}}</span>
     </button>
-    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'weapons')}}is-active{{/if}}" data-action="switchTab" data-tab="weapons">
+    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'weapons')}}is-active{{/if}}" data-action="switchTab" data-tab="weapons" data-tooltip="{{localize 'AIM.tabs.weapons'}}" aria-label="{{localize 'AIM.tabs.weapons'}}">
       <i class="fa-solid fa-khanda"></i>
-      <span>{{localize "AIM.tabs.weapons"}}</span>
+      <span class="aim-tab-label">{{localize "AIM.tabs.weapons"}}</span>
       <span class="aim-tab-count">{{counts.weapons}}</span>
     </button>
-    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'armor')}}is-active{{/if}}" data-action="switchTab" data-tab="armor">
+    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'armor')}}is-active{{/if}}" data-action="switchTab" data-tab="armor" data-tooltip="{{localize 'AIM.tabs.armor'}}" aria-label="{{localize 'AIM.tabs.armor'}}">
       <i class="fa-solid fa-shield-halved"></i>
-      <span>{{localize "AIM.tabs.armor"}}</span>
+      <span class="aim-tab-label">{{localize "AIM.tabs.armor"}}</span>
       <span class="aim-tab-count">{{counts.armor}}</span>
     </button>
-    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'consumables')}}is-active{{/if}}" data-action="switchTab" data-tab="consumables">
+    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'consumables')}}is-active{{/if}}" data-action="switchTab" data-tab="consumables" data-tooltip="{{localize 'AIM.tabs.consumables'}}" aria-label="{{localize 'AIM.tabs.consumables'}}">
       <i class="fa-solid fa-flask"></i>
-      <span>{{localize "AIM.tabs.consumables"}}</span>
+      <span class="aim-tab-label">{{localize "AIM.tabs.consumables"}}</span>
       <span class="aim-tab-count">{{counts.consumables}}</span>
     </button>
-    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'containers')}}is-active{{/if}}" data-action="switchTab" data-tab="containers">
+    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'containers')}}is-active{{/if}}" data-action="switchTab" data-tab="containers" data-tooltip="{{localize 'AIM.tabs.containers'}}" aria-label="{{localize 'AIM.tabs.containers'}}">
       <i class="fa-solid fa-box-archive"></i>
-      <span>{{localize "AIM.tabs.containers"}}</span>
+      <span class="aim-tab-label">{{localize "AIM.tabs.containers"}}</span>
       <span class="aim-tab-count">{{counts.containers}}</span>
     </button>
-    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'loot')}}is-active{{/if}}" data-action="switchTab" data-tab="loot">
+    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'loot')}}is-active{{/if}}" data-action="switchTab" data-tab="loot" data-tooltip="{{localize 'AIM.tabs.loot'}}" aria-label="{{localize 'AIM.tabs.loot'}}">
       <i class="fa-solid fa-coins"></i>
-      <span>{{localize "AIM.tabs.loot"}}</span>
+      <span class="aim-tab-label">{{localize "AIM.tabs.loot"}}</span>
       <span class="aim-tab-count">{{counts.loot}}</span>
     </button>
   </nav>

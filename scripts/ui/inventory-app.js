@@ -94,26 +94,26 @@ const BROKEN_IMAGE_FALLBACK = "icons/svg/item-bag.svg";
  * Keyed by `${sidePanelOpen}|${paperdollCollapsed}`.
  */
 const WINDOW_WIDTHS = {
-  "true|false": 1460,
-  "true|true": 1160,
-  "false|false": 1060,
-  "false|true": 780
+  "true|false": 1502,
+  "true|true": 1202,
+  "false|false": 1102,
+  "false|true": 822
 };
 
 /**
  * Narrowest width at which each layout's grid columns still fit
- * (column minimums + gaps + padding + frame, see actor-inventory.css).
+ * (column minimums + gaps + padding + frame + the side rail, see actor-inventory.css).
  */
 const MIN_LAYOUT_WIDTHS = {
-  "true|false": 1250,
-  "true|true": 1000,
-  "false|false": 900,
-  "false|true": 650
+  "true|false": 1292,
+  "true|true": 1042,
+  "false|false": 942,
+  "false|true": 692
 };
 
 /** Below this viewport width the trade layout hides the vitals column (CSS media query). */
 const NARROW_TRADE_VIEWPORT = 1050;
-const NARROW_TRADE_MIN_WIDTH = 650;
+const NARROW_TRADE_MIN_WIDTH = 692;
 
 const layoutKey = (sidePanelOpen, paperdollCollapsed) => `${Boolean(sidePanelOpen)}|${Boolean(paperdollCollapsed)}`;
 

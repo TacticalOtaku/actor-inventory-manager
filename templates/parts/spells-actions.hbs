@@ -1,7 +1,7 @@
 <div class="aim-spells-panel">
   <!-- Header: Title & Close Button -->
   <div class="aim-spells-header">
-    <div class="aim-spells-title">
+    <div class="aim-spells-title" title="{{localize 'AIM.spells.drawerTitle'}}">
       <i class="fa-solid fa-wand-magic-sparkles"></i>
       <span>{{localize "AIM.spells.drawerTitle"}}</span>
     </div>
@@ -12,24 +12,24 @@
 
   <!-- Sub-Tabs Filter -->
   <nav class="aim-spells-tabs">
-    <button type="button" class="aim-spells-tab-btn {{#if (eq spellsTab 'all')}}is-active{{/if}}" data-action="switchSpellsTab" data-tab="all">
+    <button type="button" class="aim-spells-tab-btn {{#if (eq spellsTab 'all')}}is-active{{/if}}" data-action="switchSpellsTab" data-tab="all" data-tooltip="{{localize 'AIM.spells.tabs.all'}}" aria-label="{{localize 'AIM.spells.tabs.all'}}">
       <i class="fa-solid fa-layer-group"></i>
-      <span>{{localize "AIM.spells.tabs.all"}}</span>
+      <span class="aim-tab-label">{{localize "AIM.spells.tabs.all"}}</span>
       <span class="aim-tab-count">{{spellsCounts.all}}</span>
     </button>
-    <button type="button" class="aim-spells-tab-btn {{#if (eq spellsTab 'spells')}}is-active{{/if}}" data-action="switchSpellsTab" data-tab="spells">
+    <button type="button" class="aim-spells-tab-btn {{#if (eq spellsTab 'spells')}}is-active{{/if}}" data-action="switchSpellsTab" data-tab="spells" data-tooltip="{{localize 'AIM.spells.tabs.spells'}}" aria-label="{{localize 'AIM.spells.tabs.spells'}}">
       <i class="fa-solid fa-hat-wizard"></i>
-      <span>{{localize "AIM.spells.tabs.spells"}}</span>
+      <span class="aim-tab-label">{{localize "AIM.spells.tabs.spells"}}</span>
       <span class="aim-tab-count">{{spellsCounts.spells}}</span>
     </button>
-    <button type="button" class="aim-spells-tab-btn {{#if (eq spellsTab 'actions')}}is-active{{/if}}" data-action="switchSpellsTab" data-tab="actions">
+    <button type="button" class="aim-spells-tab-btn {{#if (eq spellsTab 'actions')}}is-active{{/if}}" data-action="switchSpellsTab" data-tab="actions" data-tooltip="{{localize 'AIM.spells.tabs.actions'}}" aria-label="{{localize 'AIM.spells.tabs.actions'}}">
       <i class="fa-solid fa-bolt"></i>
-      <span>{{localize "AIM.spells.tabs.actions"}}</span>
+      <span class="aim-tab-label">{{localize "AIM.spells.tabs.actions"}}</span>
       <span class="aim-tab-count">{{spellsCounts.actions}}</span>
     </button>
-    <button type="button" class="aim-spells-tab-btn {{#if (eq spellsTab 'passives')}}is-active{{/if}}" data-action="switchSpellsTab" data-tab="passives">
+    <button type="button" class="aim-spells-tab-btn {{#if (eq spellsTab 'passives')}}is-active{{/if}}" data-action="switchSpellsTab" data-tab="passives" data-tooltip="{{localize 'AIM.spells.tabs.passives'}}" aria-label="{{localize 'AIM.spells.tabs.passives'}}">
       <i class="fa-solid fa-shield-heart"></i>
-      <span>{{localize "AIM.spells.tabs.passives"}}</span>
+      <span class="aim-tab-label">{{localize "AIM.spells.tabs.passives"}}</span>
       <span class="aim-tab-count">{{spellsCounts.passives}}</span>
     </button>
   </nav>
@@ -49,28 +49,26 @@
         <div class="aim-spell-slots-header">
           <i class="fa-solid fa-sparkles"></i> {{localize "AIM.spells.spellSlotsTitle"}}
         </div>
-        <div class="aim-spell-slots-grid">
+        <div class="aim-spell-slots-list">
           {{#each spellSlots}}
-          <div class="aim-slot-tracker-card" data-slot-key="{{this.key}}">
-            <div class="aim-slot-tracker-top">
-              <span class="aim-slot-name">{{this.label}}</span>
-              <span class="aim-slot-count">{{this.value}} / {{this.max}}</span>
-            </div>
+          <div class="aim-slot-row" data-slot-key="{{this.key}}">
+            <span class="aim-slot-name">{{this.label}}</span>
             <div class="aim-slot-pips-row">
               {{#each this.pips}}
-                <span class="aim-slot-pip {{#if this.filled}}is-filled{{/if}}"
-                      {{#if @root.canEdit}}data-action="updateSpellSlot"{{/if}}
-                      data-slot-key="{{../key}}"
-                      data-delta="{{#if this.filled}}-1{{else}}1{{/if}}"
-                      title="{{#if this.filled}}{{localize 'AIM.spells.spendSlot'}}{{else}}{{localize 'AIM.spells.restoreSlot'}}{{/if}}"></span>
+                {{#if @root.canEdit}}
+                  <button type="button"
+                          class="aim-slot-pip {{#if this.filled}}is-filled{{/if}}"
+                          data-action="updateSpellSlot"
+                          data-slot-key="{{../key}}"
+                          data-delta="{{#if this.filled}}-1{{else}}1{{/if}}"
+                          data-tooltip="{{#if this.filled}}{{localize 'AIM.spells.spendSlot'}}{{else}}{{localize 'AIM.spells.restoreSlot'}}{{/if}}"
+                          aria-label="{{../label}}: {{#if this.filled}}{{localize 'AIM.spells.spendSlot'}}{{else}}{{localize 'AIM.spells.restoreSlot'}}{{/if}}"></button>
+                {{else}}
+                  <span class="aim-slot-pip {{#if this.filled}}is-filled{{/if}}"></span>
+                {{/if}}
               {{/each}}
             </div>
-            {{#if @root.canEdit}}
-            <div class="aim-slot-quick-btns">
-              <button type="button" class="aim-slot-btn" data-action="updateSpellSlot" data-slot-key="{{this.key}}" data-delta="-1" title="{{localize 'AIM.spells.spendSlot'}}" {{#if (eq this.value 0)}}disabled{{/if}}>-</button>
-              <button type="button" class="aim-slot-btn" data-action="updateSpellSlot" data-slot-key="{{this.key}}" data-delta="1" title="{{localize 'AIM.spells.restoreSlot'}}" {{#if (eq this.value this.max)}}disabled{{/if}}>+</button>
-            </div>
-            {{/if}}
+            <span class="aim-slot-count">{{this.value}} / {{this.max}}</span>
           </div>
           {{/each}}
         </div>

@@ -69,7 +69,7 @@ https://raw.githubusercontent.com/TacticalOtaku/actor-inventory-manager/main/mod
 
 ### Using player trading
 
-Open your character's AIM inventory and select **Trade** on the right edge. Choose another online player's world actor and start a trade. Both players can enter item quantities and currency, save their offer, and confirm. Saving a changed offer clears both confirmations. A free gift requires the recipient's confirmation too. An active GM is required to authorize the transfer to both actors; players do not need ownership of each other's sheets.
+Open your character's AIM inventory and select the **Trade** button (handshake) on the window's right edge. Choose another online player's world actor and start a trade. Both players can enter item quantities and currency, save their offer, and confirm. Saving a changed offer clears both confirmations. A free gift requires the recipient's confirmation too. An active GM is required to authorize the transfer to both actors; players do not need ownership of each other's sheets.
 
 Only one trade per actor can be active. Nonempty containers must be emptied first; individual contained items can be offered. Received items are unequipped, unattuned, detached from their former container, and have no AIM equipment-slot assignment. Item Piles currency items appear as currency rather than being offered twice as ordinary items.
 

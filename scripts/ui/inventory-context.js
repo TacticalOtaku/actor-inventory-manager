@@ -114,3 +114,16 @@ export function resolveThemeContext(settingTheme, prefersLight, localize) {
     themeTooltip: localize(isDark ? "AIM.theme.switchToLight" : "AIM.theme.switchToDark")
   };
 }
+
+/**
+ * Whether the paperdoll has to fold away so an open side panel fits on screen.
+ * @param {object} layout
+ * @param {boolean} layout.sidePanelOpen
+ * @param {boolean} layout.paperdollCollapsed
+ * @param {number} layout.availableWidth  screen width the window may use
+ * @param {number} layout.requiredWidth   narrowest window holding the side panel beside the paperdoll
+ * @returns {boolean}
+ */
+export function mustCollapsePaperdoll({ sidePanelOpen, paperdollCollapsed, availableWidth, requiredWidth }) {
+  return Boolean(sidePanelOpen) && !paperdollCollapsed && availableWidth < requiredWidth;
+}

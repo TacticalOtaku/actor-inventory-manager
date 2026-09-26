@@ -4,6 +4,8 @@ import { afterEach, describe, it } from "node:test";
 import {
   extractActorActions,
   extractSpellSlots,
+  formatActivationLabel,
+  formatItemForDisplay,
   resolveItemActivation,
   resolveItemUses,
   resolveSpellPreparation,
@@ -218,5 +220,56 @@ describe("extractActorActions", () => {
     const result = extractActorActions(actor, "surge");
     assert.deepEqual(result.actions.map(a => a.name), ["Action Surge"]);
     assert.equal(result.bonus.length, 0);
+  });
+});
+
+describe("formatItemForDisplay weight", () => {
+  afterEach(() => {
+    delete globalThis.game;
+  });
+
+  function metricWorld() {
+    stubDnd5eConfig();
+    globalThis.CONFIG.DND5E.weightUnits = {
+      lb: { conversion: 1, abbreviation: "lb" },
+      kg: { conversion: 2.5, abbreviation: "kg" }
+    };
+    globalThis.game = {
+      settings: { get: (namespace, key) => namespace === "dnd5e" && key === "metricWeightUnits" },
+      i18n: { localize: key => key }
+    };
+  }
+
+  it("shows the weight in the world's unit, not the unit stored on the item", () => {
+    metricWorld();
+    const greataxe = { id: "a", name: "Greataxe", type: "weapon", system: { quantity: 1, weight: { value: 7, units: "lb" } } };
+    const rock = { id: "b", name: "Rock", type: "loot", system: { quantity: 1, weight: { value: 1, units: "kg" } } };
+    assert.equal(formatItemForDisplay(greataxe).weightDisplay, "2.8 kg");
+    assert.equal(formatItemForDisplay(rock).weightDisplay, "1.0 kg");
+  });
+
+  it("multiplies by quantity, but not a container's own weight", () => {
+    metricWorld();
+    const rations = { id: "c", name: "Rations", type: "consumable", system: { quantity: 2, weight: { value: 2, units: "lb" } } };
+    const bags = { id: "d", name: "Bag", type: "container", system: { quantity: 2, weight: { value: 5, units: "lb" } } };
+    assert.equal(formatItemForDisplay(rations).weightDisplay, "1.6 kg");
+    assert.equal(formatItemForDisplay(bags).weightDisplay, "2.0 kg");
+  });
+});
+
+describe("formatActivationLabel", () => {
+  afterEach(() => {
+    delete globalThis.game;
+  });
+
+  it("uses the module's own label for a standard activation it translates", () => {
+    const own = { "AIM.spells.activation.bonus": "Бонусное действие" };
+    globalThis.game = { i18n: { has: (key, fallback) => fallback === false && key in own, localize: key => own[key] ?? key } };
+    assert.equal(formatActivationLabel({ type: "bonus", config: { label: "Bonus Action" } }), "Бонусное действие");
+  });
+
+  it("keeps the system label, with its count, for anything else", () => {
+    globalThis.game = { i18n: { has: () => false, localize: key => key } };
+    assert.equal(formatActivationLabel({ type: "legendary", value: 2, config: { label: "Legendary Action" } }), "2 Legendary Action");
   });
 });

@@ -42,12 +42,12 @@
       {{#if trade.recovery}}<button type="button" data-action="tradeAction" data-trade-op="recover" {{#if trade.busy}}disabled{{/if}}>{{localize "AIM.trade.recover"}}</button>{{/if}}
     {{else}}
       <p class="aim-trade-hint">{{localize "AIM.trade.intro"}}</p>
-      <label class="aim-trade-target">{{localize "AIM.trade.partner"}}
-        <select data-trade-target {{#unless trade.canStart}}disabled{{/unless}}>
-          {{#each trade.targets}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
-        </select>
-      </label>
       {{#if trade.noTargets}}<p class="aim-trade-hint">{{localize "AIM.trade.noTargets"}}</p>{{else}}
+        <label class="aim-trade-target">{{localize "AIM.trade.partner"}}
+          <select data-trade-target {{#unless trade.canStart}}disabled{{/unless}}>
+            {{#each trade.targets}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
+          </select>
+        </label>
         <button type="button" data-action="tradeAction" data-trade-op="start" {{#unless trade.canStart}}disabled{{/unless}} {{#if trade.busy}}disabled{{/if}}><i class="fa-solid fa-handshake"></i> {{localize "AIM.trade.start"}}</button>
       {{/if}}
     {{/if}}

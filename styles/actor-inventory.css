@@ -159,7 +159,7 @@
   display: grid;
   /* The inventory list is the primary content, so the side columns shrink
      before it does. */
-  grid-template-columns: minmax(240px, 285px) minmax(300px, 350px) minmax(300px, 1fr);
+  grid-template-columns: minmax(240px, 285px) minmax(300px, 350px) minmax(300px, 1fr) 30px;
   height: 100%;
   max-height: 100%;
   min-height: 0;
@@ -169,19 +169,73 @@
   background: var(--aim-bg-gradient);
   transition: all 0.3s ease;
   position: relative;
-  overflow: visible;
+  /* Nothing may spill past the frame when the window is narrower than the layout. */
+  overflow: hidden;
 }
 
 .aim-window-content.is-paperdoll-collapsed {
-  grid-template-columns: minmax(240px, 285px) 44px minmax(300px, 1fr);
+  grid-template-columns: minmax(240px, 285px) 44px minmax(300px, 1fr) 30px;
 }
 
 .aim-window-content.is-spells-open {
-  grid-template-columns: minmax(240px, 285px) minmax(300px, 350px) minmax(320px, 1fr) minmax(320px, 380px);
+  grid-template-columns: minmax(240px, 285px) minmax(300px, 350px) minmax(320px, 1fr) minmax(320px, 380px) 30px;
 }
 
 .aim-window-content.is-paperdoll-collapsed.is-spells-open {
-  grid-template-columns: minmax(240px, 285px) 44px minmax(320px, 1fr) minmax(320px, 380px);
+  grid-template-columns: minmax(240px, 285px) 44px minmax(320px, 1fr) minmax(320px, 380px) 30px;
+}
+
+/* Side panel switches: a slim rail inside the frame, stacked in order. */
+.aim-side-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.aim-rail-btn {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: var(--aim-text-gold);
+  background: var(--aim-bg-panel);
+  border: 1px solid var(--aim-border-main);
+  border-radius: var(--aim-radius);
+  box-shadow: var(--aim-card-shadow);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.aim-rail-btn:hover {
+  border-color: var(--aim-border-gold-bright);
+  box-shadow: 0 0 10px var(--aim-gold-glow);
+}
+.aim-rail-btn.is-open {
+  background: var(--aim-bg-card);
+  border-color: var(--aim-border-gold-bright);
+  box-shadow: inset 0 0 10px var(--aim-gold-glow);
+}
+.aim-rail-btn:focus-visible {
+  outline: 2px solid var(--aim-border-gold-bright);
+  outline-offset: 2px;
+}
+/* An active trade session, visible while the drawer is closed. */
+.aim-rail-btn.has-trade::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--aim-accent-green);
+  box-shadow: 0 0 6px var(--aim-accent-green);
 }
 
 .aim-column {
@@ -213,7 +267,7 @@
   padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   overflow-y: auto;
   overflow-x: hidden;
   flex: 1 1 0%;
@@ -227,7 +281,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding-bottom: 12px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--aim-border-main);
   position: relative;
 }
@@ -272,7 +326,7 @@
 
 .aim-identity-info {
   flex: 1;
-  overflow: hidden;
+  min-width: 0;
 }
 
 .aim-actor-name {
@@ -280,12 +334,16 @@
   font-family: var(--aim-font-display);
   font-size: 1.15rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
   color: var(--aim-text-heading);
   text-shadow: 0 2px 6px rgba(0,0,0,0.6);
-  white-space: nowrap;
+  /* Long names wrap to a second line instead of being cut to a few letters. */
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .aim-actor-sub {
@@ -322,7 +380,7 @@
 .aim-combat-vitals {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .aim-hp-box {
@@ -383,33 +441,32 @@
   inset: -3px -3px -3px -4px;
 }
 
+/* AC, initiative and speed as one strip of three cells. */
 .aim-vital-badges-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.aim-badge-card {
   background: var(--aim-bg-card);
   border: 1px solid var(--aim-border-main);
   border-radius: 6px;
-  padding: 8px 4px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   box-shadow: var(--aim-card-shadow);
-  transition: transform 0.2s, border-color 0.2s;
 }
-.aim-badge-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--aim-border-gold-bright);
+
+.aim-badge-card {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  align-items: center;
+  column-gap: 5px;
+  padding: 5px 2px;
+  text-align: center;
+}
+.aim-badge-card + .aim-badge-card {
+  border-left: 1px solid var(--aim-border-main);
 }
 
 .aim-badge-card i {
   color: var(--aim-text-gold);
-  font-size: 0.95rem;
-  margin-bottom: 2px;
+  font-size: 0.8rem;
 }
 
 .aim-badge-val {
@@ -425,7 +482,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--aim-text-muted);
-  margin-top: 1px;
+  grid-column: 1 / -1;
 }
 
 /* Abilities Grid */
@@ -436,7 +493,7 @@
   letter-spacing: 0.08em;
   color: var(--aim-text-gold);
   text-transform: uppercase;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   border-bottom: 1px solid var(--aim-border-main);
   padding-bottom: 4px;
   display: flex;
@@ -450,11 +507,15 @@
   gap: 6px;
 }
 
+/* Modifier and save share a line under the score. */
 .aim-ability-cell {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
   background: var(--aim-bg-card);
   border: 1px solid var(--aim-border-main);
   border-radius: 6px;
-  padding: 6px 3px;
+  padding: 4px 3px;
   text-align: center;
   box-shadow: var(--aim-card-shadow);
   transition: border-color 0.2s, transform 0.2s;
@@ -462,6 +523,11 @@
 .aim-ability-cell:hover {
   border-color: var(--aim-border-gold-bright);
   transform: translateY(-1px);
+}
+
+.aim-ability-key,
+.aim-ability-score {
+  grid-column: 1 / -1;
 }
 
 .aim-ability-key {
@@ -491,7 +557,6 @@
 .aim-ability-save {
   font-size: 0.72rem;
   color: var(--aim-text-muted);
-  margin-top: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -506,9 +571,9 @@
 .aim-passives-section {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 3px;
   background: var(--aim-badge-bg);
-  padding: 8px 10px;
+  padding: 6px 10px;
   border-radius: 6px;
   font-size: 0.82rem;
   border: 1px solid var(--aim-border-light);
@@ -524,7 +589,7 @@
 /* Encumbrance Box */
 .aim-encumbrance-box {
   background: var(--aim-badge-bg);
-  padding: 10px;
+  padding: 8px 10px;
   border-radius: 6px;
   border: 1px solid var(--aim-border-main);
   box-shadow: inset 0 1px 4px rgba(0,0,0,0.5);
@@ -604,7 +669,7 @@
   font-family: var(--aim-font-display);
   font-size: 0.82rem;
   text-align: center;
-  margin-top: 8px;
+  margin-top: 6px;
   color: var(--aim-text-gold);
   letter-spacing: 0.04em;
 }
@@ -874,6 +939,8 @@
   color: var(--aim-text-muted);
   text-align: center;
   white-space: nowrap;
+  /* Stays readable over the portrait backdrop. */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.8);
 }
 
 .aim-slot-qty {
@@ -1051,14 +1118,22 @@
   flex: 1 1 0%;
 }
 
+/* Every tab stays reachable: the row wraps instead of hiding tabs behind a
+   scrollbar, and narrow columns drop the inactive labels (kept as tooltips). */
 .aim-inv-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 10px 12px;
   border-bottom: 1px solid var(--aim-border-main);
   background: var(--aim-badge-bg);
-  overflow-x: auto;
   flex-shrink: 0;
+}
+
+@container aim-inventory (max-width: 620px) {
+  .aim-tab-btn:not(.is-active) .aim-tab-label {
+    display: none;
+  }
 }
 
 .aim-tab-btn {
@@ -1261,24 +1336,26 @@
   text-shadow: 0 0 6px rgba(241, 196, 15, 0.8);
 }
 
+/* Weight, price and property chips wrap onto a second line rather than
+   cutting a chip in half. */
 .aim-item-subtitle {
   font-size: 0.78rem;
   color: var(--aim-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 3px 6px;
   margin-top: 2px;
 }
 
 .aim-meta-stat {
   font-size: 0.75rem;
+  white-space: nowrap;
 }
 
 .aim-prop-chips {
   display: inline-flex;
+  flex-wrap: wrap;
   gap: 4px;
   margin-left: 2px;
 }
@@ -1294,6 +1371,7 @@
   padding: 1px 5px;
   border-radius: 3px;
   border: 1px solid var(--aim-border-light);
+  white-space: nowrap;
 }
 
 .aim-item-controls {
@@ -1678,8 +1756,13 @@
 }
 
 [data-theme="light"] .aim-slot-name-tag {
-  color: #534537;
+  color: #3f3326;
   font-weight: 700;
+  text-shadow: 0 1px 1px rgba(255, 250, 238, 0.95), 0 0 6px rgba(255, 250, 238, 0.9);
+}
+
+[data-theme="light"] .aim-paperdoll-stage {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 251, 240, 0.7) 0%, rgba(214, 199, 168, 0.6) 100%);
 }
 
 [data-theme="light"] .aim-attunement-sockets .aim-attune-socket {
@@ -2223,23 +2306,9 @@
   transform: scale(1.1);
 }
 
-.aim-vertical-label {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  font-family: var(--aim-font-display);
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  color: var(--aim-text-heading);
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-}
-.aim-vertical-label i {
+.aim-collapsed-icon {
   color: var(--aim-text-gold);
-  transform: rotate(90deg);
+  font-size: 1.1rem;
 }
 
 .aim-collapsed-badge {
@@ -2256,141 +2325,10 @@
 }
 
 
-/* ─────────────────────────────────────────────────────────
-   ORNATE RPG SPELLS & ACTIONS BOOKMARK TAB
-   ───────────────────────────────────────────────────────── */
-.aim-spells-bookmark-tab {
-  position: absolute;
-  top: 70px;
-  right: -30px;
-  width: 30px;
-  height: auto;
-  min-height: 140px;
-  background: linear-gradient(135deg, rgba(28, 22, 14, 0.98) 0%, rgba(18, 14, 8, 0.99) 100%);
-  border: 1.5px solid var(--aim-border-gold);
-  border-left: none;
-  border-radius: 0 8px 8px 0;
-  box-shadow: 6px 4px 18px rgba(0, 0, 0, 0.8), inset 0 0 10px rgba(218, 165, 32, 0.2);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 3px 14px 3px;
-  box-sizing: border-box;
-  cursor: pointer;
-  z-index: 99;
-  user-select: none;
-  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-}
-
-/* Hover when CLOSED: Slides OUTWARD to the right (Inviting to expand drawer) */
-.aim-spells-bookmark-tab:not(.is-open):hover {
-  transform: translateX(4px);
-  border-color: var(--aim-border-gold-bright);
-  background: linear-gradient(135deg, rgba(45, 34, 20, 0.98) 0%, rgba(28, 20, 12, 0.99) 100%);
-  box-shadow: 8px 6px 24px rgba(0, 0, 0, 0.9), 0 0 14px var(--aim-gold-glow), inset 0 0 14px rgba(241, 196, 15, 0.35);
-}
-
-/* When OPEN */
-.aim-spells-bookmark-tab.is-open {
-  background: linear-gradient(135deg, rgba(54, 38, 18, 0.98) 0%, rgba(34, 24, 10, 0.99) 100%);
-  border-color: var(--aim-border-gold-bright);
-  box-shadow: 6px 4px 20px rgba(0, 0, 0, 0.85), inset 0 0 16px rgba(241, 196, 15, 0.4);
-}
-
-/* Hover when OPEN: Slides INWARD to the left (Visual feedback that clicking will collapse drawer) */
-.aim-spells-bookmark-tab.is-open:hover {
-  transform: translateX(-4px);
-  border-color: #e74c3c;
-  background: linear-gradient(135deg, rgba(52, 22, 22, 0.98) 0%, rgba(32, 12, 12, 0.99) 100%);
-  box-shadow: 2px 2px 14px rgba(231, 76, 60, 0.55), inset 0 0 14px rgba(231, 76, 60, 0.3);
-}
-.aim-spells-bookmark-tab.is-open:hover .aim-bookmark-icon,
-.aim-spells-bookmark-tab.is-open:hover .aim-bookmark-text {
-  color: #ff7675;
-}
-.aim-spells-bookmark-tab.is-open:hover .aim-bookmark-gem {
-  background: #e74c3c;
-  box-shadow: 0 0 8px #e74c3c;
-}
-
-.aim-bookmark-icon {
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--aim-text-gold);
-  font-size: 0.82rem;
-  filter: drop-shadow(0 0 4px rgba(241, 196, 15, 0.6));
-  flex-shrink: 0;
-  transition: transform 0.2s ease, color 0.2s ease;
-}
-
-.aim-bookmark-text {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  font-family: var(--aim-font-display);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--aim-text-gold);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-  white-space: nowrap;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s ease;
-}
-
-.aim-bookmark-gem {
-  width: 6px;
-  height: 6px;
-  background: #f1c40f;
-  border-radius: 50%;
-  box-shadow: 0 0 6px #f1c40f;
-  flex-shrink: 0;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-/* Light Theme Bookmark Tab */
-[data-theme="light"] .aim-spells-bookmark-tab {
-  background: linear-gradient(135deg, #ede3cf 0%, #dfd3bb 100%);
-  border-color: #8c734b;
-  border-left: none;
-  box-shadow: 5px 3px 16px rgba(0, 0, 0, 0.35), inset 0 0 8px rgba(140, 115, 75, 0.2);
-}
-[data-theme="light"] .aim-spells-bookmark-tab:not(.is-open):hover {
-  background: linear-gradient(135deg, #f5ecd8 0%, #e8dcbf 100%);
-  border-color: #6d542d;
-  box-shadow: 7px 4px 20px rgba(0, 0, 0, 0.45);
-}
-[data-theme="light"] .aim-spells-bookmark-tab.is-open {
-  background: linear-gradient(135deg, #e4d5b6 0%, #d8c8a4 100%);
-  border-color: #6d542d;
-}
-[data-theme="light"] .aim-spells-bookmark-tab.is-open:hover {
-  background: linear-gradient(135deg, #fce4e4 0%, #f7d2d2 100%);
-  border-color: #c0392b;
-}
-[data-theme="light"] .aim-bookmark-text {
-  color: #5a4220;
-  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6);
-}
-[data-theme="light"] .aim-bookmark-icon {
-  color: #7a5828;
-  filter: none;
-}
-[data-theme="light"] .aim-bookmark-gem {
-  background: #8c734b;
-  box-shadow: 0 0 4px rgba(140, 115, 75, 0.5);
-}
-
 /* Spells Column & Panel */
 .aim-spells-column {
+  container-type: inline-size;
+  container-name: aim-drawer;
   background: var(--aim-bg-panel);
   border: 1px solid var(--aim-border-main);
   border-radius: var(--aim-radius);
@@ -2405,8 +2343,6 @@
 }
 
 /* Trading shares the existing drawer grid and both theme palettes. */
-.aim-trade-bookmark-tab { top: 235px; }
-.aim-trade-bookmark-tab.has-trade .aim-bookmark-gem { background: var(--aim-accent-green); box-shadow: 0 0 8px var(--aim-accent-green); }
 .aim-trade-panel { display: flex; flex-direction: column; height: 100%; min-height: 0; color: var(--aim-text-main); }
 .aim-trade-scroll-area { flex: 1; min-height: 0; overflow-y: auto; padding: 14px; scrollbar-width: thin; }
 .aim-trade-meta, .aim-trade-confirmations { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--aim-text-muted); }
@@ -2441,7 +2377,7 @@
 .aim-trade-footer button:last-child { grid-column: 1 / -1; }
 .aim-trade-footer .aim-trade-confirm { border-color: var(--aim-border-gold); color: var(--aim-text-gold); }
 @media (max-width: 1050px) {
-  .aim-window-content.is-trade-open.is-paperdoll-collapsed { grid-template-columns: 44px minmax(260px, 1fr) minmax(300px, 380px); gap: 8px; padding: 10px; }
+  .aim-window-content.is-trade-open.is-paperdoll-collapsed { grid-template-columns: 44px minmax(260px, 1fr) minmax(300px, 380px) 30px; gap: 8px; padding: 10px; }
   .aim-window-content.is-trade-open .aim-vitals-column { display: none; }
 }
 
@@ -2471,11 +2407,19 @@
   font-size: 0.92rem;
   font-weight: 800;
   color: var(--aim-text-heading);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+/* A long translation shortens with an ellipsis instead of running under the close button. */
+.aim-spells-title span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .aim-spells-title i {
   color: var(--aim-text-gold);
@@ -2489,12 +2433,18 @@
 
 .aim-spells-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 6px 10px;
   border-bottom: 1px solid var(--aim-border-light);
   background: var(--aim-badge-bg);
   flex-shrink: 0;
-  overflow-x: auto;
+}
+
+@container aim-drawer (max-width: 460px) {
+  .aim-spells-tab-btn:not(.is-active) .aim-tab-label {
+    display: none;
+  }
 }
 
 .aim-spells-tab-btn {
@@ -2596,89 +2546,71 @@
   gap: 6px;
 }
 
-.aim-spell-slots-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-  gap: 6px;
-}
-
-.aim-slot-tracker-card {
-  background: var(--aim-bg-card);
-  border: 1px solid var(--aim-border-light);
-  border-radius: 5px;
-  padding: 5px 6px;
+/* One row per spell level. The pips are the controls: a filled pip spends a
+   slot, an empty one restores it. */
+.aim-spell-slots-list {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
-.aim-slot-tracker-top {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
+.aim-slot-row {
+  display: grid;
+  grid-template-columns: minmax(56px, auto) 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 4px;
+  border-radius: 4px;
   font-family: var(--aim-font-display);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 700;
+}
+.aim-slot-row:hover {
+  background: var(--aim-bg-card);
 }
 .aim-slot-name {
   color: var(--aim-text-heading);
+  white-space: nowrap;
 }
 .aim-slot-count {
   color: var(--aim-text-gold);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .aim-slot-pips-row {
   display: flex;
-  gap: 3px;
-  justify-content: center;
   flex-wrap: wrap;
+  gap: 4px;
   min-height: 12px;
 }
 
 .aim-slot-pip {
-  width: 10px;
-  height: 10px;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
   border-radius: 50%;
   border: 1.5px solid var(--aim-border-gold);
   background: transparent;
-  cursor: pointer;
-  transition: all 0.2s;
+  box-shadow: none;
 }
-.aim-slot-pip:hover {
+button.aim-slot-pip {
+  cursor: pointer;
+  transition: transform 0.15s, background-color 0.15s, box-shadow 0.15s;
+}
+button.aim-slot-pip:hover {
   transform: scale(1.2);
+}
+button.aim-slot-pip:focus-visible {
+  outline: 2px solid var(--aim-border-gold-bright);
+  outline-offset: 2px;
 }
 .aim-slot-pip.is-filled {
   background: #f1c40f;
   box-shadow: 0 0 6px rgba(241, 196, 15, 0.7);
-}
-
-.aim-slot-quick-btns {
-  display: flex;
-  gap: 4px;
-  width: 100%;
-  justify-content: center;
-}
-
-.aim-slot-btn {
-  background: var(--aim-badge-bg);
-  border: 1px solid var(--aim-border-light);
-  color: var(--aim-text-muted);
-  border-radius: 3px;
-  padding: 0 5px;
-  font-size: 0.7rem;
-  font-weight: bold;
-  cursor: pointer;
-  line-height: 1.2;
-}
-.aim-slot-btn:hover:not(:disabled) {
-  background: var(--aim-bg-card-hover);
-  color: #fff;
-  border-color: var(--aim-border-gold);
-}
-.aim-slot-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
 }
 
 /* Spell Cards */
@@ -2793,14 +2725,19 @@
   gap: 4px;
 }
 
+/* Long names take a second line before they are shortened. */
 .aim-spell-name {
   font-family: var(--aim-font-display);
   font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.03em;
-  white-space: nowrap;
+  line-height: 1.2;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .aim-prep-btn {

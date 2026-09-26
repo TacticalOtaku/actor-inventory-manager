@@ -54,10 +54,11 @@
       }
     },
     "app": {
-      "title": "Actor Inventory & Paperdoll"
+      "title": "Actor Inventory & Paperdoll",
+      "sidePanels": "Side panels"
     },
     "paperdoll": {
-      "title": "Equipment Paperdoll",
+      "title": "Equipment",
       "collapseTooltip": "Collapse Paperdoll Panel",
       "expandTooltip": "Expand Paperdoll Panel"
     },
@@ -113,7 +114,7 @@
       "switchToDark": "Switch to Dark Theme (Fantasy)"
     },
     "encumbrance": {
-      "title": "Carrying Capacity",
+      "title": "Load",
       "normal": "Normal Load",
       "encumbered": "Encumbered (-10 ft Speed)",
       "heavily_encumbered": "Heavily Encumbered (-20 ft, Disadvantage)",
@@ -267,14 +268,12 @@
     },
     "items": {
       "attuned": "Attuned",
-      "attunedBadge": "Attuned",
       "requiresAttunement": "Requires Attunement",
       "requiresAttunementShort": "Requires Attune",
       "emptyList": "No items found in this category."
     },
     "spells": {
       "drawerTab": "Spells",
-      "drawerTabFull": "Spells & Actions",
       "drawerTitle": "Spells & Abilities",
       "collapseTooltip": "Close Spells & Actions Panel",
       "expandTooltip": "Open Spells & Actions Panel",
@@ -300,6 +299,14 @@
         "bonus": "Bonus Actions",
         "reaction": "Reactions",
         "passive": "Passives & Traits"
+      },
+      "activation": {
+        "action": "Action",
+        "bonus": "Bonus Action",
+        "reaction": "Reaction",
+        "special": "Special",
+        "legendary": "Legendary Action",
+        "lair": "Lair Action"
       },
       "alwaysPrepared": "Always Prepared",
       "range": {

@@ -6,7 +6,7 @@
 import { SPELL_SCHOOL_COLORS } from "../constants.js";
 import { countAttunedItems, getActorAttunementMax, getAttunementStatus } from "../core/attunement.js";
 import { canItemBeEquipped } from "../core/item-classifier.js";
-import { getSystemWeightUnit, num } from "../core/weight-calculator.js";
+import { getItemWeightInUnit, getSystemWeightUnit, num } from "../core/weight-calculator.js";
 import { computeActorCurrency } from "./item-piles.js";
 import { getItemRarityVisuals, getSpellSchoolVisuals } from "./sc-rarity-colors.js";
 
@@ -150,8 +150,9 @@ export function formatItemForDisplay(item) {
   const hasGlow = rarityVisuals.hasGlow;
   const isEquipped = Boolean(system.equipped);
   const qty = num(system.quantity, 1);
-  const weight = num(system.weight?.value, 0);
-  const weightUnits = unitAbbreviation("weightUnits", system.weight?.units ?? getSystemWeightUnit());
+  // Totals and containers are shown in the world's unit, so rows are too.
+  const weightUnit = getSystemWeightUnit();
+  const weightUnits = unitAbbreviation("weightUnits", weightUnit);
   const priceVal = num(system.price?.value, 0);
   const priceDenom = system.price?.denomination ?? "gp";
 
@@ -187,7 +188,7 @@ export function formatItemForDisplay(item) {
     isAttuned,
     requiresAttunement,
     attunementStatus,
-    weightDisplay: `${(weight * qty).toFixed(1)} ${weightUnits}`,
+    weightDisplay: `${getItemWeightInUnit(item, weightUnit).toFixed(1)} ${weightUnits}`,
     priceDisplay: priceVal > 0 ? `${priceVal} ${priceDenom}` : "",
     properties,
     description: system.description?.value ?? ""
@@ -472,9 +473,18 @@ export function extractActorSpells(actor, searchFilter = "") {
  */
 export function formatActivationLabel(activation) {
   if (!activation?.type) return "";
-  const localize = key => globalThis.game?.i18n?.localize?.(key);
-  const label = activation.config?.label ? localize(activation.config.label) : null;
-  const base = label && !label.startsWith("DND5E.") ? label : activation.type;
+  const i18n = globalThis.game?.i18n;
+  const localize = key => i18n?.localize?.(key);
+  // dnd5e localizes its labels up front, so a world without a dnd5e translation
+  // shows them in English. The module carries its own for the common types.
+  const ownKey = `AIM.spells.activation.${activation.type}`;
+  let base;
+  if (i18n?.has?.(ownKey, false)) {
+    base = localize(ownKey);
+  } else {
+    const label = activation.config?.label ? localize(activation.config.label) : null;
+    base = label && !label.startsWith("DND5E.") ? label : activation.type;
+  }
   const count = num(activation.value, 0);
   return count > 1 ? `${count} ${base}` : base;
 }

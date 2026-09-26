@@ -38,6 +38,7 @@ import {
   buildInventoryCounts,
   buildSpellsCounts,
   filterAndSortInventoryItems,
+  mustCollapsePaperdoll,
   resolveThemeContext
 } from "./inventory-context.js";
 import {
@@ -93,26 +94,26 @@ const BROKEN_IMAGE_FALLBACK = "icons/svg/item-bag.svg";
  * Keyed by `${sidePanelOpen}|${paperdollCollapsed}`.
  */
 const WINDOW_WIDTHS = {
-  "true|false": 1460,
-  "true|true": 1160,
-  "false|false": 1060,
-  "false|true": 780
+  "true|false": 1502,
+  "true|true": 1202,
+  "false|false": 1102,
+  "false|true": 822
 };
 
 /**
  * Narrowest width at which each layout's grid columns still fit
- * (column minimums + gaps + padding + frame, see actor-inventory.css).
+ * (column minimums + gaps + padding + frame + the side rail, see actor-inventory.css).
  */
 const MIN_LAYOUT_WIDTHS = {
-  "true|false": 1250,
-  "true|true": 1000,
-  "false|false": 900,
-  "false|true": 650
+  "true|false": 1292,
+  "true|true": 1042,
+  "false|false": 942,
+  "false|true": 692
 };
 
 /** Below this viewport width the trade layout hides the vitals column (CSS media query). */
 const NARROW_TRADE_VIEWPORT = 1050;
-const NARROW_TRADE_MIN_WIDTH = 650;
+const NARROW_TRADE_MIN_WIDTH = 692;
 
 const layoutKey = (sidePanelOpen, paperdollCollapsed) => `${Boolean(sidePanelOpen)}|${Boolean(paperdollCollapsed)}`;
 
@@ -144,9 +145,19 @@ export function resolveWindowWidth(spellsOpen, paperdollCollapsed, tradeOpen = f
   return Math.max(resolveMinimumWidth(spellsOpen || tradeOpen, paperdollCollapsed, tradeOpen), Math.min(preferred, available));
 }
 
-/** Does a side panel fit next to the expanded paperdoll on this screen? */
-function sidePanelFitsBesidePaperdoll() {
-  return (globalThis.window?.innerWidth ?? Infinity) - 40 >= MIN_LAYOUT_WIDTHS["true|false"];
+/**
+ * Does the paperdoll have to fold away for an open side panel on this screen?
+ * @param {boolean} sidePanelOpen
+ * @param {boolean} paperdollCollapsed
+ * @returns {boolean}
+ */
+function paperdollMustMakeRoom(sidePanelOpen, paperdollCollapsed) {
+  return mustCollapsePaperdoll({
+    sidePanelOpen,
+    paperdollCollapsed,
+    availableWidth: (globalThis.window?.innerWidth ?? Infinity) - 40,
+    requiredWidth: MIN_LAYOUT_WIDTHS["true|false"]
+  });
 }
 
 /** DOM-safe window id for an actor, unique per token actor. */
@@ -239,6 +250,11 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     this.isTradePanelOpen = false;
     // Set when a side panel collapsed the paperdoll to make room, so closing the panel restores it.
     this._paperdollAutoCollapsed = false;
+    // A panel left open on a wider screen: fold the paperdoll for this session only.
+    if (paperdollMustMakeRoom(this.isSpellsPanelOpen, this.isPaperdollCollapsed)) {
+      this.isPaperdollCollapsed = true;
+      this._paperdollAutoCollapsed = true;
+    }
 
     this.dragDrop = new DragDropController(this);
     this._hooks = [];
@@ -683,7 +699,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
    */
   _makeRoomForSidePanel(opening) {
     if (opening) {
-      if (!this.isPaperdollCollapsed && !sidePanelFitsBesidePaperdoll()) {
+      if (paperdollMustMakeRoom(true, this.isPaperdollCollapsed)) {
         this.isPaperdollCollapsed = true;
         this._paperdollAutoCollapsed = true;
       }
@@ -845,19 +861,15 @@ export async function openActorInventory(actor) {
     return existing;
   }
 
-  const isCollapsed = Boolean(actor.getFlag?.(MODULE_ID, FLAGS.PAPERDOLL_COLLAPSED));
-  const isSpells = Boolean(actor.getFlag?.(MODULE_ID, FLAGS.SPELLS_PANEL_OPEN));
-  const width = resolveWindowWidth(isSpells, isCollapsed);
-
   const height = Math.max(560, Math.min(760, window.innerHeight - 60));
-  const left = Math.max(20, Math.round((window.innerWidth - width) / 2));
   const top = Math.max(20, Math.round((window.innerHeight - height) / 2));
+  const app = new ActorInventoryApp(actor, { position: { height, top } });
 
-  const app = new ActorInventoryApp(actor, {
-    position: { width, height, top, left }
-  });
+  // Sized after construction: the window may have folded the paperdoll to fit the screen.
+  const width = resolveWindowWidth(app.isSpellsPanelOpen, app.isPaperdollCollapsed);
+  const left = Math.max(20, Math.round((window.innerWidth - width) / 2));
   OPEN_INVENTORY_APPS.set(key, app);
-  await app.render({ force: true });
+  await app.render({ force: true, position: { width, left } });
   return app;
 }
 

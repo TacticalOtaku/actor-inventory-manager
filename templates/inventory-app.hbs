@@ -11,10 +11,7 @@
         <button type="button" class="aim-expand-paperdoll-btn" data-action="togglePaperdoll" title="{{localize 'AIM.paperdoll.expandTooltip'}}">
           <i class="fa-solid fa-chevron-right"></i>
         </button>
-        <div class="aim-vertical-label">
-          <i class="fa-solid fa-person-military-rifle"></i>
-          <span>{{localize "AIM.paperdoll.title"}}</span>
-        </div>
+        <i class="aim-collapsed-icon fa-solid fa-person-military-rifle" aria-hidden="true"></i>
         <div class="aim-collapsed-badge" title="{{localize 'AIM.attunement.title'}}">
           <i class="fa-solid fa-sun"></i> {{vitals.attunement.value}}/{{vitals.attunement.max}}
         </div>
@@ -36,29 +33,32 @@
     </section>
   {{/if}}
 
-  <!-- Ornate RPG Bookmark Tab on the Right Edge -->
   {{#if isTradePanelOpen}}
     <section class="aim-column aim-spells-column aim-trade-column">
       {{> "modules/actor-inventory-manager/templates/parts/trade.hbs"}}
     </section>
   {{/if}}
-  {{#if trade.available}}
-    <button type="button" class="aim-spells-bookmark-tab aim-trade-bookmark-tab {{#if isTradePanelOpen}}is-open{{/if}} {{#if hasTradeSession}}has-trade{{/if}}" data-action="toggleTradePanel" title="{{localize 'AIM.trade.title'}}" aria-expanded="{{isTradePanelOpen}}">
-      <div class="aim-bookmark-icon"><i class="fa-solid fa-handshake"></i></div>
-      <div class="aim-bookmark-text"><span>{{localize "AIM.trade.title"}}</span></div>
-      <div class="aim-bookmark-gem"></div>
+  <!-- Side panel switches, inside the frame so they never cover the Foundry UI -->
+  <nav class="aim-side-rail" aria-label="{{localize 'AIM.app.sidePanels'}}">
+    <button type="button"
+            class="aim-rail-btn {{#if isSpellsPanelOpen}}is-open{{/if}}"
+            data-action="toggleSpellsPanel"
+            data-tooltip="{{#if isSpellsPanelOpen}}{{localize 'AIM.spells.collapseTooltip'}}{{else}}{{localize 'AIM.spells.expandTooltip'}}{{/if}}"
+            data-tooltip-direction="LEFT"
+            aria-label="{{localize 'AIM.spells.drawerTab'}}"
+            aria-expanded="{{#if isSpellsPanelOpen}}true{{else}}false{{/if}}">
+      <i class="fa-solid fa-wand-magic-sparkles"></i>
     </button>
-  {{/if}}
-  <button type="button"
-          class="aim-spells-bookmark-tab {{#if isSpellsPanelOpen}}is-open{{/if}}"
-          data-action="toggleSpellsPanel"
-          title="{{#if isSpellsPanelOpen}}{{localize 'AIM.spells.collapseTooltip'}}{{else}}{{localize 'AIM.spells.expandTooltip'}}{{/if}}">
-    <div class="aim-bookmark-icon">
-      <i class="fa-solid {{#if isSpellsPanelOpen}}fa-chevron-left{{else}}fa-wand-magic-sparkles{{/if}}"></i>
-    </div>
-    <div class="aim-bookmark-text">
-      <span>{{localize "AIM.spells.drawerTab"}}</span>
-    </div>
-    <div class="aim-bookmark-gem"></div>
-  </button>
+    {{#if trade.available}}
+      <button type="button"
+              class="aim-rail-btn {{#if isTradePanelOpen}}is-open{{/if}} {{#if hasTradeSession}}has-trade{{/if}}"
+              data-action="toggleTradePanel"
+              data-tooltip="{{localize 'AIM.trade.title'}}"
+              data-tooltip-direction="LEFT"
+              aria-label="{{localize 'AIM.trade.title'}}"
+              aria-expanded="{{#if isTradePanelOpen}}true{{else}}false{{/if}}">
+        <i class="fa-solid fa-handshake"></i>
+      </button>
+    {{/if}}
+  </nav>
 </div>

@@ -63,70 +63,23 @@ function isPrimaryActorSheet(app) {
 }
 
 /**
- * Patch dnd5e actor sheets to inject a header control into the 3-dots dropdown menu
+ * Add the inventory entry to an actor sheet's header menu (the "⋮" dropdown).
+ * Bound to Foundry's getHeaderControlsActorSheetV2 hook, which fires for every
+ * actor sheet class, including sheets registered after this module is ready.
+ * @param {Object} app
+ * @param {Object[]} controls  the sheet's header menu entries, edited in place
  */
-function patchSheetHeaderControls() {
-  const sheetClasses = new Set();
+export function addInventoryHeaderControl(app, controls) {
+  if (!game.settings.get(MODULE_ID, "showSheetButton")) return;
+  if (!isPrimaryActorSheet(app)) return;
+  if (controls.some(control => control.action === HEADER_ACTION)) return;
 
-  const dnd5eApps = globalThis.dnd5e?.applications?.actor;
-  if (dnd5eApps) {
-    for (const key of Object.keys(dnd5eApps)) {
-      const cls = dnd5eApps[key];
-      if (cls?.prototype?._getHeaderControls) {
-        sheetClasses.add(cls);
-      }
-    }
-  }
-
-  const configSheets = globalThis.CONFIG?.Actor?.sheetClasses;
-  if (configSheets) {
-    for (const actorType of Object.keys(configSheets)) {
-      for (const entry of Object.values(configSheets[actorType] || {})) {
-        if (entry?.cls?.prototype?._getHeaderControls) {
-          sheetClasses.add(entry.cls);
-        }
-      }
-    }
-  }
-
-  for (const cls of sheetClasses) {
-    const original = cls.prototype._getHeaderControls;
-    if (!original || original._aimPatched) continue;
-
-    const patched = function(...args) {
-      const controls = original.call(this, ...args) || [];
-
-      if (!isPrimaryActorSheet(this)) {
-        return controls;
-      }
-
-      const actor = this.document ?? this.actor;
-      if (!game.settings.get(MODULE_ID, "showSheetButton")) return controls;
-
-      // Header controls dispatch through the sheet's action table.
-      if (this.options?.actions && !this.options.actions[HEADER_ACTION]) {
-        this.options.actions[HEADER_ACTION] = () => openActorInventory(this.document ?? this.actor);
-      }
-
-      const hasAim = controls.some(c => c.action === HEADER_ACTION);
-      if (!hasAim) {
-        controls.unshift({
-          icon: "fa-solid fa-shirt",
-          label: game.i18n.localize("AIM.sheetButton.label"),
-          action: HEADER_ACTION,
-          onClick: (event) => {
-            event?.preventDefault?.();
-            openActorInventory(actor);
-          }
-        });
-      }
-      return controls;
-    };
-    patched._aimPatched = true;
-    cls.prototype._getHeaderControls = patched;
-  }
-
-  LOG.debug("Patched _getHeaderControls on actor sheet classes", { count: sheetClasses.size });
+  controls.unshift({
+    icon: "fa-solid fa-shirt",
+    label: game.i18n.localize("AIM.sheetButton.label"),
+    action: HEADER_ACTION,
+    onClick: () => openActorInventory(app.document ?? app.actor)
+  });
 }
 
 /**
@@ -168,10 +121,8 @@ function injectHeaderButton(app) {
  * Register sheet hooks and keybinding
  */
 export function registerSheetInjectionHooks() {
-  // Patch sheet classes for the dropdown menu
-  patchSheetHeaderControls();
-
-  // Every dnd5e actor sheet is an ActorSheetV2, so this one hook covers them all.
+  // Every dnd5e actor sheet is an ActorSheetV2, so these hooks cover them all.
+  Hooks.on("getHeaderControlsActorSheetV2", addInventoryHeaderControl);
   Hooks.on("renderActorSheetV2", app => injectHeaderButton(app));
 
   // NOTE: keybindings must be registered during "init" (Foundry throws otherwise).

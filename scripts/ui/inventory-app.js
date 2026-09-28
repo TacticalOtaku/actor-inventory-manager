@@ -32,6 +32,7 @@ import { LOG } from "../foundry/logger.js";
 import { getActorPaperdollTemplate } from "../core/paperdoll-templates.js";
 import { openPaperdollEditor } from "./paperdoll-editor.js";
 import { DragDropController } from "./drag-drop-controller.js";
+import { animateMeterChanges, readMeterWidths } from "./meter-motion.js";
 import { cssUrl, escapeHTML, isImagePath } from "./html.js";
 import {
   buildAttunementSlots,
@@ -461,8 +462,15 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     this._bindActorHooks();
   }
 
+  async _preRender(context, options) {
+    await super._preRender(context, options);
+    // Read while the old DOM is still in place; played back in _onRender.
+    this._meterWidths = readMeterWidths(this.element);
+  }
+
   async _onRender(context, options) {
     await super._onRender(context, options);
+    animateMeterChanges(this.element, this._meterWidths);
     if (this.canEdit) this.dragDrop.bind(this.element);
     else this.dragDrop.unbind();
     bindTradeInputs(this);

@@ -24,7 +24,7 @@
         <span class="aim-hp-numbers">{{vitals.hp.value}} / {{vitals.hp.max}}{{#if vitals.hp.temp}} (+{{vitals.hp.temp}}){{/if}}</span>
       </div>
       <div class="aim-meter aim-hp-meter">
-        <div class="aim-meter-fill" style="width: {{vitals.hp.pct}}%;"></div>
+        <div class="aim-meter-fill" data-meter="hp" style="width: {{vitals.hp.pct}}%;"></div>
       </div>
     </div>
 
@@ -91,7 +91,7 @@
       <span class="aim-enc-numbers">{{encumbrance.value}} / {{encumbrance.max}} {{encumbrance.unit}}</span>
     </div>
     <div class="aim-meter aim-encumbrance-meter {{encumbrance.tierClass}}">
-      <div class="aim-meter-fill" style="width: {{encumbrance.pct}}%;"></div>
+      <div class="aim-meter-fill" data-meter="encumbrance" style="width: {{encumbrance.pct}}%;"></div>
       {{#if encumbrance.showTierStops}}
       <span class="aim-meter-stop" style="left: {{encumbrance.stops.encumbered}}%;"
             title="{{localize 'AIM.encumbrance.encumbered'}}: {{encumbrance.thresholds.encumbered}} {{encumbrance.unit}}"></span>

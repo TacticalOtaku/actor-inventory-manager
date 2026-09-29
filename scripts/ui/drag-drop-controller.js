@@ -88,7 +88,7 @@ export class DragDropController {
     const dropTarget = event.currentTarget;
     dropTarget.classList.remove("drag-hover");
 
-    let dragData = null;
+    let dragData;
     try {
       dragData = JSON.parse(event.dataTransfer.getData("text/plain"));
     } catch {

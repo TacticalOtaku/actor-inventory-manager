@@ -266,7 +266,7 @@ export function computeActorEncumbrance(actor, options = {}) {
 
   // If actor has system encumbrance pre-calculated (or patched by weighty-containers)
   const systemEnc = getSystemEncumbrance(actor);
-  let totalValueDisplay = 0;
+  let totalValueDisplay;
 
   if (typeof options.overrideCarriedLbs === "number") {
     totalValueDisplay = formatWeight(options.overrideCarriedLbs, unit);

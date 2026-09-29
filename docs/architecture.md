@@ -204,8 +204,10 @@ hooks are coalesced so a batched change renders once.
 
 ## Styling and theming
 
-Theme colours are CSS custom properties defined on `[data-theme="dark"]` and
-`[data-theme="light"]` in `styles/actor-inventory.css`.
+Theme colours are CSS custom properties defined on `.actor-inventory-manager-app`
+(dark by default, light when the window carries `data-theme="light"`) and on the
+header button injected into character sheets, in `styles/actor-inventory.css`.
+They are never declared on `:root`, so they cannot leak into Foundry or other modules.
 
 The decorative fonts come from Google Fonts and are injected at runtime only
 while the client setting *Decorative Web Fonts* is on, so offline worlds and
@@ -234,6 +236,8 @@ shape.
 
 ## Local development
 
-`npm run sync` copies the module into the local Foundry data directory
-(`%LOCALAPPDATA%\FoundryVTT` by default; override with `--data <path>` or the
-`FOUNDRY_DATA` environment variable). Reload Foundry with F5 afterwards.
+`npm run deploy` copies the module into Foundry's `Data/modules/actor-inventory-manager`
+(`%LOCALAPPDATA%\FoundryVTT\Data` by default; override with `--data <path>` or the
+`FOUNDRY_DATA` environment variable, both naming the `Data` folder). Reload Foundry
+with F5 afterwards. `npm run check` runs ESLint and the tests; `npm run release`
+validates `module.json` and writes `dist/actor-inventory-manager-v<version>.zip`.

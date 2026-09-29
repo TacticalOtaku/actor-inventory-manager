@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.7.0
 
 ### Changed
 - The manifest caps compatibility at Foundry 14 until the next core generation is tested.

@@ -225,11 +225,11 @@ export function getItemRarityVisuals(rarity, item = null) {
 /**
  * Get spell school color with SC - Item Rarity Colors & system config support
  * @param {string} school
- * @param {number} [level=0]
+ * @param {number} [_level=0] Unused; kept so existing callers keep their argument order.
  * @param {Object} [defaultColors={}]
  * @returns {string}
  */
-export function getSpellSchoolColor(school, level = 0, defaultColors = {}) {
+export function getSpellSchoolColor(school, _level = 0, defaultColors = {}) {
   if (!school) return "#3498db";
   const s = school.toLowerCase().trim();
 
@@ -260,7 +260,7 @@ export function getSpellSchoolColor(school, level = 0, defaultColors = {}) {
 /**
  * Get spell school visuals with CSS variables for gradients and styling
  * @param {string} school
- * @param {number} [level=0]
+ * @param {number} [_level=0] Unused; kept so existing callers keep their argument order.
  * @param {Object} [defaultColors={}]
  * @returns {{ color: string, rgb: string, cssVars: string }}
  */

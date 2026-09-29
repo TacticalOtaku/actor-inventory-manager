@@ -18,9 +18,9 @@ import { LOG } from "./logger.js";
  * @param {Object} item
  * @param {Object} changes
  * @param {Object} options
- * @param {string} userId
+ * @param {string} _userId
  */
-export function handlePreUpdateItem(item, changes, options, userId) {
+export function handlePreUpdateItem(item, changes, options, _userId) {
   const actor = item?.parent;
   if (!isSupportedActor(actor) || actor.documentName !== "Actor") return true;
   // Recovery reinstates a saved loadout; equipment validation must not rewrite it.

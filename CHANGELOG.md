@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.6.1
+
+### Motion
+- Hit point, load and container meters slide from their old value to the new one. Their CSS transition never played, because every update redraws the window.
+- The window respects the operating system's reduce-motion preference and Foundry's low performance mode: transitions, the overburdened pulse and the meter slides are turned off.
+- Hover and state transitions animate only colour, background, border, shadow, transform and opacity instead of every property.
+
+### Character sheets
+- The inventory entry in an actor sheet's ⋮ menu is added through Foundry's `getHeaderControlsActorSheetV2` hook instead of patching sheet classes at startup, so sheets registered later get it too.
+
 ## 1.6.0
 
 ### Window layout

@@ -167,7 +167,6 @@
   padding: 14px;
   box-sizing: border-box;
   background: var(--aim-bg-gradient);
-  transition: all 0.3s ease;
   position: relative;
   /* Nothing may spill past the frame when the window is narrower than the layout. */
   overflow: hidden;
@@ -365,7 +364,8 @@
   justify-content: center;
   cursor: pointer;
   font-size: 0.85rem;
-  transition: all 0.25s ease;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.25s;
   flex-shrink: 0;
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
 }
@@ -412,10 +412,11 @@
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
 }
 
+/* Width changes are animated in JS (scripts/ui/meter-motion.js): the window's
+   DOM is replaced on every render, so a CSS transition here would never play. */
 .aim-meter-fill {
   height: 100%;
   border-radius: 4px;
-  transition: width 0.35s ease;
 }
 
 .aim-hp-meter .aim-meter-fill {
@@ -707,7 +708,8 @@
   justify-content: center;
   gap: 6px;
   box-shadow: var(--aim-card-shadow);
-  transition: all 0.2s;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
 }
 .aim-btn:hover {
   background: var(--aim-bg-card-hover);
@@ -1062,7 +1064,8 @@
   background: var(--aim-badge-bg);
   color: var(--aim-attune-empty-color);
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
-  transition: all 0.2s;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
 }
 
 .aim-attune-socket.has-item {
@@ -1151,7 +1154,8 @@
   align-items: center;
   gap: 6px;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
 }
 .aim-tab-btn:hover {
   background: var(--aim-bg-card-hover);
@@ -1261,7 +1265,8 @@
   border-radius: 6px;
   padding: 7px 10px;
   gap: 12px;
-  transition: all 0.2s ease;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
   user-select: none;
   box-shadow: var(--aim-card-shadow);
 }
@@ -1406,7 +1411,8 @@
   justify-content: center;
   cursor: pointer;
   font-size: 0.85rem;
-  transition: all 0.2s;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
   box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
 }
 .aim-btn-icon:hover {
@@ -1784,7 +1790,8 @@
   justify-content: center;
   cursor: pointer;
   font-size: 0.8rem;
-  transition: all 0.2s ease;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
   margin-left: 6px;
 }
 .aim-gm-editor-btn:hover {
@@ -1937,7 +1944,8 @@
   justify-content: center;
   cursor: pointer;
   font-size: 0.75rem;
-  transition: all 0.2s;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
 }
 .aim-btn-add-slot:hover {
   background: var(--aim-border-gold);
@@ -1963,7 +1971,8 @@
   border-radius: 6px;
   padding: 6px 8px;
   box-shadow: var(--aim-card-shadow);
-  transition: all 0.2s;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
 }
 .aim-editor-slot-card:hover {
   border-color: var(--aim-border-gold-bright);
@@ -2218,7 +2227,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
 }
 .aim-filepicker-btn:hover {
   background: var(--aim-border-gold);
@@ -2247,7 +2257,8 @@
   justify-content: center;
   cursor: pointer;
   font-size: 0.85rem;
-  transition: all 0.2s;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
 }
 .aim-collapse-paperdoll-btn:hover {
   background: var(--aim-bg-card-hover);
@@ -2261,7 +2272,9 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.3s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   width: 44px;
   min-width: 44px;
   max-width: 44px;
@@ -2298,7 +2311,8 @@
   justify-content: center;
   cursor: pointer;
   font-size: 0.85rem;
-  transition: all 0.2s;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
 }
 .aim-expand-paperdoll-btn:hover {
   background: var(--aim-border-gold);
@@ -2460,7 +2474,8 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  transition: all 0.2s;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
   white-space: nowrap;
 }
 .aim-spells-tab-btn:hover {
@@ -2683,7 +2698,8 @@ button.aim-slot-pip:focus-visible {
   border: 1px solid var(--aim-border-main);
   border-radius: 6px;
   padding: 6px;
-  transition: all 0.2s;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
   box-shadow: var(--aim-card-shadow);
 }
 .aim-spell-card:hover {
@@ -2747,7 +2763,8 @@ button.aim-slot-pip:focus-visible {
   cursor: pointer;
   font-size: 0.75rem;
   padding: 1px 3px;
-  transition: all 0.2s;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
 }
 .aim-prep-btn:hover {
   color: #fff;
@@ -2865,7 +2882,8 @@ button.aim-slot-pip:focus-visible {
   border: 1px solid var(--aim-border-main);
   border-radius: 6px;
   padding: 6px;
-  transition: all 0.2s;
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.2s;
   box-shadow: var(--aim-card-shadow);
 }
 .aim-action-card:hover {
@@ -3193,4 +3211,28 @@ button.aim-slot-pip:focus-visible {
 
 .aim-container-meter.is-over .aim-meter-fill {
   background: linear-gradient(90deg, #962d22 0%, #e74c3c 100%);
+}
+
+/* ─────────────────────────────────────────────────────────
+   REDUCED MOTION
+   The OS "reduce motion" preference and Foundry's low performance mode
+   (body.performance-low) stop transitions and the overburdened pulse.
+   Meter slides are skipped in JS (scripts/ui/meter-motion.js).
+   ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .actor-inventory-manager-app *,
+  .actor-inventory-manager-app *::before,
+  .actor-inventory-manager-app *::after,
+  .aim-window-header-btn {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+body.performance-low .actor-inventory-manager-app *,
+body.performance-low .actor-inventory-manager-app *::before,
+body.performance-low .actor-inventory-manager-app *::after,
+body.performance-low .aim-window-header-btn {
+  transition: none !important;
+  animation: none !important;
 }

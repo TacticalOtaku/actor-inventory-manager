@@ -33,7 +33,7 @@
   {{#if hasCapacity}}
     <div class="aim-meter aim-container-meter {{#if load.isOver}}is-over{{/if}}"
          title="{{loadDisplay}}">
-      <div class="aim-meter-fill" style="width: {{load.pct}}%;"></div>
+      <div class="aim-meter-fill" data-meter="container-{{id}}" style="width: {{load.pct}}%;"></div>
     </div>
   {{/if}}
 

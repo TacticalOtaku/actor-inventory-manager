@@ -186,7 +186,7 @@ export class SlotConfigDialog extends ApplicationBase {
     this.close();
   }
 
-  static _onCancel(event, target) {
+  static _onCancel() {
     this._settle(null);
     this.close();
   }

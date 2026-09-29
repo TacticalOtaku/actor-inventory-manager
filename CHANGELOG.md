@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.7.0
+
+### Changed
+- The manifest caps compatibility at Foundry 14 until the next core generation is tested.
+- Item Piles, Weighty Containers and SC - Item Rarity Colors are listed under `relationships.recommends`, so Foundry
+  shows them as recommended modules. The previous `optional` key is not part of Foundry's manifest schema and was
+  dropped silently.
+- Theme tokens are declared on the module's windows and its header button instead of `:root`, so they no longer
+  leak into Foundry or other modules.
+
+### Development
+- ESLint and Prettier; `npm run check`, `deploy`, `package` and `release` as in the other TacticalOtaku modules.
+  `npm run deploy` replaces `npm run sync`; `FOUNDRY_DATA` now names the Foundry `Data` folder.
+- `npm run release` validates `module.json` and writes `dist/actor-inventory-manager-v<version>.zip`; it never
+  replaces an existing archive.
+- `ARCHITECTURE.md` moved to `docs/architecture.md`; project rules in `CLAUDE.md`.
+
 ## 1.6.1
 
 ### Motion

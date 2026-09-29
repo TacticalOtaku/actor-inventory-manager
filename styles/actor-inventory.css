@@ -6,8 +6,11 @@
 /* The decorative web fonts are loaded at runtime (setting "Decorative Web
    Fonts"), so the stylesheet never blocks on or contacts an external host. */
 
-:root,
-[data-theme="dark"] {
+/* Tokens live on the module's own elements, not on :root, so they never leak into Foundry or other
+   modules. Dark is the default; the inventory window switches with data-theme. The header button sits
+   in a character sheet, outside any AIM window, so it declares the tokens itself. */
+.actor-inventory-manager-app,
+.aim-window-header-btn {
   --aim-font-display: "Cinzel", "Cormorant SC", "Spectral", "Philosopher", Georgia, serif;
   --aim-font-body: "Marcellus", "Spectral", "Philosopher", Georgia, serif;
   --aim-bg-main: #0a0c10;
@@ -48,7 +51,7 @@
   --aim-radius: 6px;
 }
 
-[data-theme="light"] {
+.actor-inventory-manager-app[data-theme="light"] {
   --aim-bg-main: #ded3b8;
   --aim-bg-gradient: radial-gradient(ellipse at 50% 20%, #fcf6e8 0%, #d0c19e 100%);
   --aim-bg-panel: rgba(247, 241, 227, 0.97);

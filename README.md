@@ -96,15 +96,17 @@ Use two player accounts and one GM in a test world before relying on the feature
 Automated tests use in-memory Foundry document doubles. `tools/preview-trade.mjs` renders the actual templates with fictional fixtures and checks them in Playwright; it does not modify a running world. Pass a Handlebars CommonJS runtime, an output directory, and a Playwright package directory to run it.
 
 ```bash
-npm test        # run the unit tests (no Foundry required)
-npm run sync    # copy the module into the local Foundry data directory
+npm install
+npm run check    # ESLint and the unit tests (no Foundry required)
+npm run deploy   # copy the module into the local Foundry Data/modules folder
+npm run release  # check, then dist/actor-inventory-manager-v<version>.zip
 ```
 
-`npm run sync` targets `%LOCALAPPDATA%\FoundryVTT` by default; override it with
-`--data <path>` or the `FOUNDRY_DATA` environment variable. Reload Foundry (F5)
-afterwards.
+`npm run deploy` targets `%LOCALAPPDATA%\FoundryVTT\Data` by default; override it with
+`--data <path>` or the `FOUNDRY_DATA` environment variable (the Foundry `Data` folder).
+Reload Foundry (F5) afterwards. Node.js 24 or newer is required.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the module layout, the public API and
+See [docs/architecture.md](docs/architecture.md) for the module layout, the public API and
 hooks, how to register custom slots and equipment rules, and the dnd5e data-shape
 differences the code adapts to.
 

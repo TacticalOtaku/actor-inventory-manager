@@ -15,7 +15,7 @@ import {
   isShield,
   isBodyArmor
 } from "./core/item-classifier.js";
-import { slotRegistry, DEFAULT_SLOT_DEFINITIONS } from "./core/slot-definitions.js";
+import { slotRegistry } from "./core/slot-definitions.js";
 import { computeActorEncumbrance, computeActorCapacity } from "./core/weight-calculator.js";
 import { registerEnforcementHooks } from "./foundry/enforcement-hooks.js";
 import { LOG } from "./foundry/logger.js";
@@ -41,7 +41,7 @@ import {
   setActorPaperdollTemplate
 } from "./core/paperdoll-templates.js";
 import { openPaperdollEditor } from "./ui/paperdoll-editor.js";
-import { openActorInventory, toggleActorInventory, ActorInventoryApp, preloadTemplates } from "./ui/inventory-app.js";
+import { openActorInventory, toggleActorInventory, preloadTemplates } from "./ui/inventory-app.js";
 import { equipItemToSlot, unequipItem, toggleItemEquipped, useItem, toggleAttunement } from "./ui/item-actions.js";
 import { isItemPilesActive, computeActorCurrency } from "./integrations/item-piles.js";
 import { SC_MODULE_ID, invalidateRarityColorCache } from "./integrations/sc-rarity-colors.js";

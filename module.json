@@ -5,7 +5,8 @@
   "version": "1.6.1",
   "compatibility": {
     "minimum": "14",
-    "verified": "14.367"
+    "verified": "14.367",
+    "maximum": "14"
   },
   "authors": [
     {
@@ -23,7 +24,7 @@
         }
       }
     ],
-    "optional": [
+    "recommends": [
       {
         "id": "item-piles",
         "type": "module",
@@ -42,8 +43,7 @@
         "id": "sc-item-rarity-colors",
         "type": "module"
       }
-    ],
-    "conflicts": []
+    ]
   },
   "esmodules": [
     "scripts/main.js"

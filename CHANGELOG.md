@@ -30,6 +30,8 @@
 
 ### Fixed
 - An equip or attunement change vetoed by another module's update hook no longer shows a success notification.
+- Equipping a shield while a two-handed weapon is held is refused. Before, the shield pushed the weapon out and took
+  the main hand. Dropping a shield straight onto the main hand still swaps the weapon out.
 
 ### API
 - `equipItem`, `unequipItem`, `toggleItemEquipped` and `toggleAttunement` resolve to `true` when the change was

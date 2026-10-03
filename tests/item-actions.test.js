@@ -114,6 +114,14 @@ describe("toggleItemEquipped result", () => {
     assert.equal(actor.writes.length, 0);
   });
 
+  it("is false for a shield while a two-handed weapon is held", async () => {
+    const actor = makeActor();
+    addItem(actor, { id: "greataxe", type: "weapon", system: { equipped: true, type: { value: "martialM" }, properties: new Set(["two"]) } });
+    const buckler = addItem(actor, { id: "buckler", system: { type: { value: "shield" } } });
+    assert.equal(await toggleItemEquipped(actor, buckler), false);
+    assert.equal(actor.writes.length, 0);
+  });
+
   it("is false for an unsupported actor or a missing item", async () => {
     const gmNpc = { type: "npc", hasPlayerOwner: false };
     assert.equal(await toggleItemEquipped(gmNpc, { system: { equipped: false } }), false);

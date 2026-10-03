@@ -27,7 +27,8 @@ Never guess v14 or dnd5e APIs. Read the installed sources: `D:\Foundry\Foundry V
 - Trading: the socket never authorises a write. Requests are user flags; one active GM coordinates and rechecks
   ownership and confirmations; inventory snapshots live only in a private JournalEntry.
 - Windows are keyed by actor UUID. Observer gets a read-only window; Owner or GM may change things.
-- Theme tokens live on `.actor-inventory-manager-app` and the injected header button, never on `:root`. Do not
+- Theme tokens live on `.tc-root`, the root of each module window (it also carries `.actor-inventory-manager-app`),
+  never on `:root`; the injected sheet header button carries no tokens. Do not
   transition `background` or `all` on elements whose background comes from a token; expose rarity and spell-school
   colours as custom properties, not inline `color:`.
 - Decorative web fonts load only while the client setting allows it.

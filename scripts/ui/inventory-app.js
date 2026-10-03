@@ -35,7 +35,7 @@ import { DragDropController } from "./drag-drop-controller.js";
 import { animateMeterChanges, readMeterWidths, shouldReduceMotion } from "./meter-motion.js";
 import { isCompact, isDollOpen, resolveMinimumWidth, resolveWindowWidth, toggleDoll, toggleDrawer } from "./window-layout.js";
 import { applyTactileTheme } from "./tactile-theme.js";
-import { bindPress, openWindow } from "../tactile/motion.js";
+import { bindPress, captureFlip, countTo, openWindow, playFlip, pop, refuse, slideIn } from "../tactile/motion.js";
 import { cssUrl, escapeHTML, isImagePath } from "./html.js";
 import {
   buildAttunementSlots,
@@ -485,11 +485,22 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     await super._preRender(context, options);
     // Read while the old DOM is still in place; played back in _onRender.
     this._meterWidths = readMeterWidths(this.element);
+    const root = this.element;
+    this._motionBefore = {
+      hp: Number(root?.querySelector('[data-count="hp"]')?.textContent),
+      ac: Number(root?.querySelector('[data-count="ac"]')?.textContent),
+      slots: new Map([...(root?.querySelectorAll(".aim-slot[data-slot-id]") ?? [])]
+        .map(slot => [slot.dataset.slotId, slot.querySelector(".aim-sock[data-item-id]")?.dataset.itemId ?? ""])),
+      // Rows move to their new places only after a tab, search or sort change.
+      flip: this._flipNext ? captureFlip(root?.querySelector(".aim-list")) : null
+    };
+    this._flipNext = false;
   }
 
   async _onRender(context, options) {
     await super._onRender(context, options);
     animateMeterChanges(this.element, this._meterWidths);
+    if (!options.isFirstRender) this._playRenderMotion(context);
     if (this.canEdit) this.dragDrop.bind(this.element);
     else this.dragDrop.unbind();
     bindTradeInputs(this);
@@ -500,7 +511,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
 
     // Search input bindings. Re-rendering on every keystroke is wasteful and
     // fights the caret, so filtering is debounced.
-    this._bindSearchInput("[data-search-input]", value => { this.searchFilter = value; });
+    this._bindSearchInput("[data-search-input]", value => { this.searchFilter = value; this._flipNext = true; });
     this._bindSearchInput("[data-spells-search]", value => { this.spellsSearchFilter = value; });
 
     // Sort select binding
@@ -508,6 +519,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     if (sortSelect) {
       sortSelect.addEventListener("change", e => {
         this.sortBy = e.target.value;
+        this._flipNext = true;
         this.render();
       });
     }
@@ -593,6 +605,37 @@ export class ActorInventoryApp extends InventoryApplicationBase {
         if (this.rendered) this.render();
       }, SEARCH_DEBOUNCE_MS);
     });
+  }
+
+  /**
+   * Motion after a re-render: changed numbers count, newly filled slots settle,
+   * rows slide from their old places and a freshly opened drawer arrives.
+   * @param {Object} context
+   */
+  _playRenderMotion(context) {
+    const reduce = shouldReduceMotion(window);
+    const before = this._motionBefore ?? {};
+    const root = this.element;
+    countTo(root.querySelector('[data-count="hp"]'), before.hp, context.vitals?.hp?.value, { reduce });
+    countTo(root.querySelector('[data-count="ac"]'), before.ac, context.vitals?.ac, { reduce });
+    for (const slot of root.querySelectorAll(".aim-slot[data-slot-id]")) {
+      const itemId = slot.querySelector(".aim-sock[data-item-id]")?.dataset.itemId ?? "";
+      if (itemId && before.slots?.has(slot.dataset.slotId) && before.slots.get(slot.dataset.slotId) !== itemId) {
+        pop(slot.querySelector(".aim-sock"), { reduce });
+      }
+    }
+    playFlip(before.flip, { reduce, root: root.querySelector(".aim-list") });
+    if (this._drawerJustOpened) slideIn(root.querySelector(".aim-drawer"), { reduce });
+    this._drawerJustOpened = false;
+  }
+
+  /**
+   * A rule refused the change: shake the element it was aimed at.
+   * Called by the drag-and-drop controller too, which stays free of motion code.
+   * @param {Element|null} element
+   */
+  _refuse(element) {
+    refuse(element, { reduce: shouldReduceMotion(window) });
   }
 
   /**
@@ -749,12 +792,13 @@ export class ActorInventoryApp extends InventoryApplicationBase {
 
   static _switchTab(event, target) {
     this.currentTab = target.dataset.tab;
+    this._flipNext = true;
     this.render();
   }
 
   static async _toggleEquip(event, target) {
     const item = this.actor.items.get(target.dataset.itemId);
-    if (item) await toggleItemEquipped(this.actor, item);
+    if (item && !(await toggleItemEquipped(this.actor, item))) this._refuse(target.closest(".aim-row, .aim-slot"));
   }
 
   static async _unequipSlot(event, target) {
@@ -774,7 +818,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
 
   static async _toggleAttune(event, target) {
     const item = this.actor.items.get(target.dataset.itemId);
-    if (item) await toggleAttunement(item);
+    if (item && !(await toggleAttunement(item))) this._refuse(target.closest(".aim-row, .aim-asock"));
   }
 
   static async _deleteItem(event, target) {

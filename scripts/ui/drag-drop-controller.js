@@ -109,7 +109,8 @@ export class DragDropController {
 
     if (dropType === "slot") {
       const targetSlotId = dropTarget.dataset.slotId;
-      if (targetSlotId) await equipItemToSlot(actor, item, targetSlotId);
+      // The window shakes the slot when a rule refuses the item; motion stays out of this controller.
+      if (targetSlotId && !(await equipItemToSlot(actor, item, targetSlotId))) this.app._refuse?.(dropTarget);
       return;
     }
 
@@ -121,6 +122,7 @@ export class DragDropController {
       if (!containerItem || containerItem.id === item.id || item.system?.container === containerId) return;
       if (wouldCreateContainerCycle(actor, item, containerId)) {
         ui.notifications?.warn(game.i18n.format("AIM.containers.cycle", { item: item.name }));
+        this.app._refuse?.(dropTarget);
         return;
       }
       // Weighty Containers' content rules; its capacity check runs in its own hook.
@@ -128,6 +130,7 @@ export class DragDropController {
       if (!validation.ok) {
         ui.notifications?.warn(validation.reason);
         LOG.warn("Container drop rejected by Weighty Containers rules", validation);
+        this.app._refuse?.(dropTarget);
         return;
       }
       await setItemContainer(item, containerId);

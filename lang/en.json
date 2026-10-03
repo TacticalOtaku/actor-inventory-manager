@@ -367,6 +367,20 @@
         "light": "Light Parchment",
         "auto": "Auto (System Preference)"
       },
+      "accent": {
+        "name": "Accent colour",
+        "hint": "Colour of highlights, meters and primary buttons in the inventory window.",
+        "peach": "Peach",
+        "amber": "Amber",
+        "sage": "Sage",
+        "mint": "Mint",
+        "azure": "Azure",
+        "periwinkle": "Periwinkle",
+        "lavender": "Lavender",
+        "orchid": "Orchid",
+        "rose": "Rose",
+        "steel": "Steel"
+      },
       "enforcementMode": {
         "name": "Equipment Rules Enforcement Mode",
         "hint": "Controls how slot conflicts and rules are handled when equipping items.",
@@ -401,8 +415,8 @@
         "hint": "Internal storage for paperdoll templates saved in this world."
       },
       "useWebFonts": {
-        "name": "Decorative Web Fonts",
-        "hint": "Load the theme's fonts from Google Fonts. Turn off for offline play or to avoid contacting Google; system fonts are used instead."
+        "name": "Interface Fonts",
+        "hint": "Load the module's bundled interface fonts (Onest, JetBrains Mono, Unbounded). Turn off to use system fonts."
       }
     },
     "keybindings": {

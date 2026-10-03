@@ -5,9 +5,13 @@
 import { ENFORCEMENT_MODES, LOG_LEVELS, MODULE_ID, REFRESH_HOOK } from "../constants.js";
 import { LOG } from "./logger.js";
 import { canViewActor, isSupportedActor } from "../core/actor-scope.js";
+import { DEFAULT_ACCENT, PALETTE } from "../tactile/palette.js";
 
-/** Decorative fonts used by the theme. Loaded on demand so the world works offline. */
-const WEB_FONTS_URL = "https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800;900&family=Cormorant+SC:wght@500;600;700&family=Cormorant:ital,wght@0,500;0,600;0,700;1,400&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=Philosopher:wght@400;700&family=Marcellus&display=swap&subset=cyrillic,cyrillic-ext,latin,latin-ext";
+/**
+ * Interface fonts bundled with the module (Onest, JetBrains Mono, Unbounded). No leading slash: the `<link>`
+ * resolves against the game page (`<route prefix>/game`), so it keeps working behind a route prefix.
+ */
+const WEB_FONTS_URL = `modules/${MODULE_ID}/styles/tactile/fonts.css`;
 
 const refreshInventories = () => Hooks.callAll(REFRESH_HOOK);
 
@@ -50,6 +54,17 @@ export function registerModuleSettings() {
         auto: "AIM.settings.theme.auto"
       },
       default: "dark",
+      onChange: refreshInventories
+    });
+
+    game.settings.register(MODULE_ID, "accent", {
+      name: "AIM.settings.accent.name",
+      hint: "AIM.settings.accent.hint",
+      scope: "client",
+      config: true,
+      type: String,
+      choices: Object.fromEntries(PALETTE.map(p => [p.id, `AIM.settings.accent.${p.id}`])),
+      default: DEFAULT_ACCENT,
       onChange: refreshInventories
     });
 

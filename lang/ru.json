@@ -61,7 +61,8 @@
     "paperdoll": {
       "title": "Экипировка",
       "collapseTooltip": "Свернуть куклу экипировки",
-      "expandTooltip": "Развернуть куклу экипировки"
+      "expandTooltip": "Развернуть куклу экипировки",
+      "occupied": "Занятые слоты"
     },
     "sheetButton": {
       "label": "RPG Инвентарь",

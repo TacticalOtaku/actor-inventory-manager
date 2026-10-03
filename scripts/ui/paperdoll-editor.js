@@ -2,7 +2,7 @@
 // Actor Inventory Manager - GM Paperdoll Editor (ApplicationV2)
 // ─────────────────────────────────────────────────────────
 
-import { MODULE_ID, TEMPLATE_PRESETS } from "../constants.js";
+import { MODULE_ID, REFRESH_HOOK, TEMPLATE_PRESETS } from "../constants.js";
 import { isSupportedActor } from "../core/actor-scope.js";
 import {
   deleteWorldCustomTemplate,
@@ -18,9 +18,17 @@ import {
 import { LOG } from "../foundry/logger.js";
 import { escapeHTML, isImagePath } from "./html.js";
 import { SlotConfigDialog } from "./slot-config-dialog.js";
+import { stampEditorTheme, watchEditorTheme } from "./tactile-theme.js";
 
 /** Open editors, keyed by actor UUID. */
 const OPEN_EDITORS = new Map();
+
+/** Paperdoll columns in display order. */
+const EDITOR_COLUMNS = [
+  { id: "left", labelKey: "AIM.editor.columns.left", icon: "fa-light fa-arrow-left" },
+  { id: "center", labelKey: "AIM.editor.columns.center", icon: "fa-light fa-shield-halved" },
+  { id: "right", labelKey: "AIM.editor.columns.right", icon: "fa-light fa-arrow-right" }
+];
 
 const localize = key => game.i18n.localize(key);
 const format = (key, data) => game.i18n.format(key, data);
@@ -41,7 +49,7 @@ const ApplicationBase = foundry.applications.api.HandlebarsApplicationMixin(
 export class PaperdollEditorApp extends ApplicationBase {
   static DEFAULT_OPTIONS = {
     id: `${MODULE_ID}-editor`,
-    classes: ["actor-inventory-manager-app", "aim-paperdoll-editor-app", "rpg-theme"],
+    classes: ["actor-inventory-manager-app", "tc-root", "aim-paperdoll-editor-app"],
     tag: "div",
     position: {
       width: 880,
@@ -49,7 +57,7 @@ export class PaperdollEditorApp extends ApplicationBase {
     },
     window: {
       title: "AIM.editor.windowTitle",
-      icon: "fa-solid fa-wand-magic-sparkles",
+      icon: "fa-light fa-wand-magic-sparkles",
       resizable: true,
       minimizable: true
     },
@@ -109,19 +117,34 @@ export class PaperdollEditorApp extends ApplicationBase {
       ...context,
       actor: this.actor,
       templates,
+      presetTemplates: templates.filter(template => template.isPreset),
+      worldTemplates: templates.filter(template => !template.isPreset),
       activeTemplateId: this.activeTemplateId,
       isCustomTemplate: this.isCustomWorking,
       canUpdateTemplate,
       attunementMax: this.attunementMax,
       slots: enrichedSlots,
-      leftSlots: enrichedSlots.filter(s => s.column === "left"),
-      centerSlots: enrichedSlots.filter(s => s.column === "center"),
-      rightSlots: enrichedSlots.filter(s => s.column === "right")
+      columns: EDITOR_COLUMNS.map(column => ({
+        ...column,
+        slots: enrichedSlots.filter(s => s.column === column.id)
+      }))
     };
+  }
+
+  async _onFirstRender(context, options) {
+    await super._onFirstRender(context, options);
+    this._themeHookId = watchEditorTheme(this);
+  }
+
+  _onClose(options) {
+    super._onClose(options);
+    if (this._themeHookId !== undefined) Hooks.off(REFRESH_HOOK, this._themeHookId);
+    this._themeHookId = undefined;
   }
 
   _onRender(context, options) {
     super._onRender(context, options);
+    stampEditorTheme(this.element);
 
     // Template selector change listener (avoids click-re-render closing bug)
     const select = this.element.querySelector(".aim-template-select");

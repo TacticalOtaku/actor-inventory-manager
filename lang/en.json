@@ -165,6 +165,8 @@
       "gmOnly": "Only Game Master can access the Paperdoll Editor.",
       "templateLabel": "Paperdoll Template",
       "customActorConfig": "Custom Actor Configuration",
+      "presetsGroup": "Built-in presets",
+      "worldGroup": "World templates",
       "applyToActor": "Apply to this Actor",
       "applyToActorHint": "Binds this template layout directly to this actor",
       "appliedSuccess": "Applied paperdoll template to {actor}",

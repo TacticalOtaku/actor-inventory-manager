@@ -1,156 +1,94 @@
-<div class="aim-editor-window">
-  <!-- Top Toolbar: Template Selector & Actions -->
-  <div class="aim-editor-toolbar">
-    <div class="aim-editor-toolbar-row">
-      <div class="aim-template-select-group">
-        <label><i class="fa-solid fa-layer-group"></i> {{localize "AIM.editor.templateLabel"}}:</label>
-        <select class="aim-template-select">
-          {{#each templates}}
-            <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>
-              {{#if this.isPreset}}⭐ {{else}}📜 {{/if}}{{this.name}}
-            </option>
+<div class="aim-editor">
+  {{!-- Template, attunement cap and target actor --}}
+  <div class="aim-editor-bar">
+    <label class="aim-editor-field is-template">
+      <span class="tc-lbl"><i class="fa-light fa-layer-group"></i> {{localize "AIM.editor.templateLabel"}}</span>
+      <select class="tc-select aim-template-select">
+        <optgroup label="{{localize 'AIM.editor.presetsGroup'}}">
+          {{#each presetTemplates}}
+            <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
           {{/each}}
-          {{#if isCustomTemplate}}
-            <option value="custom" selected>✏️ {{localize "AIM.editor.customActorConfig"}}</option>
-          {{/if}}
-        </select>
-      </div>
-
-      <div class="aim-toolbar-buttons">
-        <button type="button" class="aim-btn aim-btn-primary" data-action="applyToActor" title="{{localize 'AIM.editor.applyToActorHint'}}">
-          <i class="fa-solid fa-user-check"></i> {{localize "AIM.editor.applyToActor"}}
-        </button>
-        <button type="button" class="aim-btn" data-action="saveAsNewTemplate" title="{{localize 'AIM.editor.saveAsNewHint'}}">
-          <i class="fa-solid fa-floppy-disk"></i> {{localize "AIM.editor.saveAsNew"}}
-        </button>
-        {{#if canUpdateTemplate}}
-          <button type="button" class="aim-btn" data-action="saveCurrentTemplate" title="{{localize 'AIM.editor.updateTemplateHint'}}">
-            <i class="fa-solid fa-pen-to-square"></i> {{localize "AIM.editor.updateTemplate"}}
-          </button>
-          <button type="button" class="aim-btn aim-btn-delete" data-action="deleteTemplate" title="{{localize 'AIM.editor.deleteTemplateHint'}}">
-            <i class="fa-solid fa-trash"></i>
-          </button>
+        </optgroup>
+        {{#if worldTemplates.length}}
+          <optgroup label="{{localize 'AIM.editor.worldGroup'}}">
+            {{#each worldTemplates}}
+              <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
+            {{/each}}
+          </optgroup>
         {{/if}}
-        <button type="button" class="aim-btn" data-action="exportJSON" title="{{localize 'AIM.editor.exportJSON'}}">
-          <i class="fa-solid fa-file-export"></i>
-        </button>
-        <button type="button" class="aim-btn" data-action="importJSON" title="{{localize 'AIM.editor.importJSON'}}">
-          <i class="fa-solid fa-file-import"></i>
-        </button>
-      </div>
-    </div>
+        {{#if isCustomTemplate}}
+          <option value="custom" selected>{{localize "AIM.editor.customActorConfig"}}</option>
+        {{/if}}
+      </select>
+    </label>
 
-    <!-- Attunement Slots Count Setting -->
-    <div class="aim-editor-options-row">
-      <div class="aim-option-group">
-        <label><i class="fa-solid fa-sun"></i> {{localize "AIM.attunement.title"}} {{localize "AIM.editor.maxSlots"}}:</label>
-        <input type="number" class="aim-attunement-input" min="0" max="9" value="{{attunementMax}}" />
-      </div>
-      <div class="aim-option-info">
-        <span><i class="fa-solid fa-info-circle"></i> {{localize "AIM.editor.actorTarget"}}: <strong>{{actor.name}}</strong></span>
-      </div>
-    </div>
+    <label class="aim-editor-field is-attunement">
+      <span class="tc-lbl"><i class="fa-light fa-sun"></i> {{localize "AIM.attunement.title"}} · {{localize "AIM.editor.maxSlots"}}</span>
+      <input type="number" class="aim-attunement-input" min="0" max="9" value="{{attunementMax}}" />
+    </label>
+
+    <span class="aim-editor-target tc-lbl"><i class="fa-light fa-user"></i> {{localize "AIM.editor.actorTarget"}} <b>{{actor.name}}</b></span>
   </div>
 
-  <!-- Main Canvas: 3 Columns of Sockets with Drag & Drop -->
+  {{!-- Template actions --}}
+  <div class="aim-editor-actions">
+    <button type="button" class="tc-btn" data-action="saveAsNewTemplate" data-tooltip="{{localize 'AIM.editor.saveAsNewHint'}}">
+      <i class="fa-light fa-floppy-disk"></i> {{localize "AIM.editor.saveAsNew"}}
+    </button>
+    {{#if canUpdateTemplate}}
+      <button type="button" class="tc-btn" data-action="saveCurrentTemplate" data-tooltip="{{localize 'AIM.editor.updateTemplateHint'}}">
+        <i class="fa-light fa-pen-to-square"></i> {{localize "AIM.editor.updateTemplate"}}
+      </button>
+      <button type="button" class="tc-btn is-square is-danger" data-action="deleteTemplate" data-tooltip="{{localize 'AIM.editor.deleteTemplateHint'}}" aria-label="{{localize 'AIM.editor.deleteTemplate'}}">
+        <i class="fa-light fa-trash-can"></i>
+      </button>
+    {{/if}}
+    <button type="button" class="tc-btn is-square" data-action="exportJSON" data-tooltip="{{localize 'AIM.editor.exportJSON'}}" aria-label="{{localize 'AIM.editor.exportJSON'}}">
+      <i class="fa-light fa-file-export"></i>
+    </button>
+    <button type="button" class="tc-btn is-square" data-action="importJSON" data-tooltip="{{localize 'AIM.editor.importJSON'}}" aria-label="{{localize 'AIM.editor.importJSON'}}">
+      <i class="fa-light fa-file-import"></i>
+    </button>
+    <button type="button" class="tc-primary aim-editor-apply" data-action="applyToActor" data-tooltip="{{localize 'AIM.editor.applyToActorHint'}}">
+      <span>{{localize "AIM.editor.applyToActor"}}</span>
+      <span class="tc-primary-nest"><i class="fa-light fa-user-check"></i></span>
+    </button>
+  </div>
+
+  {{!-- Three columns of slots; cards drag within and between columns --}}
   <div class="aim-editor-canvas">
-    <!-- Left Column -->
-    <div class="aim-editor-column" data-column="left" data-drop-zone="column">
-      <div class="aim-editor-column-header">
-        <h4><i class="fa-solid fa-arrow-left"></i> {{localize "AIM.editor.columns.left"}} ({{leftSlots.length}})</h4>
-        <button type="button" class="aim-btn-add-slot" data-action="addSlot" data-column="left" title="{{localize 'AIM.editor.addSlot'}}">
-          <i class="fa-solid fa-plus"></i>
-        </button>
-      </div>
-      <div class="aim-editor-slots-list" data-column="left">
-        {{#each leftSlots}}
-        <div class="aim-editor-slot-card" draggable="true" data-slot-id="{{this.id}}" data-column="left">
-          <div class="aim-editor-slot-icon">
-            {{#if this.isImageIcon}}
-              <img src="{{this.icon}}" class="aim-editor-slot-icon-img" alt="{{this.label}}" />
-            {{else}}
-              <i class="{{this.icon}}"></i>
-            {{/if}}
-          </div>
-          <div class="aim-editor-slot-info">
-            <span class="aim-slot-title">{{this.label}}</span>
-            <span class="aim-slot-id-tag">id: {{this.id}}</span>
-          </div>
-          <div class="aim-editor-slot-actions">
-            <button type="button" class="aim-btn-icon" data-action="moveSlotUp" data-slot-id="{{this.id}}" title="{{localize 'AIM.editor.moveUp'}}"><i class="fa-solid fa-chevron-up"></i></button>
-            <button type="button" class="aim-btn-icon" data-action="moveSlotDown" data-slot-id="{{this.id}}" title="{{localize 'AIM.editor.moveDown'}}"><i class="fa-solid fa-chevron-down"></i></button>
-            <button type="button" class="aim-btn-icon" data-action="editSlot" data-slot-id="{{this.id}}" title="{{localize 'AIM.editor.editSlot'}}"><i class="fa-solid fa-pen"></i></button>
-            <button type="button" class="aim-btn-icon aim-btn-delete" data-action="deleteSlot" data-slot-id="{{this.id}}" title="{{localize 'AIM.editor.deleteSlot'}}"><i class="fa-solid fa-trash"></i></button>
-          </div>
+    {{#each columns}}
+      <section class="aim-editor-column tc-tray" data-column="{{this.id}}" data-drop-zone="column">
+        <div class="aim-editor-column-head tc-sec">
+          <span class="tc-lbl"><i class="{{this.icon}}"></i> {{localize this.labelKey}} <b>{{this.slots.length}}</b></span>
         </div>
-        {{/each}}
-      </div>
-    </div>
-
-    <!-- Center Column -->
-    <div class="aim-editor-column" data-column="center" data-drop-zone="column">
-      <div class="aim-editor-column-header">
-        <h4><i class="fa-solid fa-shield-halved"></i> {{localize "AIM.editor.columns.center"}} ({{centerSlots.length}})</h4>
-        <button type="button" class="aim-btn-add-slot" data-action="addSlot" data-column="center" title="{{localize 'AIM.editor.addSlot'}}">
-          <i class="fa-solid fa-plus"></i>
-        </button>
-      </div>
-      <div class="aim-editor-slots-list" data-column="center">
-        {{#each centerSlots}}
-        <div class="aim-editor-slot-card" draggable="true" data-slot-id="{{this.id}}" data-column="center">
-          <div class="aim-editor-slot-icon">
-            {{#if this.isImageIcon}}
-              <img src="{{this.icon}}" class="aim-editor-slot-icon-img" alt="{{this.label}}" />
-            {{else}}
-              <i class="{{this.icon}}"></i>
-            {{/if}}
-          </div>
-          <div class="aim-editor-slot-info">
-            <span class="aim-slot-title">{{this.label}}</span>
-            <span class="aim-slot-id-tag">id: {{this.id}}</span>
-          </div>
-          <div class="aim-editor-slot-actions">
-            <button type="button" class="aim-btn-icon" data-action="moveSlotUp" data-slot-id="{{this.id}}" title="{{localize 'AIM.editor.moveUp'}}"><i class="fa-solid fa-chevron-up"></i></button>
-            <button type="button" class="aim-btn-icon" data-action="moveSlotDown" data-slot-id="{{this.id}}" title="{{localize 'AIM.editor.moveDown'}}"><i class="fa-solid fa-chevron-down"></i></button>
-            <button type="button" class="aim-btn-icon" data-action="editSlot" data-slot-id="{{this.id}}" title="{{localize 'AIM.editor.editSlot'}}"><i class="fa-solid fa-pen"></i></button>
-            <button type="button" class="aim-btn-icon aim-btn-delete" data-action="deleteSlot" data-slot-id="{{this.id}}" title="{{localize 'AIM.editor.deleteSlot'}}"><i class="fa-solid fa-trash"></i></button>
-          </div>
+        <div class="aim-editor-slots-list" data-column="{{this.id}}">
+          {{#each this.slots}}
+            <div class="aim-row aim-editor-slot-card" draggable="true" data-slot-id="{{this.id}}" data-column="{{../id}}">
+              <span class="aim-thumb is-small aim-editor-slot-icon">
+                {{#if this.isImageIcon}}
+                  <img src="{{this.icon}}" class="aim-editor-slot-icon-img" alt="{{this.label}}" />
+                {{else}}
+                  <i class="{{this.icon}}"></i>
+                {{/if}}
+              </span>
+              <div class="aim-row-text aim-editor-slot-info">
+                <div class="aim-row-l1"><b title="{{this.label}}">{{this.label}}</b></div>
+                <div class="aim-row-l2"><span class="tc-chip">{{this.id}}</span></div>
+              </div>
+              <div class="aim-row-ctrls">
+                <button type="button" class="tc-ibtn is-hover" data-action="moveSlotUp" data-slot-id="{{this.id}}" aria-label="{{localize 'AIM.editor.moveUp'}}: {{this.label}}" data-tooltip="{{localize 'AIM.editor.moveUp'}}"><i class="fa-light fa-chevron-up"></i></button>
+                <button type="button" class="tc-ibtn is-hover" data-action="moveSlotDown" data-slot-id="{{this.id}}" aria-label="{{localize 'AIM.editor.moveDown'}}: {{this.label}}" data-tooltip="{{localize 'AIM.editor.moveDown'}}"><i class="fa-light fa-chevron-down"></i></button>
+                <button type="button" class="tc-ibtn is-hover" data-action="editSlot" data-slot-id="{{this.id}}" aria-label="{{localize 'AIM.editor.editSlot'}}: {{this.label}}" data-tooltip="{{localize 'AIM.editor.editSlot'}}"><i class="fa-light fa-pen"></i></button>
+                <button type="button" class="tc-ibtn is-hover is-danger" data-action="deleteSlot" data-slot-id="{{this.id}}" aria-label="{{localize 'AIM.editor.deleteSlot'}}: {{this.label}}" data-tooltip="{{localize 'AIM.editor.deleteSlot'}}"><i class="fa-light fa-trash-can"></i></button>
+              </div>
+            </div>
+          {{/each}}
         </div>
-        {{/each}}
-      </div>
-    </div>
-
-    <!-- Right Column -->
-    <div class="aim-editor-column" data-column="right" data-drop-zone="column">
-      <div class="aim-editor-column-header">
-        <h4><i class="fa-solid fa-arrow-right"></i> {{localize "AIM.editor.columns.right"}} ({{rightSlots.length}})</h4>
-        <button type="button" class="aim-btn-add-slot" data-action="addSlot" data-column="right" title="{{localize 'AIM.editor.addSlot'}}">
-          <i class="fa-solid fa-plus"></i>
+        <button type="button" class="tc-btn aim-editor-add" data-action="addSlot" data-column="{{this.id}}">
+          <i class="fa-light fa-plus"></i> {{localize "AIM.editor.addSlot"}}
         </button>
-      </div>
-      <div class="aim-editor-slots-list" data-column="right">
-        {{#each rightSlots}}
-        <div class="aim-editor-slot-card" draggable="true" data-slot-id="{{this.id}}" data-column="right">
-          <div class="aim-editor-slot-icon">
-            {{#if this.isImageIcon}}
-              <img src="{{this.icon}}" class="aim-editor-slot-icon-img" alt="{{this.label}}" />
-            {{else}}
-              <i class="{{this.icon}}"></i>
-            {{/if}}
-          </div>
-          <div class="aim-editor-slot-info">
-            <span class="aim-slot-title">{{this.label}}</span>
-            <span class="aim-slot-id-tag">id: {{this.id}}</span>
-          </div>
-          <div class="aim-editor-slot-actions">
-            <button type="button" class="aim-btn-icon" data-action="moveSlotUp" data-slot-id="{{this.id}}" title="{{localize 'AIM.editor.moveUp'}}"><i class="fa-solid fa-chevron-up"></i></button>
-            <button type="button" class="aim-btn-icon" data-action="moveSlotDown" data-slot-id="{{this.id}}" title="{{localize 'AIM.editor.moveDown'}}"><i class="fa-solid fa-chevron-down"></i></button>
-            <button type="button" class="aim-btn-icon" data-action="editSlot" data-slot-id="{{this.id}}" title="{{localize 'AIM.editor.editSlot'}}"><i class="fa-solid fa-pen"></i></button>
-            <button type="button" class="aim-btn-icon aim-btn-delete" data-action="deleteSlot" data-slot-id="{{this.id}}" title="{{localize 'AIM.editor.deleteSlot'}}"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        </div>
-        {{/each}}
-      </div>
-    </div>
+      </section>
+    {{/each}}
   </div>
 </div>

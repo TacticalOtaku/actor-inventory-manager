@@ -1,49 +1,19 @@
-<div class="aim-slot {{#if hasItem}}has-item rarity-{{item.rarityKey}}{{else}}is-empty{{/if}} {{#if isLocked}}is-locked{{/if}} {{#if item.hasGlow}}has-rarity-glow{{/if}} aim-slot-{{id}}"
-     data-drop-target="slot"
-     data-slot-id="{{id}}"
-     {{#if hasItem}}data-rarity="{{item.rarityKey}}" data-item-rarity="{{item.rarityKey}}"{{/if}}
-     title="{{#if isLocked}}{{lockReason}}{{else if hasItem}}{{item.name}}{{else}}{{label}}{{/if}}">
-
-  <div class="aim-slot-socket"
-       style="{{#if hasItem}}{{item.cssVars}} --slot-rarity-color: var(--rarity-color); border-color: var(--rarity-color); box-shadow: 0 0 10px var(--rarity-glow-soft);{{/if}}"
-       {{#if hasItem}}{{#if canEdit}}data-drag-item="true"{{/if}} data-item-id="{{item.id}}" data-item-uuid="{{item.uuid}}" data-slot-id="{{id}}"{{/if}}>
-
-    <!-- Ornate Gothic Corner Filigree -->
-    <span class="aim-socket-corner tl"></span>
-    <span class="aim-socket-corner tr"></span>
-    <span class="aim-socket-corner bl"></span>
-    <span class="aim-socket-corner br"></span>
-
-    {{#if hasItem}}
-      <img class="aim-slot-img" src="{{item.img}}" alt="{{item.name}}" data-action="openItem" data-item-id="{{item.id}}" />
-      {{#if item.hasMultiple}}
-        <span class="aim-slot-qty">{{item.quantity}}</span>
-      {{/if}}
-      {{#if item.isAttuned}}
-        <span class="aim-attuned-badge" title="{{localize 'AIM.items.attuned'}}"><i class="fa-solid fa-sun"></i></span>
-      {{/if}}
-      {{#if canEdit}}
-      <button type="button" class="aim-slot-unequip-btn" data-action="unequipSlot" data-slot-id="{{id}}" title="{{localize 'AIM.actions.unequip'}}">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-      {{/if}}
-    {{else}}
-      <div class="aim-slot-placeholder">
-        {{#if isImageIcon}}
-          <img class="aim-slot-icon-img" src="{{icon}}" alt="{{label}}" />
-        {{else}}
-          <i class="{{icon}}"></i>
-        {{/if}}
-      </div>
-    {{/if}}
-
-    {{#if isLocked}}
-      <div class="aim-slot-lock-overlay" title="{{lockReason}}">
-        <i class="fa-solid fa-lock"></i>
-        <span class="aim-lock-text">{{localize "AIM.slots.twoHandedShort"}}</span>
-      </div>
-    {{/if}}
-  </div>
-
-  <div class="aim-slot-name-tag">{{label}}</div>
+<div class="aim-slot {{#if hasItem}}is-full{{/if}} {{#if isLocked}}is-locked{{/if}}" data-drop-target="slot" data-slot-id="{{id}}"
+     {{#if hasItem}}data-rarity="{{item.rarityKey}}" style="{{item.cssVars}}"{{/if}}
+     data-tooltip="{{#if isLocked}}{{lockReason}}{{else if hasItem}}{{label}}: {{item.name}}{{else}}{{label}}{{/if}}">
+  {{#if isLocked}}
+    <div class="aim-sock" aria-label="{{label}}: {{lockReason}}"><span class="aim-sock-lock"><i class="fa-light fa-lock"></i>{{localize "AIM.slots.twoHandedShort"}}</span></div>
+  {{else if hasItem}}
+    <div class="aim-sock" {{#if canEdit}}data-drag-item="true"{{/if}} data-item-id="{{item.id}}" data-item-uuid="{{item.uuid}}" data-slot-id="{{id}}">
+      <img src="{{item.img}}" alt="{{item.name}}" data-action="openItem" data-item-id="{{item.id}}">
+      {{#if item.hasMultiple}}<span class="aim-sock-qty">{{item.quantity}}</span>{{/if}}
+    </div>
+    {{#if item.isAttuned}}<span class="aim-sock-att" data-tooltip="{{localize 'AIM.items.attuned'}}"><i class="fa-solid fa-sun"></i></span>{{/if}}
+    {{#if canEdit}}<button type="button" class="aim-sock-off aim-edit" data-action="unequipSlot" data-slot-id="{{id}}" aria-label="{{localize 'AIM.actions.unequip'}}: {{item.name}}" data-tooltip="{{localize 'AIM.actions.unequip'}}"><i class="fa-light fa-xmark"></i></button>{{/if}}
+  {{else}}
+    <div class="aim-sock" aria-label="{{label}}">
+      {{#if isImageIcon}}<img class="aim-sock-icon" src="{{icon}}" alt="">{{else}}<i class="{{icon}}"></i>{{/if}}
+    </div>
+  {{/if}}
+  <span class="aim-slot-tag">{{#if hasItem}}{{item.name}}{{else}}{{label}}{{/if}}</span>
 </div>

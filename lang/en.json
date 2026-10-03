@@ -61,7 +61,8 @@
     "paperdoll": {
       "title": "Equipment",
       "collapseTooltip": "Collapse Paperdoll Panel",
-      "expandTooltip": "Expand Paperdoll Panel"
+      "expandTooltip": "Expand Paperdoll Panel",
+      "occupied": "Occupied slots"
     },
     "sheetButton": {
       "label": "RPG Inventory",

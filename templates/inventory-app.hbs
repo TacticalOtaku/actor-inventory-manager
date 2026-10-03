@@ -1,63 +1,35 @@
-<div class="aim-window-content {{#if isPaperdollCollapsed}}is-paperdoll-collapsed{{/if}} {{#if isSidePanelOpen}}is-spells-open{{/if}} {{#if isTradePanelOpen}}is-trade-open{{/if}}">
-  <!-- Left Column: Character Vitals & Progression -->
-  <aside class="aim-column aim-vitals-column">
+<div class="aim-body" data-doll="{{#if dollOpen}}open{{else}}strip{{/if}}" {{#if drawer}}data-drawer="{{drawer}}"{{/if}} {{#if compact}}data-compact{{/if}} {{#unless canEdit}}data-readonly{{/unless}}>
+  <aside class="aim-col aim-passport" data-part>
     {{> "modules/actor-inventory-manager/templates/parts/character-vitals.hbs"}}
   </aside>
-
-  <!-- Center Column: Paperdoll Equipment Slots (Collapsible) -->
-  <main class="aim-column aim-paperdoll-column {{#if isPaperdollCollapsed}}is-collapsed{{/if}}">
-    {{#if isPaperdollCollapsed}}
-      <div class="aim-paperdoll-collapsed-strip" data-action="togglePaperdoll" title="{{localize 'AIM.paperdoll.expandTooltip'}}">
-        <button type="button" class="aim-expand-paperdoll-btn" data-action="togglePaperdoll" title="{{localize 'AIM.paperdoll.expandTooltip'}}">
-          <i class="fa-solid fa-chevron-right"></i>
-        </button>
-        <i class="aim-collapsed-icon fa-solid fa-person-military-rifle" aria-hidden="true"></i>
-        <div class="aim-collapsed-badge" title="{{localize 'AIM.attunement.title'}}">
-          <i class="fa-solid fa-sun"></i> {{vitals.attunement.value}}/{{vitals.attunement.max}}
-        </div>
-      </div>
-    {{else}}
-      {{> "modules/actor-inventory-manager/templates/parts/paperdoll.hbs"}}
-    {{/if}}
+  <main class="aim-col {{#if dollOpen}}aim-doll{{else}}aim-doll-strip{{/if}}" data-part>
+    {{> "modules/actor-inventory-manager/templates/parts/paperdoll.hbs"}}
   </main>
-
-  <!-- Main Column: Inventory Grid & Containers -->
-  <section class="aim-column aim-inventory-column">
+  <section class="aim-col aim-inv" data-part>
     {{> "modules/actor-inventory-manager/templates/parts/inventory-grid.hbs"}}
   </section>
-
-  <!-- 4th Column / Side Drawer: Spells & Action Abilities (Expandable) -->
   {{#if isSpellsPanelOpen}}
-    <section class="aim-column aim-spells-column">
+    <section class="aim-col aim-drawer" data-drawer-panel="spells">
       {{> "modules/actor-inventory-manager/templates/parts/spells-actions.hbs"}}
     </section>
   {{/if}}
-
   {{#if isTradePanelOpen}}
-    <section class="aim-column aim-spells-column aim-trade-column">
+    <section class="aim-col aim-drawer" data-drawer-panel="trade">
       {{> "modules/actor-inventory-manager/templates/parts/trade.hbs"}}
     </section>
   {{/if}}
-  <!-- Side panel switches, inside the frame so they never cover the Foundry UI -->
-  <nav class="aim-side-rail" aria-label="{{localize 'AIM.app.sidePanels'}}">
-    <button type="button"
-            class="aim-rail-btn {{#if isSpellsPanelOpen}}is-open{{/if}}"
-            data-action="toggleSpellsPanel"
-            data-tooltip="{{#if isSpellsPanelOpen}}{{localize 'AIM.spells.collapseTooltip'}}{{else}}{{localize 'AIM.spells.expandTooltip'}}{{/if}}"
-            data-tooltip-direction="LEFT"
-            aria-label="{{localize 'AIM.spells.drawerTab'}}"
-            aria-expanded="{{#if isSpellsPanelOpen}}true{{else}}false{{/if}}">
-      <i class="fa-solid fa-wand-magic-sparkles"></i>
+  {{!-- Drawer switches live inside the frame so they never cover the Foundry UI. --}}
+  <nav class="aim-rail" aria-label="{{localize 'AIM.app.sidePanels'}}" data-part>
+    <button type="button" class="aim-rail-btn" data-action="toggleSpellsPanel"
+            data-tooltip="{{#if isSpellsPanelOpen}}{{localize 'AIM.spells.collapseTooltip'}}{{else}}{{localize 'AIM.spells.expandTooltip'}}{{/if}}" data-tooltip-direction="LEFT"
+            aria-label="{{localize 'AIM.spells.drawerTab'}}" aria-expanded="{{#if isSpellsPanelOpen}}true{{else}}false{{/if}}">
+      <i class="fa-light fa-wand-magic-sparkles"></i>
     </button>
     {{#if trade.available}}
-      <button type="button"
-              class="aim-rail-btn {{#if isTradePanelOpen}}is-open{{/if}} {{#if hasTradeSession}}has-trade{{/if}}"
-              data-action="toggleTradePanel"
-              data-tooltip="{{localize 'AIM.trade.title'}}"
-              data-tooltip-direction="LEFT"
-              aria-label="{{localize 'AIM.trade.title'}}"
-              aria-expanded="{{#if isTradePanelOpen}}true{{else}}false{{/if}}">
-        <i class="fa-solid fa-handshake"></i>
+      <button type="button" class="aim-rail-btn" data-action="toggleTradePanel"
+              data-tooltip="{{localize 'AIM.trade.title'}}" data-tooltip-direction="LEFT"
+              aria-label="{{localize 'AIM.trade.title'}}" aria-expanded="{{#if isTradePanelOpen}}true{{else}}false{{/if}}">
+        <i class="fa-light fa-handshake"></i>{{#if hasTradeSession}}<span class="aim-rail-live"></span>{{/if}}
       </button>
     {{/if}}
   </nav>

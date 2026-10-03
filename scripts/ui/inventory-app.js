@@ -32,14 +32,16 @@ import { LOG } from "../foundry/logger.js";
 import { getActorPaperdollTemplate } from "../core/paperdoll-templates.js";
 import { openPaperdollEditor } from "./paperdoll-editor.js";
 import { DragDropController } from "./drag-drop-controller.js";
-import { animateMeterChanges, readMeterWidths } from "./meter-motion.js";
+import { animateMeterChanges, readMeterWidths, shouldReduceMotion } from "./meter-motion.js";
+import { isCompact, isDollOpen, resolveMinimumWidth, resolveWindowWidth, toggleDoll, toggleDrawer } from "./window-layout.js";
+import { applyTactileTheme } from "./tactile-theme.js";
+import { bindPress, openWindow } from "../tactile/motion.js";
 import { cssUrl, escapeHTML, isImagePath } from "./html.js";
 import {
   buildAttunementSlots,
   buildInventoryCounts,
   buildSpellsCounts,
   filterAndSortInventoryItems,
-  mustCollapsePaperdoll,
   resolveThemeContext
 } from "./inventory-context.js";
 import {
@@ -90,77 +92,6 @@ const RENDER_COALESCE_MS = 40;
 /** Shown in place of item art that fails to load. */
 const BROKEN_IMAGE_FALLBACK = "icons/svg/item-bag.svg";
 
-/**
- * Preferred window width per layout, before clamping to the viewport.
- * Keyed by `${sidePanelOpen}|${paperdollCollapsed}`.
- */
-const WINDOW_WIDTHS = {
-  "true|false": 1502,
-  "true|true": 1202,
-  "false|false": 1102,
-  "false|true": 822
-};
-
-/**
- * Narrowest width at which each layout's grid columns still fit
- * (column minimums + gaps + padding + frame + the side rail, see actor-inventory.css).
- */
-const MIN_LAYOUT_WIDTHS = {
-  "true|false": 1292,
-  "true|true": 1042,
-  "false|false": 942,
-  "false|true": 692
-};
-
-/** Below this viewport width the trade layout hides the vitals column (CSS media query). */
-const NARROW_TRADE_VIEWPORT = 1050;
-const NARROW_TRADE_MIN_WIDTH = 692;
-
-const layoutKey = (sidePanelOpen, paperdollCollapsed) => `${Boolean(sidePanelOpen)}|${Boolean(paperdollCollapsed)}`;
-
-/**
- * Minimum window width for a layout.
- * @param {boolean} sidePanelOpen
- * @param {boolean} paperdollCollapsed
- * @param {boolean} [tradeOpen=false]
- * @returns {number}
- */
-export function resolveMinimumWidth(sidePanelOpen, paperdollCollapsed, tradeOpen = false) {
-  if (tradeOpen && paperdollCollapsed && (globalThis.window?.innerWidth ?? Infinity) <= NARROW_TRADE_VIEWPORT) {
-    return NARROW_TRADE_MIN_WIDTH;
-  }
-  return MIN_LAYOUT_WIDTHS[layoutKey(sidePanelOpen, paperdollCollapsed)] ?? 900;
-}
-
-/**
- * Resolve the window width for a layout: the preferred width, shrunk to the
- * viewport but never below the width the layout needs.
- * @param {boolean} spellsOpen
- * @param {boolean} paperdollCollapsed
- * @param {boolean} [tradeOpen=false]
- * @returns {number}
- */
-export function resolveWindowWidth(spellsOpen, paperdollCollapsed, tradeOpen = false) {
-  const preferred = WINDOW_WIDTHS[layoutKey(spellsOpen || tradeOpen, paperdollCollapsed)] ?? 1060;
-  const available = (globalThis.window?.innerWidth ?? preferred) - 40;
-  return Math.max(resolveMinimumWidth(spellsOpen || tradeOpen, paperdollCollapsed, tradeOpen), Math.min(preferred, available));
-}
-
-/**
- * Does the paperdoll have to fold away for an open side panel on this screen?
- * @param {boolean} sidePanelOpen
- * @param {boolean} paperdollCollapsed
- * @returns {boolean}
- */
-function paperdollMustMakeRoom(sidePanelOpen, paperdollCollapsed) {
-  return mustCollapsePaperdoll({
-    sidePanelOpen,
-    paperdollCollapsed,
-    availableWidth: (globalThis.window?.innerWidth ?? Infinity) - 40,
-    requiredWidth: MIN_LAYOUT_WIDTHS["true|false"]
-  });
-}
-
 /** DOM-safe window id for an actor, unique per token actor. */
 function appIdFor(actor) {
   return `${MODULE_ID}-actor-${String(actor.uuid ?? actor.id).replace(/[^\w-]/g, "-")}`;
@@ -177,14 +108,14 @@ const InventoryApplicationBase = foundry.applications.api.HandlebarsApplicationM
 export class ActorInventoryApp extends InventoryApplicationBase {
   static DEFAULT_OPTIONS = {
     id: `${MODULE_ID}-app`,
-    classes: ["actor-inventory-manager-app", "rpg-theme"],
+    classes: ["actor-inventory-manager-app", "tc-root"],
     tag: "div",
     position: {
-      width: 1060,
+      width: 1080,
       height: 760
     },
     window: {
-      icon: "fa-solid fa-shirt",
+      icon: "fa-light fa-shirt",
       minimizable: true,
       resizable: true
     },
@@ -221,15 +152,16 @@ export class ActorInventoryApp extends InventoryApplicationBase {
         ".aim-items-scroll-area",
         ".aim-spells-scroll-area",
         ".aim-trade-scroll-area",
-        ".aim-vitals-panel",
-        ".aim-paperdoll-stage"
+        ".aim-passport-core",
+        ".aim-stage"
       ]
     }
   };
 
   constructor(actor, options = {}) {
     if (!isSupportedActor(actor)) throw new Error("AIM: unsupported actor");
-    const title = `${actor.name} - ${game.i18n.localize("AIM.app.title")}`;
+    // The header subtitle carries race, class and level (see _refreshHeader).
+    const title = actor.name;
     super({
       ...options,
       id: appIdFor(actor),
@@ -243,19 +175,14 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     this.sortBy = "name";
     this.collapsedContainers = new Set();
 
-    // Collapsible states loaded from actor flags
-    this.isPaperdollCollapsed = Boolean(actor.getFlag?.(MODULE_ID, FLAGS.PAPERDOLL_COLLAPSED));
-    this.isSpellsPanelOpen = Boolean(actor.getFlag?.(MODULE_ID, FLAGS.SPELLS_PANEL_OPEN));
+    // Drawer and paperdoll state (see window-layout.js); the doll preference and the grimoire persist per actor.
+    this.layout = {
+      drawer: actor.getFlag?.(MODULE_ID, FLAGS.SPELLS_PANEL_OPEN) ? "spells" : null,
+      dollCollapsed: Boolean(actor.getFlag?.(MODULE_ID, FLAGS.PAPERDOLL_COLLAPSED)),
+      dollBesideDrawer: false
+    };
     this.spellsTab = "all";
     this.spellsSearchFilter = "";
-    this.isTradePanelOpen = false;
-    // Set when a side panel collapsed the paperdoll to make room, so closing the panel restores it.
-    this._paperdollAutoCollapsed = false;
-    // A panel left open on a wider screen: fold the paperdoll for this session only.
-    if (paperdollMustMakeRoom(this.isSpellsPanelOpen, this.isPaperdollCollapsed)) {
-      this.isPaperdollCollapsed = true;
-      this._paperdollAutoCollapsed = true;
-    }
 
     this.dragDrop = new DragDropController(this);
     this._hooks = [];
@@ -264,6 +191,18 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   /** May the current user change this actor? */
   get canEdit() {
     return canEditActor(this.actor, game.user);
+  }
+
+  get isSpellsPanelOpen() {
+    return this.layout.drawer === "spells";
+  }
+
+  get isTradePanelOpen() {
+    return this.layout.drawer === "trade" && isTradeActor(this.actor);
+  }
+
+  get isPaperdollCollapsed() {
+    return !isDollOpen(this.layout);
   }
 
   async _prepareContext(options) {
@@ -339,14 +278,18 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     );
 
     const tradeActor = isTradeActor(actor);
+    const drawer = this.isTradePanelOpen ? "trade" : (this.isSpellsPanelOpen ? "spells" : null);
     const prepared = {
       ...context,
       actor,
       appId: this.id,
       canEdit,
       trade: buildTradeContext(this),
-      isTradePanelOpen: this.isTradePanelOpen && tradeActor,
-      isSidePanelOpen: this.isSpellsPanelOpen || (this.isTradePanelOpen && tradeActor),
+      drawer,
+      dollOpen: isDollOpen(this.layout),
+      compact: isCompact(this._effectiveLayout(), window.innerWidth),
+      isTradePanelOpen: this.isTradePanelOpen,
+      isSidePanelOpen: Boolean(drawer),
       hasTradeSession: tradeActor && Boolean(sessionFor(actor.id)),
       vitals,
       encumbrance,
@@ -354,6 +297,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       leftSlots: allSlots.filter(s => s.column === "left"),
       centerSlots: allSlots.filter(s => s.column === "center"),
       rightSlots: allSlots.filter(s => s.column === "right"),
+      occupiedSlots: allSlots.map(s => ({ id: s.id, label: s.label, hasItem: s.hasItem })),
       attunementSlots,
       items: displayItems,
       containers: containerTrees,
@@ -456,10 +400,56 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     };
   }
 
+  _getFrameButtons(options) {
+    return [
+      ...super._getFrameButtons(options),
+      { icon: "fa-light fa-circle-half-stroke", label: "AIM.theme.toggle", action: "toggleTheme" }
+    ];
+  }
+
+  /** Header identity: portrait with the level badge before the title, the subtitle and read-only tag after it. */
+  async _renderFrame(options) {
+    const frame = await super._renderFrame(options);
+    const title = frame.querySelector(".window-title");
+    if (title) {
+      title.insertAdjacentHTML("beforebegin", '<span class="aim-head-avatar" aria-hidden="true"><img alt=""><b hidden></b></span>');
+      const readOnly = escapeHTML(game.i18n.localize("AIM.app.readOnly"));
+      title.insertAdjacentHTML("afterend",
+        `<span class="aim-head-sub"></span><span class="aim-head-ro" hidden><i class="fa-light fa-eye"></i>${readOnly}</span>`);
+    }
+    return frame;
+  }
+
+  /**
+   * Refresh the header identity; the frame outlives every render.
+   * @param {Object} vitals
+   * @param {boolean} canEdit
+   */
+  _refreshHeader(vitals, canEdit) {
+    const header = this.element?.querySelector(".window-header");
+    if (!header || !vitals) return;
+    const img = header.querySelector(".aim-head-avatar img");
+    if (img && vitals.img && img.getAttribute("src") !== vitals.img) img.src = vitals.img;
+    const badge = header.querySelector(".aim-head-avatar b");
+    if (badge) {
+      badge.textContent = vitals.level ? String(vitals.level) : "";
+      badge.hidden = !vitals.level;
+    }
+    const sub = header.querySelector(".aim-head-sub");
+    if (sub) {
+      const classLine = [vitals.className, vitals.level].filter(Boolean).join(" ");
+      sub.textContent = [vitals.race, vitals.alignment, classLine].filter(Boolean).join(" · ");
+    }
+    const readOnly = header.querySelector(".aim-head-ro");
+    if (readOnly) readOnly.hidden = canEdit;
+  }
+
   async _onFirstRender(context, options) {
     await super._onFirstRender(context, options);
     this._bindBrokenImageFallback();
     this._bindActorHooks();
+    bindPress(this.element, () => shouldReduceMotion(window));
+    openWindow(this.element, { reduce: shouldReduceMotion(window) });
   }
 
   async _preRender(context, options) {
@@ -477,6 +467,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
 
     // Apply active theme attribute
     this._applyTheme(context.theme || "dark");
+    this._refreshHeader(context.vitals, context.canEdit);
 
     // Search input bindings. Re-rendering on every keystroke is wasteful and
     // fights the caret, so filtering is debounced.
@@ -518,8 +509,13 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   }
 
   _minimumWidth() {
-    const tradeOpen = this.isTradePanelOpen && isTradeActor(this.actor);
-    return resolveMinimumWidth(this.isSpellsPanelOpen || tradeOpen, this.isPaperdollCollapsed, tradeOpen);
+    return resolveMinimumWidth(this._effectiveLayout(), window.innerWidth);
+  }
+
+  /** The layout as rendered: a trade drawer the actor cannot use counts as closed. */
+  _effectiveLayout() {
+    if (this.layout.drawer === "trade" && !isTradeActor(this.actor)) return { ...this.layout, drawer: null };
+    return this.layout;
   }
 
   /**
@@ -577,7 +573,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     const changed = root.getAttribute("data-theme") !== theme;
     if (changed) root.classList.add("aim-no-transitions");
 
-    root.setAttribute("data-theme", theme);
+    applyTactileTheme(root, theme);
 
     if (!changed) return;
     void root.offsetHeight; // flush the suppressed styles before re-enabling
@@ -678,8 +674,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   }
 
   _syncWindowSize() {
-    const tradeOpen = this.isTradePanelOpen && isTradeActor(this.actor);
-    const targetWidth = resolveWindowWidth(this.isSpellsPanelOpen, this.isPaperdollCollapsed, tradeOpen);
+    const targetWidth = resolveWindowWidth(this._effectiveLayout(), window.innerWidth);
     const screenWidth = window.innerWidth;
     let newLeft = this.position.left;
 
@@ -701,20 +696,16 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   }
 
   /**
-   * Open or close a side panel, collapsing the paperdoll while it is open
-   * when both do not fit on the screen, and restoring it afterwards.
-   * @param {boolean} opening
+   * Open, switch or close a side drawer. The drawer takes the paperdoll's place, so the doll folds
+   * into its strip while a drawer is open and comes back when it closes.
+   * @param {"spells"|"trade"} name
    */
-  _makeRoomForSidePanel(opening) {
-    if (opening) {
-      if (paperdollMustMakeRoom(true, this.isPaperdollCollapsed)) {
-        this.isPaperdollCollapsed = true;
-        this._paperdollAutoCollapsed = true;
-      }
-    } else if (this._paperdollAutoCollapsed) {
-      this.isPaperdollCollapsed = false;
-      this._paperdollAutoCollapsed = false;
-    }
+  async _toggleDrawer(name) {
+    this._drawerJustOpened = this.layout.drawer !== name;
+    this.layout = toggleDrawer(this.layout, name);
+    this._syncWindowSize();
+    this.render();
+    await this._savePreference(FLAGS.SPELLS_PANEL_OPEN, this.layout.drawer === "spells");
   }
 
   // --- Static Action Handlers ---
@@ -798,21 +789,18 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   }
 
   static async _togglePaperdoll() {
-    this.isPaperdollCollapsed = !this.isPaperdollCollapsed;
-    this._paperdollAutoCollapsed = false;
+    const before = this._effectiveLayout();
+    const { state, closedDrawer } = toggleDoll(before, window.innerWidth);
+    const savedChanged = state.dollCollapsed !== this.layout.dollCollapsed;
+    this.layout = state;
     this._syncWindowSize();
     this.render();
-    await this._savePreference(FLAGS.PAPERDOLL_COLLAPSED, this.isPaperdollCollapsed);
+    if (savedChanged) await this._savePreference(FLAGS.PAPERDOLL_COLLAPSED, state.dollCollapsed);
+    if (closedDrawer && before.drawer === "spells") await this._savePreference(FLAGS.SPELLS_PANEL_OPEN, false);
   }
 
   static async _toggleSpellsPanel() {
-    const wasTradeOpen = this.isTradePanelOpen;
-    this.isSpellsPanelOpen = !this.isSpellsPanelOpen;
-    if (this.isSpellsPanelOpen) this.isTradePanelOpen = false;
-    if (!wasTradeOpen || !this.isSpellsPanelOpen) this._makeRoomForSidePanel(this.isSpellsPanelOpen);
-    this._syncWindowSize();
-    this.render();
-    await this._savePreference(FLAGS.SPELLS_PANEL_OPEN, this.isSpellsPanelOpen);
+    await this._toggleDrawer("spells");
   }
 
   static _switchSpellsTab(event, target) {
@@ -821,14 +809,8 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   }
 
   static async _toggleTradePanel() {
-    if (!isTradeActor(this.actor)) return;
-    const wasSpellsOpen = this.isSpellsPanelOpen;
-    this.isTradePanelOpen = !this.isTradePanelOpen;
     // Drawer choice is local UI state, so observers need no actor write permission.
-    if (this.isTradePanelOpen) this.isSpellsPanelOpen = false;
-    if (!wasSpellsOpen || !this.isTradePanelOpen) this._makeRoomForSidePanel(this.isTradePanelOpen);
-    this._syncWindowSize();
-    this.render();
+    if (isTradeActor(this.actor)) await this._toggleDrawer("trade");
   }
 
   static async _tradeAction(event, target) {
@@ -873,8 +855,8 @@ export async function openActorInventory(actor) {
   const top = Math.max(20, Math.round((window.innerHeight - height) / 2));
   const app = new ActorInventoryApp(actor, { position: { height, top } });
 
-  // Sized after construction: the window may have folded the paperdoll to fit the screen.
-  const width = resolveWindowWidth(app.isSpellsPanelOpen, app.isPaperdollCollapsed);
+  // Sized after construction: the layout comes from the actor's saved preferences.
+  const width = resolveWindowWidth(app._effectiveLayout(), window.innerWidth);
   const left = Math.max(20, Math.round((window.innerWidth - width) / 2));
   OPEN_INVENTORY_APPS.set(key, app);
   await app.render({ force: true, position: { width, left } });

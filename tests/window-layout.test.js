@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import {
-  LAYOUT_MIN_WIDTHS, LAYOUT_WIDTHS, isDollOpen, layoutName, resolveMinimumWidth, resolveWindowWidth, toggleDoll, toggleDrawer
+  LAYOUT_MIN_WIDTHS, LAYOUT_WIDTHS, isCompact, isDollOpen, layoutName, resolveMinimumWidth, resolveWindowWidth, toggleDoll, toggleDrawer
 } from "../scripts/ui/window-layout.js";
 
 const base = { drawer: null, dollCollapsed: false, dollBesideDrawer: false };
@@ -44,6 +44,16 @@ describe("window layout", () => {
   it("without a drawer the doll toggle flips the saved preference", () => {
     const { state } = toggleDoll(base, 1920);
     assert.equal(state.dollCollapsed, true);
+  });
+
+  it("hides the passport beside a drawer on screens too narrow for the strip layout", () => {
+    const drawer = toggleDrawer(base, "trade");
+    assert.equal(isCompact(drawer, 1920), false);
+    assert.equal(isCompact(drawer, 1100), true);
+    assert.equal(isCompact(base, 900), false, "without a drawer the window keeps all its columns");
+    assert.equal(resolveMinimumWidth(drawer, 1100), LAYOUT_MIN_WIDTHS.drawerCompact);
+    assert.equal(resolveWindowWidth(drawer, 1100), 1060);
+    assert.equal(resolveMinimumWidth(drawer, 1920), LAYOUT_MIN_WIDTHS.drawerStrip);
   });
 
   it("clamps the preferred width to the screen but never below the layout minimum", () => {

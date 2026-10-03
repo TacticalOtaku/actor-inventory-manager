@@ -16,6 +16,7 @@ import {
   extractActorVitals,
   extractSpellSlots,
   formatItemForDisplay,
+  getContainerContentsCount,
   getSystemWeightUnit,
   toggleSpellPreparation,
   updateSpellSlot
@@ -42,6 +43,7 @@ import {
   buildInventoryCounts,
   buildSpellsCounts,
   filterAndSortInventoryItems,
+  isTopLevelItem,
   resolveThemeContext
 } from "./inventory-context.js";
 import {
@@ -269,7 +271,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     const attunementSlots = buildAttunementSlots(actorItems, getActorAttunementMax(actor), formatItemForDisplay);
 
     // Top-level physical items (exclude feats, spells, classes, races and anything inside a bag)
-    const allPhysicalItems = actorItems.filter(i => isPhysicalItem(i) && !i.system?.container);
+    const allPhysicalItems = actorItems.filter(i => isPhysicalItem(i) && isTopLevelItem(i, actor.items));
     const containers = actorItems.filter(isContainerItem);
 
     const displayItems = filterAndSortInventoryItems(allPhysicalItems, {
@@ -279,7 +281,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     }).map(i => ({ ...formatItemForDisplay(i), canEdit }));
 
     // Container explorer: top-level bags, with nested bags rendered inside their parent.
-    const rootContainers = containers.filter(c => !c.system?.container || !actor.items.has(c.system.container));
+    const rootContainers = containers.filter(c => isTopLevelItem(c, actor.items));
     const containerTrees = rootContainers.map(container => this._buildContainerTree(actor, container, new Set(), canEdit));
 
     const counts = buildInventoryCounts(allPhysicalItems, containers);
@@ -749,8 +751,10 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     this._renderTimer = null;
     this.dragDrop.unbind();
     this._unbindActorHooks();
+    // Stay listed until closed, so a reopen during the closing animation can wait for it (openActorInventory).
+    await super.close(options);
     if (OPEN_INVENTORY_APPS.get(this.actorKey) === this) OPEN_INVENTORY_APPS.delete(this.actorKey);
-    return super.close(options);
+    return this;
   }
 
   _syncWindowSize() {
@@ -803,7 +807,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
 
   static async _unequipSlot(event, target) {
     const item = getActorEquippedMap(this.actor).get(target.dataset.slotId);
-    if (item) await unequipItem(this.actor, item);
+    if (item && !(await unequipItem(this.actor, item))) this._refuse(target.closest(".aim-slot"));
   }
 
   static _openItem(event, target) {
@@ -825,15 +829,24 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     const item = this.actor.items.get(target.dataset.itemId);
     if (!item || !assertCanEdit(this.actor)) return;
 
-    const confirmed = await foundry.applications.api.DialogV2.confirm({
+    // A container's contents stay behind unless the user asks dnd5e to delete them as well.
+    const contents = await getContainerContentsCount(item);
+    const contentsOption = contents
+      ? `<label class="checkbox"><input type="checkbox" name="deleteContents"> ${escapeHTML(game.i18n.format("AIM.dialogs.deleteItem.contents", { count: contents }))}</label>`
+      : "";
+    // DialogV2 resolves a nullish callback result to the button's action name, so only "yes" returns an object.
+    const choice = await foundry.applications.api.DialogV2.confirm({
       window: { title: game.i18n.localize("AIM.dialogs.deleteItem.title") },
-      content: `<p>${game.i18n.format("AIM.dialogs.deleteItem.message", { item: escapeHTML(item.name) })}</p>`,
-      yes: { label: game.i18n.localize("AIM.dialogs.deleteItem.confirm") },
+      content: `<p>${game.i18n.format("AIM.dialogs.deleteItem.message", { item: escapeHTML(item.name) })}</p>${contentsOption}`,
+      yes: {
+        label: game.i18n.localize("AIM.dialogs.deleteItem.confirm"),
+        callback: (event, button) => ({ deleteContents: Boolean(button.form?.elements.deleteContents?.checked) })
+      },
       no: { label: game.i18n.localize("AIM.dialogs.deleteItem.cancel") },
       rejectClose: false
     });
 
-    if (confirmed) await item.delete();
+    if (choice?.deleteContents !== undefined) await item.delete({ deleteContents: choice.deleteContents });
   }
 
   static _toggleContainer(event, target) {
@@ -931,6 +944,11 @@ export async function openActorInventory(actor) {
     existing.bringToFront();
     return existing;
   }
+  // Windows share an id per actor and Foundry registers them by id: a second copy started while the first
+  // is still opening is dropped by Foundry, and a closing copy unregisters the new one when its animation ends.
+  const { RENDER_STATES } = foundry.applications.api.ApplicationV2;
+  if (existing && existing.state >= RENDER_STATES.NONE) return existing;
+  if (existing?.state === RENDER_STATES.CLOSING) await existing.close();
 
   const height = Math.max(560, Math.min(760, window.innerHeight - 60));
   const top = Math.max(20, Math.round((window.innerHeight - height) / 2));

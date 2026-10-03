@@ -7,6 +7,7 @@ import {
   extractSpellSlots,
   formatActivationLabel,
   formatItemForDisplay,
+  getContainerContentsCount,
   resolveItemActivation,
   resolveItemUses,
   resolveSpellPreparation,
@@ -351,5 +352,17 @@ describe("formatItemForDisplay rarity label", () => {
     const relic = { id: "c", name: "Relic", type: "loot", system: { rarity: "mythic", quantity: 1 } };
     assert.equal(formatItemForDisplay(rope).rarityLabel, "");
     assert.equal(formatItemForDisplay(relic).rarityLabel, "");
+  });
+});
+
+describe("container contents count", () => {
+  it("reads dnd5e 5.3.3's count, a number or a promise for compendium items", async () => {
+    assert.equal(await getContainerContentsCount({ type: "container", system: { contentsCount: 11 } }), 11);
+    assert.equal(await getContainerContentsCount({ type: "container", system: { contentsCount: Promise.resolve(2) } }), 2);
+  });
+
+  it("is zero for anything that is not a container", async () => {
+    assert.equal(await getContainerContentsCount({ type: "weapon", system: {} }), 0);
+    assert.equal(await getContainerContentsCount(null), 0);
   });
 });

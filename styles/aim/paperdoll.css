@@ -252,16 +252,26 @@
   font-size: 14px;
 }
 
-/* --- Attunement tray --- */
+/* --- Attunement tray ---
+   Up to three sockets sit beside the label; more move to their own line and wrap there, so any attunement
+   maximum fits the 312px column. */
 .actor-inventory-manager-app .aim-attune {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   padding: 8px 8px 8px 12px;
 }
 
 .actor-inventory-manager-app .aim-attune > .tc-lbl {
-  flex: 1;
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+.actor-inventory-manager-app .aim-asocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   min-width: 0;
 }
 

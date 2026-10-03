@@ -51,6 +51,18 @@ function matchesInventoryTab(item, tab) {
   return true;
 }
 
+/**
+ * Is the item loose in the inventory? An item whose container was deleted without its contents still
+ * points at it; dnd5e lists such items at the top level, and so does the window, so none goes missing.
+ * @param {Object} item
+ * @param {Map<string, Object>} actorItems the actor's items by id
+ * @returns {boolean}
+ */
+export function isTopLevelItem(item, actorItems) {
+  const containerId = item.system?.container;
+  return !containerId || !actorItems.has(containerId);
+}
+
 export function filterAndSortInventoryItems(items, { tab = "all", search = "", sortBy = "name" } = {}) {
   const query = search.toLowerCase();
   return items

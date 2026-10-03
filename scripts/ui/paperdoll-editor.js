@@ -4,6 +4,7 @@
 
 import { MODULE_ID, REFRESH_HOOK, TEMPLATE_PRESETS } from "../constants.js";
 import { isSupportedActor } from "../core/actor-scope.js";
+import { getActorSourceAttunementMax } from "../core/attunement.js";
 import {
   deleteWorldCustomTemplate,
   getAllTemplates,
@@ -12,6 +13,7 @@ import {
   importTemplateJSON,
   isReservedTemplateId,
   isWorldCustomTemplate,
+  planTemplateApply,
   saveWorldCustomTemplate,
   setActorPaperdollTemplate
 } from "../core/paperdoll-templates.js";
@@ -98,7 +100,9 @@ export class PaperdollEditorApp extends ApplicationBase {
     const actorTemplateCtx = getActorPaperdollTemplate(actor);
     this.activeTemplateId = actorTemplateCtx.templateId;
     this.workingSlots = actorTemplateCtx.slots.map(s => ({ ...s, rules: { ...s.rules } }));
-    this.attunementMax = actorTemplateCtx.attunementMax;
+    // Start from the actor's own cap: it may have been changed on the sheet since the template was applied.
+    this.attunementMax = getActorSourceAttunementMax(actor) ?? actorTemplateCtx.attunementMax;
+    this.initialAttunementMax = this.attunementMax;
     // "Custom" means an actor-only layout; a world template stays linked by id.
     this.isCustomWorking = Boolean(actorTemplateCtx.isActorCustom);
   }
@@ -333,19 +337,24 @@ export class PaperdollEditorApp extends ApplicationBase {
     if (!game.user.isGM) return;
     this._readAttunementInput();
 
-    const baseTemplate = getTemplateById(this.activeTemplateId);
-    const hasModifiedAttunement = (baseTemplate?.attunementMax ?? 3) !== this.attunementMax;
+    const plan = planTemplateApply({
+      isCustomWorking: this.isCustomWorking,
+      templateCap: getTemplateById(this.activeTemplateId)?.attunementMax ?? 3,
+      initialCap: this.initialAttunementMax,
+      cap: this.attunementMax
+    });
+    const options = { applyAttunement: plan.writeCap };
 
-    if (this.isCustomWorking || hasModifiedAttunement) {
+    if (plan.custom) {
       await setActorPaperdollTemplate(this.actor, "custom", {
         id: "custom",
         name: format("AIM.editor.customPaperdollName", { actor: this.actor.name }),
         attunementMax: this.attunementMax,
         slots: this.workingSlots
-      });
+      }, options);
     } else {
       // Linked by id, so later edits of a world template reach this actor too.
-      await setActorPaperdollTemplate(this.actor, this.activeTemplateId, null);
+      await setActorPaperdollTemplate(this.actor, this.activeTemplateId, null, options);
     }
 
     ui.notifications.info(format("AIM.editor.appliedSuccess", { actor: this.actor.name }));
@@ -569,15 +578,18 @@ export class PaperdollEditorApp extends ApplicationBase {
   }
 
   async close(options = {}) {
+    // Stay listed until closed, so a reopen during the closing animation can wait for it (openPaperdollEditor).
+    await super.close(options);
     if (OPEN_EDITORS.get(this.actorKey) === this) OPEN_EDITORS.delete(this.actorKey);
-    return super.close(options);
+    return this;
   }
 }
 
 /**
  * Open the Paperdoll Editor for an actor (GM Only)
  * @param {Object} actor
- * @returns {PaperdollEditorApp|undefined}
+ * @returns {PaperdollEditorApp|undefined} undefined when refused, or when an editor of this actor is still
+ *   closing: the new one opens once it has closed
  */
 export function openPaperdollEditor(actor) {
   if (!isSupportedActor(actor)) return;
@@ -590,6 +602,13 @@ export function openPaperdollEditor(actor) {
   if (existing?.rendered) {
     existing.bringToFront();
     return existing;
+  }
+  // Editors share an id per actor; see openActorInventory for why a copy still rendering or closing matters.
+  const { RENDER_STATES } = foundry.applications.api.ApplicationV2;
+  if (existing && existing.state >= RENDER_STATES.NONE) return existing;
+  if (existing?.state === RENDER_STATES.CLOSING) {
+    existing.close().then(() => openPaperdollEditor(actor));
+    return;
   }
   const app = new PaperdollEditorApp(actor);
   OPEN_EDITORS.set(key, app);

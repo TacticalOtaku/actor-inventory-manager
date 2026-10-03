@@ -13,6 +13,7 @@
   </div>
   <div class="tc-tray aim-attune">
     <span class="tc-lbl">{{localize "AIM.attunement.title"}} <b class="{{#if vitals.attunement.isOver}}is-over{{/if}}">{{vitals.attunement.value}}/{{vitals.attunement.max}}</b></span>
+    <div class="aim-asocks">
     {{#each attunementSlots}}
       {{#if this.hasItem}}
         <span class="aim-asock is-on {{#if this.isOverLimit}}is-over{{/if}}" data-rarity="{{this.item.rarityKey}}" style="{{this.item.cssVars}}" data-tooltip="{{this.item.name}}{{#if this.isOverLimit}} — {{localize 'AIM.attunement.overLimit'}}{{/if}}">
@@ -23,6 +24,7 @@
         <span class="aim-asock" data-tooltip="{{localize 'AIM.attunement.empty'}}"><i class="fa-light fa-sun"></i></span>
       {{/if}}
     {{/each}}
+    </div>
   </div>
 {{else}}
   <div class="tc-tray aim-strip">

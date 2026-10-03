@@ -162,8 +162,9 @@
   grid-template-columns: 256px 312px minmax(340px, 1fr) 364px 40px;
 }
 
-/* Screens too narrow for a drawer beside the strip: the passport steps aside (window-layout.js isCompact). */
-.actor-inventory-manager-app .aim-body[data-compact] {
+/* Screens too narrow for a drawer beside the strip: the passport steps aside (window-layout.js isCompact).
+   Compact only happens with a drawer open; matching [data-drawer] too lets this outrank the drawer layouts above. */
+.actor-inventory-manager-app .aim-body[data-drawer][data-compact] {
   grid-template-columns: 56px minmax(340px, 1fr) 364px 40px;
 }
 
@@ -171,10 +172,12 @@
   display: none;
 }
 
+/* One explicit track: content wider than the column (more attunement sockets, a long name) must not widen it. */
 .actor-inventory-manager-app .aim-col {
   min-height: 0;
   min-width: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .actor-inventory-manager-app .aim-scroll {

@@ -1,9 +1,18 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { filterAndSortInventoryItems } from "../scripts/ui/inventory-context.js";
+import { filterAndSortInventoryItems, isTopLevelItem } from "../scripts/ui/inventory-context.js";
 
 const item = (name, system) => ({ name, type: "loot", system });
+
+describe("top-level items", () => {
+  it("include items whose container was deleted, as the dnd5e sheet shows them", () => {
+    const items = new Map([["bag", { id: "bag", system: {} }]]);
+    assert.equal(isTopLevelItem({ system: {} }, items), true);
+    assert.equal(isTopLevelItem({ system: { container: "bag" } }, items), false);
+    assert.equal(isTopLevelItem({ system: { container: "gone" } }, items), true);
+  });
+});
 
 describe("inventory sorting", () => {
   it("ranks rarity from rarest down, not alphabetically", () => {

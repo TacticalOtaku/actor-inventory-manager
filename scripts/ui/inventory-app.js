@@ -60,6 +60,7 @@ export const AIM_TEMPLATES = [
   `modules/${MODULE_ID}/templates/parts/slot.hbs`,
   `modules/${MODULE_ID}/templates/parts/inventory-grid.hbs`,
   `modules/${MODULE_ID}/templates/parts/container-view.hbs`,
+  `modules/${MODULE_ID}/templates/parts/item-row.hbs`,
   `modules/${MODULE_ID}/templates/parts/spells-actions.hbs`,
   `modules/${MODULE_ID}/templates/editor/paperdoll-editor.hbs`,
   `modules/${MODULE_ID}/templates/editor/slot-config-dialog.hbs`
@@ -88,6 +89,16 @@ const SEARCH_DEBOUNCE_MS = 180;
 
 /** Delay used to coalesce bursts of document hooks into one render. */
 const RENDER_COALESCE_MS = 40;
+
+/** Inventory category tabs and their Font Awesome Light icons. */
+const INVENTORY_TABS = Object.freeze([
+  { id: "all", icon: "fa-boxes-stacked" },
+  { id: "weapons", icon: "fa-sword" },
+  { id: "armor", icon: "fa-shield-halved" },
+  { id: "consumables", icon: "fa-flask" },
+  { id: "containers", icon: "fa-box-archive" },
+  { id: "loot", icon: "fa-coins" }
+].map(Object.freeze));
 
 /** Coin denominations in the purse, richest first. */
 const COIN_KEYS = Object.freeze(["pp", "gp", "ep", "sp", "cp"]);
@@ -306,6 +317,8 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       items: displayItems,
       containers: containerTrees,
       hasContainers: containerTrees.length > 0,
+      showContainers: containerTrees.length > 0 && (this.currentTab === "all" || this.currentTab === "containers"),
+      inventoryTabs: INVENTORY_TABS,
       currentTab: this.currentTab,
       counts,
       ...themeContext,
@@ -373,7 +386,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     const items = children
       .filter(i => !isContainerItem(i))
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map(i => ({ ...formatItemForDisplay(i), canEdit }));
+      .map(i => ({ ...formatItemForDisplay(i), canEdit, nested: true }));
 
     const reductionPct = getContainerWeightReductionPct(container);
     // Weighty Containers owns the adjusted load: it applies the reduction and
@@ -484,6 +497,15 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       sortSelect.addEventListener("change", e => {
         this.sortBy = e.target.value;
         this.render();
+      });
+    }
+
+    // Container heads are role="button" divs: Enter and Space open them like a click.
+    for (const head of this.element.querySelectorAll(".aim-box-head")) {
+      head.addEventListener("keydown", event => {
+        if (event.target !== head || (event.key !== "Enter" && event.key !== " ")) return;
+        event.preventDefault();
+        head.click();
       });
     }
 

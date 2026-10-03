@@ -326,3 +326,30 @@ describe("formatActivationLabel", () => {
     assert.equal(formatActivationLabel({ type: "legendary", value: 2, config: { label: "Legendary Action" } }), "2 Legendary Action");
   });
 });
+
+describe("formatItemForDisplay rarity label", () => {
+  afterEach(() => {
+    delete globalThis.game;
+  });
+
+  function world() {
+    stubDnd5eConfig();
+    // dnd5e 5.3.3 pre-localizes CONFIG.DND5E.itemRarity: the values are display strings by ready time.
+    globalThis.CONFIG.DND5E.itemRarity = { common: "Common", uncommon: "Uncommon", veryRare: "Very Rare" };
+    globalThis.game = { settings: { get: () => false }, i18n: { localize: key => key } };
+  }
+
+  it("names the rarity from the system config", () => {
+    world();
+    const cloak = { id: "a", name: "Cloak", type: "equipment", system: { rarity: "veryRare", quantity: 1 } };
+    assert.equal(formatItemForDisplay(cloak).rarityLabel, "Very Rare");
+  });
+
+  it("stays quiet for common items and rarities the system does not know", () => {
+    world();
+    const rope = { id: "b", name: "Rope", type: "loot", system: { rarity: "common", quantity: 1 } };
+    const relic = { id: "c", name: "Relic", type: "loot", system: { rarity: "mythic", quantity: 1 } };
+    assert.equal(formatItemForDisplay(rope).rarityLabel, "");
+    assert.equal(formatItemForDisplay(relic).rarityLabel, "");
+  });
+});

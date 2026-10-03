@@ -59,6 +59,18 @@ function resolvePrimaryClassName(actor) {
 }
 
 /**
+ * Display name of an item rarity, empty for common items and rarities the system does not define
+ * (custom ones added by rarity-colour modules). dnd5e 5.3.3 pre-localizes CONFIG.DND5E.itemRarity.
+ * @param {string} rarityKey  normalized key, e.g. "veryRare"
+ * @returns {string}
+ */
+function rarityLabel(rarityKey) {
+  if (!rarityKey || rarityKey === "common") return "";
+  const label = getDnd5eConfig().itemRarity?.[rarityKey];
+  return typeof label === "string" ? localizeOr(label, label) : "";
+}
+
+/**
  * Extract vital character statistics for the RPG panel
  * @param {Object} actor
  * @returns {Object}
@@ -202,6 +214,7 @@ export function formatItemForDisplay(item) {
     type: item.type,
     rarity,
     rarityKey: rarityVisuals.rarityKey,
+    rarityLabel: rarityLabel(rarityVisuals.rarityKey),
     rarityColor,
     rarityGlowColor: rarityVisuals.glowColor,
     hasGlow,

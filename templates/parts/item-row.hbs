@@ -1,0 +1,27 @@
+{{!-- One inventory row, shared by the main list and container trays; `nested` is set inside containers. --}}
+<div class="aim-row {{#if isEquipped}}is-equipped{{/if}}" data-flip-id="{{id}}" data-rarity="{{rarityKey}}" style="{{cssVars}}"
+     {{#if canEdit}}data-drag-item="true"{{/if}} data-item-id="{{id}}" data-item-uuid="{{uuid}}">
+  <span class="aim-thumb" data-action="openItem" data-item-id="{{id}}">
+    <img src="{{img}}" alt="{{name}}">
+    {{#if hasMultiple}}<span class="aim-thumb-qty">{{quantity}}</span>{{/if}}
+  </span>
+  <div class="aim-row-text" data-action="openItem" data-item-id="{{id}}">
+    <div class="aim-row-l1"><b>{{name}}</b>
+      {{#if isAttuned}}<span class="tc-pill"><i class="fa-solid fa-sun"></i>{{localize "AIM.items.attuned"}}</span>
+      {{else if requiresAttunement}}<span class="tc-pill is-warn" data-tooltip="{{localize 'AIM.items.requiresAttunement'}}"><i class="fa-light fa-sun"></i>{{localize "AIM.items.requiresAttunementShort"}}</span>{{/if}}
+    </div>
+    <div class="aim-row-l2">{{#if rarityLabel}}<span class="aim-rar">{{rarityLabel}}</span><span class="aim-sep">·</span>{{/if}}<span>{{weightDisplay}}</span>{{#if priceDisplay}}<span class="aim-sep">·</span><span>{{priceDisplay}}</span>{{/if}}{{#each properties}}<span class="tc-chip">{{this}}</span>{{/each}}</div>
+  </div>
+  {{#if canEdit}}
+    <div class="aim-row-ctrls aim-edit">
+      {{#if canEquip}}{{#unless nested}}
+        <button type="button" class="tc-ibtn {{#if isEquipped}}is-on{{else}}is-hover{{/if}}" data-action="toggleEquip" data-item-id="{{id}}" aria-label="{{#if isEquipped}}{{localize 'AIM.actions.unequip'}}{{else}}{{localize 'AIM.actions.equip'}}{{/if}}: {{name}}" data-tooltip="{{#if isEquipped}}{{localize 'AIM.actions.unequip'}}{{else}}{{localize 'AIM.actions.equip'}}{{/if}}"><i class="{{#if isEquipped}}fa-solid{{else}}fa-light{{/if}} fa-shield-halved"></i></button>
+      {{/unless}}{{/if}}
+      {{#if requiresAttunement}}
+        <button type="button" class="tc-ibtn {{#if isAttuned}}is-on{{else}}is-hover{{/if}}" data-action="toggleAttune" data-item-id="{{id}}" aria-label="{{#if isAttuned}}{{localize 'AIM.attunement.break'}}{{else}}{{localize 'AIM.attunement.attune'}}{{/if}}: {{name}}" data-tooltip="{{#if isAttuned}}{{localize 'AIM.attunement.break'}}{{else}}{{localize 'AIM.attunement.attune'}}{{/if}}"><i class="{{#if isAttuned}}fa-solid{{else}}fa-light{{/if}} fa-sun"></i></button>
+      {{/if}}
+      <button type="button" class="tc-ibtn is-hover" data-action="useItem" data-item-id="{{id}}" aria-label="{{localize 'AIM.actions.use'}}: {{name}}" data-tooltip="{{localize 'AIM.actions.use'}}"><i class="fa-light fa-dice-d20"></i></button>
+      <button type="button" class="tc-ibtn is-hover is-danger" data-action="deleteItem" data-item-id="{{id}}" aria-label="{{localize 'AIM.actions.delete'}}: {{name}}" data-tooltip="{{localize 'AIM.actions.delete'}}"><i class="fa-light fa-trash-can"></i></button>
+    </div>
+  {{/if}}
+</div>

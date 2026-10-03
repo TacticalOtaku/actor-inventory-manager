@@ -156,19 +156,18 @@
 }
 
 /* --- Load with tier thresholds --- */
+/* The tier drops to its own line rather than truncate the numbers (long Russian tier names). */
 .actor-inventory-manager-app .aim-load-head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
-  gap: 8px;
+  gap: 4px 8px;
   margin: 8px 0;
   white-space: nowrap;
 }
 
 .actor-inventory-manager-app .aim-load-head > b {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
   font: 600 12.5px var(--tc-font-mono);
 }
 

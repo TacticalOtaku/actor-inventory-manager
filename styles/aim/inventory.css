@@ -18,6 +18,13 @@
   flex: 1;
 }
 
+/* Foundry stretches selects to the full width; the sort menu takes only what it needs. */
+.actor-inventory-manager-app .aim-filters .tc-select {
+  flex: none;
+  width: auto;
+  max-width: 45%;
+}
+
 .actor-inventory-manager-app .aim-list {
   padding: 6px;
   isolation: isolate;

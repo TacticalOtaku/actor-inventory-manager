@@ -89,6 +89,9 @@ const SEARCH_DEBOUNCE_MS = 180;
 /** Delay used to coalesce bursts of document hooks into one render. */
 const RENDER_COALESCE_MS = 40;
 
+/** Coin denominations in the purse, richest first. */
+const COIN_KEYS = Object.freeze(["pp", "gp", "ep", "sp", "cp"]);
+
 /** Shown in place of item art that fails to load. */
 const BROKEN_IMAGE_FALLBACK = "icons/svg/item-bag.svg";
 
@@ -292,6 +295,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       isSidePanelOpen: Boolean(drawer),
       hasTradeSession: tradeActor && Boolean(sessionFor(actor.id)),
       vitals,
+      coinKeys: COIN_KEYS,
       encumbrance,
       paperdollSlots: allSlots,
       leftSlots: allSlots.filter(s => s.column === "left"),

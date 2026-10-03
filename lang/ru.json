@@ -91,7 +91,7 @@
     },
     "vitals": {
       "level": "Уровень",
-      "hp": "Хиты (HP)",
+      "hp": "Хиты",
       "ac": "КД",
       "init": "Иниц.",
       "speed": "Скорость",
@@ -108,6 +108,17 @@
         "swim": "Плавание",
         "climb": "Лазание",
         "burrow": "Копание"
+      },
+      "tempShort": "врем.",
+      "speedShort": "Скор.",
+      "passives": "Пассивные",
+      "abilityAbbr": {
+        "str": "СИЛ",
+        "dex": "ЛОВ",
+        "con": "ТЕЛ",
+        "int": "ИНТ",
+        "wis": "МДР",
+        "cha": "ХАР"
       }
     },
     "theme": {
@@ -134,7 +145,8 @@
       "gpAbbr": "ЗМ",
       "epAbbr": "ЭМ",
       "spAbbr": "СМ",
-      "cpAbbr": "ММ"
+      "cpAbbr": "ММ",
+      "purse": "Кошель"
     },
     "templates": {
       "dnd2024": {
@@ -242,7 +254,9 @@
       "delete": "Удалить предмет",
       "shortRest": "Короткий отдых",
       "longRest": "Длинный отдых",
-      "close": "Закрыть"
+      "close": "Закрыть",
+      "shortRestShort": "Короткий",
+      "longRestShort": "Долгий"
     },
     "attunement": {
       "title": "Настроенные предметы",

@@ -108,6 +108,17 @@
         "swim": "Swim",
         "climb": "Climb",
         "burrow": "Burrow"
+      },
+      "tempShort": "temp",
+      "speedShort": "Speed",
+      "passives": "Passive",
+      "abilityAbbr": {
+        "str": "STR",
+        "dex": "DEX",
+        "con": "CON",
+        "int": "INT",
+        "wis": "WIS",
+        "cha": "CHA"
       }
     },
     "theme": {
@@ -134,7 +145,8 @@
       "gpAbbr": "GP",
       "epAbbr": "EP",
       "spAbbr": "SP",
-      "cpAbbr": "CP"
+      "cpAbbr": "CP",
+      "purse": "Purse"
     },
     "templates": {
       "dnd2024": {
@@ -242,7 +254,9 @@
       "delete": "Delete Item",
       "shortRest": "Short Rest",
       "longRest": "Long Rest",
-      "close": "Close"
+      "close": "Close",
+      "shortRestShort": "Short",
+      "longRestShort": "Long"
     },
     "attunement": {
       "title": "Attuned Items",

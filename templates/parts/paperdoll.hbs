@@ -4,8 +4,9 @@
     {{#if isGM}}<button type="button" class="tc-ibtn" data-action="openPaperdollEditor" aria-label="{{localize 'AIM.editor.openTooltip'}}" data-tooltip="{{localize 'AIM.editor.openTooltip'}}"><i class="fa-light fa-sliders"></i></button>{{/if}}
     <button type="button" class="tc-ibtn" data-action="togglePaperdoll" aria-label="{{localize 'AIM.paperdoll.collapseTooltip'}}" data-tooltip="{{localize 'AIM.paperdoll.collapseTooltip'}}"><i class="fa-light fa-chevron-left"></i></button>
   </div>
-  <div class="tc-tray aim-stage aim-scroll" {{#if showActorPortraitBackdrop}}style="--aim-portrait: {{actorImgCss}};"{{/if}}>
-    {{#if showActorPortraitBackdrop}}<div class="aim-stage-portrait" aria-hidden="true"></div>{{/if}}
+  <div class="tc-tray aim-stage aim-scroll">
+    {{!-- Set on the element itself: a url() passed through a custom property resolves against the stylesheet, not the page. --}}
+    {{#if showActorPortraitBackdrop}}<div class="aim-stage-portrait" style="background-image: {{actorImgCss}};" aria-hidden="true"></div>{{/if}}
     <div class="aim-scol is-left">{{#each leftSlots}}{{> "modules/actor-inventory-manager/templates/parts/slot.hbs" this}}{{/each}}</div>
     <div class="aim-scol is-center">{{#each centerSlots}}{{> "modules/actor-inventory-manager/templates/parts/slot.hbs" this}}{{/each}}</div>
     <div class="aim-scol is-right">{{#each rightSlots}}{{> "modules/actor-inventory-manager/templates/parts/slot.hbs" this}}{{/each}}</div>

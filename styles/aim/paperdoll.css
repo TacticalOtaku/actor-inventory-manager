@@ -61,7 +61,9 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: var(--aim-portrait) center top / cover no-repeat;
+  background-position: center top;
+  background-size: cover;
+  background-repeat: no-repeat;
   opacity: 0.14;
   filter: grayscale(0.4);
   -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent);

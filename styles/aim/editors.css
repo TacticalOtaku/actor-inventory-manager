@@ -361,6 +361,28 @@
   font-size: 13px;
 }
 
+/* Controls float over the card's right end, so the hidden buttons never cut the slot name short. */
+.actor-inventory-manager-app .aim-editor-slot-card {
+  grid-template-columns: 32px minmax(0, 1fr);
+}
+
+.actor-inventory-manager-app .aim-editor-slot-card .aim-row-ctrls {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  padding-left: 18px;
+  border-radius: 0 var(--tc-r-row) var(--tc-r-row) 0;
+  background: linear-gradient(to right, transparent, var(--tc-surface) 18px);
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity 160ms var(--tc-ease);
+}
+
+.actor-inventory-manager-app .aim-editor-slot-card:hover .aim-row-ctrls,
+.actor-inventory-manager-app .aim-editor-slot-card:focus-within .aim-row-ctrls {
+  opacity: 1;
+}
+
 .actor-inventory-manager-app .aim-editor-slot-card .aim-row-ctrls .tc-ibtn {
   width: 26px;
   height: 26px;

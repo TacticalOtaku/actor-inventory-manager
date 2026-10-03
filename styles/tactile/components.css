@@ -4,7 +4,9 @@
 
 /* Foundry's own button and input styles leak into application windows. Zero specificity, so primitives win;
    module stylesheets sit in Foundry's `modules` cascade layer, above its element styles. */
-:where(.tc-root) :where(button, input, select) { font: inherit; color: inherit; margin: 0; }
+/* Buttons that are themselves Font Awesome icons (Foundry's header controls) keep the icon font. */
+:where(.tc-root) :where(button, input, select):not(:where([class*="fa-"])) { font: inherit; }
+:where(.tc-root) :where(button, input, select) { color: inherit; margin: 0; }
 :where(.tc-root) :where(button) { background: none; border: 0; min-height: 0; line-height: normal; box-shadow: none; }
 .tc-root :focus-visible { outline: 2px solid var(--tc-accent); outline-offset: 2px; }
 

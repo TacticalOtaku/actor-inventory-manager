@@ -62,6 +62,14 @@ describe("shields", () => {
     const result = equipmentRuleEngine.validateEquip(actor, actor.items.get("tower"), "mainHand");
     assert.equal(result.code, "SHIELD_ALREADY_EQUIPPED");
   });
+
+  it("do not push a held two-handed weapon out of the main hand", () => {
+    const actor = makeActor([weapon("greataxe", ["two"], true, "mainHand"), shield("buckler")]);
+    const buckler = actor.items.get("buckler");
+    const slotId = findEquipSlot(actor, buckler);
+    assert.equal(slotId, "offHand");
+    assert.equal(equipmentRuleEngine.validateEquip(actor, buckler, slotId).code, "OFFHAND_BLOCKED_BY_2H");
+  });
 });
 
 describe("single per actor", () => {

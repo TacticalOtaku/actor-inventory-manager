@@ -16,6 +16,7 @@ import {
   extractActorVitals,
   extractSpellSlots,
   formatItemForDisplay,
+  getContainerContentsCount,
   getSystemWeightUnit,
   toggleSpellPreparation,
   updateSpellSlot
@@ -32,14 +33,17 @@ import { LOG } from "../foundry/logger.js";
 import { getActorPaperdollTemplate } from "../core/paperdoll-templates.js";
 import { openPaperdollEditor } from "./paperdoll-editor.js";
 import { DragDropController } from "./drag-drop-controller.js";
-import { animateMeterChanges, readMeterWidths } from "./meter-motion.js";
+import { animateMeterChanges, readMeterWidths, shouldReduceMotion } from "./meter-motion.js";
+import { isCompact, isDollOpen, resolveMinimumWidth, resolveWindowWidth, toggleDoll, toggleDrawer } from "./window-layout.js";
+import { applyTactileTheme } from "./tactile-theme.js";
+import { bindPress, captureFlip, countTo, openWindow, playFlip, pop, refuse, slideIn } from "../tactile/motion.js";
 import { cssUrl, escapeHTML, isImagePath } from "./html.js";
 import {
   buildAttunementSlots,
   buildInventoryCounts,
   buildSpellsCounts,
   filterAndSortInventoryItems,
-  mustCollapsePaperdoll,
+  isTopLevelItem,
   resolveThemeContext
 } from "./inventory-context.js";
 import {
@@ -58,6 +62,7 @@ export const AIM_TEMPLATES = [
   `modules/${MODULE_ID}/templates/parts/slot.hbs`,
   `modules/${MODULE_ID}/templates/parts/inventory-grid.hbs`,
   `modules/${MODULE_ID}/templates/parts/container-view.hbs`,
+  `modules/${MODULE_ID}/templates/parts/item-row.hbs`,
   `modules/${MODULE_ID}/templates/parts/spells-actions.hbs`,
   `modules/${MODULE_ID}/templates/editor/paperdoll-editor.hbs`,
   `modules/${MODULE_ID}/templates/editor/slot-config-dialog.hbs`
@@ -87,79 +92,29 @@ const SEARCH_DEBOUNCE_MS = 180;
 /** Delay used to coalesce bursts of document hooks into one render. */
 const RENDER_COALESCE_MS = 40;
 
+/** Inventory category tabs and their Font Awesome Light icons. */
+const INVENTORY_TABS = Object.freeze([
+  { id: "all", icon: "fa-boxes-stacked" },
+  { id: "weapons", icon: "fa-sword" },
+  { id: "armor", icon: "fa-shield-halved" },
+  { id: "consumables", icon: "fa-flask" },
+  { id: "containers", icon: "fa-box-archive" },
+  { id: "loot", icon: "fa-coins" }
+].map(Object.freeze));
+
+/** Grimoire sub-tabs and their Font Awesome Light icons. */
+const SPELLS_TABS = Object.freeze([
+  { id: "all", icon: "fa-layer-group" },
+  { id: "spells", icon: "fa-book-sparkles" },
+  { id: "actions", icon: "fa-bolt" },
+  { id: "passives", icon: "fa-shield-heart" }
+].map(Object.freeze));
+
+/** Coin denominations in the purse, richest first. */
+const COIN_KEYS = Object.freeze(["pp", "gp", "ep", "sp", "cp"]);
+
 /** Shown in place of item art that fails to load. */
 const BROKEN_IMAGE_FALLBACK = "icons/svg/item-bag.svg";
-
-/**
- * Preferred window width per layout, before clamping to the viewport.
- * Keyed by `${sidePanelOpen}|${paperdollCollapsed}`.
- */
-const WINDOW_WIDTHS = {
-  "true|false": 1502,
-  "true|true": 1202,
-  "false|false": 1102,
-  "false|true": 822
-};
-
-/**
- * Narrowest width at which each layout's grid columns still fit
- * (column minimums + gaps + padding + frame + the side rail, see actor-inventory.css).
- */
-const MIN_LAYOUT_WIDTHS = {
-  "true|false": 1292,
-  "true|true": 1042,
-  "false|false": 942,
-  "false|true": 692
-};
-
-/** Below this viewport width the trade layout hides the vitals column (CSS media query). */
-const NARROW_TRADE_VIEWPORT = 1050;
-const NARROW_TRADE_MIN_WIDTH = 692;
-
-const layoutKey = (sidePanelOpen, paperdollCollapsed) => `${Boolean(sidePanelOpen)}|${Boolean(paperdollCollapsed)}`;
-
-/**
- * Minimum window width for a layout.
- * @param {boolean} sidePanelOpen
- * @param {boolean} paperdollCollapsed
- * @param {boolean} [tradeOpen=false]
- * @returns {number}
- */
-export function resolveMinimumWidth(sidePanelOpen, paperdollCollapsed, tradeOpen = false) {
-  if (tradeOpen && paperdollCollapsed && (globalThis.window?.innerWidth ?? Infinity) <= NARROW_TRADE_VIEWPORT) {
-    return NARROW_TRADE_MIN_WIDTH;
-  }
-  return MIN_LAYOUT_WIDTHS[layoutKey(sidePanelOpen, paperdollCollapsed)] ?? 900;
-}
-
-/**
- * Resolve the window width for a layout: the preferred width, shrunk to the
- * viewport but never below the width the layout needs.
- * @param {boolean} spellsOpen
- * @param {boolean} paperdollCollapsed
- * @param {boolean} [tradeOpen=false]
- * @returns {number}
- */
-export function resolveWindowWidth(spellsOpen, paperdollCollapsed, tradeOpen = false) {
-  const preferred = WINDOW_WIDTHS[layoutKey(spellsOpen || tradeOpen, paperdollCollapsed)] ?? 1060;
-  const available = (globalThis.window?.innerWidth ?? preferred) - 40;
-  return Math.max(resolveMinimumWidth(spellsOpen || tradeOpen, paperdollCollapsed, tradeOpen), Math.min(preferred, available));
-}
-
-/**
- * Does the paperdoll have to fold away for an open side panel on this screen?
- * @param {boolean} sidePanelOpen
- * @param {boolean} paperdollCollapsed
- * @returns {boolean}
- */
-function paperdollMustMakeRoom(sidePanelOpen, paperdollCollapsed) {
-  return mustCollapsePaperdoll({
-    sidePanelOpen,
-    paperdollCollapsed,
-    availableWidth: (globalThis.window?.innerWidth ?? Infinity) - 40,
-    requiredWidth: MIN_LAYOUT_WIDTHS["true|false"]
-  });
-}
 
 /** DOM-safe window id for an actor, unique per token actor. */
 function appIdFor(actor) {
@@ -177,14 +132,14 @@ const InventoryApplicationBase = foundry.applications.api.HandlebarsApplicationM
 export class ActorInventoryApp extends InventoryApplicationBase {
   static DEFAULT_OPTIONS = {
     id: `${MODULE_ID}-app`,
-    classes: ["actor-inventory-manager-app", "rpg-theme"],
+    classes: ["actor-inventory-manager-app", "tc-root"],
     tag: "div",
     position: {
-      width: 1060,
+      width: 1080,
       height: 760
     },
     window: {
-      icon: "fa-solid fa-shirt",
+      icon: "fa-light fa-shirt",
       minimizable: true,
       resizable: true
     },
@@ -221,15 +176,16 @@ export class ActorInventoryApp extends InventoryApplicationBase {
         ".aim-items-scroll-area",
         ".aim-spells-scroll-area",
         ".aim-trade-scroll-area",
-        ".aim-vitals-panel",
-        ".aim-paperdoll-stage"
+        ".aim-passport-core",
+        ".aim-stage"
       ]
     }
   };
 
   constructor(actor, options = {}) {
     if (!isSupportedActor(actor)) throw new Error("AIM: unsupported actor");
-    const title = `${actor.name} - ${game.i18n.localize("AIM.app.title")}`;
+    // The header subtitle carries race, class and level (see _refreshHeader).
+    const title = actor.name;
     super({
       ...options,
       id: appIdFor(actor),
@@ -243,19 +199,14 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     this.sortBy = "name";
     this.collapsedContainers = new Set();
 
-    // Collapsible states loaded from actor flags
-    this.isPaperdollCollapsed = Boolean(actor.getFlag?.(MODULE_ID, FLAGS.PAPERDOLL_COLLAPSED));
-    this.isSpellsPanelOpen = Boolean(actor.getFlag?.(MODULE_ID, FLAGS.SPELLS_PANEL_OPEN));
+    // Drawer and paperdoll state (see window-layout.js); the doll preference and the grimoire persist per actor.
+    this.layout = {
+      drawer: actor.getFlag?.(MODULE_ID, FLAGS.SPELLS_PANEL_OPEN) ? "spells" : null,
+      dollCollapsed: Boolean(actor.getFlag?.(MODULE_ID, FLAGS.PAPERDOLL_COLLAPSED)),
+      dollBesideDrawer: false
+    };
     this.spellsTab = "all";
     this.spellsSearchFilter = "";
-    this.isTradePanelOpen = false;
-    // Set when a side panel collapsed the paperdoll to make room, so closing the panel restores it.
-    this._paperdollAutoCollapsed = false;
-    // A panel left open on a wider screen: fold the paperdoll for this session only.
-    if (paperdollMustMakeRoom(this.isSpellsPanelOpen, this.isPaperdollCollapsed)) {
-      this.isPaperdollCollapsed = true;
-      this._paperdollAutoCollapsed = true;
-    }
 
     this.dragDrop = new DragDropController(this);
     this._hooks = [];
@@ -264,6 +215,18 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   /** May the current user change this actor? */
   get canEdit() {
     return canEditActor(this.actor, game.user);
+  }
+
+  get isSpellsPanelOpen() {
+    return this.layout.drawer === "spells";
+  }
+
+  get isTradePanelOpen() {
+    return this.layout.drawer === "trade" && isTradeActor(this.actor);
+  }
+
+  get isPaperdollCollapsed() {
+    return !isDollOpen(this.layout);
   }
 
   async _prepareContext(options) {
@@ -308,7 +271,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     const attunementSlots = buildAttunementSlots(actorItems, getActorAttunementMax(actor), formatItemForDisplay);
 
     // Top-level physical items (exclude feats, spells, classes, races and anything inside a bag)
-    const allPhysicalItems = actorItems.filter(i => isPhysicalItem(i) && !i.system?.container);
+    const allPhysicalItems = actorItems.filter(i => isPhysicalItem(i) && isTopLevelItem(i, actor.items));
     const containers = actorItems.filter(isContainerItem);
 
     const displayItems = filterAndSortInventoryItems(allPhysicalItems, {
@@ -318,7 +281,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     }).map(i => ({ ...formatItemForDisplay(i), canEdit }));
 
     // Container explorer: top-level bags, with nested bags rendered inside their parent.
-    const rootContainers = containers.filter(c => !c.system?.container || !actor.items.has(c.system.container));
+    const rootContainers = containers.filter(c => isTopLevelItem(c, actor.items));
     const containerTrees = rootContainers.map(container => this._buildContainerTree(actor, container, new Set(), canEdit));
 
     const counts = buildInventoryCounts(allPhysicalItems, containers);
@@ -339,25 +302,33 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     );
 
     const tradeActor = isTradeActor(actor);
+    const drawer = this.isTradePanelOpen ? "trade" : (this.isSpellsPanelOpen ? "spells" : null);
     const prepared = {
       ...context,
       actor,
       appId: this.id,
       canEdit,
       trade: buildTradeContext(this),
-      isTradePanelOpen: this.isTradePanelOpen && tradeActor,
-      isSidePanelOpen: this.isSpellsPanelOpen || (this.isTradePanelOpen && tradeActor),
+      drawer,
+      dollOpen: isDollOpen(this.layout),
+      compact: isCompact(this._effectiveLayout(), window.innerWidth),
+      isTradePanelOpen: this.isTradePanelOpen,
+      isSidePanelOpen: Boolean(drawer),
       hasTradeSession: tradeActor && Boolean(sessionFor(actor.id)),
       vitals,
+      coinKeys: COIN_KEYS,
       encumbrance,
       paperdollSlots: allSlots,
       leftSlots: allSlots.filter(s => s.column === "left"),
       centerSlots: allSlots.filter(s => s.column === "center"),
       rightSlots: allSlots.filter(s => s.column === "right"),
+      occupiedSlots: allSlots.map(s => ({ id: s.id, label: s.label, hasItem: s.hasItem })),
       attunementSlots,
       items: displayItems,
       containers: containerTrees,
       hasContainers: containerTrees.length > 0,
+      showContainers: containerTrees.length > 0 && (this.currentTab === "all" || this.currentTab === "containers"),
+      inventoryTabs: INVENTORY_TABS,
       currentTab: this.currentTab,
       counts,
       ...themeContext,
@@ -373,6 +344,10 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       isPaperdollCollapsed: this.isPaperdollCollapsed,
       isSpellsPanelOpen: this.isSpellsPanelOpen,
       spellsTab: this.spellsTab,
+      spellsTabs: SPELLS_TABS,
+      showSpells: this.spellsTab === "all" || this.spellsTab === "spells",
+      showActions: this.spellsTab === "all" || this.spellsTab === "actions",
+      showPassives: this.spellsTab === "all" || this.spellsTab === "passives",
       spellsSearchFilter: this.spellsSearchFilter,
       spellSlots,
       spellGroups,
@@ -425,7 +400,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     const items = children
       .filter(i => !isContainerItem(i))
       .sort((a, b) => a.name.localeCompare(b.name))
-      .map(i => ({ ...formatItemForDisplay(i), canEdit }));
+      .map(i => ({ ...formatItemForDisplay(i), canEdit, nested: true }));
 
     const reductionPct = getContainerWeightReductionPct(container);
     // Weighty Containers owns the adjusted load: it applies the reduction and
@@ -456,31 +431,89 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     };
   }
 
+  _getFrameButtons(options) {
+    return [
+      ...super._getFrameButtons(options),
+      { icon: "fa-light fa-circle-half-stroke", label: "AIM.theme.toggle", action: "toggleTheme" }
+    ];
+  }
+
+  /** Header identity: portrait with the level badge before the title, the subtitle and read-only tag after it. */
+  async _renderFrame(options) {
+    const frame = await super._renderFrame(options);
+    const title = frame.querySelector(".window-title");
+    if (title) {
+      title.insertAdjacentHTML("beforebegin", '<span class="aim-head-avatar" aria-hidden="true"><img alt=""><b hidden></b></span>');
+      const readOnly = escapeHTML(game.i18n.localize("AIM.app.readOnly"));
+      title.insertAdjacentHTML("afterend",
+        `<span class="aim-head-sub"></span><span class="aim-head-ro" hidden><i class="fa-light fa-eye"></i>${readOnly}</span>`);
+    }
+    return frame;
+  }
+
+  /**
+   * Refresh the header identity; the frame outlives every render.
+   * @param {Object} vitals
+   * @param {boolean} canEdit
+   */
+  _refreshHeader(vitals, canEdit) {
+    const header = this.element?.querySelector(".window-header");
+    if (!header || !vitals) return;
+    const img = header.querySelector(".aim-head-avatar img");
+    if (img && vitals.img && img.getAttribute("src") !== vitals.img) img.src = vitals.img;
+    const badge = header.querySelector(".aim-head-avatar b");
+    if (badge) {
+      badge.textContent = vitals.level ? String(vitals.level) : "";
+      badge.hidden = !vitals.level;
+    }
+    const sub = header.querySelector(".aim-head-sub");
+    if (sub) {
+      const classLine = [vitals.className, vitals.level].filter(Boolean).join(" ");
+      sub.textContent = [vitals.race, vitals.alignment, classLine].filter(Boolean).join(" · ");
+    }
+    const readOnly = header.querySelector(".aim-head-ro");
+    if (readOnly) readOnly.hidden = canEdit;
+  }
+
   async _onFirstRender(context, options) {
     await super._onFirstRender(context, options);
     this._bindBrokenImageFallback();
     this._bindActorHooks();
+    bindPress(this.element, () => shouldReduceMotion(window));
+    openWindow(this.element, { reduce: shouldReduceMotion(window) });
   }
 
   async _preRender(context, options) {
     await super._preRender(context, options);
     // Read while the old DOM is still in place; played back in _onRender.
     this._meterWidths = readMeterWidths(this.element);
+    const root = this.element;
+    this._motionBefore = {
+      hp: Number(root?.querySelector('[data-count="hp"]')?.textContent),
+      ac: Number(root?.querySelector('[data-count="ac"]')?.textContent),
+      slots: new Map([...(root?.querySelectorAll(".aim-slot[data-slot-id]") ?? [])]
+        .map(slot => [slot.dataset.slotId, slot.querySelector(".aim-sock[data-item-id]")?.dataset.itemId ?? ""])),
+      // Rows move to their new places only after a tab, search or sort change.
+      flip: this._flipNext ? captureFlip(root?.querySelector(".aim-list")) : null
+    };
+    this._flipNext = false;
   }
 
   async _onRender(context, options) {
     await super._onRender(context, options);
     animateMeterChanges(this.element, this._meterWidths);
+    if (!options.isFirstRender) this._playRenderMotion(context);
     if (this.canEdit) this.dragDrop.bind(this.element);
     else this.dragDrop.unbind();
     bindTradeInputs(this);
 
     // Apply active theme attribute
     this._applyTheme(context.theme || "dark");
+    this._refreshHeader(context.vitals, context.canEdit);
 
     // Search input bindings. Re-rendering on every keystroke is wasteful and
     // fights the caret, so filtering is debounced.
-    this._bindSearchInput("[data-search-input]", value => { this.searchFilter = value; });
+    this._bindSearchInput("[data-search-input]", value => { this.searchFilter = value; this._flipNext = true; });
     this._bindSearchInput("[data-spells-search]", value => { this.spellsSearchFilter = value; });
 
     // Sort select binding
@@ -488,7 +521,17 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     if (sortSelect) {
       sortSelect.addEventListener("change", e => {
         this.sortBy = e.target.value;
+        this._flipNext = true;
         this.render();
+      });
+    }
+
+    // Container heads are role="button" divs: Enter and Space open them like a click.
+    for (const head of this.element.querySelectorAll(".aim-box-head")) {
+      head.addEventListener("keydown", event => {
+        if (event.target !== head || (event.key !== "Enter" && event.key !== " ")) return;
+        event.preventDefault();
+        head.click();
       });
     }
 
@@ -518,8 +561,13 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   }
 
   _minimumWidth() {
-    const tradeOpen = this.isTradePanelOpen && isTradeActor(this.actor);
-    return resolveMinimumWidth(this.isSpellsPanelOpen || tradeOpen, this.isPaperdollCollapsed, tradeOpen);
+    return resolveMinimumWidth(this._effectiveLayout(), window.innerWidth);
+  }
+
+  /** The layout as rendered: a trade drawer the actor cannot use counts as closed. */
+  _effectiveLayout() {
+    if (this.layout.drawer === "trade" && !isTradeActor(this.actor)) return { ...this.layout, drawer: null };
+    return this.layout;
   }
 
   /**
@@ -562,13 +610,43 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   }
 
   /**
-   * Stamp the theme on the window root.
+   * Motion after a re-render: changed numbers count, newly filled slots settle,
+   * rows slide from their old places and a freshly opened drawer arrives.
+   * @param {Object} context
+   */
+  _playRenderMotion(context) {
+    const reduce = shouldReduceMotion(window);
+    const before = this._motionBefore ?? {};
+    const root = this.element;
+    countTo(root.querySelector('[data-count="hp"]'), before.hp, context.vitals?.hp?.value, { reduce });
+    countTo(root.querySelector('[data-count="ac"]'), before.ac, context.vitals?.ac, { reduce });
+    for (const slot of root.querySelectorAll(".aim-slot[data-slot-id]")) {
+      const itemId = slot.querySelector(".aim-sock[data-item-id]")?.dataset.itemId ?? "";
+      if (itemId && before.slots?.has(slot.dataset.slotId) && before.slots.get(slot.dataset.slotId) !== itemId) {
+        pop(slot.querySelector(".aim-sock"), { reduce });
+      }
+    }
+    playFlip(before.flip, { reduce, root: root.querySelector(".aim-list") });
+    if (this._drawerJustOpened) slideIn(root.querySelector(".aim-drawer"), { reduce });
+    this._drawerJustOpened = false;
+  }
+
+  /**
+   * A rule refused the change: shake the element it was aimed at.
+   * Called by the drag-and-drop controller too, which stays free of motion code.
+   * @param {Element|null} element
+   */
+  _refuse(element) {
+    refuse(element, { reduce: shouldReduceMotion(window) });
+  }
+
+  /**
+   * Stamp the theme and accent on the window root.
    *
-   * Panel colours come from CSS custom properties, and several rules transition
-   * `background`/`all`. A transition started by a custom-property change never
-   * settles on the new value, which used to leave panels painted in the previous
-   * theme until the window was reopened. Suppressing transitions across the swap
-   * makes the change atomic.
+   * Colours come from Tactile tokens, and controls transition `color` and
+   * `box-shadow`. A transition started by a custom-property change could settle
+   * on the previous theme's value (the old styles left panels painted that way),
+   * so transitions are suppressed across the swap to make it atomic.
    *
    * @param {string} theme
    */
@@ -577,7 +655,7 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     const changed = root.getAttribute("data-theme") !== theme;
     if (changed) root.classList.add("aim-no-transitions");
 
-    root.setAttribute("data-theme", theme);
+    applyTactileTheme(root, theme);
 
     if (!changed) return;
     void root.offsetHeight; // flush the suppressed styles before re-enabling
@@ -673,13 +751,14 @@ export class ActorInventoryApp extends InventoryApplicationBase {
     this._renderTimer = null;
     this.dragDrop.unbind();
     this._unbindActorHooks();
+    // Stay listed until closed, so a reopen during the closing animation can wait for it (openActorInventory).
+    await super.close(options);
     if (OPEN_INVENTORY_APPS.get(this.actorKey) === this) OPEN_INVENTORY_APPS.delete(this.actorKey);
-    return super.close(options);
+    return this;
   }
 
   _syncWindowSize() {
-    const tradeOpen = this.isTradePanelOpen && isTradeActor(this.actor);
-    const targetWidth = resolveWindowWidth(this.isSpellsPanelOpen, this.isPaperdollCollapsed, tradeOpen);
+    const targetWidth = resolveWindowWidth(this._effectiveLayout(), window.innerWidth);
     const screenWidth = window.innerWidth;
     let newLeft = this.position.left;
 
@@ -701,37 +780,34 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   }
 
   /**
-   * Open or close a side panel, collapsing the paperdoll while it is open
-   * when both do not fit on the screen, and restoring it afterwards.
-   * @param {boolean} opening
+   * Open, switch or close a side drawer. The drawer takes the paperdoll's place, so the doll folds
+   * into its strip while a drawer is open and comes back when it closes.
+   * @param {"spells"|"trade"} name
    */
-  _makeRoomForSidePanel(opening) {
-    if (opening) {
-      if (paperdollMustMakeRoom(true, this.isPaperdollCollapsed)) {
-        this.isPaperdollCollapsed = true;
-        this._paperdollAutoCollapsed = true;
-      }
-    } else if (this._paperdollAutoCollapsed) {
-      this.isPaperdollCollapsed = false;
-      this._paperdollAutoCollapsed = false;
-    }
+  async _toggleDrawer(name) {
+    this._drawerJustOpened = this.layout.drawer !== name;
+    this.layout = toggleDrawer(this.layout, name);
+    this._syncWindowSize();
+    this.render();
+    await this._savePreference(FLAGS.SPELLS_PANEL_OPEN, this.layout.drawer === "spells");
   }
 
   // --- Static Action Handlers ---
 
   static _switchTab(event, target) {
     this.currentTab = target.dataset.tab;
+    this._flipNext = true;
     this.render();
   }
 
   static async _toggleEquip(event, target) {
     const item = this.actor.items.get(target.dataset.itemId);
-    if (item) await toggleItemEquipped(this.actor, item);
+    if (item && !(await toggleItemEquipped(this.actor, item))) this._refuse(target.closest(".aim-row, .aim-slot"));
   }
 
   static async _unequipSlot(event, target) {
     const item = getActorEquippedMap(this.actor).get(target.dataset.slotId);
-    if (item) await unequipItem(this.actor, item);
+    if (item && !(await unequipItem(this.actor, item))) this._refuse(target.closest(".aim-slot"));
   }
 
   static _openItem(event, target) {
@@ -746,22 +822,31 @@ export class ActorInventoryApp extends InventoryApplicationBase {
 
   static async _toggleAttune(event, target) {
     const item = this.actor.items.get(target.dataset.itemId);
-    if (item) await toggleAttunement(item);
+    if (item && !(await toggleAttunement(item))) this._refuse(target.closest(".aim-row, .aim-asock"));
   }
 
   static async _deleteItem(event, target) {
     const item = this.actor.items.get(target.dataset.itemId);
     if (!item || !assertCanEdit(this.actor)) return;
 
-    const confirmed = await foundry.applications.api.DialogV2.confirm({
+    // A container's contents stay behind unless the user asks dnd5e to delete them as well.
+    const contents = await getContainerContentsCount(item);
+    const contentsOption = contents
+      ? `<label class="checkbox"><input type="checkbox" name="deleteContents"> ${escapeHTML(game.i18n.format("AIM.dialogs.deleteItem.contents", { count: contents }))}</label>`
+      : "";
+    // DialogV2 resolves a nullish callback result to the button's action name, so only "yes" returns an object.
+    const choice = await foundry.applications.api.DialogV2.confirm({
       window: { title: game.i18n.localize("AIM.dialogs.deleteItem.title") },
-      content: `<p>${game.i18n.format("AIM.dialogs.deleteItem.message", { item: escapeHTML(item.name) })}</p>`,
-      yes: { label: game.i18n.localize("AIM.dialogs.deleteItem.confirm") },
+      content: `<p>${game.i18n.format("AIM.dialogs.deleteItem.message", { item: escapeHTML(item.name) })}</p>${contentsOption}`,
+      yes: {
+        label: game.i18n.localize("AIM.dialogs.deleteItem.confirm"),
+        callback: (event, button) => ({ deleteContents: Boolean(button.form?.elements.deleteContents?.checked) })
+      },
       no: { label: game.i18n.localize("AIM.dialogs.deleteItem.cancel") },
       rejectClose: false
     });
 
-    if (confirmed) await item.delete();
+    if (choice?.deleteContents !== undefined) await item.delete({ deleteContents: choice.deleteContents });
   }
 
   static _toggleContainer(event, target) {
@@ -798,21 +883,18 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   }
 
   static async _togglePaperdoll() {
-    this.isPaperdollCollapsed = !this.isPaperdollCollapsed;
-    this._paperdollAutoCollapsed = false;
+    const before = this._effectiveLayout();
+    const { state, closedDrawer } = toggleDoll(before, window.innerWidth);
+    const savedChanged = state.dollCollapsed !== this.layout.dollCollapsed;
+    this.layout = state;
     this._syncWindowSize();
     this.render();
-    await this._savePreference(FLAGS.PAPERDOLL_COLLAPSED, this.isPaperdollCollapsed);
+    if (savedChanged) await this._savePreference(FLAGS.PAPERDOLL_COLLAPSED, state.dollCollapsed);
+    if (closedDrawer && before.drawer === "spells") await this._savePreference(FLAGS.SPELLS_PANEL_OPEN, false);
   }
 
   static async _toggleSpellsPanel() {
-    const wasTradeOpen = this.isTradePanelOpen;
-    this.isSpellsPanelOpen = !this.isSpellsPanelOpen;
-    if (this.isSpellsPanelOpen) this.isTradePanelOpen = false;
-    if (!wasTradeOpen || !this.isSpellsPanelOpen) this._makeRoomForSidePanel(this.isSpellsPanelOpen);
-    this._syncWindowSize();
-    this.render();
-    await this._savePreference(FLAGS.SPELLS_PANEL_OPEN, this.isSpellsPanelOpen);
+    await this._toggleDrawer("spells");
   }
 
   static _switchSpellsTab(event, target) {
@@ -821,14 +903,8 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   }
 
   static async _toggleTradePanel() {
-    if (!isTradeActor(this.actor)) return;
-    const wasSpellsOpen = this.isSpellsPanelOpen;
-    this.isTradePanelOpen = !this.isTradePanelOpen;
     // Drawer choice is local UI state, so observers need no actor write permission.
-    if (this.isTradePanelOpen) this.isSpellsPanelOpen = false;
-    if (!wasSpellsOpen || !this.isTradePanelOpen) this._makeRoomForSidePanel(this.isTradePanelOpen);
-    this._syncWindowSize();
-    this.render();
+    if (isTradeActor(this.actor)) await this._toggleDrawer("trade");
   }
 
   static async _tradeAction(event, target) {
@@ -868,13 +944,18 @@ export async function openActorInventory(actor) {
     existing.bringToFront();
     return existing;
   }
+  // Windows share an id per actor and Foundry registers them by id: a second copy started while the first
+  // is still opening is dropped by Foundry, and a closing copy unregisters the new one when its animation ends.
+  const { RENDER_STATES } = foundry.applications.api.ApplicationV2;
+  if (existing && existing.state >= RENDER_STATES.NONE) return existing;
+  if (existing?.state === RENDER_STATES.CLOSING) await existing.close();
 
   const height = Math.max(560, Math.min(760, window.innerHeight - 60));
   const top = Math.max(20, Math.round((window.innerHeight - height) / 2));
   const app = new ActorInventoryApp(actor, { position: { height, top } });
 
-  // Sized after construction: the window may have folded the paperdoll to fit the screen.
-  const width = resolveWindowWidth(app.isSpellsPanelOpen, app.isPaperdollCollapsed);
+  // Sized after construction: the layout comes from the actor's saved preferences.
+  const width = resolveWindowWidth(app._effectiveLayout(), window.innerWidth);
   const left = Math.max(20, Math.round((window.innerWidth - width) / 2));
   OPEN_INVENTORY_APPS.set(key, app);
   await app.render({ force: true, position: { width, left } });

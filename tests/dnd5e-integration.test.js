@@ -3,9 +3,11 @@ import { afterEach, describe, it } from "node:test";
 
 import {
   extractActorActions,
+  extractActorVitals,
   extractSpellSlots,
   formatActivationLabel,
   formatItemForDisplay,
+  getContainerContentsCount,
   resolveItemActivation,
   resolveItemUses,
   resolveSpellPreparation,
@@ -223,6 +225,58 @@ describe("extractActorActions", () => {
   });
 });
 
+describe("extractActorVitals", () => {
+  /**
+   * Plain stand-in for a dnd5e 5.3.3 character. `actor.classes` is a record of
+   * class items keyed by identifier; the class level is `system.levels`.
+   */
+  const makeActor = ({ hp = { value: 10, max: 10, temp: 0 }, movement = { walk: 30, units: "ft" }, classes } = {}) => ({
+    name: "Hero",
+    img: "hero.webp",
+    type: "character",
+    items: new Map(),
+    classes,
+    system: {
+      attributes: { hp, movement, attunement: { max: 3 } },
+      details: {},
+      currency: { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 }
+    }
+  });
+
+  it("exposes walking speed, temp-hp share and class for the passport", () => {
+    const actor = makeActor({
+      hp: { value: 58, max: 64, temp: 5 },
+      classes: { paladin: { name: "Паладин", system: { levels: 7 } } }
+    });
+    const vitals = extractActorVitals(actor);
+    assert.equal(vitals.speedWalk, 30);
+    assert.equal(vitals.speedUnit, "ft");
+    assert.equal(vitals.hp.tempPct, 98);
+    assert.equal(vitals.className, "Паладин");
+  });
+
+  it("clamps the temp-hp share to 0..100 and is 0 without a maximum", () => {
+    assert.equal(extractActorVitals(makeActor({ hp: { value: 60, max: 64, temp: 20 } })).hp.tempPct, 100);
+    assert.equal(extractActorVitals(makeActor({ hp: { value: -5, max: 64, temp: 0 } })).hp.tempPct, 0);
+    assert.equal(extractActorVitals(makeActor({ hp: { value: 0, max: 0, temp: 5 } })).hp.tempPct, 0);
+  });
+
+  it("names the class with the most levels and is empty without classes", () => {
+    const multiclass = makeActor({
+      classes: {
+        fighter: { name: "Fighter", system: { levels: 2 } },
+        wizard: { name: "Wizard", system: { levels: 5 } }
+      }
+    });
+    assert.equal(extractActorVitals(multiclass).className, "Wizard");
+    assert.equal(extractActorVitals(makeActor()).className, "");
+  });
+
+  it("defaults the walking speed to 30 when the actor has none", () => {
+    assert.equal(extractActorVitals(makeActor({ movement: {} })).speedWalk, 30);
+  });
+});
+
 describe("formatItemForDisplay weight", () => {
   afterEach(() => {
     delete globalThis.game;
@@ -271,5 +325,44 @@ describe("formatActivationLabel", () => {
   it("keeps the system label, with its count, for anything else", () => {
     globalThis.game = { i18n: { has: () => false, localize: key => key } };
     assert.equal(formatActivationLabel({ type: "legendary", value: 2, config: { label: "Legendary Action" } }), "2 Legendary Action");
+  });
+});
+
+describe("formatItemForDisplay rarity label", () => {
+  afterEach(() => {
+    delete globalThis.game;
+  });
+
+  function world() {
+    stubDnd5eConfig();
+    // dnd5e 5.3.3 pre-localizes CONFIG.DND5E.itemRarity: the values are display strings by ready time.
+    globalThis.CONFIG.DND5E.itemRarity = { common: "Common", uncommon: "Uncommon", veryRare: "Very Rare" };
+    globalThis.game = { settings: { get: () => false }, i18n: { localize: key => key } };
+  }
+
+  it("names the rarity from the system config", () => {
+    world();
+    const cloak = { id: "a", name: "Cloak", type: "equipment", system: { rarity: "veryRare", quantity: 1 } };
+    assert.equal(formatItemForDisplay(cloak).rarityLabel, "Very Rare");
+  });
+
+  it("stays quiet for common items and rarities the system does not know", () => {
+    world();
+    const rope = { id: "b", name: "Rope", type: "loot", system: { rarity: "common", quantity: 1 } };
+    const relic = { id: "c", name: "Relic", type: "loot", system: { rarity: "mythic", quantity: 1 } };
+    assert.equal(formatItemForDisplay(rope).rarityLabel, "");
+    assert.equal(formatItemForDisplay(relic).rarityLabel, "");
+  });
+});
+
+describe("container contents count", () => {
+  it("reads dnd5e 5.3.3's count, a number or a promise for compendium items", async () => {
+    assert.equal(await getContainerContentsCount({ type: "container", system: { contentsCount: 11 } }), 11);
+    assert.equal(await getContainerContentsCount({ type: "container", system: { contentsCount: Promise.resolve(2) } }), 2);
+  });
+
+  it("is zero for anything that is not a container", async () => {
+    assert.equal(await getContainerContentsCount({ type: "weapon", system: {} }), 0);
+    assert.equal(await getContainerContentsCount(null), 0);
   });
 });

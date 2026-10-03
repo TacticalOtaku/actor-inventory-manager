@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import {
   countAttunedItems,
   getActorAttunementMax,
+  getActorSourceAttunementMax,
   getAttunementStatus,
   isItemAttuned,
   itemRequiresAttunement
@@ -57,6 +58,17 @@ describe("attunement cap", () => {
 
   it("falls back to the paperdoll template without a system value", () => {
     assert.equal(getActorAttunementMax({ flags: {}, system: {} }), 3);
+  });
+
+  it("reads the stored cap from the source, without effect bonuses (dnd5e 5.3.3)", () => {
+    const actor = {
+      _source: { system: { attributes: { attunement: { max: 6 } } } },
+      system: { attributes: { attunement: { max: 7 } } }
+    };
+    assert.equal(getActorSourceAttunementMax(actor), 6);
+    assert.equal(getActorSourceAttunementMax({ _source: { system: { attributes: { attunement: { max: "" } } } } }), null);
+    assert.equal(getActorSourceAttunementMax({ _source: { system: {} } }), null);
+    assert.equal(getActorSourceAttunementMax(null), null);
   });
 
   it("shows every attuned item, even beyond the cap", () => {

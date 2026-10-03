@@ -43,6 +43,34 @@ export function getDnd5eConfig() {
 }
 
 /**
+ * Name of the actor's main class: the one with the most levels.
+ * dnd5e 5.3.3 exposes `actor.classes` as a record of class items keyed by
+ * identifier; a class item's level is `system.levels`.
+ * @param {Object} actor
+ * @returns {string}
+ */
+function resolvePrimaryClassName(actor) {
+  const classes = Object.values(actor?.classes ?? {});
+  let primary = null;
+  for (const cls of classes) {
+    if (!primary || num(cls?.system?.levels, 0) > num(primary.system?.levels, 0)) primary = cls;
+  }
+  return primary?.name ?? "";
+}
+
+/**
+ * Display name of an item rarity, empty for common items and rarities the system does not define
+ * (custom ones added by rarity-colour modules). dnd5e 5.3.3 pre-localizes CONFIG.DND5E.itemRarity.
+ * @param {string} rarityKey  normalized key, e.g. "veryRare"
+ * @returns {string}
+ */
+function rarityLabel(rarityKey) {
+  if (!rarityKey || rarityKey === "common") return "";
+  const label = getDnd5eConfig().itemRarity?.[rarityKey];
+  return typeof label === "string" ? localizeOr(label, label) : "";
+}
+
+/**
  * Extract vital character statistics for the RPG panel
  * @param {Object} actor
  * @returns {Object}
@@ -96,6 +124,10 @@ export function extractActorVitals(actor) {
     if (movement[mode]) speeds.push(`${localizeOr(`AIM.vitals.movement.${mode}`, label)} ${movement[mode]} ${speedUnit}`);
   }
   const speedDisplay = speeds.length > 0 ? speeds.join(", ") : `${movement.walk ?? 30} ${speedUnit}`;
+  const hpValue = num(hp.value, 0);
+  const hpMax = num(hp.max, 0);
+  const hpTemp = num(hp.temp, 0);
+  const sharePct = amount => (hpMax > 0 ? Math.min(100, Math.max(0, Math.round((amount / hpMax) * 100))) : 0);
 
   // Attunement calculation
   const attunedItemsCount = countAttunedItems(actor);
@@ -108,15 +140,20 @@ export function extractActorVitals(actor) {
     race,
     background,
     alignment,
+    className: resolvePrimaryClassName(actor),
     hp: {
-      value: num(hp.value, 0),
-      max: num(hp.max, 0),
-      temp: num(hp.temp, 0),
-      pct: hp.max > 0 ? Math.min(100, Math.max(0, Math.round((num(hp.value, 0) / num(hp.max, 0)) * 100))) : 0
+      value: hpValue,
+      max: hpMax,
+      temp: hpTemp,
+      pct: sharePct(hpValue),
+      // Where the temporary-HP band ends: current plus temporary, as a share of max.
+      tempPct: sharePct(hpValue + hpTemp)
     },
     ac,
     init: init >= 0 ? `+${init}` : `${init}`,
     speed: speedDisplay,
+    speedWalk: num(movement.walk, 30),
+    speedUnit,
     passives: {
       perception: passivePerception,
       insight: passiveInsight,
@@ -177,6 +214,7 @@ export function formatItemForDisplay(item) {
     type: item.type,
     rarity,
     rarityKey: rarityVisuals.rarityKey,
+    rarityLabel: rarityLabel(rarityVisuals.rarityKey),
     rarityColor,
     rarityGlowColor: rarityVisuals.glowColor,
     hasGlow,
@@ -594,3 +632,15 @@ export async function toggleSpellPreparation(spellItem) {
   return spellItem.update({ "system.prepared": prep.prepared >= 1 ? 0 : 1 });
 }
 
+/**
+ * How many items a container holds, nested containers and stack quantities included.
+ * dnd5e 5.3.3 exposes `system.contentsCount`, a promise for items inside a compendium. Deleting a
+ * container with `{ deleteContents: true }` makes dnd5e delete them too; otherwise they stay behind.
+ * @param {Object} item
+ * @returns {Promise<number>}
+ */
+export async function getContainerContentsCount(item) {
+  if (item?.type !== "container") return 0;
+  const count = Number(await item.system?.contentsCount);
+  return Number.isFinite(count) ? count : 0;
+}

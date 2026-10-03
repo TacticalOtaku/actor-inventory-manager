@@ -1,78 +1,38 @@
-<div class="aim-paperdoll-panel">
-  <div class="aim-paperdoll-header">
-    <div class="aim-gothic-title">
-      <span class="aim-title-wing left"></span>
-      <h3><i class="fa-solid fa-person-military-rifle"></i> {{localize "AIM.paperdoll.title"}}</h3>
-      <div class="aim-paperdoll-header-controls">
-        {{#if isGM}}
-          <button type="button" class="aim-gm-editor-btn" data-action="openPaperdollEditor" title="{{localize 'AIM.editor.openTooltip'}}">
-            <i class="fa-solid fa-gear"></i>
-          </button>
-        {{/if}}
-        <button type="button" class="aim-collapse-paperdoll-btn" data-action="togglePaperdoll" title="{{localize 'AIM.paperdoll.collapseTooltip'}}">
-          <i class="fa-solid fa-chevron-left"></i>
-        </button>
-      </div>
-      <span class="aim-title-wing right"></span>
+{{#if dollOpen}}
+  <div class="aim-doll-head">
+    <span class="tc-lbl">{{localize "AIM.paperdoll.title"}}</span>
+    {{#if isGM}}<button type="button" class="tc-ibtn" data-action="openPaperdollEditor" aria-label="{{localize 'AIM.editor.openTooltip'}}" data-tooltip="{{localize 'AIM.editor.openTooltip'}}"><i class="fa-light fa-sliders"></i></button>{{/if}}
+    <button type="button" class="tc-ibtn" data-action="togglePaperdoll" aria-label="{{localize 'AIM.paperdoll.collapseTooltip'}}" data-tooltip="{{localize 'AIM.paperdoll.collapseTooltip'}}"><i class="fa-light fa-chevron-left"></i></button>
+  </div>
+  <div class="tc-tray aim-stage aim-scroll">
+    {{!-- Set on the element itself: a url() passed through a custom property resolves against the stylesheet, not the page. --}}
+    {{#if showActorPortraitBackdrop}}<div class="aim-stage-portrait" style="background-image: {{actorImgCss}};" aria-hidden="true"></div>{{/if}}
+    <div class="aim-scol is-left">{{#each leftSlots}}{{> "modules/actor-inventory-manager/templates/parts/slot.hbs" this}}{{/each}}</div>
+    <div class="aim-scol is-center">{{#each centerSlots}}{{> "modules/actor-inventory-manager/templates/parts/slot.hbs" this}}{{/each}}</div>
+    <div class="aim-scol is-right">{{#each rightSlots}}{{> "modules/actor-inventory-manager/templates/parts/slot.hbs" this}}{{/each}}</div>
+  </div>
+  <div class="tc-tray aim-attune">
+    <span class="tc-lbl">{{localize "AIM.attunement.title"}} <b class="{{#if vitals.attunement.isOver}}is-over{{/if}}">{{vitals.attunement.value}}/{{vitals.attunement.max}}</b></span>
+    <div class="aim-asocks">
+    {{#each attunementSlots}}
+      {{#if this.hasItem}}
+        <span class="aim-asock is-on {{#if this.isOverLimit}}is-over{{/if}}" data-rarity="{{this.item.rarityKey}}" style="{{this.item.cssVars}}" data-tooltip="{{this.item.name}}{{#if this.isOverLimit}} — {{localize 'AIM.attunement.overLimit'}}{{/if}}">
+          <img src="{{this.item.img}}" alt="{{this.item.name}}" data-action="openItem" data-item-id="{{this.item.id}}">
+          {{#if @root.canEdit}}<button type="button" class="aim-asock-break aim-edit" data-action="toggleAttune" data-item-id="{{this.item.id}}" aria-label="{{localize 'AIM.attunement.break'}}: {{this.item.name}}" data-tooltip="{{localize 'AIM.attunement.break'}}"><i class="fa-light fa-link-slash"></i></button>{{/if}}
+        </span>
+      {{else}}
+        <span class="aim-asock" data-tooltip="{{localize 'AIM.attunement.empty'}}"><i class="fa-light fa-sun"></i></span>
+      {{/if}}
+    {{/each}}
     </div>
   </div>
-
-  <div class="aim-paperdoll-stage">
-    <!-- Character Backdrop Graphic & Runic Overlay -->
-    {{#if showActorPortraitBackdrop}}
-      <div class="aim-actor-portrait-bg" style='background-image: {{actorImgCss}};'></div>
-    {{else}}
-      <div class="aim-silhouette-bg"></div>
-    {{/if}}
-    <div class="aim-runic-circle-bg"></div>
-
-    <!-- Paperdoll Slots Layout Grid -->
-    <div class="aim-slots-layout">
-      <!-- Left Column Slots -->
-      <div class="aim-slots-col aim-col-left">
-        {{#each leftSlots}}
-          {{> "modules/actor-inventory-manager/templates/parts/slot.hbs" this}}
-        {{/each}}
-      </div>
-
-      <!-- Center Column Slots -->
-      <div class="aim-slots-col aim-col-center">
-        {{#each centerSlots}}
-          {{> "modules/actor-inventory-manager/templates/parts/slot.hbs" this}}
-        {{/each}}
-      </div>
-
-      <!-- Right Column Slots -->
-      <div class="aim-slots-col aim-col-right">
-        {{#each rightSlots}}
-          {{> "modules/actor-inventory-manager/templates/parts/slot.hbs" this}}
-        {{/each}}
-      </div>
+{{else}}
+  <div class="tc-tray aim-strip">
+    <button type="button" class="tc-ibtn" data-action="togglePaperdoll" aria-label="{{localize 'AIM.paperdoll.expandTooltip'}}" data-tooltip="{{localize 'AIM.paperdoll.expandTooltip'}}" data-tooltip-direction="RIGHT"><i class="fa-light fa-chevron-right"></i></button>
+    <span class="aim-strip-title">{{localize "AIM.paperdoll.title"}}</span>
+    <div class="aim-strip-map" role="img" aria-label="{{localize 'AIM.paperdoll.occupied'}}">
+      {{#each occupiedSlots}}<i class="{{#if this.hasItem}}is-on{{/if}}" data-tooltip="{{this.label}}"></i>{{/each}}
     </div>
+    <span class="aim-strip-badge" data-tooltip="{{localize 'AIM.attunement.title'}}"><i class="fa-light fa-sun"></i>{{vitals.attunement.value}}/{{vitals.attunement.max}}</span>
   </div>
-
-  <!-- Attunement Bar -->
-  <div class="aim-attunement-bar">
-    <div class="aim-attunement-title">
-      <i class="fa-solid fa-sun"></i> {{localize "AIM.attunement.title"}} <span class="{{#if vitals.attunement.isOver}}is-over{{/if}}">({{vitals.attunement.value}} / {{vitals.attunement.max}})</span>
-    </div>
-    <div class="aim-attunement-sockets">
-      {{#each attunementSlots}}
-      <div class="aim-attune-socket {{#if this.hasItem}}has-item rarity-{{this.item.rarityKey}}{{else}}is-empty{{/if}} {{#if this.item.hasGlow}}has-rarity-glow{{/if}} {{#if this.isOverLimit}}is-over-limit{{/if}}"
-           {{#if this.hasItem}}data-rarity="{{this.item.rarityKey}}" data-item-rarity="{{this.item.rarityKey}}" style="{{this.item.cssVars}} border-color: var(--rarity-color);{{#if this.item.hasGlow}} box-shadow: 0 0 8px var(--rarity-glow-soft);{{/if}}"{{/if}}
-           title="{{#if this.hasItem}}{{this.item.name}}{{#if this.isOverLimit}} — {{localize 'AIM.attunement.overLimit'}}{{/if}}{{else}}{{localize 'AIM.attunement.empty'}}{{/if}}">
-        {{#if this.hasItem}}
-          <img src="{{this.item.img}}" alt="{{this.item.name}}" data-action="openItem" data-item-id="{{this.item.id}}" />
-          {{#if @root.canEdit}}
-          <button type="button" class="aim-attune-toggle" data-action="toggleAttune" data-item-id="{{this.item.id}}" title="{{localize 'AIM.attunement.break'}}">
-            <i class="fa-solid fa-link-slash"></i>
-          </button>
-          {{/if}}
-        {{else}}
-          <i class="fa-solid fa-sun-plant-wilt"></i>
-        {{/if}}
-      </div>
-      {{/each}}
-    </div>
-  </div>
-</div>
+{{/if}}

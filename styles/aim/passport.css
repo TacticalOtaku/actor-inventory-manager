@@ -1,0 +1,273 @@
+/* ─────────────────────────────────────────────────────────
+   Actor Inventory Manager — passport (vitals column)
+   The spec label: one big number, then readouts, abilities, passives, load and purse.
+   ───────────────────────────────────────────────────────── */
+
+.actor-inventory-manager-app .aim-passport-shell {
+  height: 100%;
+}
+
+.actor-inventory-manager-app .aim-passport-core {
+  padding: 14px 14px 12px;
+  gap: 13px;
+  overflow: auto;
+  scrollbar-width: none;
+}
+
+/* --- HP: the big number --- */
+.actor-inventory-manager-app .aim-hp-big {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin: 6px 0 10px;
+}
+
+.actor-inventory-manager-app .aim-hp-big strong {
+  font: 700 48px/0.9 var(--tc-font-display);
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.actor-inventory-manager-app .aim-hp-big > span {
+  padding-bottom: 2px;
+  font: 500 11px/1.25 var(--tc-font-mono);
+  color: var(--tc-muted);
+  white-space: nowrap;
+}
+
+/* --- Readouts: AC, initiative, speed --- */
+.actor-inventory-manager-app .aim-readouts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.actor-inventory-manager-app .aim-readout {
+  min-width: 0;
+  padding: 8px 9px;
+  border-radius: var(--tc-r-row);
+  background: var(--tc-sunken);
+  box-shadow: var(--tc-press);
+}
+
+.actor-inventory-manager-app .aim-readout > b {
+  display: block;
+  margin-top: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font: 700 18px/1 var(--tc-font-display);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.actor-inventory-manager-app .aim-readout > b small {
+  font: 500 10px var(--tc-font-mono);
+  color: var(--tc-muted);
+  letter-spacing: 0;
+}
+
+/* --- Abilities with saving throws (the dot marks proficiency) --- */
+.actor-inventory-manager-app .aim-abil {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.actor-inventory-manager-app .aim-ab {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  row-gap: 5px;
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: var(--tc-r-row);
+  background: color-mix(in oklab, var(--tc-sunken) 60%, transparent);
+}
+
+.actor-inventory-manager-app .aim-ab-key {
+  font: 600 9.5px/1 var(--tc-font-mono);
+  letter-spacing: 0.1em;
+  color: var(--tc-muted);
+}
+
+.actor-inventory-manager-app .aim-ab-save {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 500 10px/1 var(--tc-font-mono);
+  color: var(--tc-muted);
+}
+
+.actor-inventory-manager-app .aim-ab-save.is-prof {
+  color: var(--tc-accent-text);
+}
+
+.actor-inventory-manager-app .aim-ab > b {
+  font: 700 19px/1 var(--tc-font-display);
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.actor-inventory-manager-app .aim-ab-mod {
+  justify-self: end;
+  font: 600 12px/1 var(--tc-font-mono);
+}
+
+/* --- Passives --- */
+.actor-inventory-manager-app .aim-kv-list {
+  display: grid;
+  margin-top: 4px;
+}
+
+.actor-inventory-manager-app .aim-kv {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-top: 1px dashed var(--tc-line);
+  font-size: 12.5px;
+}
+
+.actor-inventory-manager-app .aim-kv:first-child {
+  border-top: 0;
+}
+
+.actor-inventory-manager-app .aim-kv > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--tc-muted);
+}
+
+.actor-inventory-manager-app .aim-kv > span i {
+  width: 14px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.actor-inventory-manager-app .aim-kv > b {
+  font: 600 12.5px var(--tc-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Load with tier thresholds --- */
+/* The tier drops to its own line rather than truncate the numbers (long Russian tier names). */
+.actor-inventory-manager-app .aim-load-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin: 8px 0;
+  white-space: nowrap;
+}
+
+.actor-inventory-manager-app .aim-load-head > b {
+  font: 600 12.5px var(--tc-font-mono);
+}
+
+.actor-inventory-manager-app .aim-load-head small {
+  font: 500 11px var(--tc-font-mono);
+  color: var(--tc-muted);
+}
+
+.actor-inventory-manager-app .aim-tier {
+  flex: none;
+  font: 600 10px/1 var(--tc-font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tc-good);
+}
+
+.actor-inventory-manager-app .aim-tier.is-encumbered {
+  color: var(--tc-warning);
+}
+
+.actor-inventory-manager-app .aim-tier:is(.is-heavily-encumbered, .is-overburdened) {
+  color: var(--tc-danger);
+}
+
+.actor-inventory-manager-app .aim-load-fill.is-encumbered {
+  background: var(--tc-warning);
+  box-shadow: none;
+}
+
+.actor-inventory-manager-app .aim-load-fill:is(.is-heavily-encumbered, .is-overburdened) {
+  background: var(--tc-danger);
+  box-shadow: none;
+}
+
+/* --- Purse --- */
+.actor-inventory-manager-app .aim-coins {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.actor-inventory-manager-app .aim-coin {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 6px 2px 5px;
+  border-radius: var(--tc-r-row);
+  background: color-mix(in oklab, var(--tc-sunken) 60%, transparent);
+}
+
+.actor-inventory-manager-app .aim-coin > span {
+  font: 600 9px/1 var(--tc-font-mono);
+  letter-spacing: 0.08em;
+  color: var(--tc-muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.actor-inventory-manager-app .aim-coin > b {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font: 600 12px/1 var(--tc-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.actor-inventory-manager-app .aim-coin-gp > b {
+  color: var(--tc-accent-text);
+}
+
+.actor-inventory-manager-app .aim-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--tc-muted);
+  white-space: nowrap;
+}
+
+.actor-inventory-manager-app .aim-total > b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font: 600 12px var(--tc-font-mono);
+  color: var(--tc-ink);
+}
+
+/* --- Rests sit at the bottom of the label --- */
+.actor-inventory-manager-app .aim-rests {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.actor-inventory-manager-app .aim-rests .tc-btn {
+  min-width: 0;
+  padding: 0 8px;
+}

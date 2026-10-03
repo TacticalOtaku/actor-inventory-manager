@@ -17,7 +17,9 @@ scripts/
   foundry/          adapters to the Foundry runtime (settings, hooks, logging)
   integrations/     adapters to the game system and to other modules
   trade/            currency adapter, offer validation, transfers and GM coordinator
+  tactile/          Tactile design system: accent palette and GSAP motion
   ui/               ApplicationV2 windows and their controllers
+  vendor/gsap/      vendored GSAP 3.13 ESM build (generated, see "Vendored assets")
   main.js           composition root: wires ports, registers hooks, exposes the API
 ```
 
@@ -34,7 +36,7 @@ rather than reaching for `game` directly.
 
 `trade/service.js` is the runtime coordinator. Requests are serialized JSON in the requesting User's AIM flag; `updateUser` supplies the authenticated initiating user ID. No module socket payload authorizes writes. One active GM serializes requests and retains its persisted coordinator ID while connected, so another GM joining cannot take over mid-transfer. The coordinator rechecks actor ownership and both users' confirmations and persists the editing lock before taking snapshots. Complete inventory snapshots live only in a private JournalEntry, never in the public session state; their contents are revalidated before any debit. Transfer and recovery writes check coordinator ownership across asynchronous boundaries. Persisted executing/recovery sessions cannot be resubmitted as transfers. The GM's explicit recovery action restores the saved inventories; interrupted preparation without a saved transfer phase can simply be unlocked.
 
-`ui/trade-panel.js` keeps local unsaved quantities separate from the accepted offer revision. Its drawer uses the existing spells-column layout and theme variables. `actor-inventory-manager.tradeState` updates open drawers when the saved session changes.
+`ui/trade-panel.js` keeps local unsaved quantities separate from the accepted offer revision. Its drawer shares the side-drawer layout with the grimoire (see "Window layout" below). `actor-inventory-manager.tradeState` updates open drawers when the saved session changes.
 
 ## Data-model adapter rule
 
@@ -45,6 +47,8 @@ one place to update when it moves again. Never inline these reads at a call site
 | Concern | Helper | Where |
 | --- | --- | --- |
 | Attunement state | `isItemAttuned`, `itemRequiresAttunement`, `getAttunementStatus` | `core/attunement.js` |
+| Attunement cap | `getActorAttunementMax` (prepared), `getActorSourceAttunementMax` (stored) | `core/attunement.js` |
+| Container contents | `getContainerContentsCount` | `integrations/dnd5e.js` |
 | Spell preparation | `resolveSpellPreparation` | `integrations/dnd5e.js` |
 | Spell slot maximum | `resolveSpellSlotMax` | `integrations/dnd5e.js` |
 | Item activation | `resolveItemActivation` | `integrations/dnd5e.js` |
@@ -55,7 +59,12 @@ Shapes handled (dnd5e 5.3.3):
 
 - **Attunement** — `system.attunement` is the *requirement*
   (`"" | "required" | "optional"`) and `system.attuned` is the boolean state.
-  Writing `"attuned"` into `system.attunement` corrupts the item.
+  Writing `"attuned"` into `system.attunement` corrupts the item. The cap
+  `system.attributes.attunement.max` is raised by effects; editors read and
+  write the stored `_source` value so a bonus is never baked into the base.
+- **Container contents** — `system.contentsCount` counts nested items by
+  quantity and is a promise inside a compendium. Deleting a container leaves
+  its contents pointing at the deleted id unless `{ deleteContents: true }`.
 - **Spell preparation** — `system.method` (`"spell" | "pact" | "atwill" |
   "innate" | "ritual"`) plus numeric `system.prepared` (`0/1/2`, where `2` is
   always-prepared). There is no `"prepared"` method.
@@ -88,6 +97,11 @@ Shapes handled (dnd5e 5.3.3):
 
 The public API is on `game.modules.get("actor-inventory-manager").api` and on
 `globalThis.ActorInventoryManager`.
+
+The item actions `equipItem`, `unequipItem`, `toggleItemEquipped` and
+`toggleAttunement` resolve to `true` when the write went through and `false`
+when it was refused (permission, slot rules, attunement limit) or vetoed by a
+`preUpdateItem` hook. A vetoed write shows no success notification.
 
 ### Hooks
 
@@ -197,23 +211,115 @@ base actor's id.
 
 ## Refreshing open windows
 
-Settings that change what every window shows (theme, custom templates, portrait
-backdrop, auto-reconcile, SC rarity colours) call the
+Settings that change what every window shows (theme, accent colour, custom
+templates, portrait backdrop, auto-reconcile, SC rarity colours) call the
 `actor-inventory-manager.refresh` hook; open windows re-render on it. Document
 hooks are coalesced so a batched change renders once.
 
-## Styling and theming
+## UI and Tactile
 
-Theme colours are CSS custom properties defined on `.actor-inventory-manager-app`
-(dark by default, light when the window carries `data-theme="light"`) and on the
-header button injected into character sheets, in `styles/actor-inventory.css`.
-They are never declared on `:root`, so they cannot leak into Foundry or other modules.
+The windows use Tactile, a small design system that lives inside this module:
 
-The decorative fonts come from Google Fonts and are injected at runtime only
-while the client setting *Decorative Web Fonts* is on, so offline worlds and
-players who opt out never contact Google. Rarity colours reach the templates as
-custom properties (`--rarity-color`, `--rarity-glow`, built with `color-mix`),
-never by appending an alpha suffix to a colour string.
+| Part | Where |
+| --- | --- |
+| Tokens (colours, shadows, radii, fonts) | `styles/tactile/tokens.css` |
+| Primitives (blocks, trays, chips, buttons) | `styles/tactile/components.css` |
+| Font faces (generated) | `styles/tactile/fonts.css` |
+| Accent palette | `scripts/tactile/palette.js` |
+| Motion | `scripts/tactile/motion.js` |
+| Theme and accent stamping | `scripts/ui/tactile-theme.js` |
+| AIM window, passport, paperdoll, inventory, drawers, editors | `styles/aim/*.css` |
+| Window layout | `scripts/ui/window-layout.js` |
+
+### Theme and accent
+
+Tokens are declared on `.tc-root`, the class every AIM window element carries
+(the inventory window, the paperdoll editor and the slot dialog). They are never
+declared on `:root`, so they cannot leak into Foundry or other modules. The
+light set is the default; `applyTactileTheme` stamps the resolved theme
+(`data-theme="dark"` or `"light"`, from the *Interface Theme* setting) on the
+window element, and the accent hue and chroma as `--tc-acc-h` / `--tc-acc-c`.
+The accent comes from the client setting *Accent colour* (ten choices from
+`PALETTE`, default `peach`); its lightness comes from the theme, since the
+accent tokens are OKLCH. Both settings fire the refresh hook. The inventory
+window re-renders on it; the editors re-stamp themselves through
+`watchEditorTheme` / `stampEditorTheme`.
+
+The primitives reset buttons and inputs inside `:where(.tc-root)`, so the
+resets have zero specificity and never override a component's own colours. The
+font reset skips buttons that are themselves Font Awesome icons (a class with
+`fa-`), which would otherwise lose the icon font. Icons are Font Awesome Light
+(`fa-light`); the default paperdoll slots use it too, while user templates saved
+earlier keep the icons stored in them.
+
+The header button injected into character sheets (`.aim-window-header-btn`) sits
+outside any Tactile root and keeps Foundry's `header-control` styling.
+
+### Window layout
+
+`window-layout.js` is pure: it takes the layout state (open drawer, the saved
+paperdoll preference, whether the doll was expanded beside a drawer) and the
+viewport width, and returns the layout and the window width. The column widths
+in `styles/aim/window.css` must match its arithmetic.
+
+| Layout | Preferred width | Minimum |
+| --- | --- | --- |
+| `open` - paperdoll open, no drawer | 1080 | 1006 |
+| `strip` - paperdoll folded, no drawer | 824 | 750 |
+| `drawerStrip` - drawer, paperdoll folded | 1188 | 1124 |
+| `drawerOpen` - drawer, paperdoll open | 1444 | 1380 |
+| `drawerCompact` - drawer, paperdoll folded, no passport | up to 1124 | 858 |
+
+A drawer (grimoire or trade) takes the paperdoll's place and folds it into its
+strip, so the inventory column keeps its width. Closing the drawer brings the
+paperdoll back as the saved preference has it. Expanding the paperdoll beside a
+drawer works when the screen holds `drawerOpen`; otherwise it closes the drawer
+and opens the paperdoll. On a screen too narrow for `drawerStrip`, the passport
+column hides (`isCompact`). The paperdoll preference and an open grimoire are
+saved per actor.
+
+### Motion
+
+`motion.js` runs on a private GSAP instance imported from `scripts/vendor/gsap/`
+with the `CustomEase` and `Flip` plugins registered on it explicitly. It never
+uses or overwrites a global `gsap` exposed by another module. It provides
+the window entrance (`openWindow`), counting numbers (`countTo`), a settle for a
+newly filled slot (`pop`), a shake for a refused change (`refuse`), the drawer
+entrance (`slideIn`), row moves across re-renders (`captureFlip` / `playFlip`,
+which takes the freshly rendered scope as `root`) and the press feedback on
+buttons (`bindPress`). A refused equip, attunement past the limit or an invalid
+drop shakes its target.
+
+ApplicationV2 replaces the window's DOM on every render, so the window records
+what it needs before rendering (numbers, slot contents, row positions, meter
+widths) and plays the change on the new elements afterwards. Reduced motion
+(`shouldReduceMotion`: the operating system's preference or Foundry's
+`performance-low` body class) leaves only a 150 ms opacity fade.
+
+### Vendored assets
+
+`npm run vendor` (`tools/vendor.mjs`) copies third-party runtime files from
+`node_modules` into the package; its output is committed. Run it after changing
+the versions in `package.json`.
+
+- GSAP 3.13 ESM into `scripts/vendor/gsap/`. The plugins' self-registration into
+  a foreign `window.gsap` is stripped from the copies.
+- The Onest, JetBrains Mono and Unbounded variable fonts (`@fontsource-variable`,
+  subsets latin, latin-ext, cyrillic, cyrillic-ext) into `assets/fonts/` as
+  woff2, with their licences, and the matching `@font-face` rules into
+  `styles/tactile/fonts.css`.
+
+`fonts.css` is not listed in `module.json`. The client setting *Interface Fonts*
+(`useWebFonts`) adds it as a `<link>` from the module's own folder; with the
+setting off the windows use system fonts. Nothing is fetched from Google or any
+other CDN.
+
+### Colour constraints
+
+Rarity colours reach the templates as custom properties (`--rarity-color`,
+`--rarity-glow`, built with `color-mix`), never by appending an alpha suffix to
+a colour string. Rows name the rarity of uncommon and rarer items from
+`CONFIG.DND5E.itemRarity` (`rarityLabel` in `formatItemForDisplay`).
 
 Two constraints, both learned the hard way:
 
@@ -229,8 +335,11 @@ Two constraints, both learned the hard way:
 
 ## Tests
 
-`npm test` runs the Node test runner over `tests/`. Everything under `core/`
-and the pure helpers in `integrations/dnd5e.js` are testable without Foundry;
+`npm test` runs the Node test runner over `tests/`. Everything under `core/`,
+the pure helpers in `integrations/dnd5e.js`, the window layout and the accent
+palette are testable without Foundry; `vendor-assets.test.js` checks that the
+vendored GSAP files and fonts are complete and that the GSAP plugins do not
+register into a foreign global;
 new data-model helpers should arrive with a test that pins the dnd5e 5.3.3 data
 shape.
 
@@ -239,5 +348,6 @@ shape.
 `npm run deploy` copies the module into Foundry's `Data/modules/actor-inventory-manager`
 (`%LOCALAPPDATA%\FoundryVTT\Data` by default; override with `--data <path>` or the
 `FOUNDRY_DATA` environment variable, both naming the `Data` folder). Reload Foundry
-with F5 afterwards. `npm run check` runs ESLint and the tests; `npm run release`
+with F5 afterwards; a stylesheet or language newly added to `module.json` needs a
+server restart instead. `npm run check` runs ESLint and the tests; `npm run release`
 validates `module.json` and writes `dist/actor-inventory-manager-v<version>.zip`.

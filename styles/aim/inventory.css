@@ -1,0 +1,286 @@
+/* ─────────────────────────────────────────────────────────
+   Actor Inventory Manager — inventory list and container trays
+   Rows stay quiet: only "equipped" and "attuned" are always visible, the rest shows on hover.
+   ───────────────────────────────────────────────────────── */
+
+.actor-inventory-manager-app .aim-inv {
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 8px;
+}
+
+.actor-inventory-manager-app .aim-filters {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.actor-inventory-manager-app .aim-filters .tc-search {
+  flex: 1;
+}
+
+/* Foundry stretches selects to the full width; the sort menu takes only what it needs. */
+.actor-inventory-manager-app .aim-filters .tc-select {
+  flex: none;
+  width: auto;
+  max-width: 45%;
+}
+
+.actor-inventory-manager-app .aim-list {
+  padding: 6px;
+  isolation: isolate;
+}
+
+/* --- Row --- */
+.actor-inventory-manager-app .aim-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 52px;
+  padding: 6px 6px 6px 8px;
+  border-radius: var(--tc-r-row);
+}
+
+.actor-inventory-manager-app .aim-row[data-drag-item] {
+  cursor: grab;
+}
+
+/* Hover plate: opacity, not background, so the token swap never animates. */
+.actor-inventory-manager-app .aim-row::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--tc-surface);
+  opacity: 0;
+  transition: opacity 160ms var(--tc-ease);
+}
+
+.actor-inventory-manager-app .aim-row:hover::before,
+.actor-inventory-manager-app .aim-row:focus-within::before {
+  opacity: 0.6;
+}
+
+.actor-inventory-manager-app .aim-row.is-equipped::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--tc-accent);
+  box-shadow: 0 0 6px var(--tc-glow);
+}
+
+.actor-inventory-manager-app .aim-row.is-dragging {
+  opacity: 0.5;
+}
+
+/* --- Thumb: rarity underline --- */
+.actor-inventory-manager-app .aim-thumb {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--tc-surface);
+  box-shadow: var(--tc-raise), inset 0 -2px 0 var(--rarity-color, transparent);
+  cursor: pointer;
+}
+
+.actor-inventory-manager-app .aim-row[data-rarity="common"] .aim-thumb {
+  box-shadow: var(--tc-raise);
+}
+
+.actor-inventory-manager-app .aim-thumb > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 0;
+  border-radius: inherit;
+}
+
+.actor-inventory-manager-app .aim-thumb.is-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+}
+
+.actor-inventory-manager-app .aim-thumb-qty {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 99px;
+  background: var(--tc-ink);
+  color: var(--tc-bg);
+  font: 700 9.5px/1 var(--tc-font-mono);
+  pointer-events: none;
+}
+
+/* --- Name and meta lines --- */
+.actor-inventory-manager-app .aim-row-text {
+  min-width: 0;
+  cursor: pointer;
+}
+
+.actor-inventory-manager-app .aim-row-l1 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.actor-inventory-manager-app .aim-row-l1 > b {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  font-size: 13.5px;
+  line-height: 1.25;
+}
+
+.actor-inventory-manager-app .aim-row-l2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-top: 3px;
+  overflow: hidden;
+  white-space: nowrap;
+  font: 500 11px/1.3 var(--tc-font-mono);
+  color: var(--tc-muted);
+}
+
+.actor-inventory-manager-app .aim-rar {
+  color: var(--rarity-color, inherit);
+}
+
+.actor-inventory-manager-app .aim-sep {
+  opacity: 0.6;
+}
+
+/* --- Controls appear on hover; equipped and attuned toggles stay visible --- */
+.actor-inventory-manager-app .aim-row-ctrls {
+  display: flex;
+  align-items: center;
+}
+
+.actor-inventory-manager-app .aim-row-ctrls .tc-ibtn.is-hover {
+  opacity: 0;
+}
+
+.actor-inventory-manager-app .aim-row:hover .aim-row-ctrls .tc-ibtn.is-hover,
+.actor-inventory-manager-app .aim-row:focus-within .aim-row-ctrls .tc-ibtn.is-hover {
+  opacity: 1;
+}
+
+/* --- Containers --- */
+.actor-inventory-manager-app .aim-cont {
+  margin-top: 10px;
+}
+
+.actor-inventory-manager-app .aim-cont > .tc-sec {
+  padding: 2px 6px;
+}
+
+.actor-inventory-manager-app .aim-box {
+  margin-top: 6px;
+  border-radius: var(--tc-r-block);
+  background: color-mix(in oklab, var(--tc-surface) 30%, transparent);
+  box-shadow: inset 0 0 0 1px var(--tc-line);
+}
+
+.actor-inventory-manager-app .aim-box.drag-hover {
+  box-shadow: inset 0 0 0 1.5px var(--tc-accent), 0 0 16px -4px var(--tc-glow);
+}
+
+.actor-inventory-manager-app .aim-box-head {
+  display: grid;
+  grid-template-columns: 16px 32px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 6px 6px 8px;
+  border-radius: var(--tc-r-block);
+  cursor: pointer;
+}
+
+.actor-inventory-manager-app .aim-box-chev {
+  display: grid;
+  color: var(--tc-muted);
+  transition: transform 240ms var(--tc-ease);
+}
+
+.actor-inventory-manager-app .aim-box.is-closed > .aim-box-head .aim-box-chev {
+  transform: rotate(-90deg);
+}
+
+.actor-inventory-manager-app .aim-box-head > b {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.actor-inventory-manager-app .aim-box-head > b small {
+  margin-left: 4px;
+  font: 500 11px var(--tc-font-mono);
+  color: var(--tc-muted);
+}
+
+.actor-inventory-manager-app .aim-box-badges {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.actor-inventory-manager-app .aim-box-badges .tc-pill.is-over {
+  color: var(--tc-danger);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--tc-danger) 40%, transparent);
+}
+
+.actor-inventory-manager-app .aim-box > .aim-box-band {
+  height: 4px;
+  margin: 0 12px 8px 64px;
+}
+
+.actor-inventory-manager-app .aim-box-band.is-over .tc-band-fill {
+  background: var(--tc-danger);
+  box-shadow: none;
+}
+
+.actor-inventory-manager-app .aim-box-in {
+  padding: 0 6px 6px 18px;
+  overflow: hidden;
+}
+
+/* --- Empty states --- */
+.actor-inventory-manager-app .aim-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 40px 12px;
+  color: var(--tc-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.actor-inventory-manager-app .aim-empty > i {
+  font-size: 22px;
+}
+
+.actor-inventory-manager-app .aim-empty.is-small {
+  padding: 10px;
+}

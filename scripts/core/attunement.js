@@ -70,3 +70,17 @@ export function getActorAttunementMax(actor) {
   }
   return getActorPaperdollTemplate(actor).attunementMax ?? 3;
 }
+
+/**
+ * The attunement cap stored on the actor, before effects raise it.
+ * Editors show and write this value: writing the prepared one back would bake
+ * effect bonuses such as Magic Item Adept into the base.
+ * @param {Object} actor
+ * @returns {number|null} null when the actor stores no cap
+ */
+export function getActorSourceAttunementMax(actor) {
+  const stored = actor?._source?.system?.attributes?.attunement?.max;
+  if (stored === null || stored === undefined || stored === "") return null;
+  const parsed = Number(stored);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}

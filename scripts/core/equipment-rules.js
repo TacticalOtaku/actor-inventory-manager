@@ -331,8 +331,10 @@ export const equipmentRuleEngine = new EquipmentRuleEngine();
 /**
  * Pick the slot an item should be equipped into.
  * Prefers a free slot the rules accept, then an occupied one the rules accept
- * as a swap. When no slot passes, the first candidate is returned so the caller
- * can report the rule failure.
+ * as a swap. A shield never takes a swap that would push a held two-handed weapon
+ * out of the main hand: it is pointed at the blocked off hand and refused there.
+ * When no slot passes, the first free candidate (else the first candidate) is
+ * returned so the caller can report the rule failure.
  * @param {Object} actor
  * @param {Object} item
  * @param {Map<string, Object>} [slotMap]
@@ -344,9 +346,10 @@ export function findEquipSlot(actor, item, slotMap = getActorEquippedMap(actor))
 
   const passes = slotId => equipmentRuleEngine.validateEquip(actor, item, slotId, { slotMap }).valid;
   const isFree = slotId => !slotMap.has(slotId) || slotMap.get(slotId)?.id === item.id;
+  const swapAllowed = slotId => !(isShield(item) && isTwoHandedWeapon(slotMap.get(slotId)));
 
   return candidates.find(slotId => isFree(slotId) && passes(slotId))
-    ?? candidates.find(passes)
+    ?? candidates.find(slotId => swapAllowed(slotId) && passes(slotId))
     ?? candidates.find(isFree)
     ?? candidates[0];
 }

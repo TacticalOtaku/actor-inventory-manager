@@ -75,7 +75,7 @@ export function addInventoryHeaderControl(app, controls) {
   if (controls.some(control => control.action === HEADER_ACTION)) return;
 
   controls.unshift({
-    icon: "fa-solid fa-shirt",
+    icon: "fa-light fa-shirt",
     label: game.i18n.localize("AIM.sheetButton.label"),
     action: HEADER_ACTION,
     onClick: () => openActorInventory(app.document ?? app.actor)
@@ -98,7 +98,7 @@ function injectHeaderButton(app) {
   headerBtn.className = "header-control aim-window-header-btn";
   headerBtn.title = game.i18n.localize("AIM.sheetButton.tooltip");
   headerBtn.setAttribute("aria-label", game.i18n.localize("AIM.sheetButton.label"));
-  headerBtn.innerHTML = '<i class="fa-solid fa-shirt"></i>';
+  headerBtn.innerHTML = '<i class="fa-light fa-shirt"></i>';
   headerBtn.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();

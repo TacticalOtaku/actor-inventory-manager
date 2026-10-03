@@ -1,90 +1,21 @@
-<div class="aim-container-card {{#if isCollapsed}}is-collapsed{{/if}}" data-drop-target="container" data-container-id="{{id}}">
-  <div class="aim-container-header" data-action="toggleContainer" data-container-id="{{id}}"
+<div class="aim-box {{#if isCollapsed}}is-closed{{/if}}" data-flip-id="box-{{id}}" data-drop-target="container" data-container-id="{{id}}">
+  <div class="aim-box-head" data-action="toggleContainer" data-container-id="{{id}}" role="button" tabindex="0" aria-expanded="{{#if isCollapsed}}false{{else}}true{{/if}}"
        {{#if canEdit}}data-drag-item="true"{{/if}} data-item-id="{{id}}">
-    <div class="aim-container-left">
-      <i class="aim-toggle-arrow fa-solid {{#if isCollapsed}}fa-chevron-right{{else}}fa-chevron-down{{/if}}"></i>
-      <img class="aim-container-img" src="{{img}}" alt="{{name}}" />
-      <span class="aim-container-name">{{name}}</span>
-      <span class="aim-container-count">({{itemCount}})</span>
-    </div>
-
-    <div class="aim-container-badges">
-      {{#if hasLoad}}
-        <span class="aim-container-load {{#if load.isOver}}is-over{{/if}}"
-              title="{{localize 'AIM.containers.loadTooltip'}}">
-          <i class="fa-solid fa-weight-hanging"></i> {{loadDisplay}}
-        </span>
-      {{/if}}
-
-      {{#if hasReduction}}
-        <span class="aim-reduction-badge" title="{{localize 'AIM.containers.reductionTooltip'}}">
-          <i class="fa-solid fa-feather"></i> -{{reductionPct}}%
-        </span>
-      {{/if}}
-
-      {{#if weightyContainersActive}}
-        <button type="button" class="aim-container-gear-btn" data-action="openContainerRules" data-container-id="{{id}}" title="{{localize 'AIM.containers.rulesConfig'}}">
-          <i class="fa-solid fa-gear"></i>
-        </button>
-      {{/if}}
-    </div>
+    <span class="aim-box-chev"><i class="fa-light fa-chevron-down"></i></span>
+    <span class="aim-thumb is-small"><img src="{{img}}" alt="{{name}}"></span>
+    <b>{{name}}<small>{{itemCount}}</small></b>
+    <span class="aim-box-badges">
+      {{#if hasLoad}}<span class="tc-pill is-plain {{#if load.isOver}}is-over{{/if}}" data-tooltip="{{localize 'AIM.containers.loadTooltip'}}"><i class="fa-light fa-weight-hanging"></i>{{loadDisplay}}</span>{{/if}}
+      {{#if hasReduction}}<span class="tc-pill" data-tooltip="{{localize 'AIM.containers.reductionTooltip'}}"><i class="fa-light fa-feather"></i>−{{reductionPct}}%</span>{{/if}}
+      {{#if weightyContainersActive}}<button type="button" class="tc-ibtn aim-edit" data-action="openContainerRules" data-container-id="{{id}}" aria-label="{{localize 'AIM.containers.rulesConfig'}}: {{name}}" data-tooltip="{{localize 'AIM.containers.rulesConfig'}}"><i class="fa-light fa-sliders"></i></button>{{/if}}
+    </span>
   </div>
-
-  {{#if hasCapacity}}
-    <div class="aim-meter aim-container-meter {{#if load.isOver}}is-over{{/if}}"
-         title="{{loadDisplay}}">
-      <div class="aim-meter-fill" data-meter="container-{{id}}" style="width: {{load.pct}}%;"></div>
-    </div>
-  {{/if}}
-
+  {{#if hasCapacity}}<div class="tc-band aim-box-band {{#if load.isOver}}is-over{{/if}}" aria-hidden="true"><i class="tc-band-fill" data-meter="container-{{id}}" style="width: {{load.pct}}%;"></i></div>{{/if}}
   {{#unless isCollapsed}}
-  <div class="aim-container-contents">
-    {{#if items.length}}
-      <div class="aim-nested-items-list">
-        {{#each items}}
-        <div class="aim-item-row rarity-{{this.rarityKey}} {{#if this.hasGlow}}has-rarity-glow{{/if}}"
-             {{#if this.canEdit}}data-drag-item="true"{{/if}}
-             data-item-id="{{this.id}}"
-             data-item-uuid="{{this.uuid}}"
-             data-rarity="{{this.rarityKey}}"
-             data-item-rarity="{{this.rarityKey}}"
-             style="{{this.cssVars}}">
-          <div class="aim-item-main" data-action="openItem" data-item-id="{{this.id}}">
-            <img class="aim-item-thumb" src="{{this.img}}" alt="{{this.name}}" style="border-color: var(--rarity-color);" />
-            <div class="aim-item-info">
-              <span class="aim-item-name">{{this.name}}</span>
-              <span class="aim-item-meta">{{this.weightDisplay}} {{#if this.priceDisplay}}• {{this.priceDisplay}}{{/if}}</span>
-            </div>
-          </div>
-          <div class="aim-item-actions">
-            {{#if this.hasMultiple}}<span class="aim-item-qty">x{{this.quantity}}</span>{{/if}}
-            {{#if this.canEdit}}
-            <button type="button" class="aim-btn-icon" data-action="useItem" data-item-id="{{this.id}}" title="{{localize 'AIM.actions.use'}}">
-              <i class="fa-solid fa-dice-d20"></i>
-            </button>
-            <button type="button" class="aim-btn-icon aim-btn-delete" data-action="deleteItem" data-item-id="{{this.id}}" title="{{localize 'AIM.actions.delete'}}">
-              <i class="fa-regular fa-trash-can"></i>
-            </button>
-            {{/if}}
-          </div>
-        </div>
-        {{/each}}
-      </div>
-    {{/if}}
-
-    {{#if hasChildren}}
-      <div class="aim-nested-containers">
-        {{#each children}}
-          {{> "modules/actor-inventory-manager/templates/parts/container-view.hbs" this}}
-        {{/each}}
-      </div>
-    {{/if}}
-
-    {{#unless itemCount}}
-      <div class="aim-empty-container-hint">
-        <i class="fa-regular fa-folder-open"></i> {{localize "AIM.containers.empty"}}
-      </div>
-    {{/unless}}
-  </div>
+    <div class="aim-box-in">
+      {{#each items}}{{> "modules/actor-inventory-manager/templates/parts/item-row.hbs" this}}{{/each}}
+      {{#each children}}{{> "modules/actor-inventory-manager/templates/parts/container-view.hbs" this}}{{/each}}
+      {{#unless itemCount}}<div class="aim-empty is-small"><i class="fa-light fa-folder-open"></i>{{localize "AIM.containers.empty"}}</div>{{/unless}}
+    </div>
   {{/unless}}
 </div>

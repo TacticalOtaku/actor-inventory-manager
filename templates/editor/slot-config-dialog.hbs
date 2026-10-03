@@ -1,21 +1,21 @@
-<div class="aim-slot-config-content">
+<div class="aim-slot-dialog">
   <form class="aim-slot-config-form" autocomplete="off">
-    <div class="aim-form-group">
-      <label>{{localize "AIM.editor.slot.id"}}</label>
+    <label class="aim-field">
+      <span class="tc-lbl">{{localize "AIM.editor.slot.id"}}</span>
       <input type="text" name="id" value="{{slot.id}}" {{#if isEditing}}readonly class="is-readonly"{{/if}} required placeholder="{{localize 'AIM.editor.slot.idPlaceholder'}}" />
-      <p class="aim-form-hint">{{localize "AIM.editor.slot.idHint"}}</p>
-    </div>
+      <span class="aim-field-hint">{{localize "AIM.editor.slot.idHint"}}</span>
+    </label>
 
-    <div class="aim-form-group">
-      <label>{{localize "AIM.editor.slot.label"}}</label>
+    <label class="aim-field">
+      <span class="tc-lbl">{{localize "AIM.editor.slot.label"}}</span>
       <input type="text" name="label" value="{{slot.label}}" required placeholder="{{localize 'AIM.editor.slot.labelPlaceholder'}}" />
-    </div>
+    </label>
 
-    <div class="aim-form-row">
-      <div class="aim-form-group flex-1">
-        <label>{{localize "AIM.editor.slot.icon"}}</label>
-        <div class="aim-icon-input-wrapper">
-          <div class="aim-icon-preview-box">
+    <div class="aim-field-row">
+      <div class="aim-field is-icon">
+        <span class="tc-lbl">{{localize "AIM.editor.slot.icon"}}</span>
+        <div class="aim-icon-field">
+          <span class="aim-thumb is-small aim-icon-preview-box">
             {{#if isImageIcon}}
               <img src="{{slot.icon}}" class="aim-icon-img-preview" alt="" />
               <i class="aim-icon-preview" style="display: none;"></i>
@@ -23,85 +23,86 @@
               <img src="" class="aim-icon-img-preview" style="display: none;" alt="" />
               <i class="{{slot.icon}} aim-icon-preview"></i>
             {{/if}}
-          </div>
-          <input type="text" name="icon" value="{{slot.icon}}" placeholder="{{localize 'AIM.editor.slot.iconPlaceholder'}}" />
-          <button type="button" class="aim-filepicker-btn" title="{{localize 'AIM.editor.browseFile'}}">
-            <i class="fa-solid fa-folder-open"></i>
+          </span>
+          <input type="text" name="icon" value="{{slot.icon}}" placeholder="{{localize 'AIM.editor.slot.iconPlaceholder'}}" aria-label="{{localize 'AIM.editor.slot.icon'}}" />
+          <button type="button" class="tc-btn is-square aim-filepicker-btn" data-tooltip="{{localize 'AIM.editor.browseFile'}}" aria-label="{{localize 'AIM.editor.browseFile'}}">
+            <i class="fa-light fa-folder-open"></i>
           </button>
         </div>
       </div>
 
-      <div class="aim-form-group flex-1">
-        <label>{{localize "AIM.editor.slot.column"}}</label>
+      <label class="aim-field is-column">
+        <span class="tc-lbl">{{localize "AIM.editor.slot.column"}}</span>
         <select name="column">
           <option value="left" {{#if (eq slot.column 'left')}}selected{{/if}}>{{localize "AIM.editor.columns.left"}}</option>
           <option value="center" {{#if (eq slot.column 'center')}}selected{{/if}}>{{localize "AIM.editor.columns.center"}}</option>
           <option value="right" {{#if (eq slot.column 'right')}}selected{{/if}}>{{localize "AIM.editor.columns.right"}}</option>
         </select>
-      </div>
+      </label>
     </div>
 
-    <div class="aim-form-group">
-      <label>{{localize "AIM.editor.slot.itemTypes"}}</label>
-      <div class="aim-checkbox-grid">
-        <label class="aim-checkbox-label">
+    <fieldset class="aim-field">
+      <legend class="tc-lbl">{{localize "AIM.editor.slot.itemTypes"}}</legend>
+      <div class="aim-checks tc-tray is-grid">
+        <label class="aim-check">
           <input type="checkbox" name="type_equipment" {{#if hasTypeEquipment}}checked{{/if}} />
           <span>{{localize "AIM.editor.itemTypes.equipment"}}</span>
         </label>
-        <label class="aim-checkbox-label">
+        <label class="aim-check">
           <input type="checkbox" name="type_weapon" {{#if hasTypeWeapon}}checked{{/if}} />
           <span>{{localize "AIM.editor.itemTypes.weapon"}}</span>
         </label>
-        <label class="aim-checkbox-label">
+        <label class="aim-check">
           <input type="checkbox" name="type_consumable" {{#if hasTypeConsumable}}checked{{/if}} />
           <span>{{localize "AIM.editor.itemTypes.consumable"}}</span>
         </label>
-        <label class="aim-checkbox-label">
+        <label class="aim-check">
           <input type="checkbox" name="type_tool" {{#if hasTypeTool}}checked{{/if}} />
           <span>{{localize "AIM.editor.itemTypes.tool"}}</span>
         </label>
-        <label class="aim-checkbox-label">
+        <label class="aim-check">
           <input type="checkbox" name="type_loot" {{#if hasTypeLoot}}checked{{/if}} />
           <span>{{localize "AIM.editor.itemTypes.loot"}}</span>
         </label>
       </div>
-    </div>
+    </fieldset>
 
-    <div class="aim-form-group">
-      <label>{{localize "AIM.editor.slot.accepts"}}</label>
+    <label class="aim-field">
+      <span class="tc-lbl">{{localize "AIM.editor.slot.accepts"}}</span>
       <input type="text" name="accepts" value="{{acceptsString}}" placeholder="{{localize 'AIM.editor.slot.acceptsPlaceholder'}}" />
-      <p class="aim-form-hint">{{localize "AIM.editor.slot.acceptsHint"}}</p>
-    </div>
+      <span class="aim-field-hint">{{localize "AIM.editor.slot.acceptsHint"}}</span>
+    </label>
 
-    <div class="aim-form-group">
-      <label>{{localize "AIM.editor.slot.rulesTitle"}}</label>
-      <div class="aim-rules-list">
-        <label class="aim-checkbox-label">
+    <fieldset class="aim-field">
+      <legend class="tc-lbl">{{localize "AIM.editor.slot.rulesTitle"}}</legend>
+      <div class="aim-checks tc-tray">
+        <label class="aim-check">
           <input type="checkbox" name="rule_isArmor" {{#if slot.rules.isArmor}}checked{{/if}} />
           <span>{{localize "AIM.editor.rules.isArmor"}}</span>
         </label>
-        <label class="aim-checkbox-label">
+        <label class="aim-check">
           <input type="checkbox" name="rule_isShield" {{#if slot.rules.isShield}}checked{{/if}} />
           <span>{{localize "AIM.editor.rules.isShield"}}</span>
         </label>
-        <label class="aim-checkbox-label">
+        <label class="aim-check">
           <input type="checkbox" name="rule_locksOffHandOn2H" {{#if slot.rules.locksOffHandOn2H}}checked{{/if}} />
           <span>{{localize "AIM.editor.rules.locksOffHandOn2H"}}</span>
         </label>
-        <label class="aim-checkbox-label">
+        <label class="aim-check">
           <input type="checkbox" name="rule_singlePerActor" {{#if slot.rules.singlePerActor}}checked{{/if}} />
           <span>{{localize "AIM.editor.rules.singlePerActor"}}</span>
         </label>
       </div>
-    </div>
+    </fieldset>
 
-    <div class="aim-dialog-buttons">
-      <button type="submit" class="aim-btn aim-btn-primary">
-        <i class="fa-solid fa-check"></i> {{localize "AIM.actions.save"}}
+    <footer class="aim-dialog-foot">
+      <button type="button" class="tc-btn" data-action="cancel">
+        <i class="fa-light fa-xmark"></i> {{localize "AIM.actions.cancel"}}
       </button>
-      <button type="button" class="aim-btn aim-btn-secondary" data-action="cancel">
-        <i class="fa-solid fa-xmark"></i> {{localize "AIM.actions.cancel"}}
+      <button type="submit" class="tc-primary">
+        <span>{{localize "AIM.actions.save"}}</span>
+        <span class="tc-primary-nest"><i class="fa-light fa-check"></i></span>
       </button>
-    </div>
+    </footer>
   </form>
 </div>

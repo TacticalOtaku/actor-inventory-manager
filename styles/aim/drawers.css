@@ -1,0 +1,500 @@
+/* ─────────────────────────────────────────────────────────
+   Actor Inventory Manager — side drawers: grimoire and trade
+   A drawer takes the paperdoll's place beside the inventory (see window.css).
+   ───────────────────────────────────────────────────────── */
+
+.actor-inventory-manager-app .aim-drawer-shell {
+  height: 100%;
+}
+
+.actor-inventory-manager-app .aim-drawer-shell > .tc-core {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* --- Header and tools --- */
+.actor-inventory-manager-app .aim-dh {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px 10px 14px;
+}
+
+.actor-inventory-manager-app .aim-dh-ic {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 99px;
+  background: var(--tc-accent-soft);
+  color: var(--tc-accent-text);
+}
+
+.actor-inventory-manager-app .aim-dh > b {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font: 700 13px/1.1 var(--tc-font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.actor-inventory-manager-app .aim-dtools {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 10px;
+}
+
+.actor-inventory-manager-app .aim-dbody {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 4px 12px 12px;
+  isolation: isolate;
+}
+
+/* --- Spell slots --- */
+.actor-inventory-manager-app .aim-slots {
+  padding: 4px 10px;
+  border-radius: var(--tc-r-block);
+  background: var(--tc-sunken);
+  box-shadow: var(--tc-press);
+}
+
+.actor-inventory-manager-app .aim-srow {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 32px;
+}
+
+.actor-inventory-manager-app .aim-srow > .tc-lbl {
+  color: var(--tc-ink);
+}
+
+.actor-inventory-manager-app .aim-pips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.actor-inventory-manager-app .aim-srow-count {
+  font: 600 12px var(--tc-font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* --- Groups and rows --- */
+.actor-inventory-manager-app .aim-grp {
+  display: grid;
+  gap: 2px;
+}
+
+.actor-inventory-manager-app .aim-grp > .tc-sec {
+  margin-bottom: 4px;
+}
+
+.actor-inventory-manager-app .aim-spell {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 4px 6px 6px;
+  border-radius: var(--tc-r-row);
+}
+
+.actor-inventory-manager-app .aim-spell[data-drag-item] {
+  cursor: grab;
+}
+
+.actor-inventory-manager-app .aim-spell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--tc-sunken);
+  opacity: 0;
+  transition: opacity 160ms var(--tc-ease);
+}
+
+.actor-inventory-manager-app .aim-spell:hover::before,
+.actor-inventory-manager-app .aim-spell:focus-within::before {
+  opacity: 0.6;
+}
+
+.actor-inventory-manager-app .aim-sthumb {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--tc-sunken);
+  color: var(--spell-school-color, var(--tc-muted));
+  box-shadow: inset 0 0 0 1.5px var(--spell-school-color, var(--tc-muted));
+  cursor: pointer;
+}
+
+.actor-inventory-manager-app .aim-spell[data-school="feat"] .aim-sthumb {
+  color: var(--tc-accent-text);
+  box-shadow: inset 0 0 0 1.5px var(--tc-accent-text);
+}
+
+/* The ring stays visible around the art. */
+.actor-inventory-manager-app .aim-sthumb > img {
+  width: calc(100% - 4px);
+  height: calc(100% - 4px);
+  object-fit: cover;
+  border: 0;
+  border-radius: 8px;
+}
+
+.actor-inventory-manager-app .aim-sthumb-lv {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 99px;
+  background: var(--tc-ink);
+  color: var(--tc-bg);
+  font: 700 9.5px/1 var(--tc-font-mono);
+}
+
+.actor-inventory-manager-app .aim-spell-text {
+  min-width: 0;
+  cursor: pointer;
+}
+
+.actor-inventory-manager-app .aim-spell-l1 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.actor-inventory-manager-app .aim-spell-l1 > b {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.actor-inventory-manager-app .aim-spell-l2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  margin-top: 3px;
+  font: 500 10.5px/1.3 var(--tc-font-mono);
+  color: var(--tc-muted);
+}
+
+.actor-inventory-manager-app .aim-school {
+  color: var(--spell-school-color, inherit);
+}
+
+.actor-inventory-manager-app .aim-prep {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 99px;
+  color: var(--tc-muted);
+  font-size: 12px;
+  opacity: 0.6;
+  transition: color 160ms var(--tc-ease), opacity 160ms var(--tc-ease);
+}
+
+.actor-inventory-manager-app button.aim-prep {
+  cursor: pointer;
+}
+
+.actor-inventory-manager-app .aim-prep.is-on {
+  color: var(--tc-accent-text);
+  opacity: 1;
+}
+
+.actor-inventory-manager-app .aim-uses {
+  font: 600 10.5px/1 var(--tc-font-mono);
+  color: var(--tc-ink);
+}
+
+/* --- Trade --- */
+.actor-inventory-manager-app .aim-tmeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font: 500 10.5px/1.3 var(--tc-font-mono);
+  color: var(--tc-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.actor-inventory-manager-app .aim-tmeta > b {
+  color: var(--tc-accent-text);
+  font-weight: 600;
+  text-align: right;
+}
+
+.actor-inventory-manager-app .aim-thint {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--tc-muted);
+}
+
+.actor-inventory-manager-app .aim-partner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: var(--tc-r-block);
+  background: var(--tc-sunken);
+  box-shadow: var(--tc-press);
+  font-size: 13px;
+}
+
+.actor-inventory-manager-app .aim-partner > i {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 99px;
+  background: var(--tc-surface);
+  box-shadow: var(--tc-raise);
+  color: var(--tc-accent-text);
+}
+
+.actor-inventory-manager-app .aim-partner > span {
+  min-width: 0;
+  color: var(--tc-muted);
+}
+
+.actor-inventory-manager-app .aim-partner b {
+  color: var(--tc-ink);
+  font-weight: 600;
+}
+
+.actor-inventory-manager-app .aim-conf {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.actor-inventory-manager-app .aim-cf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--tc-r-ctl);
+  box-shadow: inset 0 0 0 1px var(--tc-line);
+  font-size: 12px;
+  color: var(--tc-muted);
+  white-space: nowrap;
+}
+
+.actor-inventory-manager-app .aim-cf-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.actor-inventory-manager-app .aim-cf.is-ok {
+  color: var(--tc-good);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--tc-good) 40%, transparent);
+}
+
+.actor-inventory-manager-app .aim-offer {
+  display: grid;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.actor-inventory-manager-app .aim-offer:empty::before {
+  content: "—";
+  padding: 6px 2px;
+  color: var(--tc-muted);
+}
+
+.actor-inventory-manager-app .aim-offer > li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 2px;
+  border-top: 1px dashed var(--tc-line);
+  font-size: 12.5px;
+}
+
+.actor-inventory-manager-app .aim-offer > li:first-child {
+  border-top: 0;
+}
+
+.actor-inventory-manager-app .aim-offer b {
+  font: 600 12px var(--tc-font-mono);
+  white-space: nowrap;
+}
+
+.actor-inventory-manager-app .aim-tfields {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.actor-inventory-manager-app .aim-tfields[disabled] input {
+  opacity: 0.6;
+}
+
+.actor-inventory-manager-app .aim-money {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.actor-inventory-manager-app .aim-money > label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  font: 600 9px/1 var(--tc-font-mono);
+  letter-spacing: 0.08em;
+  color: var(--tc-muted);
+  text-transform: uppercase;
+}
+
+.actor-inventory-manager-app .aim-money > label > span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.actor-inventory-manager-app .aim-money small {
+  font-weight: 500;
+  letter-spacing: 0;
+  opacity: 0.8;
+}
+
+.actor-inventory-manager-app .aim-money input,
+.actor-inventory-manager-app input.aim-qty {
+  height: 30px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: var(--tc-r-row);
+  background: var(--tc-sunken);
+  box-shadow: var(--tc-press);
+  color: var(--tc-ink);
+  font: 600 12.5px var(--tc-font-mono);
+  text-align: right;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.actor-inventory-manager-app .aim-money input {
+  width: 100%;
+}
+
+.actor-inventory-manager-app input.aim-qty {
+  width: 56px;
+  height: 26px;
+  border-radius: 99px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.actor-inventory-manager-app .aim-money input::-webkit-inner-spin-button,
+.actor-inventory-manager-app input.aim-qty::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.actor-inventory-manager-app .aim-titem {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.actor-inventory-manager-app .aim-thumb.is-tiny {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+
+.actor-inventory-manager-app .aim-titem-name {
+  min-width: 0;
+}
+
+.actor-inventory-manager-app .aim-titem-name > b {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  font-size: 12.5px;
+}
+
+.actor-inventory-manager-app .aim-titem-name > small {
+  font: 500 10.5px var(--tc-font-mono);
+  color: var(--tc-muted);
+}
+
+.actor-inventory-manager-app .aim-ttarget {
+  display: grid;
+  gap: 6px;
+}
+
+.actor-inventory-manager-app .aim-unsaved {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--tc-r-row);
+  background: color-mix(in oklab, var(--tc-warning) 12%, transparent);
+  font-size: 12px;
+}
+
+.actor-inventory-manager-app .aim-unsaved[hidden] {
+  display: none;
+}
+
+.actor-inventory-manager-app .aim-unsaved > i {
+  margin-top: 1px;
+  color: var(--tc-warning);
+}
+
+.actor-inventory-manager-app .aim-dfoot {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  gap: 6px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--tc-line);
+}
+
+.actor-inventory-manager-app .aim-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

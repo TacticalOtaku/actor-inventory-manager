@@ -25,7 +25,7 @@ const foundryGlobals = Object.fromEntries(
 );
 
 export default [
-  { ignores: ["dist/", "node_modules/", "docs/", ".superpowers/"] },
+  { ignores: ["dist/", "node_modules/", "docs/", ".superpowers/", "scripts/vendor/"] },
   js.configs.recommended,
   {
     languageOptions: {

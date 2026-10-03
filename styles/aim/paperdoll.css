@@ -1,0 +1,392 @@
+/* ─────────────────────────────────────────────────────────
+   Actor Inventory Manager — paperdoll
+   A rack in a sunken tray: equipped items are raised and ringed in their rarity colour.
+   Folded, the paperdoll is a strip with a map of occupied slots and the attunement count.
+   ───────────────────────────────────────────────────────── */
+
+.actor-inventory-manager-app .aim-doll {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.actor-inventory-manager-app .aim-doll-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 30px;
+  padding-left: 4px;
+}
+
+.actor-inventory-manager-app .aim-doll-head .tc-lbl {
+  flex: 1;
+}
+
+/* --- Stage --- */
+.actor-inventory-manager-app .aim-stage {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  padding: 14px 6px;
+  overflow-x: hidden;
+}
+
+/* Silhouette, only when the actor portrait is not used as the backdrop. */
+.actor-inventory-manager-app .aim-stage:not(:has(.aim-stage-portrait))::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 10% 30% 6%;
+  background: var(--tc-muted);
+  opacity: 0.07;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 230'%3E%3Ccircle cx='50' cy='22' r='18'/%3E%3Cpath d='M22 48h56l10 72-12 3-6-46v56l6 84H58l-8-72-8 72H24l6-84V77l-6 46-12-3z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 230'%3E%3Ccircle cx='50' cy='22' r='18'/%3E%3Cpath d='M22 48h56l10 72-12 3-6-46v56l6 84H58l-8-72-8 72H24l6-84V77l-6 46-12-3z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.actor-inventory-manager-app .aim-stage::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 50%;
+  width: 220px;
+  height: 220px;
+  margin: -110px 0 0 -110px;
+  border-radius: 50%;
+  border: 1px dashed var(--tc-line);
+}
+
+.actor-inventory-manager-app .aim-stage-portrait {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-position: center top;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0.14;
+  filter: grayscale(0.4);
+  -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent);
+  mask-image: linear-gradient(to bottom, #000 40%, transparent);
+  pointer-events: none;
+}
+
+/* --- Slot columns --- */
+.actor-inventory-manager-app .aim-scol {
+  display: grid;
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  align-items: center;
+  justify-items: center;
+  min-width: 0;
+}
+
+.actor-inventory-manager-app .aim-scol.is-center {
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  padding-block: 44px;
+}
+
+/* --- Slot and socket --- */
+.actor-inventory-manager-app .aim-slot {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: 88px;
+  max-width: 100%;
+}
+
+.actor-inventory-manager-app .aim-sock {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  color: var(--tc-muted);
+  background: color-mix(in oklab, var(--tc-surface) 40%, transparent);
+  box-shadow: inset 0 0 0 1px var(--tc-line);
+  transition: box-shadow 240ms var(--tc-ease), color 240ms var(--tc-ease);
+}
+
+.actor-inventory-manager-app .aim-sock > i {
+  font-size: 22px;
+  opacity: 0.55;
+}
+
+.actor-inventory-manager-app .aim-sock > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 0;
+  border-radius: inherit;
+  cursor: pointer;
+}
+
+.actor-inventory-manager-app .aim-sock > img.aim-sock-icon {
+  width: 30px;
+  height: 30px;
+  opacity: 0.55;
+  cursor: default;
+}
+
+.actor-inventory-manager-app .aim-sock[data-drag-item] {
+  cursor: grab;
+}
+
+.actor-inventory-manager-app .aim-slot.is-full .aim-sock {
+  background: var(--tc-surface);
+  color: var(--tc-ink);
+  box-shadow: var(--tc-raise);
+}
+
+.actor-inventory-manager-app .aim-slot.is-full:not([data-rarity="common"]):not([data-rarity=""]) .aim-sock {
+  box-shadow: var(--tc-raise), 0 0 0 1.5px var(--rarity-color, transparent), 0 0 14px -4px var(--rarity-color, transparent);
+}
+
+.actor-inventory-manager-app .aim-slot.drag-hover .aim-sock {
+  color: var(--tc-accent-text);
+  box-shadow: inset 0 0 0 1.5px var(--tc-accent), 0 0 16px -4px var(--tc-glow);
+}
+
+.actor-inventory-manager-app .aim-sock.is-dragging {
+  opacity: 0.5;
+}
+
+.actor-inventory-manager-app .aim-sock-qty {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: 99px;
+  background: var(--tc-sunken);
+  color: var(--tc-ink);
+  font: 600 9.5px/1 var(--tc-font-mono);
+  pointer-events: none;
+}
+
+.actor-inventory-manager-app .aim-sock-att {
+  position: absolute;
+  top: -5px;
+  left: 7px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 99px;
+  background: var(--tc-accent);
+  color: var(--tc-on-accent);
+  box-shadow: 0 0 8px var(--tc-glow);
+  font-size: 10px;
+}
+
+.actor-inventory-manager-app .aim-sock-off {
+  position: absolute;
+  top: -6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 99px;
+  background: var(--tc-surface);
+  box-shadow: var(--tc-raise);
+  color: var(--tc-muted);
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 160ms var(--tc-ease), color 160ms var(--tc-ease);
+}
+
+.actor-inventory-manager-app .aim-slot:hover .aim-sock-off,
+.actor-inventory-manager-app .aim-sock-off:focus-visible {
+  opacity: 1;
+}
+
+.actor-inventory-manager-app .aim-sock-off:hover {
+  color: var(--tc-danger);
+}
+
+.actor-inventory-manager-app .aim-slot-tag {
+  max-width: 88px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: center;
+  font: 600 9px/1.2 var(--tc-font-mono);
+  letter-spacing: 0.08em;
+  color: var(--tc-muted);
+  text-transform: uppercase;
+}
+
+.actor-inventory-manager-app .aim-slot.is-full .aim-slot-tag {
+  color: var(--tc-ink);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font: 600 10.5px/1.2 var(--tc-font-ui);
+}
+
+/* Off hand held by a two-handed weapon: hatched and marked "2H". */
+.actor-inventory-manager-app .aim-slot.is-locked .aim-sock {
+  cursor: not-allowed;
+  background: repeating-linear-gradient(-45deg, transparent 0 6px, var(--tc-line) 6px 7px);
+  box-shadow: inset 0 0 0 1px var(--tc-line);
+}
+
+.actor-inventory-manager-app .aim-sock-lock {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  font: 700 9px/1 var(--tc-font-mono);
+  letter-spacing: 0.08em;
+}
+
+.actor-inventory-manager-app .aim-sock-lock i {
+  font-size: 14px;
+}
+
+/* --- Attunement tray ---
+   Up to three sockets sit beside the label; more move to their own line and wrap there, so any attunement
+   maximum fits the 312px column. */
+.actor-inventory-manager-app .aim-attune {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 12px;
+}
+
+.actor-inventory-manager-app .aim-attune > .tc-lbl {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+.actor-inventory-manager-app .aim-asocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.actor-inventory-manager-app .aim-attune > .tc-lbl b.is-over {
+  color: var(--tc-danger);
+}
+
+.actor-inventory-manager-app .aim-asock {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 99px;
+  color: var(--tc-muted);
+  box-shadow: inset 0 0 0 1px var(--tc-line);
+}
+
+.actor-inventory-manager-app .aim-asock.is-on {
+  background: var(--tc-surface);
+  color: var(--tc-ink);
+  box-shadow: var(--tc-raise), 0 0 0 1.5px var(--rarity-color, var(--tc-line));
+}
+
+.actor-inventory-manager-app .aim-asock.is-over {
+  box-shadow: var(--tc-raise), 0 0 0 1.5px var(--tc-danger);
+}
+
+.actor-inventory-manager-app .aim-asock > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 0;
+  border-radius: inherit;
+  cursor: pointer;
+}
+
+.actor-inventory-manager-app .aim-asock-break {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 99px;
+  background: var(--tc-surface);
+  color: var(--tc-danger);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 160ms var(--tc-ease);
+}
+
+.actor-inventory-manager-app .aim-asock:hover .aim-asock-break,
+.actor-inventory-manager-app .aim-asock-break:focus-visible {
+  opacity: 1;
+}
+
+/* --- Folded strip --- */
+.actor-inventory-manager-app .aim-doll-strip {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.actor-inventory-manager-app .aim-strip {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 14px;
+  padding: 8px 0;
+  overflow: hidden;
+}
+
+.actor-inventory-manager-app .aim-strip-title {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font: 600 10px/1 var(--tc-font-mono);
+  letter-spacing: 0.14em;
+  color: var(--tc-muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.actor-inventory-manager-app .aim-strip-badge {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  width: 40px;
+  padding: 9px 0;
+  border-radius: 99px;
+  background: var(--tc-surface);
+  box-shadow: var(--tc-raise);
+  font: 600 10.5px/1 var(--tc-font-mono);
+}
+
+.actor-inventory-manager-app .aim-strip-badge i {
+  color: var(--tc-accent-text);
+  font-size: 13px;
+}
+
+.actor-inventory-manager-app .aim-strip-map {
+  display: grid;
+  gap: 5px;
+}
+
+.actor-inventory-manager-app .aim-strip-map i {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px var(--tc-muted);
+  opacity: 0.6;
+}
+
+.actor-inventory-manager-app .aim-strip-map i.is-on {
+  background: var(--tc-accent);
+  box-shadow: 0 0 6px var(--tc-glow);
+  opacity: 1;
+}

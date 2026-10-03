@@ -1,5 +1,60 @@
 # Changelog
 
+## 1.8.0
+
+### Interface
+- The inventory window, the paperdoll editor, the slot dialog and the character sheet button are redrawn in the
+  Tactile style: a passport column with a large hit point number, the paperdoll rack in a sunken tray, a quieter
+  inventory list and nested container trays.
+- Opening the grimoire or the trade drawer folds the paperdoll into its strip, so the inventory keeps its width and
+  the window grows less. Closing the drawer brings the paperdoll back. The paperdoll can be expanded beside a drawer
+  when the screen holds both; otherwise expanding it closes the drawer. On a screen too narrow for a drawer beside the
+  folded paperdoll, the passport column hides while the drawer is open.
+- New client setting *Accent colour* with ten colours (default Peach). Open windows and editors re-tint without
+  reopening.
+- Item rows show the rarity name of uncommon and rarer items.
+- Icons use Font Awesome Light, including the default paperdoll slots. Saved custom templates keep their icons.
+
+### Fonts
+- The interface fonts (Onest, JetBrains Mono, Unbounded) ship with the module, with Latin and Cyrillic subsets. The
+  module no longer requests anything from Google Fonts. The setting is now called *Interface Fonts*; turned off, the
+  windows use system fonts.
+
+### Motion
+- Animations run on GSAP 3.13 bundled with the module, on a private instance that leaves any global `gsap` from
+  other modules alone: the window settles in, numbers count to their new value, a filled slot settles, rows slide
+  to their new place after sorting or filtering, and drawers slide in.
+- A refused change (an equip the rules forbid, attunement past the limit, an invalid drop) shakes its target.
+- With reduced motion (the operating system's preference or Foundry's low performance mode) only a short fade
+  remains.
+
+### Fixed
+- An equip or attunement change vetoed by another module's update hook no longer shows a success notification.
+- Equipping a shield while a two-handed weapon is held is refused. Before, the shield pushed the weapon out and took
+  the main hand. Dropping a shield straight onto the main hand still swaps the weapon out.
+- More than three attunement slots no longer widen the paperdoll over the inventory: the sockets move to their own
+  line and wrap there.
+- On screens narrower than 1164 px, an open drawer hides the passport as intended. Before, the layout rule lost to
+  the drawer layout and squeezed the inventory into a 56 px column.
+- The paperdoll editor starts from the actor's own attunement cap and writes it only when it was changed. Before,
+  applying the editor reset a cap set on the sheet (6, say) to the template's 3.
+- Deleting a container from the window asks whether its contents go too. Before, they were kept pointing at the
+  deleted container, and the window then hid them; such items now show at the top level, as on the dnd5e sheet.
+- Reopening a window during its closing animation, opening it twice at once, or adding slots in quick succession
+  no longer leaves a window Foundry has lost track of (Escape and window order did not reach it).
+- Unequipping from a slot shakes it when another module vetoes the change, like the other refused actions.
+
+### API
+- `equipItem`, `unequipItem`, `toggleItemEquipped` and `toggleAttunement` resolve to `true` when the change was
+  written and `false` when it was refused or vetoed.
+- `formatItemForDisplay` adds `rarityLabel`; `extractActorVitals` adds `className`, `hp.tempPct`, `speedWalk` and
+  `speedUnit`.
+
+### Development
+- `npm run vendor` copies GSAP and the fonts from `node_modules` into `scripts/vendor/gsap/` and `assets/fonts/`.
+- Styles are split into `styles/tactile/` (tokens and primitives) and `styles/aim/`; `styles/actor-inventory.css`
+  was removed. After `npm run deploy`, restart the Foundry server once, because `module.json` lists new stylesheets.
+
 ## 1.7.0
 
 ### Changed

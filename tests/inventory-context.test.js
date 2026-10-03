@@ -1,9 +1,18 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { filterAndSortInventoryItems, mustCollapsePaperdoll } from "../scripts/ui/inventory-context.js";
+import { filterAndSortInventoryItems, isTopLevelItem } from "../scripts/ui/inventory-context.js";
 
 const item = (name, system) => ({ name, type: "loot", system });
+
+describe("top-level items", () => {
+  it("include items whose container was deleted, as the dnd5e sheet shows them", () => {
+    const items = new Map([["bag", { id: "bag", system: {} }]]);
+    assert.equal(isTopLevelItem({ system: {} }, items), true);
+    assert.equal(isTopLevelItem({ system: { container: "bag" } }, items), false);
+    assert.equal(isTopLevelItem({ system: { container: "gone" } }, items), true);
+  });
+});
 
 describe("inventory sorting", () => {
   it("ranks rarity from rarest down, not alphabetically", () => {
@@ -19,19 +28,5 @@ describe("inventory sorting", () => {
   it("compares weight including quantity", () => {
     const items = [item("Heavy", { quantity: 1, weight: { value: 5 } }), item("Many", { quantity: 10, weight: { value: 1 } })];
     assert.deepEqual(filterAndSortInventoryItems(items, { sortBy: "weight" }).map(i => i.name), ["Many", "Heavy"]);
-  });
-});
-
-describe("mustCollapsePaperdoll", () => {
-  const layout = { sidePanelOpen: true, paperdollCollapsed: false, availableWidth: 1240, requiredWidth: 1250 };
-
-  it("folds the paperdoll away when a side panel does not fit beside it", () => {
-    assert.equal(mustCollapsePaperdoll(layout), true);
-  });
-
-  it("leaves it alone when everything fits, no panel is open, or it is already folded", () => {
-    assert.equal(mustCollapsePaperdoll({ ...layout, availableWidth: 1250 }), false);
-    assert.equal(mustCollapsePaperdoll({ ...layout, sidePanelOpen: false }), false);
-    assert.equal(mustCollapsePaperdoll({ ...layout, paperdollCollapsed: true }), false);
   });
 });

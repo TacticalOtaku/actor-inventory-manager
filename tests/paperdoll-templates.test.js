@@ -7,7 +7,9 @@ import {
   importTemplateJSON,
   isWorldCustomTemplate,
   normalizeTemplateData,
-  saveWorldCustomTemplate
+  planTemplateApply,
+  saveWorldCustomTemplate,
+  setActorPaperdollTemplate
 } from "../scripts/core/paperdoll-templates.js";
 
 afterEach(() => resetPaperdollRuntime());
@@ -32,6 +34,17 @@ describe("template validation", () => {
     assert.equal(template.attunementMax, 9);
   });
 
+  it("plans an apply from the editor without touching an unchanged cap", () => {
+    // Opened on an actor whose cap (6) differs from the template's (3), only a slot moved.
+    assert.deepEqual(planTemplateApply({ isCustomWorking: false, templateCap: 3, initialCap: 6, cap: 6 }), { custom: false, writeCap: false });
+    // The GM changed the cap away from the template: the actor gets its own copy.
+    assert.deepEqual(planTemplateApply({ isCustomWorking: false, templateCap: 3, initialCap: 3, cap: 5 }), { custom: true, writeCap: true });
+    // Changed back to the template's own cap: stay linked, write it.
+    assert.deepEqual(planTemplateApply({ isCustomWorking: false, templateCap: 3, initialCap: 6, cap: 3 }), { custom: false, writeCap: true });
+    // Edited slots always make an actor-only layout.
+    assert.deepEqual(planTemplateApply({ isCustomWorking: true, templateCap: 3, initialCap: 3, cap: 3 }), { custom: true, writeCap: false });
+  });
+
   it("reports invalid JSON in words", async () => {
     await assert.rejects(importTemplateJSON("{nope"), /not valid JSON/);
   });
@@ -50,6 +63,21 @@ describe("world templates", () => {
     assert.equal(context.templateId, "elf");
     assert.equal(context.isActorCustom, false);
     assert.deepEqual(context.slots.map(s => s.id), ["ear"]);
+  });
+
+  it("leave the actor's attunement cap alone when asked to", async () => {
+    configurePaperdollRuntime({ isGM: () => true });
+    const writes = [];
+    const actor = {
+      type: "character", hasPlayerOwner: true, flags: {},
+      system: { attributes: { attunement: { max: 6 } } },
+      async update(changes) { writes.push(changes); },
+      async setFlag(scope, key, value) { writes.push({ [`flags.${scope}.${key}`]: value }); }
+    };
+    await setActorPaperdollTemplate(actor, "dnd2024", null, { applyAttunement: false });
+    assert.equal(writes.some(change => "system.attributes.attunement.max" in change), false);
+    await setActorPaperdollTemplate(actor, "dnd2024", null);
+    assert.equal(writes.some(change => change["system.attributes.attunement.max"] === 3), true);
   });
 
   it("marks an actor-only layout as custom", () => {

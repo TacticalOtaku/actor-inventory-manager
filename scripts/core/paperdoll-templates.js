@@ -20,7 +20,7 @@ export const DND_2024_TEMPLATE = {
       id: SLOTS.HEAD,
       labelKey: "AIM.slots.head",
       label: "Head",
-      icon: "fa-solid fa-helmet-safety",
+      icon: "fa-light fa-helmet-safety",
       column: "left",
       category: "equipment",
       accepts: ["head", "helmet", "hat", "circlet", "hood", "mask", "crown"],
@@ -32,7 +32,7 @@ export const DND_2024_TEMPLATE = {
       id: SLOTS.NECK,
       labelKey: "AIM.slots.neck",
       label: "Neck",
-      icon: "fa-solid fa-gem",
+      icon: "fa-light fa-gem",
       column: "left",
       category: "equipment",
       accepts: ["neck", "necklace", "amulet", "pendant", "medallion", "periapt", "collar", "torc"],
@@ -44,7 +44,7 @@ export const DND_2024_TEMPLATE = {
       id: SLOTS.CLOAK,
       labelKey: "AIM.slots.cloak",
       label: "Cloak",
-      icon: "fa-solid fa-vest-patches",
+      icon: "fa-light fa-vest-patches",
       column: "left",
       category: "equipment",
       accepts: ["cloak", "cape", "mantle", "robe_outer", "shawl", "pauldron"],
@@ -56,7 +56,7 @@ export const DND_2024_TEMPLATE = {
       id: SLOTS.MAIN_HAND,
       labelKey: "AIM.slots.mainHand",
       label: "Main Hand",
-      icon: "fa-solid fa-hand-fist",
+      icon: "fa-light fa-hand-fist",
       column: "left",
       category: "hand",
       accepts: ["weapon", "mainHand", "shield", "staff", "wand", "rod", "focus", "torch", "tool"],
@@ -68,7 +68,7 @@ export const DND_2024_TEMPLATE = {
       id: SLOTS.ARMOR,
       labelKey: "AIM.slots.armor",
       label: "Body Armor",
-      icon: "fa-solid fa-shield-halved",
+      icon: "fa-light fa-shield-halved",
       column: "center",
       category: "equipment",
       accepts: ["armor", "light", "medium", "heavy", "clothing", "robe", "vestment", "bodyArmor"],
@@ -80,7 +80,7 @@ export const DND_2024_TEMPLATE = {
       id: SLOTS.WAIST,
       labelKey: "AIM.slots.waist",
       label: "Waist",
-      icon: "fa-solid fa-bacon",
+      icon: "fa-light fa-bacon",
       column: "center",
       category: "equipment",
       accepts: ["waist", "belt", "girdle", "sash", "cinch"],
@@ -92,7 +92,7 @@ export const DND_2024_TEMPLATE = {
       id: SLOTS.FEET,
       labelKey: "AIM.slots.feet",
       label: "Feet",
-      icon: "fa-solid fa-shoe-prints",
+      icon: "fa-light fa-shoe-prints",
       column: "center",
       category: "equipment",
       accepts: ["feet", "boots", "shoes", "greaves", "slippers", "sandals", "sabatons"],
@@ -104,7 +104,7 @@ export const DND_2024_TEMPLATE = {
       id: SLOTS.HANDS,
       labelKey: "AIM.slots.hands",
       label: "Hands",
-      icon: "fa-solid fa-mitten",
+      icon: "fa-light fa-mitten",
       column: "right",
       category: "equipment",
       accepts: ["hands", "gloves", "gauntlets", "bracers", "handwraps"],
@@ -116,7 +116,7 @@ export const DND_2024_TEMPLATE = {
       id: SLOTS.RING_1,
       labelKey: "AIM.slots.ring1",
       label: "Ring 1",
-      icon: "fa-solid fa-ring",
+      icon: "fa-light fa-ring",
       column: "right",
       category: "ring",
       accepts: ["ring", "band", "signet"],
@@ -128,7 +128,7 @@ export const DND_2024_TEMPLATE = {
       id: SLOTS.RING_2,
       labelKey: "AIM.slots.ring2",
       label: "Ring 2",
-      icon: "fa-solid fa-ring",
+      icon: "fa-light fa-ring",
       column: "right",
       category: "ring",
       accepts: ["ring", "band", "signet"],
@@ -140,7 +140,7 @@ export const DND_2024_TEMPLATE = {
       id: SLOTS.OFF_HAND,
       labelKey: "AIM.slots.offHand",
       label: "Off Hand",
-      icon: "fa-solid fa-hand",
+      icon: "fa-light fa-hand",
       column: "right",
       category: "hand",
       accepts: ["shield", "offHand", "weapon", "focus", "torch", "lantern", "quiver", "instrument"],
@@ -165,7 +165,7 @@ export const DND_2014_TEMPLATE = {
       id: SLOTS.HEAD,
       labelKey: "AIM.slots.head",
       label: "Head",
-      icon: "fa-solid fa-helmet-safety",
+      icon: "fa-light fa-helmet-safety",
       column: "left",
       category: "equipment",
       accepts: ["head", "helmet", "hat", "circlet", "hood"],
@@ -177,7 +177,7 @@ export const DND_2014_TEMPLATE = {
       id: SLOTS.NECK,
       labelKey: "AIM.slots.neck",
       label: "Neck",
-      icon: "fa-solid fa-gem",
+      icon: "fa-light fa-gem",
       column: "left",
       category: "equipment",
       accepts: ["neck", "necklace", "amulet", "pendant", "periapt"],
@@ -189,7 +189,7 @@ export const DND_2014_TEMPLATE = {
       id: SLOTS.CLOAK,
       labelKey: "AIM.slots.cloak",
       label: "Cloak",
-      icon: "fa-solid fa-vest-patches",
+      icon: "fa-light fa-vest-patches",
       column: "left",
       category: "equipment",
       accepts: ["cloak", "cape", "mantle", "robe_outer"],
@@ -201,7 +201,7 @@ export const DND_2014_TEMPLATE = {
       id: SLOTS.MAIN_HAND,
       labelKey: "AIM.slots.mainHand",
       label: "Main Hand",
-      icon: "fa-solid fa-hand-fist",
+      icon: "fa-light fa-hand-fist",
       column: "left",
       category: "hand",
       accepts: ["weapon", "mainHand", "shield", "staff", "wand", "rod", "focus"],
@@ -213,7 +213,7 @@ export const DND_2014_TEMPLATE = {
       id: SLOTS.ARMOR,
       labelKey: "AIM.slots.armor",
       label: "Body Armor",
-      icon: "fa-solid fa-shield-halved",
+      icon: "fa-light fa-shield-halved",
       column: "center",
       category: "equipment",
       accepts: ["armor", "light", "medium", "heavy", "clothing"],
@@ -225,7 +225,7 @@ export const DND_2014_TEMPLATE = {
       id: SLOTS.WAIST,
       labelKey: "AIM.slots.waist",
       label: "Waist",
-      icon: "fa-solid fa-bacon",
+      icon: "fa-light fa-bacon",
       column: "center",
       category: "equipment",
       accepts: ["waist", "belt", "girdle"],
@@ -237,7 +237,7 @@ export const DND_2014_TEMPLATE = {
       id: SLOTS.FEET,
       labelKey: "AIM.slots.feet",
       label: "Feet",
-      icon: "fa-solid fa-shoe-prints",
+      icon: "fa-light fa-shoe-prints",
       column: "center",
       category: "equipment",
       accepts: ["feet", "boots", "shoes", "slippers"],
@@ -249,7 +249,7 @@ export const DND_2014_TEMPLATE = {
       id: SLOTS.HANDS,
       labelKey: "AIM.slots.hands",
       label: "Hands",
-      icon: "fa-solid fa-mitten",
+      icon: "fa-light fa-mitten",
       column: "right",
       category: "equipment",
       accepts: ["hands", "gloves", "gauntlets", "bracers"],
@@ -261,7 +261,7 @@ export const DND_2014_TEMPLATE = {
       id: SLOTS.RING_1,
       labelKey: "AIM.slots.ring1",
       label: "Ring 1",
-      icon: "fa-solid fa-ring",
+      icon: "fa-light fa-ring",
       column: "right",
       category: "ring",
       accepts: ["ring", "band"],
@@ -273,7 +273,7 @@ export const DND_2014_TEMPLATE = {
       id: SLOTS.RING_2,
       labelKey: "AIM.slots.ring2",
       label: "Ring 2",
-      icon: "fa-solid fa-ring",
+      icon: "fa-light fa-ring",
       column: "right",
       category: "ring",
       accepts: ["ring", "band"],
@@ -285,7 +285,7 @@ export const DND_2014_TEMPLATE = {
       id: SLOTS.OFF_HAND,
       labelKey: "AIM.slots.offHand",
       label: "Off Hand",
-      icon: "fa-solid fa-hand",
+      icon: "fa-light fa-hand",
       column: "right",
       category: "hand",
       accepts: ["shield", "offHand", "weapon", "focus", "torch"],
@@ -448,12 +448,25 @@ async function clearActorCustomTemplate(actor) {
 }
 
 /**
+ * What applying the paperdoll editor should do.
+ * The editor opens on the actor's own cap, which may differ from the template's: an untouched cap is
+ * neither written back nor a reason to give the actor its own copy of the template.
+ * @param {{isCustomWorking: boolean, templateCap: number, initialCap: number, cap: number}} state
+ * @returns {{custom: boolean, writeCap: boolean}}
+ */
+export function planTemplateApply({ isCustomWorking, templateCap, initialCap, cap }) {
+  const writeCap = cap !== initialCap;
+  return { custom: Boolean(isCustomWorking) || (writeCap && cap !== templateCap), writeCap };
+}
+
+/**
  * Assign a template or custom configuration to an actor (GM Only)
  * @param {Object} actor
  * @param {string} templateId
  * @param {Object|null} customTemplateData
+ * @param {{applyAttunement?: boolean}} [options] applyAttunement false keeps the actor's attunement cap
  */
-export async function setActorPaperdollTemplate(actor, templateId, customTemplateData = null) {
+export async function setActorPaperdollTemplate(actor, templateId, customTemplateData = null, { applyAttunement = true } = {}) {
   if (!isSupportedActor(actor)) return;
   const runtime = getPaperdollRuntime();
   if (!runtime.isGM()) {
@@ -468,11 +481,11 @@ export async function setActorPaperdollTemplate(actor, templateId, customTemplat
       [`flags.${MODULE_ID}.${FLAGS.CUSTOM_TEMPLATE}`]: { ...customTemplateData, id: "custom" },
       [`flags.${MODULE_ID}.${FLAGS.TEMPLATE_ID}`]: "custom"
     });
-    await applyAttunementMax(actor, customTemplateData.attunementMax);
+    if (applyAttunement) await applyAttunementMax(actor, customTemplateData.attunementMax);
   } else {
     await clearActorCustomTemplate(actor);
     await actor.setFlag(MODULE_ID, FLAGS.TEMPLATE_ID, templateId);
-    await applyAttunementMax(actor, getTemplateById(templateId)?.attunementMax);
+    if (applyAttunement) await applyAttunementMax(actor, getTemplateById(templateId)?.attunementMax);
   }
 
   runtime.logInfo("Actor paperdoll template updated", { actorId: actor.id, templateId });
@@ -515,7 +528,7 @@ export function normalizeTemplateData(data) {
       id: slotId,
       ...(typeof slot.labelKey === "string" ? { labelKey: slot.labelKey } : {}),
       label: typeof slot.label === "string" && slot.label.trim() ? slot.label.trim() : slotId,
-      icon: typeof slot.icon === "string" && slot.icon.trim() ? slot.icon.trim() : "fa-solid fa-gem",
+      icon: typeof slot.icon === "string" && slot.icon.trim() ? slot.icon.trim() : "fa-light fa-gem",
       column: COLUMNS.includes(slot.column) ? slot.column : "center",
       category: typeof slot.category === "string" ? slot.category : "equipment",
       accepts: strings(slot.accepts).map(v => v.toLowerCase()),

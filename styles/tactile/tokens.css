@@ -1,0 +1,42 @@
+/* Tactile design tokens. They live on the application root (`.tc-root`), never on `:root`.
+   Light is the default set; dark applies when the module stamps `data-theme="dark"` on the root.
+   The accent is OKLCH: hue and chroma come from `--tc-acc-h` / `--tc-acc-c` (scripts/tactile/palette.js),
+   lightness from the theme. Both are registered so a palette change animates. */
+@property --tc-acc-h { syntax: "<number>"; inherits: true; initial-value: 45; }
+@property --tc-acc-c { syntax: "<number>"; inherits: true; initial-value: 0.13; }
+
+.tc-root {
+  --tc-acc-h: 45; --tc-acc-c: 0.13;
+  --tc-bg: #E7E8EB; --tc-surface: #F3F3F5; --tc-sunken: #D9DBDF; --tc-ink: #23262E; --tc-muted: #626876; --tc-line: rgb(35 38 46 / 9%);
+  --tc-danger: #C2363F; --tc-warning: #9A6A12; --tc-good: #2F7D57;
+  --tc-accent: oklch(0.73 var(--tc-acc-c) var(--tc-acc-h));
+  --tc-accent-text: oklch(0.5 calc(var(--tc-acc-c) * 1.05) var(--tc-acc-h));
+  --tc-on-accent: oklch(0.24 0.04 var(--tc-acc-h));
+  --tc-glow: oklch(0.76 var(--tc-acc-c) var(--tc-acc-h) / 0.6);
+  --tc-accent-soft: oklch(0.73 var(--tc-acc-c) var(--tc-acc-h) / 0.18);
+  --tc-raise: inset 0 1px 0 rgb(255 255 255 / 85%), 0 10px 24px -12px rgb(38 44 60 / 45%), 0 2px 5px -2px rgb(38 44 60 / 22%);
+  --tc-press: inset 0 2px 5px rgb(38 44 60 / 18%), inset 0 -1px 0 rgb(255 255 255 / 70%);
+  --tc-window: 0 30px 70px -28px rgb(10 12 18 / 75%), inset 0 0 0 1px rgb(255 255 255 / 50%);
+  --tc-cat-l: 0.62;
+  --tc-font-ui: "Onest Variable", "Onest", "Segoe UI", system-ui, sans-serif;
+  --tc-font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+  --tc-font-display: "Unbounded Variable", "Unbounded", var(--tc-font-ui);
+  --tc-r-window: 22px; --tc-r-block: 12px; --tc-r-row: 9px; --tc-r-ctl: 999px;
+  --tc-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  color-scheme: light;
+  transition: --tc-acc-h 700ms cubic-bezier(0.32, 0.72, 0, 1), --tc-acc-c 700ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.tc-root[data-theme="dark"] {
+  --tc-bg: #262D40; --tc-surface: #2F3750; --tc-sunken: #1D2333; --tc-ink: #E7EAF3; --tc-muted: #A0A8BD; --tc-line: rgb(220 228 255 / 8%);
+  --tc-danger: #FF7A82; --tc-warning: #F2C46B; --tc-good: #7FD3A6;
+  --tc-accent: oklch(0.78 var(--tc-acc-c) var(--tc-acc-h));
+  --tc-accent-text: oklch(0.84 calc(var(--tc-acc-c) * 0.9) var(--tc-acc-h));
+  --tc-glow: oklch(0.78 var(--tc-acc-c) var(--tc-acc-h) / 0.7);
+  --tc-accent-soft: oklch(0.78 var(--tc-acc-c) var(--tc-acc-h) / 0.16);
+  --tc-raise: inset 0 1px 0 rgb(255 255 255 / 8%), 0 12px 26px -12px rgb(0 0 0 / 70%), 0 2px 5px -2px rgb(0 0 0 / 50%);
+  --tc-press: inset 0 2px 6px rgb(0 0 0 / 45%), inset 0 -1px 0 rgb(255 255 255 / 5%);
+  --tc-window: 0 30px 70px -26px rgb(0 0 0 / 85%), inset 0 0 0 1px rgb(255 255 255 / 7%);
+  --tc-cat-l: 0.78;
+  color-scheme: dark;
+}

@@ -1,0 +1,103 @@
+/* Tactile primitives. Generic building blocks, every selector scoped under `.tc-root`; values come from tokens.css.
+   Icons inside primitives are Font Awesome `<i>` elements. Transitions touch only colour, shadow, opacity and
+   transform, never `background` or `all`. */
+
+/* Foundry's own button and input styles leak into application windows. Zero specificity, so primitives win;
+   module stylesheets sit in Foundry's `modules` cascade layer, above its element styles. */
+/* Buttons that are themselves Font Awesome icons (Foundry's header controls) keep the icon font. */
+:where(.tc-root) :where(button, input, select):not(:where([class*="fa-"])) { font: inherit; }
+:where(.tc-root) :where(button, input, select) { color: inherit; margin: 0; }
+:where(.tc-root) :where(button) { background: none; border: 0; min-height: 0; line-height: normal; box-shadow: none; }
+.tc-root :focus-visible { outline: 2px solid var(--tc-accent); outline-offset: 2px; }
+
+/* --- label: mono caps meta line --- */
+.tc-root .tc-lbl { font: 500 10.5px/1.3 var(--tc-font-mono); color: var(--tc-muted); letter-spacing: 0.08em; text-transform: uppercase; }
+.tc-root .tc-lbl i { font-size: 12px; vertical-align: -1px; }
+.tc-root .tc-lbl b { color: var(--tc-ink); font-weight: 600; }
+
+/* --- double kant: sunken shell around a raised core; tray is a sunken well --- */
+.tc-root .tc-shell { padding: 6px; border-radius: calc(var(--tc-r-block) + 6px); background: var(--tc-sunken); box-shadow: var(--tc-press); min-height: 0; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+.tc-root .tc-core { min-width: 0; min-height: 0; display: flex; flex-direction: column; border-radius: var(--tc-r-block); background: var(--tc-surface); box-shadow: var(--tc-raise); }
+.tc-root .tc-tray { border-radius: var(--tc-r-block); background: var(--tc-sunken); box-shadow: var(--tc-press); min-height: 0; }
+
+/* --- section heading: label followed by a hairline --- */
+.tc-root .tc-sec { display: flex; align-items: center; gap: 8px; }
+.tc-root .tc-sec::after { content: ""; flex: 1; height: 1px; background: var(--tc-line); }
+.tc-root .tc-sec .tc-lbl { white-space: nowrap; }
+
+/* --- band: meter track. Fills are sized by `width` (driven by `data-meter`), stops are placed by `left` --- */
+.tc-root .tc-band { position: relative; height: 6px; border-radius: 99px; background: var(--tc-sunken); box-shadow: var(--tc-press); overflow: hidden; }
+.tc-root .tc-band-fill,
+.tc-root .tc-band-ghost { position: absolute; left: 0; top: 0; height: 100%; border-radius: 99px; background: var(--tc-accent); box-shadow: 0 0 10px var(--tc-glow); }
+.tc-root .tc-band-ghost { background: var(--tc-muted); box-shadow: none; opacity: 0.35; }
+.tc-root .tc-band-stop { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--tc-surface); }
+
+/* --- ticks: scale labels under a band --- */
+.tc-root .tc-ticks { position: relative; height: 11px; margin-top: 5px; font: 500 9.5px/1 var(--tc-font-mono); color: var(--tc-muted); }
+.tc-root .tc-ticks span { position: absolute; top: 0; transform: translateX(-50%); }
+.tc-root .tc-ticks span:first-child { left: 0; transform: none; }
+.tc-root .tc-ticks span:last-child { left: auto; right: 0; transform: none; }
+
+/* --- icon button --- */
+.tc-root .tc-ibtn { width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: var(--tc-r-ctl); background: transparent; color: var(--tc-muted); cursor: pointer; transition: color 160ms var(--tc-ease), box-shadow 160ms var(--tc-ease), opacity 160ms var(--tc-ease); }
+.tc-root .tc-ibtn:hover { color: var(--tc-ink); box-shadow: var(--tc-raise); }
+.tc-root .tc-ibtn.is-on { color: var(--tc-accent-text); }
+.tc-root .tc-ibtn.is-danger:hover { color: var(--tc-danger); }
+.tc-root .tc-ibtn i { font-size: 14px; }
+
+/* --- raised button --- */
+.tc-root .tc-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 34px; padding: 0 14px; border: 0; border-radius: var(--tc-r-ctl); background: var(--tc-surface); box-shadow: var(--tc-raise); font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.tc-root .tc-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.tc-root .tc-btn.is-square { width: 34px; padding: 0; }
+
+/* --- primary: accent capsule with a nested icon well --- */
+.tc-root .tc-primary { display: inline-flex; align-items: center; justify-content: space-between; gap: 10px; height: 34px; padding: 0 3px 0 16px; border: 0; border-radius: var(--tc-r-ctl); background: var(--tc-accent); color: var(--tc-on-accent); font-weight: 700; font-size: 12.5px; cursor: pointer; white-space: nowrap; box-shadow: inset 0 1px 0 rgb(255 255 255 / 40%), 0 8px 18px -8px var(--tc-glow); }
+.tc-root .tc-primary-nest { width: 28px; height: 28px; display: grid; place-items: center; border-radius: var(--tc-r-ctl); background: rgb(255 255 255 / 28%); }
+.tc-root .tc-primary[disabled] { opacity: 0.45; box-shadow: none; cursor: not-allowed; }
+
+/* --- pill: status tag --- */
+.tc-root .tc-pill { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 7px; border-radius: 99px; background: var(--tc-accent-soft); color: var(--tc-accent-text); font: 600 9.5px/1 var(--tc-font-mono); letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; flex: none; }
+.tc-root .tc-pill i { font-size: 10px; }
+.tc-root .tc-pill.is-plain { background: transparent; color: var(--tc-muted); box-shadow: inset 0 0 0 1px var(--tc-line); }
+.tc-root .tc-pill.is-warn { background: color-mix(in oklab, var(--tc-warning) 14%, transparent); color: var(--tc-warning); }
+
+/* --- chip: quiet data tag --- */
+.tc-root .tc-chip { display: inline-flex; align-items: center; gap: 3px; height: 17px; padding: 0 6px; border-radius: 99px; background: var(--tc-sunken); color: var(--tc-muted); font: 500 10px/1 var(--tc-font-mono); white-space: nowrap; }
+.tc-root .tc-chip i { font-size: 9px; }
+
+/* --- search: sunken capsule around a bare input --- */
+.tc-root .tc-search { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: var(--tc-r-ctl); background: var(--tc-sunken); box-shadow: var(--tc-press); color: var(--tc-muted); min-width: 0; }
+.tc-root .tc-search input { flex: 1; min-width: 0; height: auto; padding: 0; border: 0; background: none; box-shadow: none; outline: none; color: var(--tc-ink); font-size: 13px; }
+.tc-root .tc-search input::placeholder { color: var(--tc-muted); }
+
+/* --- select: raised capsule with a drawn chevron --- */
+.tc-root .tc-select { height: 30px; padding: 0 28px 0 12px; border: 0; border-radius: var(--tc-r-ctl); background-color: var(--tc-surface); box-shadow: var(--tc-raise); font-size: 12.5px; appearance: none; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--tc-muted) 50%), linear-gradient(135deg, var(--tc-muted) 50%, transparent 50%);
+  background-position: right 14px center, right 9px center; background-size: 5px 5px; background-repeat: no-repeat; }
+
+/* --- segments: tab strip; only the active segment shows its label --- */
+.tc-root .tc-segs { display: flex; gap: 2px; padding: 3px; border-radius: var(--tc-r-ctl); background: var(--tc-sunken); box-shadow: var(--tc-press); }
+.tc-root .tc-seg { flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 30px; padding: 0 8px; border: 0; border-radius: var(--tc-r-ctl); background: transparent; color: var(--tc-muted); font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: color 160ms var(--tc-ease); }
+.tc-root .tc-seg:hover { color: var(--tc-ink); }
+.tc-root .tc-seg-count { font: 600 10px/1 var(--tc-font-mono); opacity: 0.8; }
+.tc-root .tc-seg-label { display: none; }
+.tc-root .tc-seg[aria-pressed="true"] { flex: 0 0 auto; padding: 0 12px; background: var(--tc-surface); color: var(--tc-ink); box-shadow: var(--tc-raise); }
+.tc-root .tc-seg[aria-pressed="true"] .tc-seg-label { display: inline; }
+.tc-root .tc-seg[aria-pressed="true"] i { color: var(--tc-accent-text); }
+
+/* --- dot: proficiency marker --- */
+.tc-root .tc-dot { display: inline-block; width: 6px; height: 6px; border-radius: 99px; box-shadow: inset 0 0 0 1.5px currentColor; flex: none; }
+.tc-root .tc-dot.is-on { background: var(--tc-accent); box-shadow: 0 0 6px var(--tc-glow); }
+
+/* --- pip: expendable charge (spell slot); a <button> when editable, a <span> otherwise --- */
+.tc-root .tc-pip { position: relative; display: inline-block; flex: none; width: 15px; height: 15px; padding: 0; border: 0; border-radius: 99px; cursor: pointer; background: transparent; box-shadow: inset 0 0 0 1.5px var(--tc-muted); }
+.tc-root .tc-pip::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--tc-accent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 45%), 0 0 8px var(--tc-glow); opacity: 0; transform: scale(0.4); transition: opacity 240ms var(--tc-ease), transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.tc-root .tc-pip.is-on::after { opacity: 1; transform: none; }
+.tc-root .tc-pip[disabled],
+.tc-root span.tc-pip { cursor: default; }
+
+/* --- reduced motion: system preference and Foundry's low-performance mode --- */
+@media (prefers-reduced-motion: reduce) {
+  .tc-root * { transition-duration: 0.01ms !important; }
+}
+body.performance-low .tc-root * { transition-duration: 0.01ms !important; }

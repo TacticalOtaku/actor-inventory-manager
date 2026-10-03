@@ -2,8 +2,9 @@
 // Actor Inventory Manager - Slot Configuration Dialog
 // ─────────────────────────────────────────────────────────
 
-import { MODULE_ID } from "../constants.js";
+import { MODULE_ID, REFRESH_HOOK } from "../constants.js";
 import { isImagePath } from "./html.js";
+import { stampEditorTheme, watchEditorTheme } from "./tactile-theme.js";
 
 /**
  * Slot category: held-item slots are "hand", ring slots "ring"; otherwise the
@@ -21,8 +22,9 @@ const ApplicationBase = foundry.applications.api.HandlebarsApplicationMixin(
 
 export class SlotConfigDialog extends ApplicationBase {
   static DEFAULT_OPTIONS = {
-    id: `${MODULE_ID}-slot-config`,
-    classes: ["actor-inventory-manager-app", "aim-slot-config-dialog", "rpg-theme"],
+    // Unique per dialog: one still closing must not unregister the next under a shared id.
+    id: `${MODULE_ID}-slot-config-{id}`,
+    classes: ["actor-inventory-manager-app", "tc-root", "aim-slot-config-dialog"],
     tag: "div",
     position: {
       width: 480,
@@ -30,7 +32,7 @@ export class SlotConfigDialog extends ApplicationBase {
     },
     window: {
       title: "AIM.editor.slotConfigTitle",
-      icon: "fa-solid fa-gear",
+      icon: "fa-light fa-gear",
       modal: true,
       resizable: false
     },
@@ -86,8 +88,20 @@ export class SlotConfigDialog extends ApplicationBase {
     };
   }
 
+  async _onFirstRender(context, options) {
+    await super._onFirstRender(context, options);
+    this._themeHookId = watchEditorTheme(this);
+  }
+
+  _onClose(options) {
+    super._onClose(options);
+    if (this._themeHookId !== undefined) Hooks.off(REFRESH_HOOK, this._themeHookId);
+    this._themeHookId = undefined;
+  }
+
   _onRender(context, options) {
     super._onRender(context, options);
+    stampEditorTheme(this.element);
 
     const form = this.element.querySelector("form");
     if (form) {

@@ -55,12 +55,14 @@
     },
     "app": {
       "title": "Actor Inventory & Paperdoll",
-      "sidePanels": "Side panels"
+      "sidePanels": "Side panels",
+      "readOnly": "Read only"
     },
     "paperdoll": {
       "title": "Equipment",
       "collapseTooltip": "Collapse Paperdoll Panel",
-      "expandTooltip": "Expand Paperdoll Panel"
+      "expandTooltip": "Expand Paperdoll Panel",
+      "occupied": "Occupied slots"
     },
     "sheetButton": {
       "label": "RPG Inventory",
@@ -107,11 +109,23 @@
         "swim": "Swim",
         "climb": "Climb",
         "burrow": "Burrow"
+      },
+      "tempShort": "temp",
+      "speedShort": "Speed",
+      "passives": "Passive",
+      "abilityAbbr": {
+        "str": "STR",
+        "dex": "DEX",
+        "con": "CON",
+        "int": "INT",
+        "wis": "WIS",
+        "cha": "CHA"
       }
     },
     "theme": {
-      "switchToLight": "Switch to Light Theme (Parchment)",
-      "switchToDark": "Switch to Dark Theme (Fantasy)"
+      "toggle": "Toggle light/dark",
+      "switchToLight": "Light theme",
+      "switchToDark": "Dark theme"
     },
     "encumbrance": {
       "title": "Load",
@@ -132,7 +146,8 @@
       "gpAbbr": "GP",
       "epAbbr": "EP",
       "spAbbr": "SP",
-      "cpAbbr": "CP"
+      "cpAbbr": "CP",
+      "purse": "Purse"
     },
     "templates": {
       "dnd2024": {
@@ -150,6 +165,8 @@
       "gmOnly": "Only Game Master can access the Paperdoll Editor.",
       "templateLabel": "Paperdoll Template",
       "customActorConfig": "Custom Actor Configuration",
+      "presetsGroup": "Built-in presets",
+      "worldGroup": "World templates",
       "applyToActor": "Apply to this Actor",
       "applyToActorHint": "Binds this template layout directly to this actor",
       "appliedSuccess": "Applied paperdoll template to {actor}",
@@ -240,7 +257,9 @@
       "delete": "Delete Item",
       "shortRest": "Short Rest",
       "longRest": "Long Rest",
-      "close": "Close"
+      "close": "Close",
+      "shortRestShort": "Short",
+      "longRestShort": "Long"
     },
     "attunement": {
       "title": "Attuned Items",
@@ -255,7 +274,8 @@
       "armor": "Armor",
       "consumables": "Consumables",
       "containers": "Containers",
-      "loot": "Loot"
+      "loot": "Loot",
+      "label": "Categories"
     },
     "filters": {
       "searchPlaceholder": "Search items..."
@@ -264,13 +284,15 @@
       "name": "Sort by Name",
       "weight": "Sort by Weight",
       "value": "Sort by Value",
-      "rarity": "Sort by Rarity"
+      "rarity": "Sort by Rarity",
+      "label": "Sort"
     },
     "items": {
       "attuned": "Attuned",
       "requiresAttunement": "Requires Attunement",
       "requiresAttunementShort": "Requires Attune",
-      "emptyList": "No items found in this category."
+      "emptyList": "No items found in this category.",
+      "noMatches": "Nothing matches the search."
     },
     "spells": {
       "drawerTab": "Spells",
@@ -345,6 +367,7 @@
       "deleteItem": {
         "title": "Delete Item",
         "message": "Are you sure you want to delete {item}?",
+        "contents": "Delete everything inside as well ({count} items). Otherwise it stays in the inventory.",
         "confirm": "Delete",
         "cancel": "Cancel"
       }
@@ -362,10 +385,24 @@
     "settings": {
       "theme": {
         "name": "Interface Theme",
-        "hint": "Choose the visual theme for the inventory window: Dark Fantasy, Light Parchment, or Auto-detect.",
-        "dark": "Dark Fantasy",
-        "light": "Light Parchment",
+        "hint": "Choose the theme for the inventory window: dark, light, or follow the system.",
+        "dark": "Dark",
+        "light": "Light",
         "auto": "Auto (System Preference)"
+      },
+      "accent": {
+        "name": "Accent colour",
+        "hint": "Colour of highlights, meters and primary buttons in the inventory window.",
+        "peach": "Peach",
+        "amber": "Amber",
+        "sage": "Sage",
+        "mint": "Mint",
+        "azure": "Azure",
+        "periwinkle": "Periwinkle",
+        "lavender": "Lavender",
+        "orchid": "Orchid",
+        "rose": "Rose",
+        "steel": "Steel"
       },
       "enforcementMode": {
         "name": "Equipment Rules Enforcement Mode",
@@ -401,8 +438,8 @@
         "hint": "Internal storage for paperdoll templates saved in this world."
       },
       "useWebFonts": {
-        "name": "Decorative Web Fonts",
-        "hint": "Load the theme's fonts from Google Fonts. Turn off for offline play or to avoid contacting Google; system fonts are used instead."
+        "name": "Interface Fonts",
+        "hint": "Load the module's bundled interface fonts (Onest, JetBrains Mono, Unbounded). Turn off to use system fonts."
       }
     },
     "keybindings": {

@@ -17,7 +17,8 @@ Release notes: [CHANGELOG.md](CHANGELOG.md).
   - Multi-tier Paperdoll presets: D&D 2024 Rules and Classic D&D 2014.
   - In-game GM Paperdoll Editor to customize slot layouts, add custom slots, and configure slot rules.
   - Auto-locking of off-hand when equipping Two-Handed weapons.
-  - Solar Attunement bar with quick attunement tracking.
+  - Attunement tray with the attuned items and the attunement count.
+  - Opening the Spells or Trade drawer folds the paperdoll into a strip, so the inventory keeps its width.
 
 - **Vitals & Encumbrance HUD**:
   - HP, Temp HP, Armor Class, Speed, Initiative, and Passives display.
@@ -35,11 +36,13 @@ Release notes: [CHANGELOG.md](CHANGELOG.md).
 
 - **SC - Item Rarity Colors Integration**:
   - Seamless visual integration with *SC - Item Rarity Colors* & *Custom DND5E*.
-  - Vibrant horizontal rarity gradients, glowing thumbnails, and magical school spell effects.
+  - Rarity colours on item thumbnails and equipped slots, rarity names on item rows, and spell-school colours in the Spells drawer.
 
-- **Dual Theme Support**:
-  - Dark Fantasy (Midnight Obsidian & Gold).
-  - Light Parchment (Ancient Gilded Tome).
+- **Tactile Interface**:
+  - Dark and light themes, or follow the system preference (*Interface Theme* setting).
+  - Ten accent colours (*Accent colour* setting).
+  - Interface fonts (Onest, JetBrains Mono, Unbounded) bundled with the module; no requests to Google Fonts or other CDNs. Turn off *Interface Fonts* to use system fonts.
+  - GSAP animations that respect the system's reduced-motion preference and Foundry's low performance mode.
 
 ---
 

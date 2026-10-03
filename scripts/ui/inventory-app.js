@@ -100,6 +100,14 @@ const INVENTORY_TABS = Object.freeze([
   { id: "loot", icon: "fa-coins" }
 ].map(Object.freeze));
 
+/** Grimoire sub-tabs and their Font Awesome Light icons. */
+const SPELLS_TABS = Object.freeze([
+  { id: "all", icon: "fa-layer-group" },
+  { id: "spells", icon: "fa-book-sparkles" },
+  { id: "actions", icon: "fa-bolt" },
+  { id: "passives", icon: "fa-shield-heart" }
+].map(Object.freeze));
+
 /** Coin denominations in the purse, richest first. */
 const COIN_KEYS = Object.freeze(["pp", "gp", "ep", "sp", "cp"]);
 
@@ -334,6 +342,10 @@ export class ActorInventoryApp extends InventoryApplicationBase {
       isPaperdollCollapsed: this.isPaperdollCollapsed,
       isSpellsPanelOpen: this.isSpellsPanelOpen,
       spellsTab: this.spellsTab,
+      spellsTabs: SPELLS_TABS,
+      showSpells: this.spellsTab === "all" || this.spellsTab === "spells",
+      showActions: this.spellsTab === "all" || this.spellsTab === "actions",
+      showPassives: this.spellsTab === "all" || this.spellsTab === "passives",
       spellsSearchFilter: this.spellsSearchFilter,
       spellSlots,
       spellGroups,
@@ -584,13 +596,12 @@ export class ActorInventoryApp extends InventoryApplicationBase {
   }
 
   /**
-   * Stamp the theme on the window root.
+   * Stamp the theme and accent on the window root.
    *
-   * Panel colours come from CSS custom properties, and several rules transition
-   * `background`/`all`. A transition started by a custom-property change never
-   * settles on the new value, which used to leave panels painted in the previous
-   * theme until the window was reopened. Suppressing transitions across the swap
-   * makes the change atomic.
+   * Colours come from Tactile tokens, and controls transition `color` and
+   * `box-shadow`. A transition started by a custom-property change could settle
+   * on the previous theme's value (the old styles left panels painted that way),
+   * so transitions are suppressed across the swap to make it atomic.
    *
    * @param {string} theme
    */

@@ -7,7 +7,8 @@
 // Pure: no Foundry or DOM globals, the caller passes the viewport width in.
 //
 // Column arithmetic (styles/aim/window.css must match): passport 256, doll 312 or strip 56,
-// inventory >= 340, drawer 364, rail 40, gaps 10, body padding 14 on each side.
+// inventory >= 340, drawer 364, rail 40, gaps 10, body padding 14 on each side. The compact layout drops
+// the passport column (256 + one gap) from drawerStrip.
 
 /**
  * @typedef {object} WindowLayoutState
@@ -16,11 +17,14 @@
  * @property {boolean} dollBesideDrawer       the user expanded the doll next to the open drawer
  */
 
-/** Preferred window widths (px). */
-export const LAYOUT_WIDTHS = Object.freeze({ open: 1080, strip: 824, drawerStrip: 1188, drawerOpen: 1444 });
+/**
+ * Preferred window widths (px). `drawerCompact` is the strip layout without the passport, used only
+ * when the screen cannot hold `drawerStrip`, so it takes whatever the screen offers up to that minimum.
+ */
+export const LAYOUT_WIDTHS = Object.freeze({ open: 1080, strip: 824, drawerStrip: 1188, drawerOpen: 1444, drawerCompact: 1124 });
 
 /** Narrowest widths at which the columns still fit (see the column arithmetic above). */
-export const LAYOUT_MIN_WIDTHS = Object.freeze({ open: 1006, strip: 750, drawerStrip: 1124, drawerOpen: 1380 });
+export const LAYOUT_MIN_WIDTHS = Object.freeze({ open: 1006, strip: 750, drawerStrip: 1124, drawerOpen: 1380, drawerCompact: 858 });
 
 /** Room kept free between the window and the screen edges. */
 const SCREEN_MARGIN = 40;
@@ -73,12 +77,28 @@ export function toggleDoll(state, viewportWidth) {
 }
 
 /**
+ * A drawer beside the strip does not fit this screen: the passport column hides to make room.
+ * @param {WindowLayoutState} state
+ * @param {number} viewportWidth
+ * @returns {boolean}
+ */
+export function isCompact(state, viewportWidth) {
+  return Boolean(state.drawer) && !isDollOpen(state) && viewportWidth - SCREEN_MARGIN < LAYOUT_MIN_WIDTHS.drawerStrip;
+}
+
+function effectiveLayoutName(state, viewportWidth) {
+  if (isCompact(state, viewportWidth)) return "drawerCompact";
+  return layoutName({ drawer: state.drawer, dollOpen: isDollOpen(state) });
+}
+
+/**
  * Narrowest window width for the current layout.
  * @param {WindowLayoutState} state
+ * @param {number} [viewportWidth=Infinity]
  * @returns {number}
  */
-export function resolveMinimumWidth(state) {
-  return LAYOUT_MIN_WIDTHS[layoutName({ drawer: state.drawer, dollOpen: isDollOpen(state) })];
+export function resolveMinimumWidth(state, viewportWidth = Infinity) {
+  return LAYOUT_MIN_WIDTHS[effectiveLayoutName(state, viewportWidth)];
 }
 
 /**
@@ -89,7 +109,7 @@ export function resolveMinimumWidth(state) {
  * @returns {number}
  */
 export function resolveWindowWidth(state, viewportWidth) {
-  const name = layoutName({ drawer: state.drawer, dollOpen: isDollOpen(state) });
+  const name = effectiveLayoutName(state, viewportWidth);
   const available = viewportWidth - SCREEN_MARGIN;
   return Math.max(LAYOUT_MIN_WIDTHS[name], Math.min(LAYOUT_WIDTHS[name], available));
 }

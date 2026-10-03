@@ -55,7 +55,8 @@
     },
     "app": {
       "title": "Actor Inventory & Paperdoll",
-      "sidePanels": "Side panels"
+      "sidePanels": "Side panels",
+      "readOnly": "Read only"
     },
     "paperdoll": {
       "title": "Equipment",
@@ -110,8 +111,9 @@
       }
     },
     "theme": {
-      "switchToLight": "Switch to Light Theme (Parchment)",
-      "switchToDark": "Switch to Dark Theme (Fantasy)"
+      "toggle": "Toggle light/dark",
+      "switchToLight": "Light theme",
+      "switchToDark": "Dark theme"
     },
     "encumbrance": {
       "title": "Load",
@@ -362,9 +364,9 @@
     "settings": {
       "theme": {
         "name": "Interface Theme",
-        "hint": "Choose the visual theme for the inventory window: Dark Fantasy, Light Parchment, or Auto-detect.",
-        "dark": "Dark Fantasy",
-        "light": "Light Parchment",
+        "hint": "Choose the theme for the inventory window: dark, light, or follow the system.",
+        "dark": "Dark",
+        "light": "Light",
         "auto": "Auto (System Preference)"
       },
       "accent": {

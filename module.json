@@ -49,7 +49,14 @@
     "scripts/main.js"
   ],
   "styles": [
-    "styles/actor-inventory.css"
+    "styles/tactile/tokens.css",
+    "styles/tactile/components.css",
+    "styles/aim/window.css",
+    "styles/aim/passport.css",
+    "styles/aim/paperdoll.css",
+    "styles/aim/inventory.css",
+    "styles/aim/drawers.css",
+    "styles/aim/editors.css"
   ],
   "languages": [
     {

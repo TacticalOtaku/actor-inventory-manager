@@ -1,0 +1,895 @@
+<title>AIM в Tactile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Unbounded:wght@500;700&display=swap">
+<style>
+/* Layout: the module's own four zones — passport, paperdoll, inventory, side drawer on a rail — rebuilt in Tactile.
+   The passport is the spec label (one big number), the paperdoll is a rack in a sunken tray, the inventory is a quiet
+   list whose controls surface on hover, drawers are sheets with a double kant. Opening a drawer folds the paperdoll
+   into a strip, so the inventory keeps its width. */
+@property --tc-acc-h { syntax: "<number>"; inherits: true; initial-value: 45; }
+@property --tc-acc-c { syntax: "<number>"; inherits: true; initial-value: 0.13; }
+
+:root {
+  --pg-bg: #ECEDEF; --pg-panel: #F6F6F7; --pg-ink: #1D1F24; --pg-muted: #5E626C; --pg-line: rgb(29 31 36 / 12%); --pg-focus: #2F6FEB;
+  --pg-font: "Onest", "Segoe UI", system-ui, sans-serif; --pg-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --pg-bg: #121316; --pg-panel: #1A1B1F; --pg-ink: #E8E9EC; --pg-muted: #9A9EA8; --pg-line: rgb(232 233 236 / 10%); --pg-focus: #7FA7FF; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --pg-bg: #121316; --pg-panel: #1A1B1F; --pg-ink: #E8E9EC; --pg-muted: #9A9EA8; --pg-line: rgb(232 233 236 / 10%); --pg-focus: #7FA7FF; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--pg-bg); color: var(--pg-ink); font: 15px/1.5 var(--pg-font); -webkit-font-smoothing: antialiased; }
+.page { max-width: 1240px; margin: 0 auto; padding-inline: clamp(16px, 3vw, 36px); padding-block: 28px 64px; display: grid; gap: 18px; }
+.top { display: grid; gap: 16px; padding-block-end: 20px; border-bottom: 1px solid var(--pg-line); }
+.top h1 { margin: 0; font-size: clamp(24px, 3vw, 34px); line-height: 1.1; font-weight: 600; letter-spacing: -0.02em; text-wrap: balance; }
+.top p { margin: 6px 0 0; max-width: 82ch; color: var(--pg-muted); }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 22px; align-items: center; }
+.ctl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.seg-label { font: 500 11px/1 var(--pg-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--pg-muted); }
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--pg-panel); border: 1px solid var(--pg-line); }
+.seg button { font: 500 13px/1 var(--pg-font); color: var(--pg-muted); background: none; border: 0; padding: 8px 13px; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--pg-ink); color: var(--pg-bg); }
+.palette { display: flex; flex-wrap: wrap; gap: 6px; padding: 5px; border-radius: 999px; background: var(--pg-panel); border: 1px solid var(--pg-line); }
+.sw { --sw-l: 0.73; width: 26px; height: 26px; border-radius: 999px; border: 0; cursor: pointer; position: relative; background: oklch(var(--sw-l) var(--c) var(--h)); box-shadow: inset 0 1px 0 rgb(255 255 255 / 45%), 0 2px 6px -2px rgb(0 0 0 / 35%); }
+:root[data-theme="dark"] .sw { --sw-l: 0.78; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sw { --sw-l: 0.78; } }
+.sw[aria-checked="true"]::after { content: ""; position: absolute; inset: -4px; border-radius: 999px; border: 2px solid var(--pg-ink); }
+.acc-name { min-width: 8ch; font-size: 13px; color: var(--pg-muted); }
+.replay { font: 500 13px/1 var(--pg-font); color: var(--pg-ink); background: var(--pg-panel); border: 1px solid var(--pg-line); border-radius: 999px; padding: 10px 16px; cursor: pointer; }
+:where(.page button, .page input, .page select):focus-visible { outline: 2px solid var(--pg-focus); outline-offset: 2px; }
+.hint { margin: 0; color: var(--pg-muted); font-size: 14px; max-width: 96ch; }
+.hint b { color: var(--pg-ink); font-weight: 600; }
+.scene { padding: clamp(10px, 2.4vw, 28px); border-radius: 18px; overflow: hidden;
+  background:
+    radial-gradient(110% 90% at 18% 12%, rgb(120 140 110 / 38%), transparent 60%),
+    radial-gradient(90% 80% at 88% 92%, rgb(150 110 70 / 30%), transparent 60%),
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 4.5%) 0 1px, transparent 1px 56px),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 4.5%) 0 1px, transparent 1px 56px),
+    #2A2F2A; }
+
+/* =================== Tactile tokens — on the application root, never :root =================== */
+.tc-root {
+  --tc-acc-h: 45; --tc-acc-c: 0.13;
+  --tc-bg: #E7E8EB; --tc-surface: #F3F3F5; --tc-sunken: #D9DBDF; --tc-ink: #23262E; --tc-muted: #626876; --tc-line: rgb(35 38 46 / 9%);
+  --tc-danger: #C2363F; --tc-warning: #9A6A12; --tc-good: #2F7D57;
+  --tc-accent: oklch(0.73 var(--tc-acc-c) var(--tc-acc-h));
+  --tc-accent-text: oklch(0.5 calc(var(--tc-acc-c) * 1.05) var(--tc-acc-h));
+  --tc-on-accent: oklch(0.24 0.04 var(--tc-acc-h));
+  --tc-glow: oklch(0.76 var(--tc-acc-c) var(--tc-acc-h) / 0.6);
+  --tc-accent-soft: oklch(0.73 var(--tc-acc-c) var(--tc-acc-h) / 0.18);
+  --tc-raise: inset 0 1px 0 rgb(255 255 255 / 85%), 0 10px 24px -12px rgb(38 44 60 / 45%), 0 2px 5px -2px rgb(38 44 60 / 22%);
+  --tc-press: inset 0 2px 5px rgb(38 44 60 / 18%), inset 0 -1px 0 rgb(255 255 255 / 70%);
+  --tc-window: 0 30px 70px -28px rgb(10 12 18 / 75%), inset 0 0 0 1px rgb(255 255 255 / 50%);
+  --tc-cat-l: 0.62;
+  --tc-font-ui: "Onest", "Segoe UI", system-ui, sans-serif;
+  --tc-font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --tc-font-display: "Unbounded", "Onest", system-ui, sans-serif;
+  --tc-r-window: 22px; --tc-r-block: 12px; --tc-r-row: 9px; --tc-r-ctl: 999px;
+  --tc-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  color-scheme: light;
+  transition: --tc-acc-h 700ms cubic-bezier(0.32, 0.72, 0, 1), --tc-acc-c 700ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tc-root {
+    --tc-bg: #262D40; --tc-surface: #2F3750; --tc-sunken: #1D2333; --tc-ink: #E7EAF3; --tc-muted: #A0A8BD; --tc-line: rgb(220 228 255 / 8%);
+    --tc-danger: #FF7A82; --tc-warning: #F2C46B; --tc-good: #7FD3A6;
+    --tc-accent: oklch(0.78 var(--tc-acc-c) var(--tc-acc-h)); --tc-accent-text: oklch(0.84 calc(var(--tc-acc-c) * 0.9) var(--tc-acc-h));
+    --tc-glow: oklch(0.78 var(--tc-acc-c) var(--tc-acc-h) / 0.7); --tc-accent-soft: oklch(0.78 var(--tc-acc-c) var(--tc-acc-h) / 0.16);
+    --tc-raise: inset 0 1px 0 rgb(255 255 255 / 8%), 0 12px 26px -12px rgb(0 0 0 / 70%), 0 2px 5px -2px rgb(0 0 0 / 50%);
+    --tc-press: inset 0 2px 6px rgb(0 0 0 / 45%), inset 0 -1px 0 rgb(255 255 255 / 5%);
+    --tc-window: 0 30px 70px -26px rgb(0 0 0 / 85%), inset 0 0 0 1px rgb(255 255 255 / 7%);
+    --tc-cat-l: 0.78; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] .tc-root {
+  --tc-bg: #262D40; --tc-surface: #2F3750; --tc-sunken: #1D2333; --tc-ink: #E7EAF3; --tc-muted: #A0A8BD; --tc-line: rgb(220 228 255 / 8%);
+  --tc-danger: #FF7A82; --tc-warning: #F2C46B; --tc-good: #7FD3A6;
+  --tc-accent: oklch(0.78 var(--tc-acc-c) var(--tc-acc-h)); --tc-accent-text: oklch(0.84 calc(var(--tc-acc-c) * 0.9) var(--tc-acc-h));
+  --tc-glow: oklch(0.78 var(--tc-acc-c) var(--tc-acc-h) / 0.7); --tc-accent-soft: oklch(0.78 var(--tc-acc-c) var(--tc-acc-h) / 0.16);
+  --tc-raise: inset 0 1px 0 rgb(255 255 255 / 8%), 0 12px 26px -12px rgb(0 0 0 / 70%), 0 2px 5px -2px rgb(0 0 0 / 50%);
+  --tc-press: inset 0 2px 6px rgb(0 0 0 / 45%), inset 0 -1px 0 rgb(255 255 255 / 5%);
+  --tc-window: 0 30px 70px -26px rgb(0 0 0 / 85%), inset 0 0 0 1px rgb(255 255 255 / 7%);
+  --tc-cat-l: 0.78; color-scheme: dark;
+}
+/* Rarity and school colours are custom properties, never inline colour. */
+[data-r] { --rar: transparent; }
+[data-r="uncommon"] { --rar: oklch(var(--tc-cat-l) 0.14 150); }
+[data-r="rare"] { --rar: oklch(var(--tc-cat-l) 0.13 245); }
+[data-r="veryRare"] { --rar: oklch(var(--tc-cat-l) 0.14 305); }
+[data-r="legendary"] { --rar: oklch(var(--tc-cat-l) 0.15 60); }
+[data-school] { --school: var(--tc-muted); }
+[data-school="abj"] { --school: oklch(var(--tc-cat-l) 0.12 235); }
+[data-school="enc"] { --school: oklch(var(--tc-cat-l) 0.13 330); }
+[data-school="con"] { --school: oklch(var(--tc-cat-l) 0.13 78); }
+[data-school="div"] { --school: oklch(var(--tc-cat-l) 0.11 275); }
+[data-school="feat"] { --school: var(--tc-accent-text); }
+
+/* =================== window =================== */
+.tactile { --win-w: 1080px; width: var(--win-w); margin-inline: auto; position: relative; background: var(--tc-bg); color: var(--tc-ink); border-radius: var(--tc-r-window); box-shadow: var(--tc-window); font: 14px/1.45 var(--tc-font-ui); }
+.tactile[data-doll="strip"] { --win-w: 824px; }
+.tactile[data-drawer][data-doll="strip"] { --win-w: 1188px; }
+.tactile[data-drawer][data-doll="open"] { --win-w: 1444px; }
+.tactile svg.lucide { width: 16px; height: 16px; stroke-width: 1.5; flex: none; }
+/* Zero specificity, so component rules keep their own colours. */
+:where(.tactile) :where(button, input, select) { font: inherit; color: inherit; }
+.tactile :focus-visible { outline: 2px solid var(--tc-accent); outline-offset: 2px; }
+.lbl { font: 500 10.5px/1.3 var(--tc-font-mono); color: var(--tc-muted); letter-spacing: 0.08em; text-transform: uppercase; }
+.lbl svg.lucide { width: 12px; height: 12px; vertical-align: -2px; }
+.lbl b { color: var(--tc-ink); font-weight: 600; }
+.mono { font-family: var(--tc-font-mono); font-variant-numeric: tabular-nums; }
+
+.bar { display: flex; align-items: center; gap: 12px; padding: 12px 12px 10px 14px; user-select: none; }
+.avatar { position: relative; width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 99px; background: var(--tc-surface); box-shadow: var(--tc-raise); font: 700 12px/1 var(--tc-font-display); color: var(--tc-accent-text); }
+.avatar b { position: absolute; right: -4px; bottom: -4px; min-width: 18px; height: 18px; padding: 0 4px; display: grid; place-items: center; border-radius: 99px; background: var(--tc-accent); color: var(--tc-on-accent); font: 700 10px/1 var(--tc-font-mono); }
+.bar-title { flex: 1; min-width: 0; }
+.bar-title b { display: block; font: 700 14px/1.15 var(--tc-font-display); text-transform: uppercase; letter-spacing: 0.01em; }
+.bar-title small { display: block; margin-top: 2px; font: 500 10.5px/1.3 var(--tc-font-mono); color: var(--tc-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.bar-btn { width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: var(--tc-r-ctl); background: transparent; color: var(--tc-muted); cursor: pointer; }
+.bar-btn:hover { color: var(--tc-ink); box-shadow: var(--tc-press); }
+.ro-tag { height: 24px; padding: 0 10px; display: inline-flex; align-items: center; gap: 6px; border-radius: 99px; background: var(--tc-sunken); box-shadow: var(--tc-press); font: 600 10px/1 var(--tc-font-mono); letter-spacing: 0.08em; color: var(--tc-muted); text-transform: uppercase; }
+.ro-tag svg.lucide { width: 13px; height: 13px; }
+
+.body { display: grid; grid-template-columns: 256px 312px minmax(0, 1fr) 40px; gap: 10px; height: 676px; padding: 2px 14px 14px; }
+.tactile[data-doll="strip"] .body { grid-template-columns: 256px 56px minmax(0, 1fr) 40px; }
+.tactile[data-drawer][data-doll="strip"] .body { grid-template-columns: 256px 56px minmax(0, 1fr) 364px 40px; }
+.tactile[data-drawer][data-doll="open"] .body { grid-template-columns: 256px 312px minmax(0, 1fr) 364px 40px; }
+.col { min-height: 0; min-width: 0; display: grid; }
+.scroll { overflow: auto; scrollbar-width: thin; scrollbar-color: var(--tc-muted) transparent; }
+
+/* shared blocks */
+.shell { padding: 6px; border-radius: calc(var(--tc-r-block) + 6px); background: var(--tc-sunken); box-shadow: var(--tc-press); min-height: 0; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+.core { min-width: 0; min-height: 0; display: flex; flex-direction: column; border-radius: var(--tc-r-block); background: var(--tc-surface); box-shadow: var(--tc-raise); }
+.tray { border-radius: var(--tc-r-block); background: var(--tc-sunken); box-shadow: var(--tc-press); min-height: 0; }
+.sec-h { display: flex; align-items: center; gap: 8px; }
+.sec-h::after { content: ""; flex: 1; height: 1px; background: var(--tc-line); }
+.sec-h .lbl { white-space: nowrap; }
+.band { position: relative; height: 6px; border-radius: 99px; background: var(--tc-sunken); box-shadow: var(--tc-press); overflow: hidden; }
+.band i { position: absolute; inset: 0; transform-origin: left; border-radius: 99px; background: var(--tc-accent); box-shadow: 0 0 10px var(--tc-glow); }
+.band i.ghost { background: var(--tc-muted); box-shadow: none; opacity: 0.35; }
+.band s { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--tc-surface); }
+.ticks { position: relative; height: 11px; margin-top: 5px; font: 500 9.5px/1 var(--tc-font-mono); color: var(--tc-muted); }
+.ticks span { position: absolute; top: 0; transform: translateX(-50%); }
+.ticks span:first-child { left: 0; transform: none; }
+.ticks span:last-child { left: auto; right: 0; transform: none; }
+.ibtn { width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: var(--tc-r-ctl); background: transparent; color: var(--tc-muted); cursor: pointer; transition: color 160ms var(--tc-ease), box-shadow 160ms var(--tc-ease), opacity 160ms var(--tc-ease); }
+.ibtn:hover { color: var(--tc-ink); box-shadow: var(--tc-raise); }
+.ibtn.on { color: var(--tc-accent-text); }
+.ibtn.danger:hover { color: var(--tc-danger); }
+.ibtn svg.lucide { width: 15px; height: 15px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 34px; padding: 0 14px; border: 0; border-radius: var(--tc-r-ctl); background: var(--tc-surface); box-shadow: var(--tc-raise); font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.primary { display: inline-flex; align-items: center; justify-content: space-between; gap: 10px; height: 34px; padding: 0 3px 0 16px; border: 0; border-radius: var(--tc-r-ctl); background: var(--tc-accent); color: var(--tc-on-accent); font-weight: 700; font-size: 12.5px; cursor: pointer; white-space: nowrap; box-shadow: inset 0 1px 0 rgb(255 255 255 / 40%), 0 8px 18px -8px var(--tc-glow); }
+.primary .nest { width: 28px; height: 28px; display: grid; place-items: center; border-radius: var(--tc-r-ctl); background: rgb(255 255 255 / 28%); }
+.primary[disabled] { opacity: 0.45; box-shadow: none; cursor: not-allowed; }
+.pill { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 7px; border-radius: 99px; background: var(--tc-accent-soft); color: var(--tc-accent-text); font: 600 9.5px/1 var(--tc-font-mono); letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; flex: none; }
+.pill svg.lucide { width: 11px; height: 11px; }
+.pill.plain { background: transparent; color: var(--tc-muted); box-shadow: inset 0 0 0 1px var(--tc-line); }
+.pill.warn { background: color-mix(in oklab, var(--tc-warning) 14%, transparent); color: var(--tc-warning); }
+.chip { display: inline-flex; align-items: center; gap: 3px; height: 17px; padding: 0 6px; border-radius: 99px; background: var(--tc-sunken); color: var(--tc-muted); font: 500 10px/1 var(--tc-font-mono); white-space: nowrap; }
+.chip svg.lucide { width: 10px; height: 10px; }
+.search { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: var(--tc-r-ctl); background: var(--tc-sunken); box-shadow: var(--tc-press); color: var(--tc-muted); min-width: 0; }
+.search input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: var(--tc-ink); font-size: 13px; }
+.search input::placeholder { color: var(--tc-muted); }
+.sel { height: 30px; padding: 0 28px 0 12px; border: 0; border-radius: var(--tc-r-ctl); background-color: var(--tc-surface); box-shadow: var(--tc-raise); font-size: 12.5px; appearance: none; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--tc-muted) 50%), linear-gradient(135deg, var(--tc-muted) 50%, transparent 50%);
+  background-position: right 14px center, right 9px center; background-size: 5px 5px; background-repeat: no-repeat; }
+.segs { display: flex; gap: 2px; padding: 3px; border-radius: var(--tc-r-ctl); background: var(--tc-sunken); box-shadow: var(--tc-press); }
+.segs button { flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 30px; padding: 0 8px; border: 0; border-radius: var(--tc-r-ctl); background: transparent; color: var(--tc-muted); font-size: 12.5px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: color 160ms var(--tc-ease); }
+.segs button:hover { color: var(--tc-ink); }
+.segs button .n { font: 600 10px/1 var(--tc-font-mono); opacity: 0.8; }
+.segs button .t { display: none; }
+.segs button[aria-selected="true"] { flex: 0 0 auto; padding: 0 12px; background: var(--tc-surface); color: var(--tc-ink); box-shadow: var(--tc-raise); }
+.segs button[aria-selected="true"] .t { display: inline; }
+.segs button[aria-selected="true"] svg { color: var(--tc-accent-text); }
+
+/* =================== passport (vitals) =================== */
+.passport .core { padding: 14px 14px 12px; gap: 13px; overflow: auto; scrollbar-width: none; }
+.hp .big { display: flex; align-items: flex-end; gap: 8px; margin: 6px 0 10px; }
+.hp .big strong { font: 700 48px/0.9 var(--tc-font-display); letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+.hp .big > span { padding-bottom: 2px; font: 500 11px/1.25 var(--tc-font-mono); color: var(--tc-muted); }
+.readouts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.readout { padding: 8px 9px 8px; border-radius: var(--tc-r-row); background: var(--tc-sunken); box-shadow: var(--tc-press); }
+.readout b { display: block; margin-top: 4px; font: 700 18px/1 var(--tc-font-display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.readout b small { font: 500 10px var(--tc-font-mono); color: var(--tc-muted); letter-spacing: 0; }
+.abil { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin-top: 8px; }
+.ab { display: grid; grid-template-columns: 1fr auto; align-items: baseline; row-gap: 5px; padding: 7px 8px; border-radius: var(--tc-r-row); background: color-mix(in oklab, var(--tc-sunken) 60%, transparent); }
+.ab .k { font: 600 9.5px/1 var(--tc-font-mono); letter-spacing: 0.1em; color: var(--tc-muted); }
+.ab .sv { justify-self: end; display: inline-flex; align-items: center; gap: 4px; font: 500 10px/1 var(--tc-font-mono); color: var(--tc-muted); }
+.ab .sv.prof { color: var(--tc-accent-text); }
+.ab b { font: 700 19px/1 var(--tc-font-display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.ab .mod { justify-self: end; font: 600 12px/1 var(--tc-font-mono); }
+.dot { width: 6px; height: 6px; border-radius: 99px; box-shadow: inset 0 0 0 1.5px currentColor; flex: none; }
+.dot.on { background: var(--tc-accent); box-shadow: 0 0 6px var(--tc-glow); }
+.rows-kv { display: grid; margin-top: 4px; }
+.kv { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 5px 0; border-top: 1px dashed var(--tc-line); font-size: 12.5px; }
+.kv:first-child { border-top: 0; }
+.kv span { display: inline-flex; align-items: center; gap: 7px; color: var(--tc-muted); }
+.kv span svg.lucide { width: 14px; height: 14px; }
+.kv b { font: 600 12.5px var(--tc-font-mono); font-variant-numeric: tabular-nums; }
+.load-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 8px 0 8px; white-space: nowrap; }
+.load-h b { font: 600 12.5px var(--tc-font-mono); }
+.load-h small { font: 500 11px var(--tc-font-mono); color: var(--tc-muted); }
+.tier { font: 600 10px/1 var(--tc-font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--tc-good); }
+.tier[data-tier="1"] { color: var(--tc-warning); }
+.tier[data-tier="2"] { color: var(--tc-danger); }
+.coins { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin-top: 8px; }
+.coin { display: grid; justify-items: center; gap: 4px; padding: 6px 0 5px; border-radius: var(--tc-r-row); background: color-mix(in oklab, var(--tc-sunken) 60%, transparent); }
+.coin span { font: 600 9px/1 var(--tc-font-mono); letter-spacing: 0.08em; color: var(--tc-muted); text-transform: uppercase; }
+.coin b { font: 600 12px/1 var(--tc-font-mono); font-variant-numeric: tabular-nums; }
+.coin.gp b { color: var(--tc-accent-text); }
+.total { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: var(--tc-muted); }
+.total b { font: 600 12px var(--tc-font-mono); color: var(--tc-ink); }
+.rests { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: auto; }
+.rests .btn { padding: 0 8px; }
+
+/* =================== paperdoll =================== */
+.doll { grid-template-rows: auto minmax(0, 1fr) auto; gap: 8px; }
+.doll-h { display: flex; align-items: center; gap: 2px; height: 30px; padding-left: 4px; }
+.doll-h .lbl { flex: 1; }
+.stage { position: relative; isolation: isolate; padding: 14px 6px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; overflow: hidden; }
+.stage::before { content: ""; position: absolute; z-index: -1; inset: 10% 30% 6%; background: var(--tc-muted); opacity: 0.07;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 230'%3E%3Ccircle cx='50' cy='22' r='18'/%3E%3Cpath d='M22 48h56l10 72-12 3-6-46v56l6 84H58l-8-72-8 72H24l6-84V77l-6 46-12-3z'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 230'%3E%3Ccircle cx='50' cy='22' r='18'/%3E%3Cpath d='M22 48h56l10 72-12 3-6-46v56l6 84H58l-8-72-8 72H24l6-84V77l-6 46-12-3z'/%3E%3C/svg%3E") center / contain no-repeat; }
+.stage::after { content: ""; position: absolute; z-index: -1; left: 50%; top: 50%; width: 220px; height: 220px; margin: -110px 0 0 -110px; border-radius: 50%; border: 1px dashed var(--tc-line); }
+.scol { display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); align-items: center; justify-items: center; }
+.scol.center { grid-template-rows: repeat(3, minmax(0, 1fr)); padding-block: 44px; }
+.slot { position: relative; display: grid; justify-items: center; gap: 6px; width: 88px; }
+.sock { position: relative; width: 64px; height: 64px; display: grid; place-items: center; border-radius: 14px; border: 0; padding: 0; cursor: pointer; color: var(--tc-muted); background: color-mix(in oklab, var(--tc-surface) 40%, transparent); box-shadow: inset 0 0 0 1px var(--tc-line); transition: box-shadow 240ms var(--tc-ease), color 240ms var(--tc-ease); }
+.sock svg.lucide { width: 22px; height: 22px; stroke-width: 1.25; opacity: 0.55; }
+.slot.full .sock { background: var(--tc-surface); color: var(--tc-ink); box-shadow: var(--tc-raise); }
+.slot.full .sock svg.lucide { opacity: 1; stroke-width: 1.5; }
+.slot.full:not([data-r="common"]) .sock { box-shadow: var(--tc-raise), 0 0 0 1.5px var(--rar), 0 0 14px -4px var(--rar); }
+.slot .att { position: absolute; top: -5px; left: 7px; width: 18px; height: 18px; display: grid; place-items: center; border-radius: 99px; background: var(--tc-accent); color: var(--tc-on-accent); box-shadow: 0 0 8px var(--tc-glow); }
+.slot .att svg.lucide { width: 11px; height: 11px; stroke-width: 2; }
+.slot .off { position: absolute; top: -6px; right: 6px; width: 20px; height: 20px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 99px; background: var(--tc-surface); box-shadow: var(--tc-raise); color: var(--tc-muted); cursor: pointer; opacity: 0; transition: opacity 160ms var(--tc-ease), color 160ms var(--tc-ease); }
+.slot .off svg.lucide { width: 11px; height: 11px; stroke-width: 2; }
+.slot:hover .off, .slot .off:focus-visible { opacity: 1; }
+.slot .off:hover { color: var(--tc-danger); }
+.slot .tag { max-width: 88px; font: 600 9px/1.2 var(--tc-font-mono); letter-spacing: 0.08em; color: var(--tc-muted); text-transform: uppercase; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slot.full .tag { color: var(--tc-ink); letter-spacing: 0.02em; text-transform: none; font: 600 10.5px/1.2 var(--tc-font-ui); }
+.slot.locked .sock { cursor: not-allowed; background: repeating-linear-gradient(-45deg, transparent 0 6px, var(--tc-line) 6px 7px); box-shadow: inset 0 0 0 1px var(--tc-line); }
+.slot.locked .lk { display: grid; justify-items: center; gap: 3px; font: 700 9px/1 var(--tc-font-mono); letter-spacing: 0.08em; }
+.slot.locked .lk svg.lucide { width: 14px; height: 14px; opacity: 1; }
+.attune { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 12px; }
+.attune .lbl { flex: 1; }
+.asock { position: relative; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 99px; color: var(--tc-muted); box-shadow: inset 0 0 0 1px var(--tc-line); }
+.asock.on { background: var(--tc-surface); color: var(--tc-ink); box-shadow: var(--tc-raise), 0 0 0 1.5px var(--rar); }
+.asock .brk { position: absolute; inset: 0; display: grid; place-items: center; padding: 0; border: 0; border-radius: 99px; background: var(--tc-surface); color: var(--tc-danger); cursor: pointer; opacity: 0; transition: opacity 160ms var(--tc-ease); }
+.asock:hover .brk, .asock .brk:focus-visible { opacity: 1; }
+.doll-strip { grid-template-rows: minmax(0, 1fr); }
+.strip { display: grid; align-content: start; justify-items: center; gap: 14px; padding: 8px 0; }
+.strip .vt { writing-mode: vertical-rl; transform: rotate(180deg); font: 600 10px/1 var(--tc-font-mono); letter-spacing: 0.14em; color: var(--tc-muted); text-transform: uppercase; }
+.strip .badge { display: grid; justify-items: center; gap: 5px; padding: 9px 0; width: 40px; border-radius: 99px; background: var(--tc-surface); box-shadow: var(--tc-raise); font: 600 10.5px/1 var(--tc-font-mono); }
+.strip .badge svg { color: var(--tc-accent-text); width: 14px; height: 14px; }
+.strip .mini { display: grid; gap: 5px; }
+.strip .mini i { display: block; width: 10px; height: 10px; border-radius: 3px; box-shadow: inset 0 0 0 1px var(--tc-muted); opacity: 0.6; }
+.strip .mini i.on { background: var(--tc-accent); box-shadow: 0 0 6px var(--tc-glow); opacity: 1; }
+
+/* =================== inventory =================== */
+.inv { grid-template-rows: auto auto minmax(0, 1fr); gap: 8px; }
+.filters { display: flex; gap: 6px; }
+.filters .search { flex: 1; }
+.list { padding: 6px; isolation: isolate; }
+.irow { position: relative; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 52px; padding: 6px 6px 6px 8px; border-radius: var(--tc-r-row); cursor: grab; }
+.irow::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--tc-surface); opacity: 0; transition: opacity 160ms var(--tc-ease); }
+.irow:hover::before, .irow:focus-within::before { opacity: 0.6; }
+.irow.eq::after { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 2px; border-radius: 2px; background: var(--tc-accent); box-shadow: 0 0 6px var(--tc-glow); }
+.thumb { position: relative; width: 38px; height: 38px; flex: none; display: grid; place-items: center; border-radius: 10px; background: var(--tc-surface); box-shadow: var(--tc-raise), inset 0 -2px 0 var(--rar); }
+.thumb svg.lucide { width: 18px; height: 18px; }
+.thumb .q { position: absolute; right: -5px; bottom: -5px; min-width: 18px; height: 16px; padding: 0 4px; display: grid; place-items: center; border-radius: 99px; background: var(--tc-ink); color: var(--tc-bg); font: 700 9.5px/1 var(--tc-font-mono); }
+.nm { min-width: 0; }
+.nm .l1 { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.nm .l1 b { min-width: 0; font-weight: 600; font-size: 13.5px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nm .l2 { display: flex; align-items: center; gap: 6px; margin-top: 3px; min-width: 0; overflow: hidden; font: 500 11px/1.3 var(--tc-font-mono); color: var(--tc-muted); white-space: nowrap; }
+.nm .l2 .rar { color: var(--rar); }
+.ctrls { display: flex; align-items: center; }
+.ctrls .ibtn.hov { opacity: 0; }
+.irow:hover .ctrls .ibtn.hov, .irow:focus-within .ctrls .ibtn.hov { opacity: 1; }
+.cont { margin-top: 10px; }
+.cont > .sec-h { padding: 2px 6px 2px; }
+.box { margin-top: 6px; border-radius: var(--tc-r-block); background: color-mix(in oklab, var(--tc-surface) 30%, transparent); box-shadow: inset 0 0 0 1px var(--tc-line); }
+.box-h { display: grid; grid-template-columns: 16px 32px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 6px 6px 8px; cursor: pointer; border-radius: var(--tc-r-block); }
+.box-h .chev { display: grid; color: var(--tc-muted); transition: transform 240ms var(--tc-ease); }
+.box.closed > .box-h .chev { transform: rotate(-90deg); }
+.box-h .thumb { width: 32px; height: 32px; border-radius: 9px; }
+.box-h .thumb svg.lucide { width: 16px; height: 16px; }
+.box-h b { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.box-h b small { margin-left: 4px; font: 500 11px var(--tc-font-mono); color: var(--tc-muted); }
+.box-b { display: flex; align-items: center; gap: 4px; }
+.box > .band { margin: 0 12px 8px 64px; height: 4px; }
+.box-in { padding: 0 6px 6px 18px; overflow: hidden; }
+.box.closed > .box-in { display: none; }
+.empty { display: grid; justify-items: center; gap: 8px; padding: 40px 12px; color: var(--tc-muted); font-size: 13px; text-align: center; }
+.empty svg.lucide { width: 22px; height: 22px; }
+.box-in .empty { padding: 10px; }
+
+/* =================== drawer =================== */
+.drawer .core { overflow: hidden; }
+.dh { display: flex; align-items: center; gap: 10px; padding: 12px 10px 10px 14px; }
+.dh .ic { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 99px; background: var(--tc-accent-soft); color: var(--tc-accent-text); }
+.dh b { flex: 1; font: 700 13px/1.1 var(--tc-font-display); text-transform: uppercase; letter-spacing: 0.01em; }
+.dtools { display: grid; gap: 8px; padding: 0 12px 10px; }
+.dbody { flex: 1; min-height: 0; padding: 4px 12px 12px; display: grid; align-content: start; gap: 12px; isolation: isolate; }
+.slots { padding: 4px 10px; border-radius: var(--tc-r-block); background: var(--tc-sunken); box-shadow: var(--tc-press); }
+.srow { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 8px; align-items: center; min-height: 32px; }
+.srow .lbl { color: var(--tc-ink); }
+.pips { display: flex; flex-wrap: wrap; gap: 7px; }
+.pip { position: relative; width: 15px; height: 15px; padding: 0; border: 0; border-radius: 99px; cursor: pointer; background: transparent; box-shadow: inset 0 0 0 1.5px var(--tc-muted); }
+.pip::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--tc-accent); box-shadow: inset 0 1px 0 rgb(255 255 255 / 45%), 0 0 8px var(--tc-glow); opacity: 0; transform: scale(0.4); transition: opacity 240ms var(--tc-ease), transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.pip.on::after { opacity: 1; transform: none; }
+.pip[disabled] { cursor: default; }
+.srow .mono { font-size: 12px; font-weight: 600; }
+.grp { display: grid; gap: 2px; }
+.grp > .sec-h { margin-bottom: 4px; }
+.spell { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px 4px 6px 6px; border-radius: var(--tc-r-row); }
+.spell::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--tc-sunken); opacity: 0; transition: opacity 160ms var(--tc-ease); }
+.spell:hover::before { opacity: 0.6; }
+.sthumb { position: relative; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: var(--tc-sunken); color: var(--school); box-shadow: inset 0 0 0 1.5px var(--school); }
+.sthumb svg.lucide { width: 17px; height: 17px; }
+.sthumb .lv { position: absolute; right: -5px; bottom: -5px; width: 16px; height: 16px; display: grid; place-items: center; border-radius: 99px; background: var(--tc-ink); color: var(--tc-bg); font: 700 9.5px/1 var(--tc-font-mono); }
+.spell .l1 { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.spell .l1 b { min-width: 0; font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.spell .l2 { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 3px; font: 500 10.5px/1.3 var(--tc-font-mono); color: var(--tc-muted); }
+.spell .l2 .school { color: var(--school); }
+.prep { width: 20px; height: 20px; flex: none; display: grid; place-items: center; padding: 0; border: 0; border-radius: 99px; background: transparent; color: var(--tc-muted); cursor: pointer; opacity: 0.6; }
+.prep svg.lucide { width: 13px; height: 13px; }
+.prep.on { color: var(--tc-accent-text); opacity: 1; }
+.uses { font: 600 10.5px/1 var(--tc-font-mono); color: var(--tc-ink); }
+.tmeta { display: flex; justify-content: space-between; gap: 8px; font: 500 10.5px/1.3 var(--tc-font-mono); color: var(--tc-muted); letter-spacing: 0.04em; text-transform: uppercase; }
+.tmeta b { color: var(--tc-accent-text); font-weight: 600; text-align: right; }
+.partner { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: var(--tc-r-block); background: var(--tc-sunken); box-shadow: var(--tc-press); }
+.partner .avatar { width: 32px; height: 32px; font-size: 11px; }
+.partner b { display: block; font-weight: 600; font-size: 13px; }
+.partner small { font: 500 10.5px var(--tc-font-mono); color: var(--tc-muted); }
+.partner > div { flex: 1; min-width: 0; }
+.conf { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.cf { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: var(--tc-r-ctl); box-shadow: inset 0 0 0 1px var(--tc-line); font-size: 12px; color: var(--tc-muted); }
+.cf svg.lucide { width: 14px; height: 14px; }
+.cf.ok { color: var(--tc-good); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--tc-good) 40%, transparent); }
+.offer { display: grid; margin-top: 2px; }
+.offer div { display: flex; justify-content: space-between; gap: 8px; padding: 6px 2px; border-top: 1px dashed var(--tc-line); font-size: 12.5px; }
+.offer div:first-child { border-top: 0; }
+.offer b { font: 600 12px var(--tc-font-mono); }
+.tfields { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; min-width: 0; }
+.money { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+.money label { display: grid; gap: 5px; font: 600 9px/1 var(--tc-font-mono); letter-spacing: 0.08em; color: var(--tc-muted); text-transform: uppercase; }
+.money label small { font-weight: 500; letter-spacing: 0; opacity: 0.8; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.btn.sq { width: 34px; padding: 0; }
+.money input { width: 100%; height: 30px; padding: 0 7px; border: 0; border-radius: var(--tc-r-row); background: var(--tc-sunken); box-shadow: var(--tc-press); font: 600 12.5px var(--tc-font-mono); text-align: right; -moz-appearance: textfield; }
+.money input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.titem { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 4px 0; }
+.titem .thumb { width: 30px; height: 30px; border-radius: 8px; }
+.titem .thumb svg.lucide { width: 15px; height: 15px; }
+.titem b { display: block; font-weight: 600; font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.titem small { font: 500 10.5px var(--tc-font-mono); color: var(--tc-muted); }
+.qty { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 99px; background: var(--tc-sunken); box-shadow: var(--tc-press); }
+.qty button { width: 22px; height: 22px; border: 0; border-radius: 99px; background: transparent; color: var(--tc-muted); cursor: pointer; }
+.qty b { min-width: 20px; text-align: center; font: 600 12px var(--tc-font-mono); }
+.qty.on b { color: var(--tc-accent-text); }
+.unsaved { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border-radius: var(--tc-r-row); background: color-mix(in oklab, var(--tc-warning) 12%, transparent); font-size: 12px; }
+.unsaved svg { color: var(--tc-warning); margin-top: 1px; }
+.dfoot { display: grid; grid-template-columns: auto auto 1fr; gap: 6px; padding: 10px 12px 12px; border-top: 1px solid var(--tc-line); }
+
+/* =================== rail =================== */
+.rail { display: grid; align-content: start; gap: 4px; padding: 4px; border-radius: var(--tc-r-ctl); background: var(--tc-sunken); box-shadow: var(--tc-press); height: max-content; }
+.rail button { position: relative; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 99px; background: transparent; color: var(--tc-muted); cursor: pointer; }
+.rail button:hover { color: var(--tc-ink); }
+.rail button[aria-expanded="true"] { background: var(--tc-surface); color: var(--tc-accent-text); box-shadow: var(--tc-raise); }
+.rail .live { position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 99px; background: var(--tc-good); box-shadow: 0 0 0 2px var(--tc-sunken); }
+
+/* read-only (Observer) */
+.tactile[data-readonly] .edit { display: none !important; }
+.tactile[data-readonly] .irow, .tactile[data-readonly] .sock { cursor: default; }
+.tactile:not([data-readonly]) .ro-tag { display: none; }
+
+@media (prefers-reduced-motion: reduce) { .tactile * { transition-duration: 0.01ms !important; } }
+.tactile[data-motion="reduced"] * { transition-duration: 0.01ms !important; }
+</style>
+
+<div class="page">
+  <header class="top">
+    <div>
+      <h1>Actor Inventory Manager в Tactile</h1>
+      <p>Структура модуля сохранена: паспорт персонажа, кукла, опись с контейнерами и рейка с гримуаром и торговлей. Но каждая зона пересобрана в Tactile, а не перекрашена. Паспорт стал биркой с одним большим числом, кукла — стойкой в лотке, опись — тихим списком, где кнопки появляются при наведении. Боковая панель открывается листом и сворачивает куклу в полосу, поэтому опись не теряет ширину.</p>
+    </div>
+    <div class="controls">
+      <div class="ctl"><span class="seg-label">Акцент</span><div class="palette" role="radiogroup" aria-label="Акцентный цвет" id="palette"></div><span class="acc-name" id="acc-name" aria-live="polite"></span></div>
+      <div class="ctl"><span class="seg-label">Тема</span><div class="seg" role="group" aria-label="Тема">
+        <button type="button" data-theme-set="auto">Авто</button><button type="button" data-theme-set="light">Светлая</button><button type="button" data-theme-set="dark">Тёмная</button></div></div>
+      <div class="ctl"><span class="seg-label">Права</span><div class="seg" role="group" aria-label="Права">
+        <button type="button" data-role-set="owner">Владелец</button><button type="button" data-role-set="observer">Наблюдатель</button></div></div>
+      <div class="ctl"><span class="seg-label">Движение</span><div class="seg" role="group" aria-label="Движение">
+        <button type="button" data-motion-set="full">Полное</button><button type="button" data-motion-set="reduced">Меньше</button></div></div>
+      <button type="button" class="replay" id="replay">Открыть окно заново</button>
+    </div>
+  </header>
+  <p class="hint"><b>Попробуйте:</b> наведите на «Двуручный меч» в описи и наденьте его — щит снимется, вторая рука закроется, КД досчитается с 19 до 17. Откройте гримуар или торговлю на рейке справа: кукла свернётся в полосу. Сверните рюкзак, потратьте ячейку магии.</p>
+  <div class="scene"><section class="tc-root tactile" id="win" aria-label="Окно инвентаря" data-doll="open">
+    <div class="bar" data-part>
+      <span class="avatar" aria-hidden="true">ТВ<b>7</b></span>
+      <div class="bar-title"><b>Тэрин Вейл</b><small>Человек · законно-добрый · паладин 7</small></div>
+      <span class="ro-tag"><i data-lucide="eye"></i>Только просмотр</span>
+      <button type="button" class="bar-btn" id="theme-btn" aria-label="Сменить тему" title="Сменить тему"><i data-lucide="sun-moon"></i></button>
+      <button type="button" class="bar-btn" aria-label="Закрыть окно" title="Закрыть"><i data-lucide="x"></i></button>
+    </div>
+    <div class="body" id="body">
+      <aside class="col passport" data-part id="passport"></aside>
+      <main class="col doll" data-part id="doll"></main>
+      <section class="col inv" data-part id="inv"></section>
+      <section class="col drawer" id="drawer" hidden></section>
+      <nav class="rail" aria-label="Боковые панели" data-part>
+        <button type="button" data-drawer-set="spells" aria-expanded="false" aria-label="Гримуар" title="Гримуар"><i data-lucide="wand-sparkles"></i></button>
+        <button type="button" data-drawer-set="trade" aria-expanded="false" aria-label="Торговля" title="Торговля"><i data-lucide="handshake"></i><span class="live" title="Идёт сделка"></span></button>
+      </nav>
+    </div>
+  </section></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/CustomEase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/Flip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script>
+(() => {
+  const PALETTE = [
+    { id: "peach", name: "Персик", h: 45, c: 0.13 }, { id: "amber", name: "Янтарь", h: 78, c: 0.12 },
+    { id: "sage", name: "Шалфей", h: 145, c: 0.08 }, { id: "mint", name: "Мята", h: 178, c: 0.09 },
+    { id: "azure", name: "Лазурь", h: 235, c: 0.1 }, { id: "periwinkle", name: "Барвинок", h: 275, c: 0.1 },
+    { id: "lavender", name: "Лаванда", h: 300, c: 0.1 }, { id: "orchid", name: "Орхидея", h: 330, c: 0.11 },
+    { id: "rose", name: "Роза", h: 10, c: 0.11 }, { id: "steel", name: "Сталь", h: 250, c: 0.035 },
+  ];
+  const store = {
+    get(k, f) { try { return localStorage.getItem(k) ?? f; } catch (e) { return f; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } },
+  };
+  const root = document.documentElement;
+  const win = document.getElementById("win");
+  const $ = (id) => document.getElementById(id);
+
+  if (window.CustomEase) gsap.registerPlugin(CustomEase);
+  if (window.Flip) gsap.registerPlugin(Flip);
+  const hasCE = !!window.CustomEase;
+  if (hasCE) { CustomEase.create("tactile", "0.32, 0.72, 0, 1"); CustomEase.create("settle", "M0,0 C0.18,0.9 0.3,1.04 0.52,1.02 0.7,1 0.84,1 1,1"); }
+  const EASE = hasCE ? "tactile" : "power3.out";
+  const SETTLE = hasCE ? "settle" : "back.out(1.4)";
+  const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const darkMql = window.matchMedia("(prefers-color-scheme: dark)");
+  let motion = store.get("aim-tactile-motion", "full");
+  const reduced = () => motion === "reduced" || mql.matches;
+  const icons = (el) => { if (window.lucide) lucide.createIcons({ attrs: { "stroke-width": 1.5 }, root: el }); };
+  const fmt = (n) => String(+n.toFixed(1)).replace(".", ",");
+  const I = (name) => `<i data-lucide="${name}"></i>`;
+
+  /* ---------- data: what the module reads from a dnd5e 5.3.3 actor ---------- */
+  const A = { hp: 58, hpMax: 64, temp: 5, baseAc: 16, init: "+1", speed: 30, cap: 240, stops: [80, 160],
+    abil: [["СИЛ", 16, "+3", "+3", 0], ["ЛОВ", 12, "+1", "+1", 0], ["ТЕЛ", 14, "+2", "+2", 0], ["ИНТ", 8, "−1", "−1", 0], ["МДР", 13, "+1", "+4", 1], ["ХАР", 17, "+3", "+6", 1]],
+    passive: [["eye", "Внимательность", 11], ["search", "Анализ", 9], ["brain", "Проницательность", 14]],
+    coins: [["пм", 2], ["зм", 142], ["эм", 0], ["см", 35], ["мм", 12]], total: "164,6 зм" };
+  const RL = { uncommon: "Необычное", rare: "Редкое", veryRare: "Очень редкое", legendary: "Легендарное" };
+  const ITEMS = [
+    { id: "sword", n: "Длинный меч +1", icon: "sword", cat: "weapons", r: "uncommon", w: 3, p: "1015 зм", props: ["универсальное"], slot: "main", eq: true },
+    { id: "great", n: "Двуручный меч", icon: "swords", cat: "weapons", r: "common", w: 6, p: "50 зм", props: ["двуручное", "тяжёлое"], slot: "main", two: true },
+    { id: "shield", n: "Щит", icon: "shield", cat: "armor", r: "common", w: 6, p: "10 зм", slot: "off", eq: true, ac: 2 },
+    { id: "armor", n: "Полулаты", icon: "shirt", cat: "armor", r: "common", w: 40, p: "750 зм", props: ["помеха скрытности"], slot: "armor", eq: true },
+    { id: "amulet", n: "Амулет здоровья", icon: "gem", cat: "armor", r: "rare", w: 1, slot: "neck", eq: true, att: "on" },
+    { id: "ring", n: "Кольцо защиты", icon: "circle-dot", cat: "armor", r: "rare", w: 0, slot: "ring1", eq: true, att: "on", ac: 1 },
+    { id: "boots", n: "Сапоги эльфов", icon: "footprints", cat: "armor", r: "uncommon", w: 1, slot: "feet" },
+    { id: "wand", n: "Жезл огненных шаров", icon: "wand", cat: "consumables", r: "veryRare", w: 1, att: "req", props: ["7/7 зарядов"] },
+    { id: "potion", n: "Зелье лечения", icon: "flask-conical", cat: "consumables", r: "uncommon", w: 0.5, q: 3, p: "50 зм" },
+    { id: "scroll", n: "Свиток: Щит веры", icon: "scroll-text", cat: "consumables", r: "common", w: 0, p: "25 зм" },
+    { id: "ruby", n: "Рубин", icon: "diamond", cat: "loot", r: "common", w: 0, q: 2, p: "500 зм" },
+  ];
+  const BOXES = [
+    { id: "pack", n: "Рюкзак", icon: "backpack", r: "common", self: 5, cap: 30, open: true, items: [
+      { id: "rope", n: "Верёвка шёлковая", icon: "cable", r: "common", w: 5, p: "10 зм" },
+      { id: "rations", n: "Рационы", icon: "package", r: "common", w: 2, q: 5, p: "5 см" },
+      { id: "torch", n: "Факел", icon: "flame", r: "common", w: 1, q: 5, p: "1 мм" } ],
+      kids: [{ id: "pouch", n: "Мешочек компонентов", icon: "shopping-bag", r: "common", cap: 2, open: false, items: [{ id: "holy", n: "Священный символ", icon: "sun", r: "common", w: 1, p: "5 зм" }], kids: [] }] },
+    { id: "bag", n: "Сумка хранения", icon: "briefcase", r: "uncommon", self: 15, cap: 500, cut: 100, open: false, items: [
+      { id: "tent", n: "Палатка", icon: "tent", r: "common", w: 20, p: "2 зм" } ], kids: [] },
+  ];
+  const SLOTS = {
+    left: [["head", "Голова", "hard-hat"], ["neck", "Шея", "gem"], ["cloak", "Плащ", "wind"], ["main", "Осн. рука", "sword"]],
+    center: [["armor", "Доспех", "shirt"], ["waist", "Пояс", "minus"], ["feet", "Ноги", "footprints"]],
+    right: [["hands", "Руки", "hand"], ["ring1", "Кольцо I", "circle-dot"], ["ring2", "Кольцо II", "circle"], ["off", "Вт. рука", "shield"]],
+  };
+  const TABS = [["all", "Всё", "boxes"], ["weapons", "Оружие", "sword"], ["armor", "Броня", "shield-half"], ["consumables", "Расходники", "flask-conical"], ["containers", "Контейнеры", "archive"], ["loot", "Добыча", "coins"]];
+  const SLOT_PIPS = [["1 круг", [1, 1, 1, 0]], ["2 круг", [1, 1, 0]]];
+  const SPELLS = [
+    { id: "sof", n: "Щит веры", icon: "shield-check", lv: 1, school: "abj", sl: "Ограждение", act: "бонусное", rng: "60 фт", comp: ["В", "С", "М"], conc: true, prep: "on" },
+    { id: "cmd", n: "Приказ", icon: "megaphone", lv: 1, school: "enc", sl: "Очарование", act: "действие", rng: "60 фт", comp: ["В"], prep: "on" },
+    { id: "deg", n: "Обнаружение зла и добра", icon: "eye", lv: 1, school: "div", sl: "Прорицание", act: "действие", rng: "на себя", comp: ["В", "С"], conc: true, prep: "off" },
+    { id: "steed", n: "Поиск скакуна", icon: "rabbit", lv: 2, school: "con", sl: "Вызов", act: "10 мин", rng: "30 фт", comp: ["В", "С"], prep: "always" },
+    { id: "aid", n: "Подмога", icon: "heart-plus", lv: 2, school: "abj", sl: "Ограждение", act: "действие", rng: "30 фт", comp: ["В", "С", "М"], prep: "off" },
+  ];
+  const ACTIONS = [
+    ["Действия", [{ n: "Божественное чувство", icon: "sparkles", src: "Паладин", act: "действие", uses: "3/4" }, { n: "Божественный канал", icon: "flame-kindling", src: "Паладин", act: "действие", uses: "2/2", rech: "кор. отдых" }]],
+    ["Бонусные действия", [{ n: "Наложение рук", icon: "hand-heart", src: "Паладин", act: "бонусное", uses: "35/35" }]],
+    ["Реакции", [{ n: "Боевой стиль: защита", icon: "shield-plus", src: "Паладин 2", act: "реакция" }]],
+  ];
+  const PASSIVES = [{ n: "Аура защиты", icon: "circle-dashed", src: "Паладин 6" }, { n: "Божественное здоровье", icon: "heart-pulse", src: "Паладин 3" }, { n: "Дополнительная атака", icon: "repeat-2", src: "Паладин 5" }];
+
+  let tab = "all", query = "", sort = "name", drawer = null, dollPref = "open", spellsTab = "all", readonly = false;
+  const tradeQty = { potion: 2, scroll: 1, ruby: 0, rations: 0 };
+  const tradeMoney = { пм: 0, зм: 25, эм: 0, см: 0, мм: 0 };
+  let tradeDirty = true;
+
+  const inSlot = (id) => ITEMS.find((i) => i.eq && i.slot === id);
+  const twoHanded = () => ITEMS.find((i) => i.eq && i.two);
+  const ac = () => A.baseAc + ITEMS.reduce((s, i) => s + (i.eq && i.ac ? i.ac : 0), 0);
+  const stackW = (i) => i.w * (i.q || 1);
+  const contentsW = (b) => b.items.reduce((s, i) => s + stackW(i), 0) + b.kids.reduce((s, k) => s + contentsW(k), 0);
+  // Weighty Containers decides what a container carries; here a bag of holding drops its contents' weight (−100 %).
+  const carriedW = (b) => (b.self || 0) + contentsW(b) * (1 - (b.cut || 0) / 100);
+  const load = () => ITEMS.reduce((s, i) => s + stackW(i), 0) + BOXES.reduce((s, b) => s + carriedW(b), 0);
+  const attuned = () => ITEMS.filter((i) => i.att === "on");
+  const countOf = (k) => k === "all" ? ITEMS.length + BOXES.length : k === "containers" ? BOXES.length : ITEMS.filter((i) => i.cat === k).length;
+
+  /* ---------- passport ---------- */
+  function renderPassport() {
+    const L = load();
+    const tier = L > A.stops[1] ? 2 : L > A.stops[0] ? 1 : 0;
+    const tierName = ["Норма", "Нагрузка", "Перегруз"][tier];
+    $("passport").innerHTML = `<div class="shell"><div class="core">
+      <div class="hp"><span class="lbl">Хиты</span>
+        <div class="big"><strong data-count="hp">${A.hp}</strong><span>/ ${A.hpMax}<br>+${A.temp} врем.</span></div>
+        <div class="band" role="meter" aria-label="Хиты" aria-valuenow="${A.hp}" aria-valuemax="${A.hpMax}"><i class="ghost" style="transform:scaleX(${Math.min(1, (A.hp + A.temp) / A.hpMax)})"></i><i data-band="hp" style="transform:scaleX(${A.hp / A.hpMax})"></i></div></div>
+      <div class="readouts">
+        <div class="readout"><span class="lbl">КД</span><b data-count="ac">${ac()}</b></div>
+        <div class="readout"><span class="lbl">Иниц.</span><b>${A.init}</b></div>
+        <div class="readout"><span class="lbl">Скор.</span><b>${A.speed}<small> фт</small></b></div>
+      </div>
+      <div><div class="sec-h"><span class="lbl">Характеристики</span></div>
+        <div class="abil">${A.abil.map(([k, v, m, sv, p]) => `<div class="ab" title="Спасбросок ${sv}${p ? " · владение" : ""}"><span class="k">${k}</span><span class="sv${p ? " prof" : ""}"><span class="dot${p ? " on" : ""}"></span>${sv}</span><b>${v}</b><span class="mod">${m}</span></div>`).join("")}</div></div>
+      <div><div class="sec-h"><span class="lbl">Пассивные</span></div>
+        <div class="rows-kv">${A.passive.map(([ic, k, v]) => `<div class="kv"><span>${I(ic)}${k}</span><b>${v}</b></div>`).join("")}</div></div>
+      <div><div class="sec-h"><span class="lbl">Груз</span></div>
+        <div class="load-h"><b>${fmt(L)} <small>/ ${A.cap} фнт</small></b><span class="tier" data-tier="${tier}" title="${["Без штрафов", "Скорость −10 фт", "Скорость −20 фт, помеха"][tier]}">${tierName}</span></div>
+        <div class="band" role="meter" aria-label="Груз" aria-valuenow="${L}" aria-valuemax="${A.cap}"><i data-band="load" style="transform:scaleX(${Math.min(1, L / A.cap)})"></i>${A.stops.map((s) => `<s style="left:${(s / A.cap) * 100}%"></s>`).join("")}</div>
+        <div class="ticks"><span>0</span>${A.stops.map((s) => `<span style="left:${(s / A.cap) * 100}%">${s}</span>`).join("")}<span>${A.cap}</span></div></div>
+      <div><div class="sec-h"><span class="lbl">Кошель</span></div>
+        <div class="coins">${A.coins.map(([k, v]) => `<div class="coin${k === "зм" ? " gp" : ""}"><span>${k}</span><b>${v}</b></div>`).join("")}</div>
+        <div class="total"><span>Всего</span><b>${A.total}</b></div></div>
+      <div class="rests edit"><button type="button" class="btn">${I("coffee")}Короткий</button><button type="button" class="btn">${I("bed")}Долгий</button></div>
+    </div></div>`;
+    icons($("passport"));
+  }
+
+  /* ---------- paperdoll ---------- */
+  function slotHTML([id, label, icon]) {
+    const it = inSlot(id);
+    const lock = id === "off" && twoHanded();
+    if (lock) return `<div class="slot locked" data-slot="${id}" title="Занято: ${lock.n}"><div class="sock" aria-label="${label}: занято двуручным оружием"><span class="lk">${I("lock")}2Р</span></div><span class="tag">${label}</span></div>`;
+    if (!it) return `<div class="slot" data-slot="${id}"><button type="button" class="sock" aria-label="${label}: пусто" title="${label}">${I(icon)}</button><span class="tag">${label}</span></div>`;
+    return `<div class="slot full" data-slot="${id}" data-r="${it.r}" title="${label}: ${it.n}">
+      <button type="button" class="sock" aria-label="${label}: ${it.n}">${I(it.icon)}</button>
+      ${it.att === "on" ? `<span class="att" title="Настроен">${I("sun")}</span>` : ""}
+      <button type="button" class="off edit" data-equip="${it.id}" aria-label="Снять: ${it.n}" title="Снять">${I("x")}</button>
+      <span class="tag">${it.n}</span></div>`;
+  }
+  function renderDoll() {
+    const el = $("doll");
+    const att = attuned();
+    if (win.dataset.doll === "strip") {
+      el.className = "col doll-strip";
+      el.innerHTML = `<div class="tray strip">
+        <button type="button" class="ibtn" data-doll-toggle aria-label="Развернуть куклу" title="Развернуть куклу">${I("chevron-right")}</button>
+        <span class="vt">Снаряжение</span>
+        <div class="mini" aria-label="Занятые слоты">${Object.values(SLOTS).flat().map(([id, l]) => `<i class="${inSlot(id) ? "on" : ""}" title="${l}"></i>`).join("")}</div>
+        <span class="badge" title="Настройка ${att.length} из 3">${I("sun")}${att.length}/3</span></div>`;
+    } else {
+      el.className = "col doll";
+      el.innerHTML = `<div class="doll-h"><span class="lbl">Снаряжение</span>
+          <button type="button" class="ibtn edit" aria-label="Редактор куклы (ГМ)" title="Редактор куклы (ГМ)">${I("settings-2")}</button>
+          <button type="button" class="ibtn" data-doll-toggle aria-label="Свернуть куклу" title="Свернуть куклу">${I("chevron-left")}</button></div>
+        <div class="tray stage">${["left", "center", "right"].map((c) => `<div class="scol ${c}">${SLOTS[c].map(slotHTML).join("")}</div>`).join("")}</div>
+        <div class="tray attune"><span class="lbl">Настройка <b>${att.length}/3</b></span>
+          ${[0, 1, 2].map((i) => att[i] ? `<span class="asock on" data-r="${att[i].r}" title="${att[i].n}">${I(att[i].icon)}<button type="button" class="brk edit" data-attune="${att[i].id}" aria-label="Разорвать настройку: ${att[i].n}" title="Разорвать настройку">${I("unlink")}</button></span>` : `<span class="asock" title="Свободно">${I("sun-dim")}</span>`).join("")}</div>`;
+    }
+    icons(el);
+  }
+
+  /* ---------- inventory ---------- */
+  function rowHTML(i, nested = false) {
+    const meta = [i.r && RL[i.r] ? `<span class="rar">${RL[i.r]}</span>` : "", `${fmt(stackW(i))} фнт`, i.p || ""].filter(Boolean).join(" · ");
+    const pill = i.att === "on" ? `<span class="pill">${I("sun")}настроен</span>` : i.att === "req" ? `<span class="pill warn">${I("sun-dim")}настройка</span>` : "";
+    const canEquip = !nested && i.slot;
+    return `<div class="irow${i.eq ? " eq" : ""}" data-row="${i.id}" data-r="${i.r || "common"}" data-flip-id="${i.id}">
+      <span class="thumb">${I(i.icon)}${i.q ? `<span class="q">${i.q}</span>` : ""}</span>
+      <div class="nm"><div class="l1"><b>${i.n}</b>${pill}</div>
+        <div class="l2">${meta}${(i.props || []).map((p) => `<span class="chip">${p}</span>`).join("")}</div></div>
+      <div class="ctrls edit">
+        ${canEquip ? `<button type="button" class="ibtn${i.eq ? " on" : " hov"}" data-equip="${i.id}" aria-label="${i.eq ? "Снять" : "Надеть"}: ${i.n}" title="${i.eq ? "Снять" : "Надеть"}">${I(i.eq ? "shield-check" : "shield")}</button>` : ""}
+        ${i.att ? `<button type="button" class="ibtn${i.att === "on" ? " on" : " hov"}" data-attune="${i.id}" aria-label="${i.att === "on" ? "Разорвать настройку" : "Настроиться"}: ${i.n}" title="${i.att === "on" ? "Разорвать настройку" : "Настроиться"}">${I("sun")}</button>` : ""}
+        <button type="button" class="ibtn hov" aria-label="Использовать: ${i.n}" title="Использовать">${I("dices")}</button>
+        <button type="button" class="ibtn hov danger" aria-label="Удалить: ${i.n}" title="Удалить">${I("trash-2")}</button>
+      </div></div>`;
+  }
+  function boxHTML(b) {
+    const w = contentsW(b);
+    return `<div class="box${b.open ? "" : " closed"}" data-box="${b.id}" data-flip-id="box-${b.id}">
+      <div class="box-h" data-box-toggle="${b.id}" role="button" tabindex="0" aria-expanded="${b.open}">
+        <span class="chev">${I("chevron-down")}</span>
+        <span class="thumb" data-r="${b.r}">${I(b.icon)}</span>
+        <b>${b.n}<small>${b.items.length + b.kids.length}</small></b>
+        <span class="box-b">
+          <span class="pill plain" title="Загрузка">${I("weight")}${fmt(w)}/${b.cap}</span>
+          ${b.cut ? `<span class="pill" title="Вес содержимого снижен">${I("feather")}−${b.cut}%</span>` : ""}
+          <button type="button" class="ibtn edit" data-noop aria-label="Правила контейнера: ${b.n}" title="Правила контейнера (Weighty Containers)">${I("settings-2")}</button>
+        </span></div>
+      <div class="band" aria-hidden="true"><i style="transform:scaleX(${Math.min(1, w / b.cap)})"></i></div>
+      <div class="box-in">${b.items.map((i) => rowHTML(i, true)).join("")}${b.kids.map(boxHTML).join("")}${!b.items.length && !b.kids.length ? `<div class="empty">${I("folder-open")}Пусто</div>` : ""}</div>
+    </div>`;
+  }
+  function renderInvShell() {
+    $("inv").innerHTML = `<div class="segs" role="tablist" aria-label="Категории">${TABS.map(([k, l, ic]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${k === tab}" aria-label="${l}" title="${l}">${I(ic)}<span class="t">${l}</span><span class="n">${countOf(k)}</span></button>`).join("")}</div>
+      <div class="filters"><label class="search">${I("search")}<input type="search" id="q" placeholder="Поиск предметов" autocomplete="off" aria-label="Поиск предметов"></label>
+        <select class="sel" id="sort" aria-label="Сортировка"><option value="name">По названию</option><option value="weight">По весу</option><option value="value">По цене</option><option value="rarity">По редкости</option></select></div>
+      <div class="tray list scroll" id="list"></div>`;
+    icons($("inv"));
+    $("q").addEventListener("input", (e) => { query = e.target.value.trim().toLowerCase(); renderList(true); });
+    $("sort").addEventListener("change", (e) => { sort = e.target.value; renderList(true); });
+  }
+  function renderList(animate) {
+    const list = $("list");
+    const state = animate && !reduced() && window.Flip ? Flip.getState(list.querySelectorAll("[data-flip-id]")) : null;
+    const RANK = { common: 0, uncommon: 1, rare: 2, veryRare: 3, legendary: 4 };
+    const val = (i) => parseFloat(String(i.p || "0").replace(/\s/g, "")) || 0;
+    const sorters = { name: (a, b) => a.n.localeCompare(b.n, "ru"), weight: (a, b) => stackW(b) - stackW(a), value: (a, b) => val(b) - val(a), rarity: (a, b) => RANK[b.r] - RANK[a.r] };
+    const hit = (n) => !query || n.toLowerCase().includes(query);
+    const items = tab === "containers" ? [] : ITEMS.filter((i) => (tab === "all" || i.cat === tab) && hit(i.n)).sort(sorters[sort]);
+    const boxHit = (b) => hit(b.n) || b.items.some((i) => hit(i.n)) || b.kids.some(boxHit);
+    const boxes = tab === "all" || tab === "containers" ? BOXES.filter(boxHit) : [];
+    list.innerHTML = `${items.map((i) => rowHTML(i)).join("")}
+      ${boxes.length ? `<div class="cont"><div class="sec-h"><span class="lbl">Контейнеры</span></div>${boxes.map(boxHTML).join("")}</div>` : ""}
+      ${!items.length && !boxes.length ? `<div class="empty">${I("package-open")}${query ? "По запросу ничего не найдено." : "В этой категории пусто."}</div>` : ""}`;
+    icons(list);
+    if (state) Flip.from(state, { duration: 0.38, ease: EASE, nested: true, onEnter: (els) => gsap.fromTo(els, { autoAlpha: 0, y: 6 }, { autoAlpha: 1, y: 0, duration: 0.3, ease: EASE, clearProps: "transform" }) });
+  }
+
+  /* ---------- drawers ---------- */
+  function spellRow(s, withLevel) {
+    const prep = s.prep === "always" ? `<span class="prep on" title="Всегда подготовлено">${I("lock")}</span>`
+      : readonly ? (s.prep === "on" ? `<span class="prep on" title="Подготовлено">${I("book-marked")}</span>` : "")
+      : `<button type="button" class="prep${s.prep === "on" ? " on" : ""}" data-prep="${s.id}" aria-pressed="${s.prep === "on"}" aria-label="Подготовка: ${s.n}" title="${s.prep === "on" ? "Подготовлено" : "Не подготовлено"}">${I("book-marked")}</button>`;
+    return `<div class="spell" data-school="${s.school}">
+      <span class="sthumb">${I(s.icon)}${withLevel ? `<span class="lv">${s.lv}</span>` : ""}</span>
+      <div style="min-width:0"><div class="l1"><b>${s.n}</b>${prep}</div>
+        <div class="l2"><span class="school">${s.sl}</span><span class="pill plain">${s.act}</span><span>${s.rng}</span>${s.comp.map((c) => `<span class="chip">${c}</span>`).join("")}${s.conc ? `<span class="chip" title="Концентрация">${I("brain")}</span>` : ""}</div></div>
+      <button type="button" class="ibtn edit" aria-label="Сотворить: ${s.n}" title="Сотворить">${I("wand-sparkles")}</button></div>`;
+  }
+  function spellsHTML() {
+    const nActions = ACTIONS.reduce((s, [, l]) => s + l.length, 0);
+    const sub = [["all", "Всё", "layers", SPELLS.length + nActions + PASSIVES.length], ["spells", "Заклинания", "book-open", SPELLS.length], ["actions", "Действия", "zap", nActions], ["passives", "Пассивные", "shield-ellipsis", PASSIVES.length]];
+    const show = (k) => spellsTab === "all" || spellsTab === k;
+    const prepared = SPELLS.filter((s) => s.prep !== "off");
+    const levels = [1, 2].map((lv) => [lv, SPELLS.filter((s) => s.lv === lv)]);
+    return `<div class="shell"><div class="core">
+      <div class="dh"><span class="ic">${I("wand-sparkles")}</span><b>Гримуар и умения</b><button type="button" class="ibtn" data-drawer-set="spells" aria-label="Закрыть гримуар" title="Закрыть">${I("x")}</button></div>
+      <div class="dtools"><div class="segs" role="tablist" aria-label="Разделы гримуара">${sub.map(([k, l, ic, n]) => `<button type="button" role="tab" data-sub="${k}" aria-selected="${k === spellsTab}" aria-label="${l}" title="${l}">${I(ic)}<span class="t">${l}</span><span class="n">${n}</span></button>`).join("")}</div>
+        <label class="search">${I("search")}<input type="search" placeholder="Поиск заклинаний и умений" aria-label="Поиск заклинаний и умений"></label></div>
+      <div class="dbody scroll">
+        ${show("spells") ? `<div class="slots">${SLOT_PIPS.map(([l, pips], si) => `<div class="srow"><span class="lbl">${l}</span><div class="pips">${pips.map((on, pi) => `<button type="button" class="pip${on ? " on" : ""}" data-pip="${si}-${pi}" ${readonly ? "disabled" : ""} aria-label="${l}: ${on ? "потратить" : "восстановить"} ячейку"></button>`).join("")}</div><span class="mono" data-pipn="${si}">${pips.filter(Boolean).length} / ${pips.length}</span></div>`).join("")}</div>
+          <div class="grp"><div class="sec-h"><span class="lbl">${I("book-marked")} Подготовлено <b>${prepared.length}</b></span></div>${prepared.map((s) => spellRow(s, true)).join("")}</div>
+          ${levels.map(([lv, list]) => `<div class="grp"><div class="sec-h"><span class="lbl">${lv} круг <b>${list.length}</b></span></div>${list.map((s) => spellRow(s, false)).join("")}</div>`).join("")}` : ""}
+        ${show("actions") ? ACTIONS.map(([t, list]) => `<div class="grp"><div class="sec-h"><span class="lbl">${t} <b>${list.length}</b></span></div>${list.map((a) => `<div class="spell" data-school="feat"><span class="sthumb">${I(a.icon)}</span>
+            <div style="min-width:0"><div class="l1"><b>${a.n}</b></div><div class="l2"><span>${a.src}</span><span class="pill plain">${a.act}</span>${a.uses ? `<span class="uses">${a.uses}</span>` : ""}${a.rech ? `<span class="chip">${I("rotate-ccw")}${a.rech}</span>` : ""}</div></div>
+            <button type="button" class="ibtn edit" aria-label="Использовать: ${a.n}" title="Использовать">${I("dices")}</button></div>`).join("")}</div>`).join("") : ""}
+        ${show("passives") ? `<div class="grp"><div class="sec-h"><span class="lbl">Пассивные черты <b>${PASSIVES.length}</b></span></div>${PASSIVES.map((p) => `<div class="spell"><span class="sthumb">${I(p.icon)}</span><div style="min-width:0"><div class="l1"><b>${p.n}</b></div><div class="l2"><span>${p.src}</span></div></div><span></span></div>`).join("")}</div>` : ""}
+      </div></div></div>`;
+  }
+  function tradeHTML() {
+    const tradables = [...ITEMS.filter((i) => ["potion", "scroll", "ruby"].includes(i.id)), BOXES[0].items[1]];
+    const name = (id) => tradables.find((i) => i.id === id).n;
+    const COIN = { пм: "Платина", зм: "Золото", эм: "Электрум", см: "Серебро", мм: "Медь" };
+    const mine = [...Object.entries(tradeQty).filter(([, n]) => n).map(([id, n]) => [name(id), `×${n}`]), ...Object.entries(tradeMoney).filter(([, v]) => v).map(([k, v]) => [COIN[k], String(v)])];
+    return `<div class="shell"><div class="core">
+      <div class="dh"><span class="ic">${I("handshake")}</span><b>Торговля</b><button type="button" class="ibtn" data-drawer-set="trade" aria-label="Закрыть торговлю" title="Закрыть">${I("x")}</button></div>
+      <div class="dbody scroll">
+        <div class="tmeta"><span>Встроенная · через ГМ</span><b role="status" id="trade-status">${tradeDirty ? "Есть несохранённое" : "Ждём вашего подтверждения"}</b></div>
+        <div class="partner"><span class="avatar">МТ</span><div><b>Мирабель Тёмнолист</b><small>игрок Лира · онлайн</small></div></div>
+        <div class="conf" aria-live="polite"><span class="cf" id="cf-me">${I("hourglass")}Вы</span><span class="cf ok">${I("check")}Мирабель</span></div>
+        <div><div class="sec-h"><span class="lbl">Предлагают вам</span></div><div class="offer"><div><span>Посох лесов</span><b>×1</b></div><div><span>Серебро</span><b>40</b></div></div></div>
+        <div><div class="sec-h"><span class="lbl">Ваше предложение</span></div><div class="offer">${mine.map(([n, v]) => `<div><span>${n}</span><b>${v}</b></div>`).join("") || `<div><span>пока пусто</span><b></b></div>`}</div></div>
+        <fieldset class="tfields edit"><legend class="sr">Изменить предложение</legend><div class="sec-h"><span class="lbl">Монеты</span></div>
+          <div class="money">${A.coins.map(([k, have]) => `<label><span>${k} <small>${have}</small></span><input type="number" min="0" max="${have}" value="${tradeMoney[k]}" data-money="${k}" aria-label="${COIN[k]}, есть ${have}"></label>`).join("")}</div>
+          <div class="sec-h"><span class="lbl">Предметы</span></div>
+          <div>${tradables.map((i) => `<div class="titem" data-r="${i.r}"><span class="thumb">${I(i.icon)}</span><div style="min-width:0"><b>${i.n}</b><small>доступно ${i.q || 1}</small></div>
+            <span class="qty${tradeQty[i.id] ? " on" : ""}"><button type="button" data-tq="${i.id}" data-d="-1" aria-label="Меньше: ${i.n}">−</button><b>${tradeQty[i.id]}</b><button type="button" data-tq="${i.id}" data-d="1" data-max="${i.q || 1}" aria-label="Больше: ${i.n}">+</button></span></div>`).join("")}</div>
+        </fieldset>
+        <div class="unsaved edit" ${tradeDirty ? "" : "hidden"}>${I("triangle-alert")}<span>Предложение изменено. Сохраните его, прежде чем подтверждать.</span></div>
+      </div>
+      <div class="dfoot edit"><button type="button" class="btn sq" data-trade="cancel" aria-label="Отменить сделку" title="Отменить сделку">${I("x")}</button><button type="button" class="btn" data-trade="save" ${tradeDirty ? "" : "disabled"}>${I("save")}Сохранить</button>
+        <button type="button" class="primary" data-trade="confirm" ${tradeDirty ? "disabled" : ""}><span>Подтвердить</span><span class="nest">${I("check")}</span></button></div>
+    </div></div>`;
+  }
+  function renderDrawer(animate) {
+    const el = $("drawer");
+    el.hidden = !drawer;
+    win.querySelectorAll(".rail [data-drawer-set]").forEach((b) => b.setAttribute("aria-expanded", String(b.dataset.drawerSet === drawer)));
+    if (!drawer) { el.innerHTML = ""; return; }
+    const keep = el.querySelector(".dbody")?.scrollTop || 0;
+    el.innerHTML = drawer === "spells" ? spellsHTML() : tradeHTML();
+    icons(el);
+    if (!animate) { const b = el.querySelector(".dbody"); if (b) b.scrollTop = keep; }
+    if (animate && !reduced()) gsap.fromTo(el, { autoAlpha: 0, x: 18 }, { autoAlpha: 1, x: 0, duration: 0.5, ease: SETTLE, clearProps: "transform" });
+  }
+
+  /* ---------- layout state ---------- */
+  function setDrawer(next) {
+    const was = drawer;
+    drawer = next === drawer ? null : next;
+    // A drawer takes the paperdoll's place: the doll folds into a strip and comes back when the drawer closes.
+    win.dataset.doll = drawer ? "strip" : dollPref;
+    if (drawer) win.dataset.drawer = drawer; else delete win.dataset.drawer;
+    renderDoll(); renderDrawer(Boolean(drawer) && drawer !== was); fit();
+  }
+  function toggleDoll() {
+    const next = win.dataset.doll === "open" ? "strip" : "open";
+    win.dataset.doll = next;
+    if (!drawer) dollPref = next;
+    renderDoll(); fit();
+    if (!reduced()) gsap.fromTo($("doll").children, { autoAlpha: 0, x: next === "open" ? -10 : 0 }, { autoAlpha: 1, x: 0, duration: 0.4, ease: EASE, stagger: 0.04, clearProps: "transform" });
+  }
+
+  /* ---------- motion helpers ---------- */
+  function countTo(el, from, to) {
+    if (!el) return;
+    if (reduced() || from === to) { el.textContent = String(to); return; }
+    el.textContent = String(from);
+    const o = { v: from };
+    gsap.to(o, { v: to, duration: 0.7, ease: EASE, onUpdate: () => { el.textContent = String(Math.round(o.v)); } });
+  }
+  function pop(el) { if (el && !reduced()) gsap.fromTo(el, { scale: 0.86 }, { scale: 1, duration: 0.6, ease: SETTLE, clearProps: "transform" }); }
+  function refuse(el) { if (el && !reduced()) gsap.fromTo(el, { x: -4 }, { x: 0, duration: 0.5, ease: "elastic.out(1.2, 0.3)", clearProps: "transform" }); }
+
+  /* ---------- equipment rules (the module's, in miniature) ---------- */
+  function equip(id) {
+    const it = ITEMS.find((i) => i.id === id);
+    const before = ac();
+    const touched = new Set([it.slot]);
+    if (it.eq) it.eq = false;
+    else {
+      // The off hand is blocked while a two-handed weapon is held: refuse, as the module's rules do.
+      if (it.slot === "off" && twoHanded()) { refuse(document.querySelector('[data-slot="off"]')); refuse(document.querySelector(`[data-row="${id}"]`)); return; }
+      ITEMS.filter((o) => o.eq && o.slot === it.slot).forEach((o) => { o.eq = false; });
+      if (it.two) { ITEMS.filter((o) => o.eq && o.slot === "off").forEach((o) => { o.eq = false; }); touched.add("off"); }
+      it.eq = true;
+    }
+    renderPassport(); renderDoll(); renderList(false);
+    countTo(document.querySelector('[data-count="ac"]'), before, ac());
+    touched.forEach((s) => pop(document.querySelector(`[data-slot="${s}"] .sock`)));
+  }
+  function toggleAttune(id) {
+    const it = ITEMS.find((i) => i.id === id);
+    if (it.att === "on") it.att = "req";
+    else if (attuned().length < 3) it.att = "on";
+    else { refuse(document.querySelector(".attune")); return; }
+    renderDoll(); renderList(false);
+    pop(document.querySelector(`[data-row="${id}"] .thumb`));
+  }
+  const findBox = (list, id) => { for (const b of list) { if (b.id === id) return b; const k = findBox(b.kids, id); if (k) return k; } return null; };
+
+  /* ---------- events ---------- */
+  win.addEventListener("click", (e) => {
+    const t = e.target.closest("button, [data-box-toggle]"); if (!t) return;
+    const d = t.dataset;
+    if ("noop" in d) { e.stopPropagation(); return; }
+    if (t.id === "theme-btn") { const dark = root.dataset.theme ? root.dataset.theme === "dark" : darkMql.matches; setTheme(dark ? "light" : "dark"); return; }
+    if (d.drawerSet) { setDrawer(d.drawerSet); return; }
+    if ("dollToggle" in d) { toggleDoll(); return; }
+    if (d.tab) { tab = d.tab; $("inv").querySelectorAll("[data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b === t))); renderList(true); return; }
+    if (d.equip) { equip(d.equip); return; }
+    if (d.attune) { toggleAttune(d.attune); return; }
+    if (d.boxToggle) {
+      const b = findBox(BOXES, d.boxToggle); b.open = !b.open;
+      const box = t.closest(".box");
+      box.classList.toggle("closed", !b.open); t.setAttribute("aria-expanded", String(b.open));
+      if (b.open && !reduced()) gsap.fromTo(box.querySelector(":scope > .box-in"), { height: 0, autoAlpha: 0 }, { height: "auto", autoAlpha: 1, duration: 0.38, ease: EASE, clearProps: "height,opacity,visibility" });
+      return;
+    }
+    if (d.sub) { spellsTab = d.sub; renderDrawer(false); $("drawer").querySelector(".dbody").scrollTop = 0; return; }
+    if (d.prep) { const s = SPELLS.find((x) => x.id === d.prep); s.prep = s.prep === "on" ? "off" : "on"; renderDrawer(false); return; }
+    if (d.pip) {
+      const [si, pi] = d.pip.split("-").map(Number);
+      const pips = SLOT_PIPS[si][1];
+      pips[pi] = pips[pi] ? 0 : 1;
+      t.classList.toggle("on", !!pips[pi]);
+      $("drawer").querySelector(`[data-pipn="${si}"]`).textContent = `${pips.filter(Boolean).length} / ${pips.length}`;
+      return;
+    }
+    if (d.tq) {
+      const n = Math.max(0, Math.min(Number(d.max || 99), tradeQty[d.tq] + Number(d.d)));
+      if (n !== tradeQty[d.tq]) { tradeQty[d.tq] = n; tradeDirty = true; renderDrawer(false); }
+      return;
+    }
+    if (d.trade === "save") { tradeDirty = false; renderDrawer(false); return; }
+    if (d.trade === "confirm") {
+      const me = $("cf-me"); me.classList.add("ok"); me.innerHTML = `${I("check")}Вы`; icons(me);
+      t.disabled = true; $("trade-status").textContent = "ГМ переносит предметы";
+      return;
+    }
+  });
+  win.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-box-toggle]")) { e.preventDefault(); e.target.click(); } });
+  win.addEventListener("change", (e) => { if (e.target.dataset.money) { tradeMoney[e.target.dataset.money] = Math.max(0, Number(e.target.value) || 0); tradeDirty = true; renderDrawer(false); } });
+  /* press: sink into the material, spring back */
+  win.addEventListener("pointerdown", (e) => {
+    const b = e.target.closest("button"); if (!b || b.disabled || reduced()) return;
+    gsap.to(b, { scale: 0.96, y: 1, duration: 0.12, ease: "power2.out" });
+    const up = () => { gsap.to(b, { scale: 1, y: 0, duration: 0.45, ease: SETTLE, clearProps: "transform" }); b.removeEventListener("pointerup", up); b.removeEventListener("pointerleave", up); };
+    b.addEventListener("pointerup", up); b.addEventListener("pointerleave", up);
+  });
+
+  /* ---------- fit the real-width window into the page ---------- */
+  const scene = document.querySelector(".scene");
+  function fit() {
+    const natural = parseFloat(getComputedStyle(win).getPropertyValue("--win-w")) || 1080;
+    const pad = parseFloat(getComputedStyle(scene).paddingLeft) * 2;
+    win.style.zoom = String(Math.min(1, (scene.clientWidth - pad) / natural));
+  }
+  new ResizeObserver(fit).observe(scene);
+
+  /* ---------- opening: shell settles, zones follow 40 ms apart, the big number counts last ---------- */
+  let opening = null;
+  function open() {
+    if (opening) opening.progress(1).kill();
+    if (reduced()) { gsap.fromTo(win, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.15, clearProps: "opacity,visibility" }); return; }
+    const parts = [...win.querySelectorAll("[data-part]")];
+    const hp = win.querySelector('[data-count="hp"]');
+    const band = win.querySelector('[data-band="hp"]');
+    const tl = gsap.timeline();
+    tl.fromTo(win, { autoAlpha: 0, scale: 0.965, y: 10 }, { autoAlpha: 1, scale: 1, y: 0, duration: 0.7, ease: SETTLE, clearProps: "transform" })
+      .fromTo(parts, { autoAlpha: 0, y: 8 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: EASE, stagger: 0.04, clearProps: "transform" }, 0.12);
+    if (band) tl.fromTo(band, { scaleX: 0 }, { scaleX: A.hp / A.hpMax, duration: 1.1, ease: SETTLE }, 0.4);
+    if (hp) { const o = { v: 0 }; tl.to(o, { v: A.hp, duration: 0.9, ease: EASE, onUpdate: () => { hp.textContent = String(Math.round(o.v)); } }, 0.4); }
+    opening = tl;
+    // Background tabs throttle frames: finish the entrance anyway so the window is never left translucent.
+    setTimeout(() => { if (tl.progress() < 1) tl.progress(1); }, 2200);
+  }
+
+  /* ---------- page controls ---------- */
+  const pal = $("palette");
+  pal.innerHTML = PALETTE.map((p) => `<button type="button" class="sw" role="radio" aria-checked="false" aria-label="${p.name}" title="${p.name}" data-acc="${p.id}" style="--h:${p.h};--c:${p.c}"></button>`).join("");
+  function setAccent(id) {
+    const p = PALETTE.find((x) => x.id === id) || PALETTE[0];
+    win.style.setProperty("--tc-acc-h", p.h); win.style.setProperty("--tc-acc-c", p.c);
+    pal.querySelectorAll(".sw").forEach((s) => s.setAttribute("aria-checked", String(s.dataset.acc === p.id)));
+    $("acc-name").textContent = p.name;
+    store.set("aim-tactile-accent", p.id);
+  }
+  pal.addEventListener("click", (e) => { const s = e.target.closest(".sw"); if (s) setAccent(s.dataset.acc); });
+  function setTheme(t) {
+    if (t === "auto") root.removeAttribute("data-theme"); else root.setAttribute("data-theme", t);
+    document.querySelectorAll("[data-theme-set]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.themeSet === t)));
+    store.set("aim-tactile-theme", t);
+  }
+  document.querySelectorAll("[data-theme-set]").forEach((b) => b.addEventListener("click", () => setTheme(b.dataset.themeSet)));
+  function setRole(r) {
+    readonly = r === "observer";
+    if (readonly) win.dataset.readonly = ""; else delete win.dataset.readonly;
+    document.querySelectorAll("[data-role-set]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.roleSet === r)));
+    renderDrawer(false);
+  }
+  document.querySelectorAll("[data-role-set]").forEach((b) => b.addEventListener("click", () => setRole(b.dataset.roleSet)));
+  function setMotion(m) {
+    motion = m; win.dataset.motion = m;
+    document.querySelectorAll("[data-motion-set]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.motionSet === m)));
+    store.set("aim-tactile-motion", m);
+  }
+  document.querySelectorAll("[data-motion-set]").forEach((b) => b.addEventListener("click", () => setMotion(b.dataset.motionSet)));
+  $("replay").addEventListener("click", () => { open(); });
+
+  setTheme(store.get("aim-tactile-theme", "auto"));
+  setAccent(store.get("aim-tactile-accent", "peach"));
+  setMotion(motion);
+  icons(win);
+  renderPassport(); renderDoll(); renderInvShell(); renderList(false);
+  setRole("owner");
+  fit();
+  open();
+})();
+</script>

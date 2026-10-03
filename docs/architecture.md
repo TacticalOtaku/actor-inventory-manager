@@ -47,6 +47,8 @@ one place to update when it moves again. Never inline these reads at a call site
 | Concern | Helper | Where |
 | --- | --- | --- |
 | Attunement state | `isItemAttuned`, `itemRequiresAttunement`, `getAttunementStatus` | `core/attunement.js` |
+| Attunement cap | `getActorAttunementMax` (prepared), `getActorSourceAttunementMax` (stored) | `core/attunement.js` |
+| Container contents | `getContainerContentsCount` | `integrations/dnd5e.js` |
 | Spell preparation | `resolveSpellPreparation` | `integrations/dnd5e.js` |
 | Spell slot maximum | `resolveSpellSlotMax` | `integrations/dnd5e.js` |
 | Item activation | `resolveItemActivation` | `integrations/dnd5e.js` |
@@ -57,7 +59,12 @@ Shapes handled (dnd5e 5.3.3):
 
 - **Attunement** — `system.attunement` is the *requirement*
   (`"" | "required" | "optional"`) and `system.attuned` is the boolean state.
-  Writing `"attuned"` into `system.attunement` corrupts the item.
+  Writing `"attuned"` into `system.attunement` corrupts the item. The cap
+  `system.attributes.attunement.max` is raised by effects; editors read and
+  write the stored `_source` value so a bonus is never baked into the base.
+- **Container contents** — `system.contentsCount` counts nested items by
+  quantity and is a promise inside a compendium. Deleting a container leaves
+  its contents pointing at the deleted id unless `{ deleteContents: true }`.
 - **Spell preparation** — `system.method` (`"spell" | "pact" | "atwill" |
   "innate" | "ritual"`) plus numeric `system.prepared` (`0/1/2`, where `2` is
   always-prepared). There is no `"prepared"` method.

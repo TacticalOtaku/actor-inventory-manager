@@ -632,3 +632,15 @@ export async function toggleSpellPreparation(spellItem) {
   return spellItem.update({ "system.prepared": prep.prepared >= 1 ? 0 : 1 });
 }
 
+/**
+ * How many items a container holds, nested containers and stack quantities included.
+ * dnd5e 5.3.3 exposes `system.contentsCount`, a promise for items inside a compendium. Deleting a
+ * container with `{ deleteContents: true }` makes dnd5e delete them too; otherwise they stay behind.
+ * @param {Object} item
+ * @returns {Promise<number>}
+ */
+export async function getContainerContentsCount(item) {
+  if (item?.type !== "container") return 0;
+  const count = Number(await item.system?.contentsCount);
+  return Number.isFinite(count) ? count : 0;
+}

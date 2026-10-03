@@ -22,7 +22,8 @@ const ApplicationBase = foundry.applications.api.HandlebarsApplicationMixin(
 
 export class SlotConfigDialog extends ApplicationBase {
   static DEFAULT_OPTIONS = {
-    id: `${MODULE_ID}-slot-config`,
+    // Unique per dialog: one still closing must not unregister the next under a shared id.
+    id: `${MODULE_ID}-slot-config-{id}`,
     classes: ["actor-inventory-manager-app", "tc-root", "aim-slot-config-dialog"],
     tag: "div",
     position: {

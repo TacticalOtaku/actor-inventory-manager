@@ -367,6 +367,7 @@
       "deleteItem": {
         "title": "Delete Item",
         "message": "Are you sure you want to delete {item}?",
+        "contents": "Delete everything inside as well ({count} items). Otherwise it stays in the inventory.",
         "confirm": "Delete",
         "cancel": "Cancel"
       }

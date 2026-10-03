@@ -448,12 +448,25 @@ async function clearActorCustomTemplate(actor) {
 }
 
 /**
+ * What applying the paperdoll editor should do.
+ * The editor opens on the actor's own cap, which may differ from the template's: an untouched cap is
+ * neither written back nor a reason to give the actor its own copy of the template.
+ * @param {{isCustomWorking: boolean, templateCap: number, initialCap: number, cap: number}} state
+ * @returns {{custom: boolean, writeCap: boolean}}
+ */
+export function planTemplateApply({ isCustomWorking, templateCap, initialCap, cap }) {
+  const writeCap = cap !== initialCap;
+  return { custom: Boolean(isCustomWorking) || (writeCap && cap !== templateCap), writeCap };
+}
+
+/**
  * Assign a template or custom configuration to an actor (GM Only)
  * @param {Object} actor
  * @param {string} templateId
  * @param {Object|null} customTemplateData
+ * @param {{applyAttunement?: boolean}} [options] applyAttunement false keeps the actor's attunement cap
  */
-export async function setActorPaperdollTemplate(actor, templateId, customTemplateData = null) {
+export async function setActorPaperdollTemplate(actor, templateId, customTemplateData = null, { applyAttunement = true } = {}) {
   if (!isSupportedActor(actor)) return;
   const runtime = getPaperdollRuntime();
   if (!runtime.isGM()) {
@@ -468,11 +481,11 @@ export async function setActorPaperdollTemplate(actor, templateId, customTemplat
       [`flags.${MODULE_ID}.${FLAGS.CUSTOM_TEMPLATE}`]: { ...customTemplateData, id: "custom" },
       [`flags.${MODULE_ID}.${FLAGS.TEMPLATE_ID}`]: "custom"
     });
-    await applyAttunementMax(actor, customTemplateData.attunementMax);
+    if (applyAttunement) await applyAttunementMax(actor, customTemplateData.attunementMax);
   } else {
     await clearActorCustomTemplate(actor);
     await actor.setFlag(MODULE_ID, FLAGS.TEMPLATE_ID, templateId);
-    await applyAttunementMax(actor, getTemplateById(templateId)?.attunementMax);
+    if (applyAttunement) await applyAttunementMax(actor, getTemplateById(templateId)?.attunementMax);
   }
 
   runtime.logInfo("Actor paperdoll template updated", { actorId: actor.id, templateId });

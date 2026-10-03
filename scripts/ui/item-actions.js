@@ -27,13 +27,16 @@ export function assertCanEdit(actor) {
  * @param {Object} actor
  * @param {Object} item
  * @param {string} targetSlotId
+ * @returns {Promise<boolean>} true when the item was written into the slot; false when
+ *   refused (unsupported actor, missing argument, no permission, not equippable, slot
+ *   rules) or when a preUpdate hook vetoed the write
  */
 export async function equipItemToSlot(actor, item, targetSlotId) {
-  if (!isSupportedActor(actor) || !item || !targetSlotId) return;
-  if (!assertCanEdit(actor)) return;
+  if (!isSupportedActor(actor) || !item || !targetSlotId) return false;
+  if (!assertCanEdit(actor)) return false;
   if (!canItemBeEquipped(item)) {
     ui.notifications?.warn(game.i18n.format("AIM.notifications.cannotEquip", { item: item.name }));
-    return;
+    return false;
   }
 
   const currentSlotMap = getActorEquippedMap(actor);
@@ -44,7 +47,7 @@ export async function equipItemToSlot(actor, item, targetSlotId) {
   if (!validation.valid) {
     ui.notifications?.warn(validation.error);
     LOG.warn("Equip validation failed in UI", { item: item.name, targetSlotId, error: validation.error });
-    return;
+    return false;
   }
 
   // One batched write: displaced items and the new one change together, so a
@@ -69,59 +72,64 @@ export async function equipItemToSlot(actor, item, targetSlotId) {
     [`flags.${MODULE_ID}.${FLAGS.EQUIPPED_AT}`]: Date.now()
   });
 
-  await actor.updateEmbeddedDocuments("Item", updates, { [AIM_EQUIP_OPTION]: true });
+  // Foundry drops a document from the result when a preUpdate hook vetoes it.
+  const updated = await actor.updateEmbeddedDocuments("Item", updates, { [AIM_EQUIP_OPTION]: true });
+  if (!updated?.some(doc => doc?.id === item.id)) return false;
 
   LOG.info("Item equipped to slot", { item: item.name, slot: targetSlotId, actor: actor.name });
+  return true;
 }
 
 /**
  * Unequip an item from its slot
  * @param {Object} actor
  * @param {Object} item
+ * @returns {Promise<boolean>} true when the change was written; false when refused
+ *   (unsupported actor, missing item, no permission) or vetoed by a preUpdate hook
  */
 export async function unequipItem(actor, item) {
-  if (!isSupportedActor(actor) || !item) return;
-  if (!assertCanEdit(actor)) return;
+  if (!isSupportedActor(actor) || !item) return false;
+  if (!assertCanEdit(actor)) return false;
 
-  await item.update({
+  const updated = await item.update({
     "system.equipped": false,
     [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: null
   });
+  if (!updated) return false;
 
   LOG.info("Item unequipped", { item: item.name, actor: actor?.name });
+  return true;
 }
 
 /**
  * Toggle equip status of an item automatically finding the best slot
  * @param {Object} actor
  * @param {Object} item
+ * @returns {Promise<boolean>} true when the item was equipped or unequipped; false when
+ *   refused (unsupported actor, missing item, no permission, not equippable, slot rules)
+ *   or vetoed by a preUpdate hook
  */
 export async function toggleItemEquipped(actor, item) {
-  if (!isSupportedActor(actor) || !item) return;
+  if (!isSupportedActor(actor) || !item) return false;
 
-  if (item.system?.equipped) {
-    await unequipItem(actor, item);
-    return;
-  }
+  if (item.system?.equipped) return unequipItem(actor, item);
 
   const targetSlotId = findEquipSlot(actor, item, getActorEquippedMap(actor));
-  if (targetSlotId) {
-    await equipItemToSlot(actor, item, targetSlotId);
-    return;
-  }
+  if (targetSlotId) return equipItemToSlot(actor, item, targetSlotId);
 
   // Items with no place on the paperdoll (Ioun stones, trinkets, ...) are
   // still equippable in the system - they just do not occupy a slot.
-  if (!assertCanEdit(actor)) return;
+  if (!assertCanEdit(actor)) return false;
   if (!canItemBeEquipped(item)) {
     ui.notifications?.warn(game.i18n.format("AIM.notifications.cannotEquip", { item: item.name }));
-    return;
+    return false;
   }
-  await item.update({
+  const updated = await item.update({
     "system.equipped": true,
     ...(item.system?.container ? { "system.container": null } : {}),
     [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: null
   }, { [AIM_EQUIP_OPTION]: true });
+  return Boolean(updated);
 }
 
 /**
@@ -149,17 +157,20 @@ export async function useItem(item, event = undefined) {
 /**
  * Toggle attunement state of an item
  * @param {Object} item
+ * @returns {Promise<boolean>} true when attunement was started or ended; false when
+ *   refused (missing item, unsupported actor, no permission, attunement not needed,
+ *   attunement limit reached) or vetoed by a preUpdate hook
  */
 export async function toggleAttunement(item) {
-  if (!item) return;
+  if (!item) return false;
   const actor = item.parent;
-  if (!isSupportedActor(actor)) return;
-  if (!assertCanEdit(actor)) return;
+  if (!isSupportedActor(actor)) return false;
+  if (!assertCanEdit(actor)) return false;
 
   if (!isItemAttuned(item)) {
     if (!itemRequiresAttunement(item)) {
       ui.notifications?.warn(game.i18n.format("AIM.notifications.attunementNotRequired", { item: item.name }));
-      return;
+      return false;
     }
 
     const maxAttunement = getActorAttunementMax(actor);
@@ -170,16 +181,17 @@ export async function toggleAttunement(item) {
       ui.notifications?.warn(
         game.i18n.format("AIM.notifications.maxAttunementReached", { max: maxAttunement })
       );
-      return;
+      return false;
     }
 
-    await item.update({ "system.attuned": true });
+    if (!await item.update({ "system.attuned": true })) return false;
     ui.notifications?.info(game.i18n.format("AIM.notifications.attunedSuccess", { item: item.name }));
-    return;
+    return true;
   }
 
-  await item.update({ "system.attuned": false });
+  if (!await item.update({ "system.attuned": false })) return false;
   ui.notifications?.info(game.i18n.format("AIM.notifications.unattunedSuccess", { item: item.name }));
+  return true;
 }
 
 /**

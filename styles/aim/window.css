@@ -249,3 +249,11 @@
   max-width: 100%;
   max-height: 100%;
 }
+
+/* --- Theme swap: transitions are suppressed for two frames so every token lands at once (_applyTheme). --- */
+.actor-inventory-manager-app.aim-no-transitions,
+.actor-inventory-manager-app.aim-no-transitions *,
+.actor-inventory-manager-app.aim-no-transitions *::before,
+.actor-inventory-manager-app.aim-no-transitions *::after {
+  transition: none !important;
+}

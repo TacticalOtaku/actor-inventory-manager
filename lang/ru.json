@@ -272,7 +272,8 @@
       "armor": "Броня",
       "consumables": "Зелья/Свитки",
       "containers": "Сумки/Контейнеры",
-      "loot": "Разное"
+      "loot": "Разное",
+      "label": "Категории"
     },
     "filters": {
       "searchPlaceholder": "Поиск предметов..."
@@ -281,13 +282,15 @@
       "name": "По названию",
       "weight": "По весу",
       "value": "По стоимости",
-      "rarity": "По редкости"
+      "rarity": "По редкости",
+      "label": "Сортировка"
     },
     "items": {
       "attuned": "Настроено",
       "requiresAttunement": "Требует настройки",
       "requiresAttunementShort": "Настройка",
-      "emptyList": "В этой категории нет предметов."
+      "emptyList": "В этой категории нет предметов.",
+      "noMatches": "По запросу ничего не найдено."
     },
     "spells": {
       "drawerTab": "Заклинания",

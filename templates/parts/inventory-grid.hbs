@@ -1,155 +1,33 @@
-<div class="aim-inventory-panel">
-  <!-- Top Bar: Navigation Tabs with Count Badges -->
-  <nav class="aim-inv-tabs">
-    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'all')}}is-active{{/if}}" data-action="switchTab" data-tab="all" data-tooltip="{{localize 'AIM.tabs.all'}}" aria-label="{{localize 'AIM.tabs.all'}}">
-      <i class="fa-solid fa-boxes-stacked"></i>
-      <span class="aim-tab-label">{{localize "AIM.tabs.all"}}</span>
-      <span class="aim-tab-count">{{counts.all}}</span>
+<nav class="tc-segs aim-tabs" aria-label="{{localize 'AIM.tabs.label'}}">
+  {{#each inventoryTabs as |tab|}}
+    <button type="button" class="tc-seg" data-action="switchTab" data-tab="{{tab.id}}" aria-pressed="{{#if (eq @root.currentTab tab.id)}}true{{else}}false{{/if}}"
+            aria-label="{{localize (concat 'AIM.tabs.' tab.id)}}" data-tooltip="{{localize (concat 'AIM.tabs.' tab.id)}}">
+      <i class="fa-light {{tab.icon}}"></i><span class="tc-seg-label">{{localize (concat "AIM.tabs." tab.id)}}</span><span class="tc-seg-count">{{lookup @root.counts tab.id}}</span>
     </button>
-    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'weapons')}}is-active{{/if}}" data-action="switchTab" data-tab="weapons" data-tooltip="{{localize 'AIM.tabs.weapons'}}" aria-label="{{localize 'AIM.tabs.weapons'}}">
-      <i class="fa-solid fa-khanda"></i>
-      <span class="aim-tab-label">{{localize "AIM.tabs.weapons"}}</span>
-      <span class="aim-tab-count">{{counts.weapons}}</span>
-    </button>
-    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'armor')}}is-active{{/if}}" data-action="switchTab" data-tab="armor" data-tooltip="{{localize 'AIM.tabs.armor'}}" aria-label="{{localize 'AIM.tabs.armor'}}">
-      <i class="fa-solid fa-shield-halved"></i>
-      <span class="aim-tab-label">{{localize "AIM.tabs.armor"}}</span>
-      <span class="aim-tab-count">{{counts.armor}}</span>
-    </button>
-    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'consumables')}}is-active{{/if}}" data-action="switchTab" data-tab="consumables" data-tooltip="{{localize 'AIM.tabs.consumables'}}" aria-label="{{localize 'AIM.tabs.consumables'}}">
-      <i class="fa-solid fa-flask"></i>
-      <span class="aim-tab-label">{{localize "AIM.tabs.consumables"}}</span>
-      <span class="aim-tab-count">{{counts.consumables}}</span>
-    </button>
-    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'containers')}}is-active{{/if}}" data-action="switchTab" data-tab="containers" data-tooltip="{{localize 'AIM.tabs.containers'}}" aria-label="{{localize 'AIM.tabs.containers'}}">
-      <i class="fa-solid fa-box-archive"></i>
-      <span class="aim-tab-label">{{localize "AIM.tabs.containers"}}</span>
-      <span class="aim-tab-count">{{counts.containers}}</span>
-    </button>
-    <button type="button" class="aim-tab-btn {{#if (eq currentTab 'loot')}}is-active{{/if}}" data-action="switchTab" data-tab="loot" data-tooltip="{{localize 'AIM.tabs.loot'}}" aria-label="{{localize 'AIM.tabs.loot'}}">
-      <i class="fa-solid fa-coins"></i>
-      <span class="aim-tab-label">{{localize "AIM.tabs.loot"}}</span>
-      <span class="aim-tab-count">{{counts.loot}}</span>
-    </button>
-  </nav>
-
-  <!-- Filter & Sort Controls -->
-  <div class="aim-filter-bar">
-    <div class="aim-search-wrapper">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="{{appId}}-search" name="aim-inv-search" class="aim-search-input" data-search-input="true" autocomplete="off" placeholder="{{localize 'AIM.filters.searchPlaceholder'}}" value="{{searchFilter}}" />
+  {{/each}}
+</nav>
+<div class="aim-filters">
+  <label class="tc-search"><i class="fa-light fa-magnifying-glass"></i>
+    <input type="text" id="{{appId}}-search" name="aim-inv-search" data-search-input="true" autocomplete="off" placeholder="{{localize 'AIM.filters.searchPlaceholder'}}" value="{{searchFilter}}" aria-label="{{localize 'AIM.filters.searchPlaceholder'}}">
+  </label>
+  <select id="{{appId}}-sort" name="aim-inv-sort" class="tc-select" data-sort-select="true" aria-label="{{localize 'AIM.sort.label'}}">
+    <option value="name" {{#if (eq sortBy 'name')}}selected{{/if}}>{{localize "AIM.sort.name"}}</option>
+    <option value="weight" {{#if (eq sortBy 'weight')}}selected{{/if}}>{{localize "AIM.sort.weight"}}</option>
+    <option value="value" {{#if (eq sortBy 'value')}}selected{{/if}}>{{localize "AIM.sort.value"}}</option>
+    <option value="rarity" {{#if (eq sortBy 'rarity')}}selected{{/if}}>{{localize "AIM.sort.rarity"}}</option>
+  </select>
+</div>
+<div class="tc-tray aim-list aim-scroll aim-items-scroll-area" data-drop-target="inventory">
+  {{#each items}}
+    {{> "modules/actor-inventory-manager/templates/parts/item-row.hbs" this}}
+  {{/each}}
+  {{#if showContainers}}
+    <div class="aim-cont">
+      <div class="tc-sec"><span class="tc-lbl">{{localize "AIM.containers.title"}}</span></div>
+      {{#each containers}}{{> "modules/actor-inventory-manager/templates/parts/container-view.hbs" this}}{{/each}}
     </div>
-
-    <div class="aim-sort-wrapper">
-      <select id="{{appId}}-sort" name="aim-inv-sort" class="aim-sort-select" data-sort-select="true">
-        <option value="name" {{#if (eq sortBy 'name')}}selected{{/if}}>{{localize "AIM.sort.name"}}</option>
-        <option value="weight" {{#if (eq sortBy 'weight')}}selected{{/if}}>{{localize "AIM.sort.weight"}}</option>
-        <option value="value" {{#if (eq sortBy 'value')}}selected{{/if}}>{{localize "AIM.sort.value"}}</option>
-        <option value="rarity" {{#if (eq sortBy 'rarity')}}selected{{/if}}>{{localize "AIM.sort.rarity"}}</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Items List Grid -->
-  <div class="aim-items-scroll-area" data-drop-target="inventory">
-    <!-- Main Item List -->
-    <div class="aim-items-list">
-      {{#if items.length}}
-        {{#each items}}
-        <div class="aim-item-card {{#if this.isEquipped}}is-equipped{{/if}} rarity-{{this.rarityKey}} {{#if this.hasGlow}}has-rarity-glow{{/if}}"
-             {{#if this.canEdit}}data-drag-item="true"{{/if}}
-             data-item-id="{{this.id}}"
-             data-item-uuid="{{this.uuid}}"
-             data-rarity="{{this.rarityKey}}"
-             data-item-rarity="{{this.rarityKey}}"
-             style="{{this.cssVars}}">
-
-          <div class="aim-item-thumb-wrapper" data-action="openItem" data-item-id="{{this.id}}" style="border-color: var(--rarity-color);">
-            <img class="aim-item-img" src="{{this.img}}" alt="{{this.name}}" />
-            {{#if this.hasMultiple}}
-              <span class="aim-item-badge-qty">{{this.quantity}}</span>
-            {{/if}}
-          </div>
-
-          <div class="aim-item-details" data-action="openItem" data-item-id="{{this.id}}">
-            <div class="aim-item-title">
-              {{this.name}}
-              {{#if this.isAttuned}}
-                <span class="aim-attuned-badge-pill" title="{{localize 'AIM.items.attuned'}}">
-                  <i class="fa-solid fa-sun"></i> {{localize "AIM.items.attuned"}}
-                </span>
-              {{else if this.requiresAttunement}}
-                <span class="aim-requires-attune-pill" title="{{localize 'AIM.items.requiresAttunement'}}">
-                  <i class="fa-regular fa-sun"></i> {{localize "AIM.items.requiresAttunementShort"}}
-                </span>
-              {{/if}}
-            </div>
-            <div class="aim-item-subtitle">
-              <span class="aim-meta-stat">{{this.weightDisplay}}</span>
-              {{#if this.priceDisplay}}<span class="aim-meta-stat">• {{this.priceDisplay}}</span>{{/if}}
-              {{#if this.properties.length}}
-                <span class="aim-prop-chips">
-                  {{#each this.properties}}
-                    <span class="aim-prop-chip">{{this}}</span>
-                  {{/each}}
-                </span>
-              {{/if}}
-            </div>
-          </div>
-
-          {{#if this.canEdit}}
-          <div class="aim-item-controls">
-            {{#if this.canEquip}}
-              <button type="button" class="aim-btn-icon {{#if this.isEquipped}}is-active{{/if}}"
-                      data-action="toggleEquip"
-                      data-item-id="{{this.id}}"
-                      title="{{#if this.isEquipped}}{{localize 'AIM.actions.unequip'}}{{else}}{{localize 'AIM.actions.equip'}}{{/if}}">
-                <i class="fa-solid {{#if this.isEquipped}}fa-shield-halved{{else}}fa-shield{{/if}}"></i>
-              </button>
-            {{/if}}
-
-            {{#if this.requiresAttunement}}
-              <button type="button" class="aim-btn-icon aim-btn-attune {{#if this.isAttuned}}is-active is-attuned{{/if}}"
-                      data-action="toggleAttune"
-                      data-item-id="{{this.id}}"
-                      title="{{#if this.isAttuned}}{{localize 'AIM.attunement.break'}}{{else}}{{localize 'AIM.attunement.attune'}}{{/if}}">
-                <i class="fa-solid fa-sun"></i>
-              </button>
-            {{/if}}
-
-            <button type="button" class="aim-btn-icon" data-action="useItem" data-item-id="{{this.id}}" title="{{localize 'AIM.actions.use'}}">
-              <i class="fa-solid fa-dice-d20"></i>
-            </button>
-
-            <button type="button" class="aim-btn-icon aim-btn-delete" data-action="deleteItem" data-item-id="{{this.id}}" title="{{localize 'AIM.actions.delete'}}">
-              <i class="fa-regular fa-trash-can"></i>
-            </button>
-          </div>
-          {{/if}}
-        </div>
-        {{/each}}
-      {{else}}
-        <div class="aim-empty-list-hint">
-          <i class="fa-solid fa-box-open"></i>
-          <p>{{localize "AIM.items.emptyList"}}</p>
-        </div>
-      {{/if}}
-    </div>
-
-    <!-- Containers Section (if tab is all or containers) -->
-    {{#if (or (eq currentTab 'all') (eq currentTab 'containers'))}}
-      {{#if hasContainers}}
-        <div class="aim-containers-section">
-          <div class="aim-containers-title">
-            <i class="fa-solid fa-boxes-packing"></i> {{localize "AIM.containers.title"}}
-          </div>
-          <div class="aim-containers-list">
-            {{#each containers}}
-              {{> "modules/actor-inventory-manager/templates/parts/container-view.hbs" this}}
-            {{/each}}
-          </div>
-        </div>
-      {{/if}}
-    {{/if}}
-  </div>
+  {{/if}}
+  {{#unless items.length}}{{#unless showContainers}}
+    <div class="aim-empty"><i class="fa-light fa-box-open"></i>{{#if searchFilter}}{{localize "AIM.items.noMatches"}}{{else}}{{localize "AIM.items.emptyList"}}{{/if}}</div>
+  {{/unless}}{{/unless}}
 </div>

@@ -272,7 +272,8 @@
       "armor": "Armor",
       "consumables": "Consumables",
       "containers": "Containers",
-      "loot": "Loot"
+      "loot": "Loot",
+      "label": "Categories"
     },
     "filters": {
       "searchPlaceholder": "Search items..."
@@ -281,13 +282,15 @@
       "name": "Sort by Name",
       "weight": "Sort by Weight",
       "value": "Sort by Value",
-      "rarity": "Sort by Rarity"
+      "rarity": "Sort by Rarity",
+      "label": "Sort"
     },
     "items": {
       "attuned": "Attuned",
       "requiresAttunement": "Requires Attunement",
       "requiresAttunementShort": "Requires Attune",
-      "emptyList": "No items found in this category."
+      "emptyList": "No items found in this category.",
+      "noMatches": "Nothing matches the search."
     },
     "spells": {
       "drawerTab": "Spells",

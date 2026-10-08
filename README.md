@@ -96,7 +96,7 @@ Use two player accounts and one GM in a test world before relying on the feature
 4. Cancel a trade, exhaust an offered item, disconnect a participant, and change currency settings. Verify no invalid transfer completes.
 5. Inspect both themes and a narrow window. If deliberately testing interrupted execution, use disposable actors and verify the GM recovery path before resuming normal play.
 
-Automated tests use in-memory Foundry document doubles. `tools/preview-trade.mjs` renders the actual templates with fictional fixtures and checks them in Playwright; it does not modify a running world. Pass a Handlebars CommonJS runtime, an output directory, and a Playwright package directory to run it.
+Automated tests use in-memory Foundry document doubles.
 
 ```bash
 npm install

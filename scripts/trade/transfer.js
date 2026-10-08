@@ -10,11 +10,6 @@ export function captureInventory(actor) {
   return { actorId: actor.id, items: Array.from(actor.items.values(), i => i.toObject()), attributes };
 }
 
-export function inventoryMatches(actor, snapshot) {
-  const changes = inventoryChanges(actor, snapshot);
-  return Object.values(changes).every(entries => entries.length === 0);
-}
-
 /** Diagnostics contain IDs and paths only, never item contents or currency balances. */
 export function inventoryChanges(actor, snapshot) {
   const current = captureInventory(actor);

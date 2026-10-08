@@ -50,6 +50,11 @@ describe("two-handed weapons", () => {
     assert.equal(result.code, "OFFHAND_BLOCKED_BY_2H");
   });
 
+  it("prefer a free hand over swapping a one-handed weapon", () => {
+    const actor = makeActor([weapon("dagger", [], true, "mainHand"), weapon("longsword")]);
+    assert.equal(findEquipSlot(actor, actor.items.get("longsword")), "offHand");
+  });
+
   it("picks the main hand as a swap instead of the blocked off hand", () => {
     const actor = makeActor([weapon("greataxe", ["two"], true, "mainHand"), weapon("longsword")]);
     assert.equal(findEquipSlot(actor, actor.items.get("longsword")), "mainHand");

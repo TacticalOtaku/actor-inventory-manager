@@ -3,10 +3,10 @@ import { describe, it } from "node:test";
 
 import {
   classifyItem,
-  findBestSlotForEquipping,
   getValidSlotsForItem,
   isBodyArmor,
   isItemCompatibleWithSlot,
+  isOffHandSlot,
   isShield,
   isTwoHandedWeapon
 } from "../scripts/core/item-classifier.js";
@@ -74,10 +74,12 @@ describe("two-handed weapons never offer the off hand", () => {
     assert.equal(isItemCompatibleWithSlot(greataxe, "mainHand", actor), true);
   });
 
-  it("does not auto-equip into the off hand when the main hand is taken", () => {
-    // Auto-equip must not pick a slot the rule engine will then refuse.
-    const occupied = new Map([["mainHand", longsword]]);
-    assert.equal(findBestSlotForEquipping(actor, greataxe, occupied), "mainHand");
+});
+
+describe("off-hand slot detection", () => {
+  it("needs both \"left\" and \"hand\" in a Russian label", () => {
+    assert.equal(isOffHandSlot({ id: "leftRing", label: "Левое кольцо" }), false);
+    assert.equal(isOffHandSlot({ id: "slotA", label: "Левая рука" }), true);
   });
 });
 
@@ -88,10 +90,6 @@ describe("one-handed weapons and shields", () => {
     assert.ok(slots.includes("offHand"));
   });
 
-  it("prefers a free hand when auto-equipping", () => {
-    const occupied = new Map([["mainHand", greataxe]]);
-    assert.equal(findBestSlotForEquipping(actor, longsword, occupied), "offHand");
-  });
 
   it("keeps shields out of armor and ring slots", () => {
     assert.equal(isItemCompatibleWithSlot(shield, "armor", actor), false);

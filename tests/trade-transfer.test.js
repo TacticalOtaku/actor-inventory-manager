@@ -1,6 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { captureInventory, inventoryMatches, restoreInventory, transferItems } from "../scripts/trade/transfer.js";
+import { captureInventory, inventoryChanges, restoreInventory, transferItems } from "../scripts/trade/transfer.js";
+
+const inventoryMatches = (actor, snapshot) => Object.values(inventoryChanges(actor, snapshot)).every(ids => ids.length === 0);
 
 function actor(id, itemData = []) {
   const a = { id, name: id, system: { currency: { gp: 5 } }, items: new Map(), async update(updates) {

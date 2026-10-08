@@ -103,6 +103,21 @@ test("failed rollback keeps a private recovery record and GM can explicitly rest
   assert.equal(actors.get("b").system.currency.gp, 10);
   assert.equal(game.journal.size, 0);
 });
+test("GM recovery without its snapshot journal closes the trade instead of locking both actors", async () => {
+  const { actors } = setup(); await start();
+  const target = actors.get("b"), update = target.update;
+  target.update = async () => { throw new Error("database unavailable"); };
+  await command("offerRequest0001", "offer", "a", "p1", { revision: 0, offer: { items: [], money: { gp: 3 } } });
+  await command("confirmRequest01", "confirm", "a", "p1", { revision: 1 });
+  await command("confirmRequest02", "confirm", "b", "p2", { revision: 1 });
+  assert.equal(tradeState().sessions[0].status, "recovery");
+  target.update = update;
+  game.journal.clear();
+  await command("recoverRequest01", "recover", "a", "gm");
+  assert.equal(tradeState().sessions[0].status, "failed");
+  assert.equal(tradeState().sessions[0].error, "AIM.trade.errors.recoveryLost");
+  assert.equal(tradeState().receipts.gm.error, null);
+});
 test("stale confirmations after an offer edit cannot settle the new offer", async () => {
   const { actors } = setup(); await start();
   await command("offerRequest0001", "offer", "a", "p1", { revision: 0, offer: { items: [], money: { gp: 3 } } });

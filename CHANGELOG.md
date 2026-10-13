@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.9.1
 
 ### Fixed
 - Trading coins without Item Piles works. Before, every trade that moved D&D5e coins failed after the debit and was

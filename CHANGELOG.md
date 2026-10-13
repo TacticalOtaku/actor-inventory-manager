@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- The spells drawer title wraps onto a second line instead of ending in an ellipsis.
+
 ## 1.9.0
 
 ### Fixed

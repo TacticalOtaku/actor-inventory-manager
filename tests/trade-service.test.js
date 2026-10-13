@@ -118,6 +118,19 @@ test("GM recovery without its snapshot journal closes the trade instead of locki
   assert.equal(tradeState().sessions[0].error, "AIM.trade.errors.recoveryLost");
   assert.equal(tradeState().receipts.gm.error, null);
 });
+test("finished sessions stay in chronological order and pruning drops the oldest", async () => {
+  setup();
+  for (let i = 0; i < 32; i++) {
+    const id = `startRequest${String(i).padStart(4, "0")}`;
+    await processTradeRequest({ id, action: "start", actorId: "a", targetId: "b", targetUserId: "p2" }, "p1");
+    await processTradeRequest({ id: `cancelRequest${String(i).padStart(3, "0")}`, action: "cancel", actorId: "a", sessionId: id }, "p1");
+  }
+  const ids = tradeState().sessions.map(s => s.id);
+  // The trade drawer reports the actor's last session, so the newest must stay at the end.
+  assert.equal(ids.length, 30);
+  assert.equal(ids[0], "startRequest0002");
+  assert.equal(ids.at(-1), "startRequest0031");
+});
 test("stale confirmations after an offer edit cannot settle the new offer", async () => {
   const { actors } = setup(); await start();
   await command("offerRequest0001", "offer", "a", "p1", { revision: 0, offer: { items: [], money: { gp: 3 } } });

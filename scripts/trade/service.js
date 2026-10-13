@@ -88,8 +88,9 @@ export function authorizedSide(session, actorId, user) {
 
 async function save(state) {
   assertCoordinator();
-  const terminal = state.sessions.filter(s => !ACTIVE.has(s.status)).slice(-30);
-  state.sessions = [...state.sessions.filter(s => ACTIVE.has(s.status)), ...terminal];
+  // Keep sessions in start order (the drawer shows an actor's last one); drop only the oldest finished ones.
+  const expired = new Set(state.sessions.filter(s => !ACTIVE.has(s.status)).slice(0, -30));
+  state.sessions = state.sessions.filter(s => !expired.has(s));
   await game.settings.set(MODULE_ID, TRADE_STATE, state);
 }
 

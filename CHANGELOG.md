@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.9.1
+
+### Fixed
+- Trading coins without Item Piles works. Before, every trade that moved D&D5e coins failed after the debit and was
+  rolled back: Foundry adds `_id` to the update data, and the balance check read it as a currency.
+- The Trade drawer shows the actor's latest trade. Before, finished trades were stored newest first, so the drawer
+  showed the oldest result and the 30-trade history limit dropped the newest ones.
+- A failed trade is labelled "Trade failed" instead of "Cancelled; assets restored", which was wrong when the
+  recovery journal was missing and nothing could be restored.
+- The spells drawer title wraps onto a second line instead of ending in an ellipsis.
+
 ## 1.9.0
 
 ### Fixed

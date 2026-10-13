@@ -69,10 +69,11 @@ export async function transferMoney(source, target, money, signature, interactio
     debit[`system.currency.${key}`] = Number(source.system?.currency?.[key] ?? 0) - amount;
     credit[`system.currency.${key}`] = balance + amount;
   }
-  await source.update(debit);
+  // Document#update writes _id into the object it gets; pass copies so the checks below see only currency paths.
+  await source.update({ ...debit });
   guard();
   if (Object.entries(debit).some(([path, value]) => Number(source.system?.currency?.[path.split(".").at(-1)] ?? 0) !== value)) throw tradeError("transfer");
-  await target.update(credit);
+  await target.update({ ...credit });
   guard();
   if (Object.entries(credit).some(([path, value]) => Number(target.system?.currency?.[path.split(".").at(-1)] ?? 0) !== value)) throw tradeError("transfer");
 }

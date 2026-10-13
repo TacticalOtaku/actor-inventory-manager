@@ -6,8 +6,10 @@ import { normalizeOffer, changeOffer, confirmOffer } from "../scripts/trade/offe
 function setup(api) {
   globalThis.game = { modules: new Map([["item-piles", { active: Boolean(api) }]]), itempiles: { API: api } };
 }
-const actor = () => ({ system: { currency: { gp: 10, sp: 5 } }, items: new Map(), async update(data) {
-  for (const [path, value] of Object.entries(data)) this.system.currency[path.split(".").at(-1)] = value;
+// Like Foundry's Document#update, the double writes _id into the caller's object.
+const actor = () => ({ id: "actor", system: { currency: { gp: 10, sp: 5 } }, items: new Map(), async update(data) {
+  data._id = this.id;
+  for (const [path, value] of Object.entries(data)) if (path !== "_id") this.system.currency[path.split(".").at(-1)] = value;
 } });
 
 test("fallback transfers exact denominations and conserves money", async () => {

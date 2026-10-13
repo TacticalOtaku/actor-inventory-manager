@@ -29,7 +29,7 @@
         "executing": "Transferring / GM review",
         "complete": "Trade complete",
         "cancelled": "Trade cancelled",
-        "failed": "Cancelled; assets restored",
+        "failed": "Trade failed",
         "recovery": "GM recovery required"
       },
       "errors": {

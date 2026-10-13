@@ -50,7 +50,8 @@
         "request": "Unknown trade operation.",
         "timeout": "The GM did not respond in time. Check the trade state before trying again.",
         "rolledBack": "The transfer failed. Inventories and currencies were restored to their pre-trade state.",
-        "recovery": "The transfer was interrupted. A GM must inspect the saved snapshot and restore the trade. Further trading is blocked."
+        "recovery": "The transfer was interrupted. A GM must inspect the saved snapshot and restore the trade. Further trading is blocked.",
+        "recoveryLost": "The trade snapshot journal is missing, so nothing could be restored. The trade is closed; the GM must check both inventories by hand."
       }
     },
     "app": {

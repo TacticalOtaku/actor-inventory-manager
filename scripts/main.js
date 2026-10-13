@@ -4,10 +4,9 @@
 
 import { MODULE_ID, SLOTS, FLAGS, ENFORCEMENT_MODES, REFRESH_HOOK } from "./constants.js";
 import { registerTradeService, registerTradeSettings } from "./trade/service.js";
-import { equipmentRuleEngine, getActorEquippedMap, isOffHandLockedBy2H } from "./core/equipment-rules.js";
+import { equipmentRuleEngine, findEquipSlot, getActorEquippedMap, isOffHandLockedBy2H } from "./core/equipment-rules.js";
 import {
   classifyItem,
-  findBestSlotForEquipping,
   getItemAssignedSlot,
   getValidSlotsForItem,
   isItemCompatibleWithSlot,
@@ -61,36 +60,6 @@ function watchRarityColourSettings() {
   Hooks.on("clientSettingChanged", key => onChange(key));
 }
 
-function registerHandlebarsHelpers() {
-  if (typeof globalThis.Handlebars === "undefined") return;
-  const H = globalThis.Handlebars;
-
-  if (!H.helpers.eq) {
-    H.registerHelper("eq", (a, b) => a === b);
-  }
-  if (!H.helpers.ne) {
-    H.registerHelper("ne", (a, b) => a !== b);
-  }
-  if (!H.helpers.gt) {
-    H.registerHelper("gt", (a, b) => Number(a) > Number(b));
-  }
-  if (!H.helpers.lt) {
-    H.registerHelper("lt", (a, b) => Number(a) < Number(b));
-  }
-  if (!H.helpers.or) {
-    H.registerHelper("or", (...args) => {
-      args.pop();
-      return args.some(Boolean);
-    });
-  }
-  if (!H.helpers.and) {
-    H.registerHelper("and", (...args) => {
-      args.pop();
-      return args.every(Boolean);
-    });
-  }
-}
-
 // Bind platform ports before any module service reads from Foundry.
 registerFoundryPaperdollRuntime();
 
@@ -99,7 +68,6 @@ registerModuleSettings();
 
 Hooks.once("init", () => {
   registerTradeSettings();
-  registerHandlebarsHelpers();
   preloadTemplates();
 });
 
@@ -127,7 +95,8 @@ Hooks.once("ready", () => {
     isOffHandLockedBy2H,
     classifyItem,
     getValidSlotsForItem,
-    findBestSlotForEquipping,
+    // Same rule-checked choice as clicking Equip; the old name stays for API callers.
+    findBestSlotForEquipping: findEquipSlot,
     getItemAssignedSlot,
     isItemCompatibleWithSlot,
     isTwoHandedWeapon,

@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.9.0
+
+### Fixed
+- Equipping a shield while a two-handed weapon is held is refused. Before, the shield pushed the weapon out and took
+  the main hand. Dropping a shield straight onto the main hand still swaps the weapon out.
+- More than three attunement slots no longer widen the paperdoll over the inventory: the sockets move to their own
+  line and wrap there.
+- On screens narrower than 1164 px, an open drawer hides the passport as intended. Before, the layout rule lost to
+  the drawer layout and squeezed the inventory into a 56 px column.
+- The paperdoll editor starts from the actor's own attunement cap and writes it only when it was changed. Before,
+  applying the editor reset a cap set on the sheet (6, say) to the template's 3.
+- Deleting a container from the window asks whether its contents go too. Before, they were kept pointing at the
+  deleted container, and the window then hid them; such items now show at the top level, as on the dnd5e sheet.
+- Reopening a window during its closing animation, opening it twice at once, or adding slots in quick succession
+  no longer leaves a window Foundry has lost track of (Escape and window order did not reach it).
+- Unequipping from a slot shakes it when another module vetoes the change, like the other refused actions.
+- A slot labelled *Левое кольцо* (left ring) is no longer treated as an off hand, so a two-handed weapon does not
+  lock it. A Russian label now needs both *лев* and *рук* to mean the off hand.
+- GM recovery of an interrupted trade whose snapshot journal was deleted closes the trade with its own error
+  instead of failing again and keeping both characters locked.
+
+### API
+- `findBestSlotForEquipping` returns the same rule-checked slot as clicking Equip. Before, it could pick a slot the
+  rules then refused.
+
+### Development
+- Removed `tools/preview-trade.mjs`, which still read the removed stylesheet, and the Handlebars helper fallbacks
+  that Foundry 14 already provides.
+- Weighty Containers is recommended from 3.5.0, the version the README and the integration expect.
+
 ## 1.8.0
 
 ### Interface
@@ -30,19 +60,6 @@
 
 ### Fixed
 - An equip or attunement change vetoed by another module's update hook no longer shows a success notification.
-- Equipping a shield while a two-handed weapon is held is refused. Before, the shield pushed the weapon out and took
-  the main hand. Dropping a shield straight onto the main hand still swaps the weapon out.
-- More than three attunement slots no longer widen the paperdoll over the inventory: the sockets move to their own
-  line and wrap there.
-- On screens narrower than 1164 px, an open drawer hides the passport as intended. Before, the layout rule lost to
-  the drawer layout and squeezed the inventory into a 56 px column.
-- The paperdoll editor starts from the actor's own attunement cap and writes it only when it was changed. Before,
-  applying the editor reset a cap set on the sheet (6, say) to the template's 3.
-- Deleting a container from the window asks whether its contents go too. Before, they were kept pointing at the
-  deleted container, and the window then hid them; such items now show at the top level, as on the dnd5e sheet.
-- Reopening a window during its closing animation, opening it twice at once, or adding slots in quick succession
-  no longer leaves a window Foundry has lost track of (Escape and window order did not reach it).
-- Unequipping from a slot shakes it when another module vetoes the change, like the other refused actions.
 
 ### API
 - `equipItem`, `unequipItem`, `toggleItemEquipped` and `toggleAttunement` resolve to `true` when the change was

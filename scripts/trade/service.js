@@ -214,7 +214,15 @@ export async function processTradeRequest(request, userId) {
         const journal = game.journal.get(session.recoveryId);
         const storedRecovery = journal?.getFlag(MODULE_ID, "tradeRecovery");
         const recovery = typeof storedRecovery === "string" ? JSON.parse(storedRecovery) : storedRecovery;
-        if (!recovery || recovery.sessionId !== session.id || !Array.isArray(recovery.snapshots)) throw tradeError("recovery");
+        if (!recovery) {
+          // The snapshot journal was deleted: nothing can be restored, so unlock and let the GM fix inventories by hand.
+          session.status = "failed";
+          session.error = "AIM.trade.errors.recoveryLost";
+          state.receipts[userId] = { id: request.id, error: null };
+          await save(state);
+          return;
+        }
+        if (recovery.sessionId !== session.id || !Array.isArray(recovery.snapshots)) throw tradeError("recovery");
         session.status = "executing";
         session.gmId = game.user.id;
         await save(state);

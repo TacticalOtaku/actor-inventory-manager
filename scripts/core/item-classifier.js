@@ -262,7 +262,8 @@ export function isOffHandSlot(slot) {
     slot.rules?.isShield ||
     words.includes("offhand") ||
     (words.includes("off") && words.includes("hand")) ||
-    nameHasAnyToken(label, ["off hand", "off-hand", "offhand", "щит", "лев"])
+    nameHasAnyToken(label, ["off hand", "off-hand", "offhand", "щит"]) ||
+    (nameHasToken(label, "лев") && nameHasToken(label, "рук"))
   );
 }
 
@@ -533,24 +534,3 @@ export function getItemAssignedSlot(item) {
   return item?.flags?.[MODULE_ID]?.[FLAGS.SLOT] ?? null;
 }
 
-/**
- * Find the best available slot on an actor for an item being equipped
- * @param {Object} actor
- * @param {Object} item
- * @param {Map<string, Object>} currentSlotMap
- * @returns {string|null}
- */
-export function findBestSlotForEquipping(actor, item, currentSlotMap) {
-  const validSlots = getValidSlotsForItem(item, actor);
-  if (!validSlots.length) return null;
-
-  // First preference: an empty valid slot
-  for (const slotId of validSlots) {
-    if (!currentSlotMap.has(slotId)) {
-      return slotId;
-    }
-  }
-
-  // If no empty slot, return the first valid slot (for swapping)
-  return validSlots[0];
-}

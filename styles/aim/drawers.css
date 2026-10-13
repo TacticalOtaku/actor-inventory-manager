@@ -34,9 +34,9 @@
 .actor-inventory-manager-app .aim-dh > b {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  /* "Заклинания и Способности" is wider than a narrow drawer: wrap instead of cutting it off. */
+  overflow-wrap: anywhere;
+  text-wrap: balance;
   font: 700 13px/1.1 var(--tc-font-display);
   text-transform: uppercase;
   letter-spacing: 0.01em;

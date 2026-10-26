@@ -476,8 +476,8 @@
     "equipmentTab": {
       "behaviour": [
         {
-          "text": "Shows the purse, load, the paperdoll and the inventory grouped by type; the doll sits left of the inventory when the tab is at least 700 px wide, otherwise centred above it.",
-          "source": "assumption"
+          "text": "Shows the purse, load, the paperdoll, the containers and the inventory in sections by dnd5e item type (Оружие, Снаряжение, Расходуемое, Инструменты, Добыча); items inside a container are not repeated in the sections. The doll sits left of the inventory when the tab is at least 700 px wide, otherwise centred above it.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -485,8 +485,8 @@
     "inventoryToolbar": {
       "behaviour": [
         {
-          "text": "Holds search, the view switch and the doll toggle.",
-          "source": "assumption"
+          "text": "Holds search, the sort select, the Экипировано and Настроено filter chips, the view switch, the trade button and the doll toggle.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -495,7 +495,7 @@
       "behaviour": [
         {
           "text": "Filters the tab's lists by name as you type; empty sections say nothing was found.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -533,12 +533,12 @@
     "currencyBar": {
       "behaviour": [
         {
-          "text": "Shows each coin type with its amount; editing amounts comes later.",
-          "source": "assumption"
+          "text": "Shows pp, gp, ep, sp and cp and the total value in gold; with Item Piles active its currencies and its total are shown instead. Click a coin (owner, GM) to edit: −5 spends, +10 adds, 20 sets (actor.update on system.currency).",
+          "source": "spec"
         },
         {
           "text": "When a total changes it counts to the new value and its coin flips once.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -547,11 +547,11 @@
       "behaviour": [
         {
           "text": "Shows carried weight against capacity as text and a bar.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
-          "text": "The bar is green up to 5 × Strength, amber above it and red above 10 × Strength; crossing a threshold shakes it once.",
-          "source": "assumption"
+          "text": "Thresholds come from dnd5e's system.attributes.encumbrance (world rule, size, Powerful Build, effects; Weighty Containers' reductions through its integration); stops are marked on the bar, which is green, amber past encumbered and red past heavily encumbered; crossing a stop shakes it once. Hidden when the world uses no encumbrance.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -611,15 +611,15 @@
       "behaviour": [
         {
           "text": "Click the header to collapse or expand; the body animates its height.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
-          "text": "Dropping an item on an inventory section moves it to that group; the section glows while it is the drop target.",
-          "source": "assumption"
+          "text": "Dropping an item on a section takes it out of its container; an item's type, and so its section, never changes by a drop.",
+          "source": "spec"
         },
         {
           "text": "In list view each row keeps its tags on one line and fades them out at the right edge, so rows keep one height.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -628,7 +628,7 @@
       "behaviour": [
         {
           "text": "Enter or Space toggles it from the keyboard.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -636,8 +636,8 @@
     "addItemButton": {
       "behaviour": [
         {
-          "text": "Creates a new item of the section's type.",
-          "source": "assumption"
+          "text": "Opens dnd5e's item creation for the section's type (Item.createDialog).",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -646,11 +646,19 @@
       "behaviour": [
         {
           "text": "Click selects the row: in the wide layout the inspector shows it, otherwise its description opens under the row; clicking again deselects.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
-          "text": "Owner and GM can drag a row to a section or a doll slot.",
-          "source": "assumption"
+          "text": "Owner and GM can drag a row to a doll slot, onto a container, or onto the list to take it out of its container.",
+          "source": "spec"
+        },
+        {
+          "text": "Click on the item's tile uses it through dnd5e (item.use): dnd5e picks the activity, consumes quantity, charges or ammunition and rolls; click elsewhere on the row selects it.",
+          "source": "spec"
+        },
+        {
+          "text": "The row shows weight, price, «Настроено» or «Требует настройки» for items needing attunement, and the item's tags.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -659,7 +667,7 @@
       "behaviour": [
         {
           "text": "Opens and closes with a height animation; never shown in the wide layout.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -668,7 +676,7 @@
       "behaviour": [
         {
           "text": "Equips the item to its first free slot and the tile flies to the doll, or unequips it and the tile flies back.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -677,7 +685,7 @@
       "behaviour": [
         {
           "text": "Stars or unstars the entry; the rail list updates with a glide.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -685,8 +693,8 @@
     "rowMenuButton": {
       "behaviour": [
         {
-          "text": "Opens the entry's menu: edit, duplicate, delete, send to chat.",
-          "source": "assumption"
+          "text": "Opens the item's menu, as on the vanilla sheet: Просмотр, Изменить, Дублировать, Удалить (item.deleteDialog), В чат (item.displayCard), and Идентифицировать for unidentified items.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -809,11 +817,11 @@
       "behaviour": [
         {
           "text": "Exists only in the wide layout; shows the selected entry's tile, name, rarity or circle, tags, description and its main action.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "With nothing selected it shows a hint.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1332,6 +1340,116 @@
       "behaviour": [
         {
           "text": "Each Overview card shows a gear on hover for the owner and the GM; it opens the matching dnd5e dialog (SkillsConfig, AbilityConfig, ToolsConfig, DamagesConfig / TraitsConfig, MovementSensesConfig, LanguagesConfig, WeaponsConfig). Hidden for observers.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "itemUseButton": {
+      "behaviour": [
+        {
+          "text": "The item tile is a button: click uses the item (item.use).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "quantityStepper": {
+      "behaviour": [
+        {
+          "text": "On hover, − and + beside the quantity change it by one (item.update on system.quantity); hidden for observers.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "chargesTrack": {
+      "behaviour": [
+        {
+          "text": "Items with charges show them as pips instead of a quantity: click spends one, right click restores one (system.uses.spent).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "attuneButton": {
+      "behaviour": [
+        {
+          "text": "Items that need attunement have their own attune toggle, independent of equipping; past the attunement limit it is refused with a shake of the row and the attunement track.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "sortSelect": {
+      "behaviour": [
+        {
+          "text": "Sorts each section by name, weight, price, rarity or by hand (drag); each tab remembers its choice.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "filterChips": {
+      "behaviour": [
+        {
+          "text": "Экипировано and Настроено narrow the lists to equipped or attuned items; each tab remembers its filters.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "currencyManagerButton": {
+      "behaviour": [
+        {
+          "text": "Opens dnd5e's CurrencyManager to convert coins or transfer them to another actor or a container.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "containerSection": {
+      "behaviour": [
+        {
+          "text": "Containers are listed in their own section; each container row is followed by a tray of its contents, and a container inside another nests its own tray.",
+          "source": "spec"
+        },
+        {
+          "text": "Each tray shows the load band and the weight reduction from Weighty Containers; the GM sees a gear that opens the Weighty Containers rules for that container. Without Weighty Containers the dnd5e capacity is shown.",
+          "source": "spec"
+        },
+        {
+          "text": "Dropping an item on a tray puts it in that container; Weighty Containers validates it (capacity, its rules) and a refusal shakes the tray with the reason. A container can never go inside itself.",
+          "source": "spec"
+        },
+        {
+          "text": "With more than three containers they start folded: a folded tray is one line with the load band and a peek of up to six content tiles plus +N; what the user unfolds is remembered; Свернуть все / Развернуть все sits in the section header.",
+          "source": "spec"
+        },
+        {
+          "text": "While dragging, hovering a folded tray for about half a second unfolds it, so an item can reach any nested container.",
+          "source": "spec"
+        },
+        {
+          "text": "Searching unfolds only the containers with matches, down to the nested one, and hides the rest; clearing the search restores the folding.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "containerRulesButton": {
+      "behaviour": [
+        {
+          "text": "GM only: opens the Weighty Containers rules window for the container.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "externalDrop": {
+      "behaviour": [
+        {
+          "text": "Something dragged in from outside the window (compendium, sidebar, chat, another actor) outlines the Снаряжение tab with «Отпустите, чтобы добавить»; what happens on the drop is settled in «Перенос предметов извне в окно актора: решение».",
           "source": "spec"
         }
       ],

@@ -1160,6 +1160,55 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-xp-row { display: grid; grid-template-columns: 1fr auto auto; gap: 4px; }
 .cs-xp-row input { min-width: 0; padding: 4px 8px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface-0); color: var(--text); font: 600 13px var(--font-ui); }
 .cs-xp-row button { padding: 0 8px; }
+/* Inventory (#12): use on the tile, quantity, charges, sort and filters, coins, load stops */
+.cs-tile-btn { display: contents; }
+.cs-tile-btn > .cs-tile { cursor: pointer; transition: transform var(--d-fast) var(--ease-snap), box-shadow var(--d-fast); }
+.cs-tile-btn:hover > .cs-tile { transform: scale(1.06); box-shadow: 0 0 0 1px var(--accent-line); }
+.cs-qty { display: inline-flex; align-items: center; gap: 2px; }
+.cs-qty button { width: 18px; height: 18px; padding: 0; border: 1px solid var(--line); border-radius: 5px; background: var(--surface-3); color: var(--text-2); font: 600 12px/1 var(--font-ui); cursor: pointer; opacity: 0; transition: opacity var(--d-fast); }
+.cs-row:hover .cs-qty button, .cs-qty button:focus-visible { opacity: 1; }
+.cs-charges button { width: 9px; height: 9px; border-color: var(--arcane); background: var(--arcane); }
+.cs-charges button.is-spent { background: transparent; }
+.cs-sort { height: 32px; padding: 0 8px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface-2); color: var(--text-2); font: 12px var(--font-ui); }
+.cs-filters { display: inline-flex; gap: 4px; }
+.cs-coin { cursor: pointer; color: var(--text); }
+.cs-coin:hover { border-color: var(--line-strong); }
+.cs-coin-total { color: var(--text-2); font: 600 12px var(--font-num); padding: 0 4px; }
+.cs-coin-edit input { width: 110px; height: 28px; padding: 0 8px; border-radius: 99px; border: 1px solid var(--accent-line); background: var(--surface-0); color: var(--text); font: 600 12px var(--font-ui); outline: none; }
+.cs-load .bar { position: relative; }
+.cs-load .bar::before, .cs-load .bar::after { content: ""; position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--text-3); z-index: 1; }
+.cs-load .bar::before { left: var(--t1, 33%); }
+.cs-load .bar::after { left: var(--t2, 66%); }
+.cs-load b { color: var(--text-2); font-weight: 600; }
+[data-panel="equipment"].is-external-drop { outline: 2px dashed var(--accent-line); outline-offset: -6px; }
+[data-panel="equipment"].is-external-drop::after { content: "Отпустите, чтобы добавить"; position: absolute; left: 50%; top: 50%; translate: -50% -50%; padding: 8px 14px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); font: 600 12px var(--font-ui); pointer-events: none; z-index: 5; }
+[data-panel="equipment"] { position: relative; }
+/* Containers: load band, Weighty Containers reduction, drop target */
+.cs-bag-load { position: relative; display: inline-flex; align-items: center; min-width: 96px; height: 18px; padding: 0 7px; border-radius: 99px; background: var(--surface-0); overflow: hidden; font: 600 10.5px var(--font-num); color: var(--text-2); }
+.cs-bag-load i { position: absolute; inset: 0 auto 0 0; background: color-mix(in oklab, var(--heal) 35%, transparent); }
+.cs-bag-load.is-full i { background: color-mix(in oklab, var(--hp) 40%, transparent); }
+.cs-bag-load b { position: relative; }
+.cs-tag.is-wc { color: var(--temp); background: color-mix(in oklab, var(--temp) 15%, transparent); }
+[data-drop-bag].is-drop { box-shadow: inset 0 0 0 1px var(--accent), 0 0 18px color-mix(in oklab, var(--accent) 30%, transparent); }
+[data-drop-bag].is-refused { animation: cs-refuse 360ms var(--ease-settle); box-shadow: inset 0 0 0 1px var(--hp); }
+[data-drop-bag].is-landed { animation: cs-pop var(--d-slow) var(--ease-snap); }
+/* A — trays */
+.cs-tray { border-radius: var(--r-md); margin-bottom: 4px; }
+.cs-tray-head { display: grid; grid-template-columns: 22px 1fr; align-items: center; }
+.cs-tray-head .cs-rowwrap { min-width: 0; }
+.cs-tray-meta { grid-column: 2; display: flex; align-items: center; gap: 6px; padding: 0 6px 6px 48px; }
+.cs-tray-toggle { width: 22px; height: 22px; border: 0; background: none; color: var(--text-3); cursor: pointer; padding: 0; }
+.cs-tray-toggle .cs-ico { transition: transform var(--d-fast); }
+.cs-tray.is-collapsed .cs-tray-toggle .cs-ico { transform: rotate(-90deg); }
+.cs-tray-body { margin: 0 0 6px 22px; padding-left: 10px; border-left: 2px solid var(--line-strong); display: grid; gap: 2px; }
+.cs-tray.is-collapsed .cs-tray-body { display: none; }
+/* Many containers: a folded tray shows a peek of its contents */
+.cs-tray-peek { display: none; align-items: center; gap: 3px; margin-left: 4px; }
+.cs-tray.is-collapsed > .cs-tray-head .cs-tray-peek { display: inline-flex; }
+.cs-tray-peek .cs-tile { --tile: 20px; }
+.cs-tray-peek .more { font: 600 10.5px var(--font-num); color: var(--text-3); }
+.cs-linkbtn { border: 0; background: none; color: var(--text-3); font: 600 11px var(--font-ui); cursor: pointer; padding: 2px 4px; }
+.cs-linkbtn:hover { color: var(--text); }
 </style>
 </head>
 <body>
@@ -1380,6 +1429,8 @@ button.cs-stat:active { transform: scale(0.95); }
             <button type="button" data-view="grid" aria-label="Карточки"><svg class="cs-ico"><use href="#i-grid"/></svg></button>
             <button type="button" data-view="icons" aria-label="Только иконки"><svg class="cs-ico"><use href="#i-tiles"/></svg></button>
           </div>
+          <select class="cs-sort" data-ui="sortSelect" data-sort="items" aria-label="Порядок"><option value="name">По имени</option><option value="weight">По весу</option><option value="price">По цене</option><option value="rarity">По редкости</option><option value="manual">Вручную</option></select>
+          <div class="cs-filters" data-ui="filterChips"><button type="button" class="cs-chip" data-filter="equipped" aria-pressed="false">Экипировано</button><button type="button" class="cs-chip" data-filter="attuned" aria-pressed="false">Настроено</button></div>
           <button type="button" class="cs-btn cs-editonly cs-playeronly" data-ui="tradeButton" aria-expanded="false"><svg class="cs-ico"><use href="#i-trade"/></svg>Обмен</button>
           <button type="button" class="cs-ibtn is-on" data-ui="dollToggle" aria-pressed="true" aria-label="Показать куклу" title="Кукла"><svg class="cs-ico"><use href="#i-doll"/></svg></button>
         </div>
@@ -1531,25 +1582,40 @@ button.cs-stat:active { transform: scale(0.95); }
   const presetSlots = () => [...DOLL_LAYOUT.map(([slot]) => slot), ...PRESETS[S.preset].extras];
   const fitsHere = (it) => (it.slots ?? []).filter((slot) => presetSlots().includes(slot));
 
+  // group = dnd5e item type; in = id of the container holding it; price in gp
   const items = [
-    { id: "staff", name: "Боевой посох Кель-Аммара", group: "weapon", icon: "staff", rarity: "uncommon", act: "action", roll: "+3 · 1к6 + 1 дроб.", qty: 1, wt: 4, slots: ["mainHand"], tags: ["Универсальное", "1к6 / 1к8"], desc: "Магическое оружие +1. Пока посох у вас в руках, вы получаете +1 к броскам атаки заклинаниями." },
-    { id: "dagger", name: "Кинжал", group: "weapon", icon: "sword", rarity: "common", qty: 2, wt: 1, slots: ["mainHand", "offHand"], tags: ["Лёгкое", "Фехтовальное", "Метательное"], desc: "Колющий урон 1к4. Дистанция броска 20/60 фт." },
-    { id: "cloak", name: "Плащ защиты", group: "gear", icon: "cloak", rarity: "uncommon", qty: 1, wt: 1, slots: ["cloak"], attune: true, tags: ["Настройка"], desc: "+1 к КД и спасброскам, пока вы настроены на этот плащ." },
-    { id: "ring", name: "Кольцо защиты", group: "gear", icon: "ring", rarity: "rare", qty: 1, wt: 0, slots: ["ring1", "ring2", "ring3", "ring4"], attune: true, tags: ["Настройка"], desc: "+1 к КД и спасброскам, пока вы настроены на это кольцо." },
-    { id: "amulet", name: "Амулет здоровья", group: "gear", icon: "amulet", rarity: "rare", qty: 1, wt: 1, slots: ["neck"], attune: true, tags: ["Настройка"], desc: "Ваше Телосложение становится равным 19, пока вы носите амулет." },
-    { id: "goggles", name: "Очки ночного видения", group: "gear", icon: "eye", rarity: "uncommon", qty: 1, wt: 0, slots: ["eyes"], tags: [], desc: "Тёмное зрение 60 фт, пока очки на вас." },
-    { id: "bracers", name: "Наручи защиты", group: "gear", icon: "shield", rarity: "rare", qty: 1, wt: 1, slots: ["wrists"], attune: true, tags: ["Настройка"], desc: "+2 к КД, пока на вас нет доспеха и щита." },
-    { id: "boots", name: "Эльфийские сапоги", group: "gear", icon: "boot", rarity: "uncommon", qty: 1, wt: 1, slots: ["feet"], tags: [], desc: "Ваши шаги не издают звуков на любой поверхности." },
-    { id: "potion", name: "Зелье лечения", group: "consumable", icon: "potion", rarity: "common", act: "bonus", roll: "2к4 + 2 хита", qty: 3, wt: 0.5, tags: ["2к4+2"], desc: "Бонусным действием вы восстанавливаете 2к4 + 2 хита." },
-    { id: "scroll", name: "Свиток: Огненный шар", group: "consumable", icon: "scroll", rarity: "uncommon", qty: 1, wt: 0, tags: ["3 круг"], desc: "Одноразовый свиток заклинания 3 круга." },
-    { id: "book", name: "Книга заклинаний", group: "gear", icon: "book", rarity: "common", qty: 1, wt: 3, tags: ["Фокусировка"], desc: "Переплёт из кожи василиска, 14 заклинаний." },
-    { id: "pouch", name: "Мешочек с компонентами", group: "gear", icon: "pouch", rarity: "common", qty: 1, wt: 2, tags: [], desc: "Материальные компоненты без указанной стоимости." },
-    { id: "rope", name: "Верёвка, 50 фт", group: "pack", icon: "rope", rarity: "common", qty: 1, wt: 5, tags: [], desc: "Пеньковая верёвка." },
-    { id: "ration", name: "Рацион", group: "pack", icon: "food", rarity: "common", qty: 5, wt: 2, tags: [], desc: "Сухари, вяленое мясо, сушёные фрукты на день." },
-    { id: "torch", name: "Факел", group: "pack", icon: "flame", rarity: "common", qty: 3, wt: 1, tags: [], desc: "Яркий свет в радиусе 20 фт на 1 час." },
-    { id: "kit", name: "Набор учёного", group: "pack", icon: "tool", rarity: "common", qty: 1, wt: 1, tags: [], desc: "Перо, чернила, пергамент, песочные часы." }
+    { id: "staff", name: "Боевой посох Кель-Аммара", group: "weapon", icon: "staff", rarity: "uncommon", act: "action", roll: "+3 · 1к6 + 1 дроб.", qty: 1, wt: 4, price: 500, slots: ["mainHand"], tags: ["Универсальное", "1к6 / 1к8"], desc: "Магическое оружие +1. Пока посох у вас в руках, вы получаете +1 к броскам атаки заклинаниями." },
+    { id: "dagger", name: "Кинжал", group: "weapon", icon: "sword", rarity: "common", qty: 2, wt: 1, price: 2, slots: ["mainHand", "offHand"], tags: ["Лёгкое", "Фехтовальное", "Метательное"], desc: "Колющий урон 1к4. Дистанция броска 20/60 фт." },
+    { id: "cloak", name: "Плащ защиты", group: "equipment", icon: "cloak", rarity: "uncommon", qty: 1, wt: 1, price: 500, slots: ["cloak"], attune: true, tags: [], desc: "+1 к КД и спасброскам, пока вы настроены на этот плащ." },
+    { id: "ring", name: "Кольцо защиты", group: "equipment", icon: "ring", rarity: "rare", qty: 1, wt: 0, price: 3500, slots: ["ring1", "ring2", "ring3", "ring4"], attune: true, tags: [], desc: "+1 к КД и спасброскам, пока вы настроены на это кольцо." },
+    { id: "amulet", name: "Амулет здоровья", group: "equipment", icon: "amulet", rarity: "rare", qty: 1, wt: 1, price: 8000, slots: ["neck"], attune: true, tags: [], desc: "Ваше Телосложение становится равным 19, пока вы носите амулет." },
+    { id: "goggles", name: "Очки ночного видения", group: "equipment", icon: "eye", rarity: "uncommon", qty: 1, wt: 0, price: 1500, slots: ["eyes"], tags: [], desc: "Тёмное зрение 60 фт, пока очки на вас." },
+    { id: "bracers", name: "Наручи защиты", group: "equipment", icon: "shield", rarity: "rare", qty: 1, wt: 1, price: 6000, slots: ["wrists"], attune: true, tags: [], desc: "+2 к КД, пока на вас нет доспеха и щита." },
+    { id: "boots", name: "Эльфийские сапоги", group: "equipment", icon: "boot", rarity: "uncommon", qty: 1, wt: 1, price: 2500, slots: ["feet"], tags: [], desc: "Ваши шаги не издают звуков на любой поверхности." },
+    { id: "book", name: "Книга заклинаний", group: "equipment", icon: "book", rarity: "common", qty: 1, wt: 3, price: 50, tags: ["Фокусировка"], desc: "Переплёт из кожи василиска, 14 заклинаний." },
+    { id: "pouch", name: "Мешочек с компонентами", group: "equipment", icon: "pouch", rarity: "common", qty: 1, wt: 2, price: 25, tags: ["Фокусировка"], desc: "Материальные компоненты без указанной стоимости." },
+    { id: "wand", name: "Жезл волшебных стрел", group: "consumable", icon: "staff", rarity: "uncommon", act: "action", qty: 1, wt: 1, price: 800, uses: [5, 7], tags: ["Заряды"], desc: "7 зарядов. Действием потратьте 1–3 заряда, чтобы сотворить «Волшебную стрелу». Восстанавливает 1к6 + 1 заряд на рассвете." },
+    { id: "potion", name: "Зелье лечения", group: "consumable", icon: "potion", rarity: "common", act: "bonus", roll: "2к4 + 2 хита", qty: 3, wt: 0.5, price: 50, tags: ["2к4+2"], desc: "Бонусным действием вы восстанавливаете 2к4 + 2 хита." },
+    { id: "scroll", name: "Свиток: Огненный шар", group: "consumable", icon: "scroll", rarity: "uncommon", qty: 1, wt: 0, price: 200, tags: ["3 круг"], desc: "Одноразовый свиток заклинания 3 круга." },
+    { id: "callig", name: "Принадлежности каллиграфа", group: "tool", icon: "tool", rarity: "common", qty: 1, wt: 5, price: 10, tags: ["Лов"], desc: "Перья, чернила, пергамент. Владение: проверка с бонусом мастерства." },
+    { id: "backpack", name: "Рюкзак", group: "container", icon: "bag", rarity: "common", qty: 1, wt: 5, price: 2, cap: 30, tags: [], desc: "Вмещает 30 фнт снаряжения." },
+    { id: "holding", name: "Сумка хранения", group: "container", icon: "pouch", rarity: "uncommon", qty: 1, wt: 15, price: 4000, cap: 500, reduce: 100, tags: [], desc: "Внутри больше места, чем снаружи: до 500 фнт, сумка всегда весит 15 фнт." },
+    { id: "rope", name: "Верёвка, 50 фт", group: "consumable", icon: "rope", rarity: "common", qty: 1, wt: 5, price: 1, in: "backpack", tags: [], desc: "Пеньковая верёвка." },
+    { id: "ration", name: "Рацион", group: "consumable", icon: "food", rarity: "common", qty: 5, wt: 2, price: 0.5, in: "backpack", tags: [], desc: "Сухари, вяленое мясо, сушёные фрукты на день." },
+    { id: "torch", name: "Факел", group: "consumable", icon: "flame", rarity: "common", qty: 3, wt: 1, price: 0.01, in: "backpack", tags: [], desc: "Яркий свет в радиусе 20 фт на 1 час." },
+    { id: "alch", name: "Набор алхимика", group: "tool", icon: "potion", rarity: "common", qty: 1, wt: 8, price: 50, in: "holding", tags: ["Инт"], desc: "Колбы, реторта, реагенты." },
+    { id: "quiver", name: "Колчан", group: "container", icon: "staff", rarity: "common", qty: 1, wt: 1, price: 1, cap: 2, tags: [], desc: "Вмещает 20 стрел." },
+    { id: "arrows", name: "Стрелы", group: "consumable", icon: "staff", rarity: "common", qty: 20, wt: 0.05, price: 0.05, in: "quiver", tags: ["Боеприпасы"], desc: "Обычные стрелы." },
+    { id: "scrollcase", name: "Футляр для свитков", group: "container", icon: "scroll", rarity: "common", qty: 1, wt: 1, price: 1, cap: 1, tags: [], desc: "Кожаный тубус для свитков и карт." },
+    { id: "idscroll", name: "Свиток: Опознание", group: "consumable", icon: "scroll", rarity: "common", qty: 1, wt: 0, price: 50, in: "scrollcase", tags: ["1 круг"], desc: "Одноразовый свиток заклинания 1 круга." },
+    { id: "herbal", name: "Сумка травника", group: "container", icon: "pouch", rarity: "common", qty: 1, wt: 2, price: 5, cap: 10, tags: [], desc: "Отделения для трав и склянок." },
+    { id: "herbs", name: "Целебные травы", group: "loot", icon: "food", rarity: "common", qty: 6, wt: 0.1, price: 1, in: "herbal", tags: [], desc: "Высушенные пучки ромашки и зверобоя." },
+    { id: "coinpurse", name: "Кошель", group: "container", icon: "pouch", rarity: "common", qty: 1, wt: 0.5, price: 0.5, cap: 2, in: "backpack", tags: [], desc: "Небольшой кожаный кошель." },
+    { id: "gem2", name: "Жемчужина", group: "loot", icon: "spark", rarity: "common", qty: 1, wt: 0, price: 100, in: "coinpurse", tags: [], desc: "Гладкая белая жемчужина." },
+    { id: "gem", name: "Аметист", group: "loot", icon: "spark", rarity: "common", qty: 2, wt: 0, price: 100, in: "holding", tags: [], desc: "Огранённый самоцвет фиолетового цвета." }
   ];
-  const GROUPS = [["weapon", "Оружие"], ["gear", "Снаряжение"], ["consumable", "Расходуемое"], ["pack", "Рюкзак"]];
+  // Sections follow dnd5e item types in a fixed order; containers are shown on their own.
+  const GROUPS = [["weapon", "Оружие"], ["equipment", "Снаряжение"], ["consumable", "Расходуемое"], ["tool", "Инструменты"], ["loot", "Добыча"]];
 
   const SCHOOLS = { abj: "Ограждение", con: "Вызов", div: "Прорицание", enc: "Очарование", evo: "Воплощение", ill: "Иллюзия", nec: "Некромантия", trs: "Преобразование" };
   const spells = [
@@ -1591,7 +1657,10 @@ button.cs-stat:active { transform: scale(0.95); }
     attuned: new Set(["cloak", "ring"]),
     preset: "standard",
     xp: { value: 20500, from: 14000, to: 23000, level: 6 },
-    coins: { pp: 2, gp: 147, sp: 23, cp: 41 },
+    coins: { pp: 2, gp: 147, ep: 5, sp: 23, cp: 41 },
+    sort: { items: "name" },
+    filter: { items: new Set() },
+
     trade: { status: "idle", partner: "torvin", mine: {}, myCoins: {}, theirs: [], theirCoins: {}, confirmed: [false, false] },
     favorites: ["firebolt", "fireball", "staff", "misty", "potion", "shield"],
     conc: null,
@@ -1717,8 +1786,12 @@ button.cs-stat:active { transform: scale(0.95); }
     const fav = S.favorites.includes(x.id);
     let meta = "", num = "", acts = "";
     if (k === "item") {
-      meta = [`${x.wt * x.qty} фнт`, ...x.tags.map((t) => `<span class="cs-tag ${t === "Настройка" ? "is-att" : ""}">${t}</span>`)].join("");
-      num = `<span class="cs-num">${x.qty}</span>`;
+      const att = x.attune ? `<span class="cs-tag is-att">${S.attuned.has(x.id) ? "Настроено" : "Требует настройки"}</span>` : "";
+      meta = [`${+(x.wt * x.qty).toFixed(2)} фнт`, x.price ? `${fmtPrice(x.price * x.qty)}` : "", att, ...x.tags.map((t) => `<span class="cs-tag">${t}</span>`)].join("");
+      num = x.uses
+        ? `<span class="cs-uses cs-charges" data-ui="chargesTrack" title="Заряды ${x.uses[0]} / ${x.uses[1]}: клик — потратить, правый клик — вернуть">${Array.from({ length: x.uses[1] }, (_, i) => `<button type="button" class="${i >= x.uses[0] ? "is-spent" : ""}" data-charge="${x.id}" data-i="${i}" aria-label="Заряд ${i + 1}"></button>`).join("")}</span>`
+        : `<span class="cs-qty" data-ui="quantityStepper"><button type="button" class="cs-editonly" data-qty="${x.id}" data-d="-1" aria-label="Меньше">−</button><b class="cs-num">${x.qty}</b><button type="button" class="cs-editonly" data-qty="${x.id}" data-d="1" aria-label="Больше">+</button></span>`;
+      if (x.attune) acts += `<button type="button" class="cs-ibtn cs-editonly ${S.attuned.has(x.id) ? "is-on" : ""}" data-ui="attuneButton" data-attune="${x.id}" aria-pressed="${S.attuned.has(x.id)}" aria-label="${S.attuned.has(x.id) ? "Прервать настройку" : "Настроиться"}" title="${S.attuned.has(x.id) ? "Прервать настройку" : "Настроиться"}">${icon("spark")}</button>`;
       if (fitsHere(x).length) acts += `<button type="button" class="cs-ibtn cs-editonly ${eqSlot ? "is-on" : ""}" data-ui="equipButton" data-equip="${x.id}" aria-pressed="${!!eqSlot}" aria-label="${eqSlot ? "Снять" : "Надеть"}" title="${eqSlot ? "Снять" : "Надеть"}">${icon("hand")}</button>`;
     } else if (k === "spell") {
       meta = [`${SCHOOLS[x.school]}`, ...x.tags.map((t) => `<span class="cs-tag">${t}</span>`), x.conc ? `<span class="cs-tag is-conc">К</span>` : "", x.ritual ? `<span class="cs-tag is-rit">Р</span>` : ""].join("");
@@ -1730,13 +1803,13 @@ button.cs-stat:active { transform: scale(0.95); }
     }
     if (k === "item" && S.trade.status === "open" && (S.trade.mine[x.id] ?? 0) < x.qty) acts += `<button type="button" class="cs-ibtn cs-editonly" data-ui="offerButton" data-offer="${x.id}" aria-label="В обмен" title="В обмен">${icon("trade")}</button>`;
     acts += `<button type="button" class="cs-ibtn cs-editonly ${fav ? "is-on" : ""}" data-ui="favoriteButton" data-fav="${x.id}" aria-pressed="${fav}" aria-label="В избранное" title="В избранное">${icon("star")}</button>`;
-    acts += `<button type="button" class="cs-ibtn" data-ui="rowMenuButton" aria-label="Ещё" data-oos="Контекстное меню: изменить, дублировать, удалить, отправить в чат">${icon("dots")}</button>`;
+    acts += `<button type="button" class="cs-ibtn" data-ui="rowMenuButton" aria-label="Ещё" data-oos="Меню: просмотр, изменить, дублировать, удалить (item.deleteDialog), в чат (item.displayCard), идентифицировать — у неопознанных">${icon("dots")}</button>`;
     const lvl = k === "spell" && x.lvl ? `<span class="lvl">${x.lvl}</span>` : "";
     const draggable = k === "item" && canEdit() ? `draggable="true"` : "";
     const unprepared = k === "spell" && x.lvl && !x.prep;
     return `<div class="cs-rowwrap" data-key="${sec}:${x.id}">
       <div class="cs-row ${S.selected === x.id ? "is-selected" : ""} ${eqSlot ? "is-equipped" : ""} ${unprepared ? "is-unprepared" : ""}" data-ui="${k}Row" data-row="${x.id}" ${draggable} title="${x.name}" tabindex="0">
-        ${tile(x)}${lvl}
+        ${k === "item" ? `<button type="button" class="cs-tile-btn" data-ui="itemUseButton" data-use-item="${x.id}" aria-label="Использовать: ${x.name}" title="Использовать">${tile(x)}</button>` : tile(x)}${lvl}
         <div class="cs-row-main"><div class="cs-name-line">${x.name}</div><div class="cs-meta">${meta}</div></div>
         ${num}<div class="cs-row-act">${acts}</div>
       </div>
@@ -1749,7 +1822,7 @@ button.cs-stat:active { transform: scale(0.95); }
     return `<section class="cs-section fx-spot ${collapsed ? "is-collapsed" : ""}" data-ui="listSection" data-section="${id}" data-key="sec-${id}">
       <div class="cs-sec-head" data-ui="sectionHeader" data-toggle-sec="${id}" role="button" tabindex="0" aria-expanded="${!collapsed}">
         <span class="chev">${icon("chev")}</span><h3>${title}</h3><span class="n">${list.length}</span><span class="grow"></span>${metaHTML}
-        ${viewFor === "items" ? `<button type="button" class="cs-ibtn cs-editonly" data-ui="addItemButton" aria-label="Добавить" data-oos="Создаёт новый предмет этого типа или открывает компендиум">${icon("plus")}</button>` : ""}
+        ${viewFor === "items" ? `<button type="button" class="cs-ibtn cs-editonly" data-ui="addItemButton" aria-label="Добавить" data-oos="Открывает создание предмета этого типа в dnd5e (Item.createDialog)">${icon("plus")}</button>` : ""}
       </div>
       <div class="cs-sec-body"><div class="cs-sec-inner"><div class="cs-sec-content">
         ${list.length ? `<div class="cs-items" data-view="${view}">${list.map((x) => row(x, id)).join("")}</div>` : `<div class="cs-empty">Пусто${S.search[viewFor] ? " — ничего не найдено" : ""}</div>`}
@@ -1757,6 +1830,19 @@ button.cs-stat:active { transform: scale(0.95); }
     </section>`;
   }
   const match = (x, q) => !q || x.name.toLowerCase().includes(q.toLowerCase());
+  const fmtPrice = (gp) => (gp >= 1 ? `${+gp.toFixed(1)} зм` : gp >= 0.1 ? `${Math.round(gp * 10)} см` : `${Math.round(gp * 100)} мм`);
+  const RARITY_ORDER = ["common", "uncommon", "rare", "veryRare", "legendary", "artifact"];
+  const SORTS = { name: (a, b) => a.name.localeCompare(b.name, "ru"), weight: (a, b) => b.wt * b.qty - a.wt * a.qty, price: (a, b) => (b.price ?? 0) * b.qty - (a.price ?? 0) * a.qty, rarity: (a, b) => RARITY_ORDER.indexOf(b.rarity) - RARITY_ORDER.indexOf(a.rarity), manual: () => 0 };
+  // Weighty Containers decides a container's load and reduction; the mock imitates its result.
+  const bagContents = (id) => items.filter((x) => x.in === id);
+  const rawLoad = (id) => bagContents(id).reduce((s, x) => s + x.wt * x.qty + (x.group === "container" ? rawLoad(x.id) : 0), 0);
+  const bagWeight = (bag) => bag.wt + rawLoad(bag.id) * (1 - (bag.reduce ?? 0) / 100);
+  const carried = () => items.filter((x) => !x.in).reduce((s, x) => s + (x.group === "container" ? bagWeight(x) : x.wt * x.qty), 0);
+  const ENC = { max: 120, encumbered: 40, heavy: 80, mode: "variant" }; // system.attributes.encumbrance (variant rule, Str 8)
+  function visibleItems(list) {
+    const f = S.filter.items;
+    return list.filter((x) => match(x, S.search.items) && (!f.has("equipped") || slotOf(x.id)) && (!f.has("attuned") || S.attuned.has(x.id))).sort(SORTS[S.sort.items]);
+  }
 
   function renderAbilities() {
     $("[data-abilities]").innerHTML = ABILITIES.map((a) => `<button type="button" class="cs-ability fx-spot" data-ui="abilityTile" data-oos="Бросает проверку ${a.label}; Shift+клик — спасбросок" title="Проверка; Shift — спасбросок">
@@ -1775,22 +1861,43 @@ button.cs-stat:active { transform: scale(0.95); }
     $("[data-saves]").innerHTML = ABILITIES.map((a) => `<div class="cs-skill" data-ui="saveRow" data-oos="Бросает спасбросок ${a.label}"><span class="p ${a.save ? "is-prof" : ""}"></span><span class="nm">${({ str: "Сила", dex: "Ловкость", con: "Телосложение", int: "Интеллект", wis: "Мудрость", cha: "Харизма" })[a.key]}</span><span class="bn">${sign(mod(a.value) + (a.save ? PROF : 0) + 2)}</span></div>`).join("");
   }
   function renderInventory() {
-    const q = S.search.items;
-    $("[data-inventory]").innerHTML = GROUPS.map(([g, title]) => {
-      const list = items.filter((x) => x.group === g && match(x, q));
-      const meta = g === "pack" ? `<span class="cs-sec-meta">${list.reduce((s, x) => s + x.wt * x.qty, 0)} / 30 фнт</span>` : "";
-      return section(g, title, list, "items", meta);
-    }).join("");
-    const load = items.reduce((s, x) => s + x.wt * x.qty, 0);
-    $("[data-load-text]").textContent = `Груз ${load} / 120 фнт`;
-    $("[data-load-bar]").style.width = `${Math.min(100, (load / 120) * 100)}%`;
-    const tier = load > 80 ? "heavy" : load > 40 ? "enc" : "ok";
+    const top = items.filter((x) => !x.in);
+    $("[data-inventory]").innerHTML = renderBags() + GROUPS.map(([g, title]) => section(g, title, visibleItems(top.filter((x) => x.group === g)), "items")).join("");
+    const load = +carried().toFixed(1);
+    $("[data-load-text]").innerHTML = `Груз <b>${load}</b> / ${ENC.max} фнт`;
+    $("[data-load-bar]").style.width = `${Math.min(100, (load / ENC.max) * 100)}%`;
+    $(".cs-load").style.setProperty("--t1", `${(ENC.encumbered / ENC.max) * 100}%`);
+    $(".cs-load").style.setProperty("--t2", `${(ENC.heavy / ENC.max) * 100}%`);
+    const tier = load > ENC.heavy ? "heavy" : load > ENC.encumbered ? "enc" : "ok";
     const bar = $("[data-load-bar]");
     if (bar.dataset.tier && bar.dataset.tier !== tier) pulse($(".cs-load"), "is-cross");
     bar.dataset.tier = tier;
     bar.classList.toggle("is-enc", tier === "enc");
     bar.classList.toggle("is-heavy", tier === "heavy");
     $('[data-count="items"]').textContent = items.length;
+  }
+  function bagHead(bag) {
+    const load = rawLoad(bag.id), full = load > bag.cap;
+    return `<span class="cs-bag-load ${full ? "is-full" : ""}" title="Загрузка по Weighty Containers"><i style="width:${Math.min(100, (load / bag.cap) * 100)}%"></i><b>${+load.toFixed(1)} / ${bag.cap} фнт</b></span>
+      ${bag.reduce ? `<span class="cs-tag is-wc" title="Weighty Containers: снижение веса содержимого">−${bag.reduce}% веса</span>` : ""}
+      <button type="button" class="cs-ibtn cs-mini cs-gmonly" data-ui="containerRulesButton" aria-label="Правила контейнера" title="Правила Weighty Containers" data-oos="Открывает окно правил Weighty Containers для этого контейнера (что можно класть, лимиты)">${icon("gear")}</button>`;
+  }
+  // Containers (Weighty Containers' load and rules): trays in the list; many containers fold to one line each.
+  const deepMatch = (b) => bagContents(b.id).some((x) => match(x, S.search.items) || (x.group === "container" && deepMatch(x)));
+  function renderBags() {
+    const bags = items.filter((x) => x.group === "container" && !x.in);
+    const q = S.search.items;
+    const tray = (b) => {
+      if (q && !match(b, q) && !deepMatch(b)) return "";
+      const folded = !q && S.collapsed.has("bag-" + b.id);
+      const inside = bagContents(b.id);
+      const peek = inside.slice(0, 6).map((x) => tile(x)).join("") + (inside.length > 6 ? `<span class="more">+${inside.length - 6}</span>` : "");
+      return `<div class="cs-tray ${folded ? "is-collapsed" : ""}" data-drop-bag="${b.id}" data-key="tray-${b.id}">
+      <div class="cs-tray-head"><button type="button" class="cs-tray-toggle" data-toggle-bag="${b.id}" aria-expanded="${!folded}" aria-label="${folded ? "Развернуть" : "Свернуть"}: ${b.name}">${icon("chev")}</button>${row(b, "bags").replace('class="cs-rowwrap"', 'class="cs-rowwrap is-bag"')}<div class="cs-tray-meta">${bagHead(b)}<span class="cs-tray-peek" aria-hidden="true">${peek}</span></div></div>
+      <div class="cs-tray-body">${[...visibleItems(inside.filter((x) => x.group !== "container")).map((x) => row(x, "in-" + b.id)), ...inside.filter((x) => x.group === "container").map(tray)].join("") || `<div class="cs-empty">Пусто — перетащите сюда предмет</div>`}</div></div>`;
+    };
+    const anyOpen = bags.some((b) => !S.collapsed.has("bag-" + b.id));
+    return `<section class="cs-section fx-spot" data-ui="containerSection" data-key="sec-bags"><div class="cs-sec-head"><h3>Контейнеры</h3><span class="n">${bags.length}</span><span class="grow"></span><button type="button" class="cs-linkbtn" data-ui="foldAllBags" data-bags-all="${anyOpen ? "fold" : "unfold"}">${anyOpen ? "Свернуть все" : "Развернуть все"}</button></div><div class="cs-sec-content">${bags.map(tray).join("") || `<div class="cs-empty">Ничего не найдено</div>`}</div></section>`;
   }
   function slotButton(slot, pos = "") {
     const id = S.equipped[slot];
@@ -1935,17 +2042,20 @@ button.cs-stat:active { transform: scale(0.95); }
       <div class="cs-meta">${(x.tags ?? []).map((t) => `<span class="cs-tag">${t}</span>`).join("")}</div><p>${x.desc}</p>
       <div class="acts">${eq}${cast}${prep}<button type="button" class="cs-btn" data-oos="Показывает карточку в чате">В чат</button></div></div>`;
   }
-  const COIN_DEF = [["pp", "пм", "#c9d2e3"], ["gp", "зм", "#e7b04a"], ["sp", "см", "#c7c0b0"], ["cp", "мм", "#c2743f"]];
+  const COIN_DEF = [["pp", "пм", "#c9d2e3"], ["gp", "зм", "#e7b04a"], ["ep", "эм", "#b9c79a"], ["sp", "см", "#c7c0b0"], ["cp", "мм", "#c2743f"]];
+  const COIN_GP = { pp: 10, gp: 1, ep: 0.5, sp: 0.1, cp: 0.01 };
   function renderCoins() {
     const host = $("[data-coins]");
-    if (!host.children.length) host.innerHTML = COIN_DEF.map(([k, l, c]) => `<span class="cs-coin" style="--c:${c}" data-coin="${k}"><i></i><b data-coin-n>${S.coins[k]}</b><small>${l}</small></span>`).join("");
+    if (!host.children.length) host.innerHTML = COIN_DEF.map(([k, l, c]) => `<button type="button" class="cs-coin" style="--c:${c}" data-coin="${k}" aria-label="${l}: изменить" title="Клик — изменить: +10, −5, 20"><i></i><b data-coin-n>${S.coins[k]}</b><small>${l}</small></button>`).join("")
+      + `<span class="cs-coin-total" data-coin-total title="Общая стоимость в золотых"></span><button type="button" class="cs-ibtn cs-mini cs-editonly" data-ui="currencyManagerButton" aria-label="Размен и передача монет" title="Размен и передача монет" data-oos="Открывает CurrencyManager dnd5e: размен монет и передача другому актору или в контейнер">${icon("trade")}</button>`;
+    $("[data-coin-total]").textContent = `≈ ${fmtPrice(Object.entries(S.coins).reduce((t, [k, n]) => t + n * COIN_GP[k], 0))}`;
     for (const [k] of COIN_DEF) {
       const chip = host.querySelector(`[data-coin="${k}"]`), n = chip.querySelector("[data-coin-n]");
       if (Number(n.textContent) !== S.coins[k]) { countTo(n, S.coins[k]); pulse(chip, "is-glint"); }
     }
   }
   const PARTNERS = { torvin: "Торвин Камнелом · игрок Миша", sera: "Сэра Лин · игрок Аня" };
-  const PARTNER_OFFER = [{ id: "t-web", name: "Свиток: Паутина", icon: "scroll", rarity: "uncommon", qty: 1, group: "consumable", wt: 0, tags: ["2 круг"], desc: "Одноразовый свиток заклинания 2 круга." }];
+  const PARTNER_OFFER = [{ id: "t-web", name: "Свиток: Паутина", icon: "scroll", rarity: "uncommon", qty: 1, group: "consumable", wt: 0, price: 150, tags: ["2 круг"], desc: "Одноразовый свиток заклинания 2 круга." }];
   function renderTrade() {
     const T = S.trade;
     const host = $("[data-trade]");
@@ -2084,7 +2194,6 @@ button.cs-stat:active { transform: scale(0.95); }
     if (current) {
       const slotEl = $(`[data-slot="${current}"]`);
       delete S.equipped[current];
-      S.attuned.delete(id);
       rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
       const target = $(`[data-row="${id}"] .cs-tile`) ?? $(`[data-row="${id}"]`);
       fly(slotEl, target, tile(it));
@@ -2093,12 +2202,9 @@ button.cs-stat:active { transform: scale(0.95); }
     const fits = fitsHere(it);
     if (!fits.length) return;
     const slot = fits.find((s) => !S.equipped[s]) ?? fits[0];
-    if (it.attune && S.attuned.size >= PRESETS[S.preset].attune) { pulse($(`[data-slot="${slot}"]`), "is-refused"); return; }
     const from = sourceEl ?? $(`[data-row="${id}"] .cs-tile`);
     S.equipped[slot] = id;
-    if (it.attune) S.attuned.add(id);
     rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
-    if (it.attune) setTimeout(() => pulse($(`[data-socket="${id}"]`), "is-new"), motionOn() ? 480 : 0);
     const slotEl = $(`[data-slot="${slot}"]`);
     fly(from, slotEl, tile(it));
     setTimeout(() => pulse(slotEl, "is-landed"), motionOn() ? 480 : 0);
@@ -2215,6 +2321,14 @@ button.cs-stat:active { transform: scale(0.95); }
     }
     if (t.matches("[data-rest='long']")) { pulse(t, "is-resting"); return longRest(); }
     if (t.matches('[data-ui="sheetMenuButton"]')) return toggleSheetMenu();
+    if (t.matches("[data-use-item]")) { e.stopPropagation(); return useItem(t.dataset.useItem, t); }
+    if (t.matches("[data-qty]")) return changeQty(t.dataset.qty, Number(t.dataset.d));
+    if (t.matches("[data-charge]")) return spendCharge(t.dataset.charge, 1);
+    if (t.matches("[data-attune]")) return toggleAttune(t.dataset.attune);
+    if (t.matches("[data-coin]")) return openCoinEdit(t);
+    if (t.matches("[data-filter]")) { const f = S.filter.items, k = t.dataset.filter; f.has(k) ? f.delete(k) : f.add(k); t.setAttribute("aria-pressed", f.has(k)); t.classList.toggle("is-on", f.has(k)); return rerender("equipment", renderInventory); }
+    if (t.matches("[data-toggle-bag]")) { const k = "bag-" + t.dataset.toggleBag; S.collapsed.has(k) ? S.collapsed.delete(k) : S.collapsed.add(k); return rerender("equipment", renderInventory); }
+    if (t.matches("[data-bags-all]")) { items.filter((x) => x.group === "container").forEach((b) => (t.dataset.bagsAll === "fold" ? S.collapsed.add("bag-" + b.id) : S.collapsed.delete("bag-" + b.id))); return rerender("equipment", renderInventory); }
     if (t.matches('[data-ui="settingsButton"]')) return root.classList.add("is-settings");
     if (t.matches("[data-close-settings]")) return root.classList.remove("is-settings");
     if (t.matches('[data-act="collapse"]')) return collapseSheet(true);
@@ -2285,17 +2399,21 @@ button.cs-stat:active { transform: scale(0.95); }
     if (t.closest("[data-accent]")) { root.style.setProperty("--accent", t.dataset.value); $$("[data-accent] button").forEach((b) => b.setAttribute("aria-pressed", b === t)); return; }
   });
   root.addEventListener("contextmenu", (e) => {
-    const t = e.target.closest('[data-ui="hpBar"], [data-die], [data-ui="exhaustionTrack"]');
+    const t = e.target.closest('[data-ui="hpBar"], [data-die], [data-ui="exhaustionTrack"], [data-charge]');
     if (!t) return;
     e.preventDefault();
     if (!canEdit()) return;
     if (t.dataset.ui === "hpBar") openHpEdit("в");
     else if (t.matches("[data-die]")) return;
+    else if (t.matches("[data-charge]")) spendCharge(t.dataset.charge, -1);
     else { S.exh = Math.max(0, S.exh - 1); renderVitals(); }
   });
   root.addEventListener("keydown", (e) => {
     if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-toggle-sec], .cs-row")) { e.preventDefault(); e.target.click(); }
     if (e.key === "Escape" && root.classList.contains("is-settings")) root.classList.remove("is-settings");
+  });
+  root.addEventListener("change", (e) => {
+    if (e.target.dataset.sort) { S.sort[e.target.dataset.sort] = e.target.value; rerender("equipment", renderInventory); }
   });
   root.addEventListener("input", (e) => {
     if (e.target.dataset.tradeCoin) {
@@ -2377,31 +2495,70 @@ button.cs-stat:active { transform: scale(0.95); }
     $$(".is-dragging, .is-target, .is-drop").forEach((el) => el.classList.remove("is-dragging", "is-target", "is-drop"));
   });
   root.addEventListener("dragover", (e) => {
-    if (!dragId) return;
-    const sec = e.target.closest('[data-panel="equipment"] .cs-section');
+    if (!dragId) {
+      // Something dragged in from outside the window (compendium, chat, another actor).
+      if (!canEdit() || !e.target.closest('[data-panel="equipment"]')) return;
+      e.preventDefault();
+      $('[data-panel="equipment"]').classList.add("is-external-drop");
+      return;
+    }
+    const bag = e.target.closest("[data-drop-bag]");
+    // A folded container opens when an item hovers over it for a moment.
+    if (bag?.classList.contains("is-collapsed") && spring.id !== bag.dataset.dropBag) {
+      clearTimeout(spring.timer);
+      spring.id = bag.dataset.dropBag;
+      spring.timer = setTimeout(() => { S.collapsed.delete("bag-" + spring.id); bag.classList.remove("is-collapsed"); pulse(bag, "is-landed"); }, 550);
+    } else if (!bag) { clearTimeout(spring.timer); spring.id = null; }
+    const sec = !bag && e.target.closest('[data-panel="equipment"] .cs-section');
     const slot = e.target.closest(".cs-slot");
-    if (sec || slot) e.preventDefault();
-    $$(".cs-section.is-drop").forEach((s) => s !== sec && s.classList.remove("is-drop"));
-    if (sec) sec.classList.add("is-drop");
+    if (bag || sec || slot) e.preventDefault();
+    $$(".is-drop").forEach((s) => s !== (bag || sec) && s.classList.remove("is-drop"));
+    (bag || sec)?.classList.add("is-drop");
   });
+  root.addEventListener("dragleave", (e) => {
+    if (!dragId && !root.contains(e.relatedTarget)) $('[data-panel="equipment"]').classList.remove("is-external-drop");
+  });
+  const spring = { id: null, timer: 0 };
+  // Weighty Containers validates a drop into a container; the mock checks capacity and cycles.
+  function canHold(bag, it) {
+    if (it.id === bag.id || (it.group === "container" && (function inside(b) { return b.in === it.id || (b.in && inside(byId[b.in])); })(bag))) return "Нельзя положить контейнер внутрь самого себя";
+    const add = it.wt * it.qty + (it.group === "container" ? rawLoad(it.id) : 0);
+    if (rawLoad(bag.id) + add > bag.cap) return `Weighty Containers: не помещается (${+(rawLoad(bag.id) + add).toFixed(1)} / ${bag.cap} фнт)`;
+    return null;
+  }
   root.addEventListener("drop", (e) => {
-    if (!dragId) return;
+    $('[data-panel="equipment"]').classList.remove("is-external-drop");
+    if (!dragId) {
+      if (!canEdit() || !e.target.closest('[data-panel="equipment"]')) return;
+      e.preventDefault();
+      chip($('[data-ui="inventoryToolbar"]'), "Перенос извне: как именно — решает «Перенос предметов извне в окно актора»");
+      return;
+    }
     e.preventDefault();
-    const id = dragId;
+    const id = dragId, it = byId[id];
     const slot = e.target.closest(".cs-slot");
-    const sec = e.target.closest('[data-panel="equipment"] .cs-section');
+    const bagEl = e.target.closest("[data-drop-bag]");
+    const sec = !bagEl && e.target.closest('[data-panel="equipment"] .cs-section');
     if (slot) {
-      const it = byId[id];
       if (!it.slots?.includes(slot.dataset.slot)) return pulse(slot, "is-refused");
       const prev = slotOf(id); if (prev) delete S.equipped[prev];
       S.equipped[slot.dataset.slot] = id;
-      if (it.attune) S.attuned.add(id);
+      delete it.in;
       rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
       pulse($(`[data-slot="${slot.dataset.slot}"]`), "is-landed");
-    } else if (sec) {
-      byId[id].group = sec.dataset.section;
+    } else if (bagEl) {
+      const bag = byId[bagEl.dataset.dropBag];
+      if (it.in === bag.id) return;
+      const why = canHold(bag, it);
+      if (why) { pulse(bagEl, "is-refused"); chip(bagEl, why); return; }
+      const prev = slotOf(id); if (prev) delete S.equipped[prev];
+      it.in = bag.id;
+      rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
+      pulse($(`[data-drop-bag="${bag.id}"]`), "is-landed");
+    } else if (sec && it.in) {
+      // Dropping on the list takes the item out of its container.
+      delete it.in;
       rerender("equipment", renderInventory);
-      pulse($(`[data-section="${sec.dataset.section}"]`), "is-landed");
     }
     applyRole();
   });
@@ -2526,6 +2683,62 @@ button.cs-stat:active { transform: scale(0.95); }
   }
   document.addEventListener("pointerdown", (e) => { if (!e.target.closest(".cs-menu-wrap")) toggleSheetMenu(false); });
   root.addEventListener("keydown", (e) => { if (e.key === "Escape") toggleSheetMenu(false); });
+  // Mock of item.use(): dnd5e picks the activity, consumes charges or quantity, rolls.
+  function useItem(id, el) {
+    if (!canEdit()) return;
+    const it = byId[id];
+    chip(el, `item.use(): ${it.name}`);
+    pulse(el.querySelector(".cs-tile") ?? el, "is-landed");
+    if (it.uses) return spendCharge(id, 1);
+    if (it.group === "consumable") changeQty(id, -1);
+  }
+  function changeQty(id, d) {
+    if (!canEdit()) return;
+    const it = byId[id];
+    if (it.qty + d < 0) return;
+    it.qty += d;
+    rerender("equipment", renderInventory);
+    pulse($(`[data-row="${id}"] .cs-num`), "is-pop");
+  }
+  function spendCharge(id, d) {
+    if (!canEdit()) return;
+    const it = byId[id], v = it.uses[0] - d;
+    if (v < 0 || v > it.uses[1]) { pulse($(`[data-row="${id}"]`), "is-refused"); return; }
+    it.uses[0] = v;
+    rerender("equipment", renderInventory);
+  }
+  function toggleAttune(id) {
+    if (!canEdit()) return;
+    if (S.attuned.has(id)) S.attuned.delete(id);
+    else if (S.attuned.size >= PRESETS[S.preset].attune) { pulse($('[data-ui="attunementTrack"]'), "is-refused"); pulse($(`[data-row="${id}"]`), "is-refused"); return; }
+    else S.attuned.add(id);
+    rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
+    if (S.attuned.has(id)) setTimeout(() => pulse($(`[data-socket="${id}"]`), "is-new"), motionOn() ? 300 : 0);
+  }
+  // Coins: −5 spends, +10 adds, 20 sets (actor.update on system.currency).
+  function openCoinEdit(btn) {
+    if (!canEdit()) return;
+    const k = btn.dataset.coin;
+    const f = document.createElement("form");
+    f.className = "cs-coin-edit";
+    f.innerHTML = `<input name="v" autocomplete="off" aria-label="Монеты" placeholder="+10 · −5 · 20">`;
+    btn.after(f);
+    f.v.focus();
+    const close = () => f.remove();
+    f.v.addEventListener("blur", () => setTimeout(close, 120));
+    f.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+    f.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const m = f.v.value.trim().replace(/−/g, "-").match(/^([+-]?)(\d+)$/);
+      if (!m) { pulse(f, "is-refused"); return; }
+      const n = Number(m[2]), cur = S.coins[k];
+      const next = m[1] === "+" ? cur + n : m[1] === "-" ? cur - n : n;
+      if (next < 0) { pulse(btn, "is-refused"); return; }
+      S.coins[k] = next;
+      close();
+      renderCoins();
+    });
+  }
   function rollConcentration(btn) {
     if (!canEdit()) return;
     const r = 1 + Math.floor(Math.random() * 20);
@@ -2687,6 +2900,11 @@ button.cs-stat:active { transform: scale(0.95); }
   orb.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOrb(e); } });
   document.querySelector("[data-mock-xp]").addEventListener("input", renderOrbState);
   renderOrbState();
+
+  // More than three containers start folded to one line each.
+  const topBags = items.filter((x) => x.group === "container" && !x.in);
+  if (topBags.length > 3) items.filter((x) => x.group === "container").forEach((b) => S.collapsed.add("bag-" + b.id));
+  renderInventory();
 
   applyLayout(layoutFor(root.offsetWidth));
   requestAnimationFrame(moveInk);

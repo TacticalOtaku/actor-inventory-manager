@@ -1,0 +1,2690 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CharacterSheet · mock</title>
+<style>
+:root {
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(1200px 800px at 30% 20%, #1b1f2a 0%, #0b0d12 60%) fixed;
+  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  color: #ece6da;
+}
+
+/* ═══════════ Tokens: live on the window root, never on :root ═══════════ */
+.cs-root {
+  /* surfaces */
+  --surface-0: #11131a;
+  --surface-1: #161922;
+  --surface-2: #1d212c;
+  --surface-3: #262b38;
+  --line: rgb(255 255 255 / 0.07);
+  --line-strong: rgb(255 255 255 / 0.14);
+  --scrim: rgb(5 6 10 / 0.55);
+  /* text */
+  --text: #ece6da;
+  --text-2: #aaa499;
+  --text-3: #6e6a63;
+  /* accent (user-selectable) */
+  --accent: #d4a55a;
+  --accent-ink: #1b1206;
+  --accent-soft: color-mix(in oklab, var(--accent) 16%, transparent);
+  --accent-line: color-mix(in oklab, var(--accent) 45%, transparent);
+  /* meaning */
+  --hp: #e0564f;
+  --heal: #5fc28a;
+  --temp: #5aa9e6;
+  --arcane: #9b7bff;
+  --warn: #e7b04a;
+  /* rarity (custom properties, never inline color) */
+  --rarity-common: #b8b2a7;
+  --rarity-uncommon: #5fc28a;
+  --rarity-rare: #5aa9e6;
+  --rarity-veryRare: #a77bff;
+  --rarity-legendary: #f0a24a;
+  --rarity-artifact: #e0564f;
+  /* spell schools */
+  --school-abj: #6fb7e8;
+  --school-con: #e7b04a;
+  --school-div: #c9d2e3;
+  --school-enc: #e07aa0;
+  --school-evo: #e2734a;
+  --school-ill: #a77bff;
+  --school-nec: #7fae6a;
+  --school-trs: #5fc2b8;
+  /* shape */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  /* density (user-selectable) */
+  --row-h: 44px;
+  --tile: 36px;
+  /* type */
+  --font-display: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-num: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  /* motion */
+  --ease-snap: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --d-fast: 140ms;
+  --d-base: 240ms;
+  --d-slow: 420ms;
+  --shadow-1: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 8px 24px rgb(0 0 0 / 0.35);
+  --shadow-lift: 0 18px 40px rgb(0 0 0 / 0.5);
+}
+.cs-root[data-theme="parchment"] {
+  --surface-0: #f3eee3;
+  --surface-1: #ebe4d6;
+  --surface-2: #e2d9c7;
+  --surface-3: #d6cbb5;
+  --line: rgb(60 40 10 / 0.1);
+  --line-strong: rgb(60 40 10 / 0.2);
+  --scrim: rgb(40 30 15 / 0.25);
+  --text: #2a2419;
+  --text-2: #6a5e4b;
+  --text-3: #988b75;
+  --accent: #9a6420;
+  --accent-ink: #fff8ec;
+  --shadow-1: 0 1px 0 rgb(255 255 255 / 0.6) inset, 0 8px 24px rgb(60 40 10 / 0.15);
+  --shadow-lift: 0 18px 40px rgb(60 40 10 / 0.25);
+}
+.cs-root[data-density="compact"] { --row-h: 34px; --tile: 28px; }
+.cs-root[data-motion="off"] *, .cs-root[data-motion="off"] *::before, .cs-root[data-motion="off"] *::after {
+  transition-duration: 0ms !important;
+  animation-duration: 0ms !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-root *, .cs-root *::before, .cs-root *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+}
+
+/* ═══════════ Window frame ═══════════ */
+.cs-root {
+  position: relative;
+  width: 1040px;
+  height: 720px;
+  min-width: 300px;
+  min-height: 520px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 96px);
+  resize: both;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: var(--rail-w, 272px) minmax(0, 1fr) var(--inspector-w, 0px);
+  grid-template-rows: minmax(0, 1fr);
+  background: var(--surface-0);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-xl);
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.55);
+  color: var(--text);
+  font: 13px/1.4 var(--font-ui);
+  transition: width var(--d-slow) var(--ease-settle);
+}
+.cs-root[data-layout="wide"] { --inspector-w: 288px; }
+.cs-root[data-layout="narrow"] { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+.cs-root[data-layout="compact"] { grid-template-columns: minmax(0, 1fr); --rail-w: 100%; }
+.cs-root[data-layout="compact"] .cs-main, .cs-root[data-layout="compact"] .cs-inspector { display: none; }
+.cs-root[data-layout="narrow"] .cs-inspector { display: none; }
+.cs-root:not([data-layout="wide"]) .cs-inspector { display: none; }
+.cs-root button { font: inherit; color: inherit; }
+.cs-root :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cs-ico { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ═══════════ Rail ═══════════ */
+.cs-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  min-height: 0;
+  padding: var(--s4) 6px var(--s3) var(--s3);
+  background: linear-gradient(180deg, var(--surface-1), var(--surface-0));
+  border-right: 1px solid var(--line);
+  /* The rail scrolls only vertically; its gutter is reserved so content never loses width to the scrollbar. */
+  overflow: hidden auto;
+  scrollbar-gutter: stable;
+}
+.cs-rail > * { min-width: 0; }
+.cs-root[data-layout="narrow"] .cs-rail {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: stretch;
+  border-right: 0;
+  border-bottom: 1px solid var(--line);
+  padding: var(--s3);
+}
+.cs-root[data-layout="narrow"] .cs-rail-fav,
+.cs-root[data-layout="narrow"] .cs-rail-portrait { display: none; }
+.cs-rail-portrait { display: flex; align-items: center; gap: var(--s3); }
+.cs-root:not([data-layout="compact"]) .cs-rail-portrait { display: none; }
+.cs-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #6b5a8f, #2a2240);
+  border: 1px solid var(--accent-line);
+  display: grid; place-items: center;
+  font: 600 16px var(--font-display); color: var(--accent);
+}
+.cs-rail-name { font: 600 16px/1.1 var(--font-display); }
+.cs-rail-sub { color: var(--text-2); font-size: 11px; }
+
+.cs-vitals { display: grid; gap: var(--s2); }
+.cs-root[data-layout="narrow"] .cs-vitals { flex: 1 1 100%; grid-template-columns: minmax(180px, 1.4fr) 1fr 1fr; align-items: stretch; }
+/* HP: the fill drops at once, the ghost drains after it so the hit stays readable */
+.cs-hp {
+  display: grid; gap: 7px;
+  padding: 10px 12px 12px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-lg);
+  text-align: left; cursor: pointer; user-select: none;
+  transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-snap);
+}
+.cs-root[data-role="observer"] .cs-hp { cursor: default; }
+.cs-hp-top { display: flex; align-items: baseline; justify-content: space-between; }
+.cs-hp-label { font: 600 10.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
+.cs-hp-val { font: 600 26px/1 var(--font-num); font-variant-numeric: tabular-nums; }
+.cs-hp-val small { font-size: 14px; color: var(--text-2); font-weight: 500; }
+.cs-hp-val em { display: inline-flex; align-items: center; gap: 2px; margin-left: 6px; font: 600 12px var(--font-num); font-style: normal; color: var(--temp); opacity: 0; transition: opacity var(--d-base); }
+.cs-hp-val em .cs-ico { width: 12px; height: 12px; }
+.cs-hp-val em.is-pop { animation: cs-numpop 380ms var(--ease-snap); }
+.cs-hp.has-temp .cs-hp-val em { opacity: 1; }
+.cs-hp-bar { position: relative; height: 10px; border-radius: 6px; background: var(--surface-0); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+.cs-hp-bar i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; }
+.cs-hp-bar .fill { background: linear-gradient(90deg, color-mix(in oklab, var(--hp) 75%, #000), var(--hp)); transition: width var(--d-base) var(--ease-settle); }
+.cs-hp-bar .ghost { background: color-mix(in oklab, var(--hp) 45%, #fff); opacity: 0.55; transition: width 700ms var(--ease-settle) 380ms; }
+/* Temp HP band: stripes run in a pseudo-element so the band itself never animates a token background. */
+.cs-hp-bar .temp {
+  overflow: hidden;
+  background: color-mix(in oklab, var(--temp) 45%, transparent);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--temp) 60%, transparent), inset 0 0 0 1px color-mix(in oklab, var(--temp) 70%, transparent);
+  transition: width var(--d-slow) var(--ease-settle), left var(--d-base) var(--ease-settle);
+}
+.cs-hp-bar .temp::before {
+  content: ""; position: absolute; inset: 0 -12px;
+  background: repeating-linear-gradient(135deg, var(--temp) 0 4px, transparent 4px 8px);
+  opacity: 0.85;
+  animation: cs-stripe 0.9s linear infinite;
+}
+@keyframes cs-stripe { from { transform: translateX(0); } to { transform: translateX(11.31px); } }
+.cs-hp-bar .temp.is-absorb { animation: cs-absorb 420ms var(--ease-settle); }
+@keyframes cs-absorb { 0% { filter: brightness(2.4) saturate(0.4); } 100% { filter: none; } }
+.cs-hp.is-hit { animation: cs-hit 420ms var(--ease-settle); }
+.cs-hp.is-heal { animation: cs-heal 520ms var(--ease-settle); }
+.cs-hp.is-heal .cs-hp-bar .fill { transition-duration: var(--d-slow); }
+.cs-vrow {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px var(--s2);
+  min-height: 34px; padding: 6px 10px;
+  background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-md);
+  text-align: left;
+}
+.cs-vrow.is-link { cursor: pointer; transition: border-color var(--d-fast); }
+.cs-vrow.is-link:hover { border-color: color-mix(in oklab, var(--arcane) 45%, transparent); }
+.cs-vlabel { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+.cs-vlabel b { color: var(--text); font: 600 12px var(--font-num); }
+.cs-dice { display: inline-flex; flex-wrap: wrap; gap: 3px; }
+.cs-die {
+  width: 15px; height: 15px; padding: 0;
+  border-radius: 4px; border: 1.5px solid var(--accent); background: var(--accent-soft);
+  cursor: pointer; position: relative;
+  transition: background var(--d-fast), opacity var(--d-base), transform var(--d-fast) var(--ease-snap);
+}
+.cs-die::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--accent); transition: opacity var(--d-fast); }
+.cs-die.is-spent { background: transparent; opacity: 0.4; }
+.cs-die.is-spent::after { opacity: 0; }
+.cs-die.is-roll { animation: cs-roll 460ms var(--ease-snap); }
+@keyframes cs-roll { 0% { transform: rotate(0) scale(1); } 50% { transform: rotate(200deg) scale(1.25); } 100% { transform: rotate(360deg) scale(1); } }
+.cs-runes { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.cs-runes .g { display: inline-flex; gap: 2px; }
+.cs-rune { width: 7px; height: 7px; rotate: 45deg; border-radius: 1.5px; background: var(--arcane); box-shadow: 0 0 6px color-mix(in oklab, var(--arcane) 50%, transparent); transition: background var(--d-base), box-shadow var(--d-base); }
+.cs-rune.is-spent { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--arcane) 60%, transparent); }
+@keyframes cs-hit {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--hp) 70%, transparent); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-1px); }
+  100% { transform: none; box-shadow: 0 0 0 14px transparent; }
+}
+@keyframes cs-heal {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--heal) 60%, transparent); }
+  100% { box-shadow: 0 0 0 16px transparent; }
+}
+
+.cs-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s1); }
+.cs-root[data-layout="narrow"] .cs-stats { flex: 1 1 260px; }
+.cs-stat {
+  display: grid; justify-items: center; gap: 1px;
+  padding: var(--s2) 0 6px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md);
+}
+.cs-stat b { font: 600 17px/1 var(--font-num); font-variant-numeric: tabular-nums; }
+.cs-stat span { font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+
+.cs-chips { display: flex; flex-wrap: wrap; gap: var(--s1); }
+.cs-root[data-layout="narrow"] .cs-chips { flex: 1 1 100%; }
+.cs-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 26px; padding: 0 9px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 99px;
+  font-size: 11.5px; color: var(--text-2); cursor: pointer;
+  transition: background var(--d-fast), border-color var(--d-fast), color var(--d-fast), transform var(--d-fast) var(--ease-snap);
+}
+.cs-chip:hover { border-color: var(--line-strong); color: var(--text); }
+.cs-chip:active { transform: scale(0.95); }
+.cs-chip.is-on { border-color: var(--accent-line); color: var(--accent); background: var(--accent-soft); }
+.cs-chip .cs-pips { display: inline-flex; gap: 3px; }
+.cs-pip-s { width: 7px; height: 7px; border-radius: 50%; border: 1px solid currentColor; opacity: 0.5; transition: background var(--d-fast), opacity var(--d-fast), transform var(--d-fast) var(--ease-snap); }
+.cs-pip-s.is-on { background: currentColor; opacity: 1; }
+.cs-chip.is-conc { border-color: color-mix(in oklab, var(--arcane) 55%, transparent); color: var(--arcane); background: color-mix(in oklab, var(--arcane) 14%, transparent); animation: cs-pop var(--d-slow) var(--ease-snap); }
+.cs-chip.is-conc[hidden] { display: none; }
+@keyframes cs-pop { from { transform: scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.cs-death {
+  display: grid; grid-template-columns: auto 1fr; gap: 6px var(--s2); align-items: center;
+  padding: var(--s2) var(--s3);
+  background: color-mix(in oklab, var(--hp) 10%, var(--surface-2));
+  border: 1px solid color-mix(in oklab, var(--hp) 40%, transparent);
+  border-radius: var(--r-md);
+  animation: cs-pop var(--d-slow) var(--ease-snap);
+}
+.cs-death[hidden] { display: none; }
+.cs-death span { font-size: 11px; color: var(--text-2); }
+.cs-death .row { display: flex; gap: 6px; }
+.cs-death button { width: 16px; height: 16px; padding: 0; border-radius: 50%; border: 1.5px solid currentColor; background: transparent; cursor: pointer; transition: background var(--d-fast), transform var(--d-fast) var(--ease-snap); }
+.cs-death .ok { color: var(--heal); }
+.cs-death .bad { color: var(--hp); }
+.cs-death button.is-on { background: currentColor; transform: scale(1.1); }
+
+.cs-rail-fav { display: flex; flex-direction: column; flex: none; }
+.cs-rail-title { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 6px; font: 600 10.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
+.cs-fav-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.cs-fav {
+  display: flex; align-items: center; gap: var(--s2);
+  height: 36px; padding: 0 6px; border-radius: var(--r-sm);
+  cursor: pointer; transition: background var(--d-fast);
+}
+.cs-fav:hover { background: var(--surface-2); }
+.cs-fav.is-new { animation: cs-pop var(--d-slow) var(--ease-snap); }
+.cs-fav .cs-tile { --tile: 26px; }
+.cs-fav-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-fav-meta { font: 500 11px var(--font-num); color: var(--text-3); }
+.cs-empty { padding: var(--s3); color: var(--text-3); font-size: 12px; text-align: center; border: 1px dashed var(--line-strong); border-radius: var(--r-md); }
+
+/* rail detail */
+.cs-hpcard { display: grid; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+.cs-hpcard .cs-hp { background: none; border: 0; border-radius: 0; }
+.cs-hp-label { color: var(--text-2); }
+.cs-hp-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px var(--s2); padding: 6px 8px 7px 12px; border-top: 1px solid var(--line); background: color-mix(in oklab, var(--surface-0) 40%, transparent); }
+.cs-hp-info { font: 500 11px var(--font-num); color: var(--text-3); white-space: nowrap; }
+.cs-hp-info b { color: var(--text-2); font-weight: 600; }
+.cs-hp-info .t { color: var(--temp); }
+/* GM only: players never get quick HP buttons. */
+.cs-hp-steps { display: none; gap: 2px; }
+.cs-root[data-role="gm"] .cs-hp-steps { display: inline-flex; }
+.cs-hp-steps button {
+  height: 22px; min-width: 26px; padding: 0 5px;
+  background: var(--surface-3); border: 0; border-radius: 6px;
+  font: 600 11px var(--font-num); cursor: pointer;
+  transition: background var(--d-fast), transform var(--d-fast) var(--ease-snap);
+}
+.cs-hp-steps button:nth-child(-n+2) { color: color-mix(in oklab, var(--hp) 80%, var(--text)); }
+.cs-hp-steps button:nth-child(n+3) { color: color-mix(in oklab, var(--heal) 80%, var(--text)); }
+.cs-hp-steps button:hover { background: var(--line-strong); }
+.cs-hp-steps button:active { transform: scale(0.9); }
+.cs-formula { margin-left: 4px; padding: 1px 5px; border-radius: 4px; background: var(--surface-3); font: 500 10px var(--font-num); color: var(--text-2); }
+button.cs-stat { font: inherit; color: inherit; cursor: pointer; transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-snap); }
+button.cs-stat:hover { border-color: var(--accent-line); }
+button.cs-stat:active { transform: scale(0.95); }
+.cs-stat { position: relative; overflow: hidden; }
+.cs-stat > b, .cs-stat > span { position: relative; }
+.cs-stat-bg { position: absolute; inset: 3px; width: calc(100% - 6px); height: calc(100% - 6px); color: var(--accent); opacity: 0.12; stroke-width: 1.2; }
+.cs-stat.is-ac b { color: var(--accent); }
+.cs-magic {
+  display: grid; grid-template-columns: auto repeat(3, minmax(0, 1fr)); align-items: center; gap: var(--s2);
+  padding: 7px 10px;
+  background: linear-gradient(90deg, color-mix(in oklab, var(--arcane) 12%, var(--surface-1)), var(--surface-1));
+  border: 1px solid color-mix(in oklab, var(--arcane) 25%, transparent); border-radius: var(--r-md);
+}
+.cs-magic-k { font: 600 10px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; color: var(--arcane); writing-mode: horizontal-tb; }
+.cs-magic-v { display: grid; justify-items: center; line-height: 1.1; }
+.cs-magic-v b { font: 600 14px var(--font-num); }
+.cs-magic-v small { font-size: 9.5px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.cs-root[data-layout="narrow"] .cs-magic, .cs-root[data-layout="narrow"] .cs-effects { flex: 1 1 240px; }
+.cs-effects, .cs-effect-list { display: grid; gap: 3px; }
+.cs-effects .cs-rail-title { margin-bottom: 2px; }
+.cs-mini { width: 22px; height: 22px; border-radius: 6px; }
+.cs-mini .cs-ico { width: 13px; height: 13px; }
+.cs-effect { display: flex; align-items: center; gap: var(--s2); min-height: 32px; padding: 3px 8px 3px 4px; border-radius: var(--r-sm); background: var(--surface-1); border: 1px solid var(--line); }
+.cs-effect-ic { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 6px; color: var(--tone); background: color-mix(in oklab, var(--tone) 16%, transparent); flex: none; }
+.cs-effect-ic .cs-ico { width: 14px; height: 14px; }
+.cs-effect-n { flex: 1; min-width: 0; display: grid; font-size: 12px; line-height: 1.2; }
+.cs-effect-n small { font-size: 10.5px; color: var(--text-3); }
+.cs-effect-t { font: 500 10.5px var(--font-num); color: var(--text-2); white-space: nowrap; }
+.cs-effect.is-conc { border-color: color-mix(in oklab, var(--arcane) 45%, transparent); }
+.cs-fav-group { margin: 6px 6px 2px; font: 600 9.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); display: flex; align-items: center; gap: 6px; }
+.cs-fav-group::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.cs-fav-group:first-child { margin-top: 0; }
+.cs-fav { height: auto; min-height: 40px; padding: 3px 6px; }
+.cs-fav-body { flex: 1; min-width: 0; display: grid; line-height: 1.2; }
+.cs-fav-roll { font: 500 10.5px var(--font-num); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-fav-meta { display: inline-flex; align-items: center; gap: 2px; }
+.cs-fav-meta .cs-rune { width: 6px; height: 6px; }
+
+/* rest: labelled, in the rail beside the resources it restores */
+.cs-rest { display: grid; gap: 6px; }
+.cs-root[data-layout="narrow"] .cs-rest { flex: 1 1 260px; }
+.cs-rest-btn {
+  display: flex; align-items: center; gap: 8px; min-width: 0;
+  padding: 7px 8px; text-align: left;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md);
+  cursor: pointer;
+  transition: border-color var(--d-fast), background var(--d-fast), transform var(--d-fast) var(--ease-snap);
+}
+.cs-rest-btn:hover { border-color: color-mix(in oklab, var(--tone) 50%, transparent); background: color-mix(in oklab, var(--tone) 8%, var(--surface-2)); }
+.cs-rest-btn:active { transform: scale(0.97); }
+.cs-rest-btn.is-short { --tone: var(--school-evo); }
+.cs-rest-btn.is-long { --tone: var(--arcane); }
+.cs-rest-btn .ic { flex: none; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; color: var(--tone); background: color-mix(in oklab, var(--tone) 16%, transparent); }
+.cs-rest-btn .ic .cs-ico { width: 15px; height: 15px; }
+.cs-rest-btn .tx { display: grid; min-width: 0; font-size: 12px; font-weight: 600; line-height: 1.2; }
+.cs-rest-btn .tx small { font-size: 10.5px; font-weight: 400; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-rest-btn.is-resting { animation: cs-heal 700ms var(--ease-settle); }
+
+/* ═══════════ Interaction effects ═══════════ */
+/* Heartbeat: one rhythm drives the HP bar and the critical vignette; it quickens as HP falls. */
+.cs-root { --beat: 2.8s; }
+.cs-root[data-vital="hurt"] { --beat: 1.7s; }
+.cs-root[data-vital="critical"] { --beat: 0.85s; }
+.cs-hp-bar .fill { overflow: hidden; animation: cs-beat var(--beat) ease-in-out infinite; }
+.cs-hp-bar .fill::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgb(255 255 255 / 0.32) 48%, transparent 66%) 0 0 / 220% 100% no-repeat;
+  animation: cs-flow 3.2s linear infinite;
+}
+@keyframes cs-flow { from { background-position: 160% 0; } to { background-position: -60% 0; } }
+@keyframes cs-beat { 0%, 100% { filter: brightness(1); } 10% { filter: brightness(1.4); } 20% { filter: brightness(1.05); } 30% { filter: brightness(1.28); } 45% { filter: brightness(1); } }
+.cs-root[data-vital="critical"] .cs-hp-val > span:first-child, .cs-root[data-vital="down"] .cs-hp-val > span:first-child { color: var(--hp); }
+.cs-root[data-vital="critical"] .cs-hp-bar { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--hp) 55%, transparent), 0 0 12px color-mix(in oklab, var(--hp) 35%, transparent); }
+.cs-root[data-vital="down"] .cs-hp-label { color: var(--hp); }
+/* edge vignette: pulses with the heartbeat when critical, stays lit when down */
+.cs-root::after {
+  content: ""; position: absolute; inset: 0; z-index: 30; pointer-events: none;
+  border-radius: inherit; opacity: 0;
+  box-shadow: inset 0 0 70px 8px color-mix(in oklab, var(--hp) 50%, transparent);
+  transition: opacity var(--d-slow) var(--ease-settle);
+}
+.cs-root[data-vital="critical"]::after { animation: cs-vignette var(--beat) ease-in-out infinite; }
+.cs-root[data-vital="down"]::after { opacity: 0.95; box-shadow: inset 0 0 110px 14px color-mix(in oklab, var(--hp) 55%, transparent); }
+@keyframes cs-vignette { 0%, 100% { opacity: 0.25; } 12% { opacity: 0.9; } 24% { opacity: 0.45; } 34% { opacity: 0.75; } 50% { opacity: 0.25; } }
+.cs-main, .cs-inspector { transition: filter 700ms var(--ease-settle); }
+.cs-root[data-vital="down"] .cs-main, .cs-root[data-vital="down"] .cs-inspector { filter: grayscale(0.55) brightness(0.8); }
+.cs-root[data-vital="down"] .cs-death { animation: cs-pop var(--d-slow) var(--ease-snap), cs-death-pulse 1.8s ease-in-out infinite 420ms; }
+@keyframes cs-death-pulse { 50% { box-shadow: 0 0 0 4px color-mix(in oklab, var(--hp) 25%, transparent); } }
+.cs-hpcard.is-revive { animation: cs-revive 900ms var(--ease-settle); }
+@keyframes cs-revive { 0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--heal) 80%, transparent); } 100% { box-shadow: 0 0 0 22px transparent; } }
+.cs-hp-val.is-pop > span:first-child { display: inline-block; animation: cs-numpop 380ms var(--ease-snap); }
+@keyframes cs-numpop { 40% { transform: scale(1.22); } 100% { transform: none; } }
+
+/* shield aura around the HP card while temporary HP lasts: a calm hum, not the heartbeat */
+.cs-hpcard { transition: box-shadow var(--d-slow) var(--ease-settle); }
+.cs-hpcard.has-shield { box-shadow: 0 0 0 1px color-mix(in oklab, var(--temp) 45%, transparent), 0 0 16px color-mix(in oklab, var(--temp) 18%, transparent); animation: cs-hum 3.6s ease-in-out infinite; }
+@keyframes cs-hum { 50% { box-shadow: 0 0 0 1px color-mix(in oklab, var(--temp) 75%, transparent), 0 0 26px color-mix(in oklab, var(--temp) 32%, transparent); } }
+.cs-hpcard.is-shield-up { animation: cs-shield-up 700ms var(--ease-settle), cs-hum 3.6s ease-in-out 700ms infinite; }
+@keyframes cs-shield-up { 0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--temp) 90%, transparent), inset 0 0 0 0 color-mix(in oklab, var(--temp) 50%, transparent); } 40% { box-shadow: 0 0 0 6px color-mix(in oklab, var(--temp) 35%, transparent), inset 0 0 30px 0 color-mix(in oklab, var(--temp) 30%, transparent); } 100% { box-shadow: 0 0 0 1px color-mix(in oklab, var(--temp) 45%, transparent), 0 0 16px color-mix(in oklab, var(--temp) 18%, transparent); } }
+.cs-hpcard.is-shield-break { animation: cs-shield-break 650ms var(--ease-settle); }
+@keyframes cs-shield-break { 0% { box-shadow: 0 0 0 2px color-mix(in oklab, var(--temp) 90%, transparent), 0 0 30px color-mix(in oklab, var(--temp) 60%, transparent); filter: brightness(1.4); } 25% { transform: translateX(-2px); } 50% { transform: translateX(2px); } 100% { box-shadow: 0 0 0 0 transparent; transform: none; filter: none; } }
+.cs-hp-steps .is-temp-step { display: inline-flex; align-items: center; gap: 2px; color: var(--temp) !important; }
+.cs-hp-steps .is-temp-step .cs-ico { width: 11px; height: 11px; }
+.fx-shard { position: absolute; z-index: 40; width: 7px; height: 3px; margin: -1.5px 0 0 -3.5px; pointer-events: none; background: var(--temp); box-shadow: 0 0 6px var(--temp); border-radius: 1px; }
+.cs-root[data-motion="off"] .cs-hp-bar .temp::before, .cs-root[data-motion="off"] .cs-hpcard { animation: none !important; }
+
+/* floating combat numbers */
+.cs-float {
+  position: absolute; z-index: 40; pointer-events: none;
+  font: 700 17px var(--font-num); white-space: nowrap;
+  text-shadow: 0 2px 6px rgb(0 0 0 / 0.6);
+  animation: cs-float 1150ms var(--ease-settle) forwards;
+}
+.cs-float.is-dmg { color: var(--hp); }
+.cs-float.is-heal { color: var(--heal); }
+.cs-float.is-temp { color: var(--temp); font-size: 13px; }
+@keyframes cs-float {
+  0% { opacity: 0; transform: translate(-50%, 6px) scale(0.7); }
+  15% { opacity: 1; transform: translate(-50%, -6px) scale(1.18); }
+  100% { opacity: 0; transform: translate(-50%, -42px) scale(1); }
+}
+
+/* cursor spotlight on cards and buttons */
+.fx-spot { position: relative; }
+.fx-spot::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  border-radius: inherit; opacity: 0;
+  background: radial-gradient(140px circle at var(--mx, 50%) var(--my, 50%), rgb(255 255 255 / 0.07), transparent 70%);
+  transition: opacity var(--d-base);
+}
+.cs-root[data-theme="parchment"] .fx-spot::before { background: radial-gradient(140px circle at var(--mx, 50%) var(--my, 50%), rgb(255 255 255 / 0.5), transparent 70%); }
+.fx-spot:hover::before { opacity: 1; }
+
+/* press ripple */
+.fx-ripple-host { position: relative; overflow: hidden; }
+/* Host rules such as ".cs-stat > span" must never pull the ripple into the layout. */
+.fx-ripple-host > .fx-ripple { position: absolute; margin: 0; }
+.fx-ripple { position: absolute; border-radius: 50%; pointer-events: none; background: currentColor; opacity: 0.22; transform: scale(0); animation: cs-ripple 560ms var(--ease-settle) forwards; }
+@keyframes cs-ripple { to { transform: scale(1); opacity: 0; } }
+
+/* lift on hover */
+.cs-btn:hover, .cs-rest-btn:hover { transform: translateY(-1px); }
+.cs-btn:active, .cs-rest-btn:active { transform: translateY(0) scale(0.97); }
+.cs-ability .m { transition: transform var(--d-base) var(--ease-snap), text-shadow var(--d-base); }
+.cs-ability:hover .m { transform: translateY(-2px); text-shadow: 0 0 14px color-mix(in oklab, var(--accent) 55%, transparent); }
+.cs-ability:hover .sv.is-prof { animation: cs-pop var(--d-slow) var(--ease-snap); }
+.cs-slot:hover:not(.is-target) { transform: translateY(-2px); }
+
+/* rows: accent edge, tile lift and a sheen sweep */
+.cs-row:hover { box-shadow: inset 2px 0 0 var(--accent-line); }
+.cs-row .cs-tile { transition: transform var(--d-base) var(--ease-snap); }
+.cs-row:hover .cs-tile { transform: translateY(-1px) scale(1.05); }
+.cs-tile::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(115deg, transparent 38%, rgb(255 255 255 / 0.38) 50%, transparent 62%) 160% 0 / 260% 100% no-repeat;
+}
+.cs-row:hover .cs-tile::after, .cs-slot:hover .cs-tile::after { background-position: -60% 0; transition: background-position 700ms var(--ease-settle); }
+
+/* tabs: hover previews the underline */
+.cs-tab::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px; border-radius: 2px; background: var(--line-strong); transform: scaleX(0); transition: transform var(--d-base) var(--ease-settle); }
+.cs-tab:hover::after { transform: scaleX(1); }
+.cs-tab[aria-selected="true"]::after { display: none; }
+
+/* particles */
+.fx-spark { position: absolute; z-index: 40; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; pointer-events: none; background: var(--c); box-shadow: 0 0 8px var(--c); }
+
+.cs-root[data-motion="off"] .cs-hp-bar .fill, .cs-root[data-motion="off"] .cs-hp-bar .fill::after, .cs-root[data-motion="off"]::after { animation: none !important; }
+
+/* ═══════════ Motion details ═══════════ */
+/* accent changes flow through every derived colour */
+@property --accent { syntax: "<color>"; inherits: true; initial-value: #d4a55a; }
+.cs-root { transition: width var(--d-slow) var(--ease-settle), --accent 600ms var(--ease-settle); }
+
+/* inspiration: golden, with a sheen passing every few seconds */
+.cs-chip[data-ui="inspirationToggle"] { position: relative; overflow: hidden; }
+.cs-chip[data-ui="inspirationToggle"].is-on { color: var(--warn); border-color: color-mix(in oklab, var(--warn) 55%, transparent); background: color-mix(in oklab, var(--warn) 13%, var(--surface-2)); box-shadow: 0 0 14px color-mix(in oklab, var(--warn) 25%, transparent); }
+.cs-chip[data-ui="inspirationToggle"].is-on::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(110deg, transparent 35%, rgb(255 240 200 / 0.45) 50%, transparent 65%) 160% 0 / 250% 100% no-repeat;
+  animation: cs-insp-sheen 3.4s ease-in-out infinite;
+}
+@keyframes cs-insp-sheen { 0%, 55% { background-position: 160% 0; } 100% { background-position: -70% 0; } }
+.cs-chip[data-ui="inspirationToggle"].is-on .cs-ico { animation: cs-spin-slow 6s linear infinite; }
+@keyframes cs-spin-slow { to { transform: rotate(360deg); } }
+
+/* concentration: the eye blinks now and then */
+.cs-chip.is-conc > .cs-ico:first-child { animation: cs-blink 4.2s ease-in-out infinite; transform-origin: center; }
+@keyframes cs-blink { 0%, 90%, 100% { transform: scaleY(1); } 94% { transform: scaleY(0.1); } }
+
+/* idle twinkle on spell runes */
+.cs-rune.is-twinkle, .cs-slotpip.is-twinkle { animation: cs-twinkle 700ms ease-out; }
+@keyframes cs-twinkle { 40% { filter: brightness(2) drop-shadow(0 0 4px var(--arcane)); transform: scale(1.35); } }
+
+/* death save outcomes */
+.cs-death-state { grid-column: 1 / -1; font: 600 11px var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; text-align: center; }
+.cs-death-state:empty { display: none; }
+.cs-death.is-stable { border-color: color-mix(in oklab, var(--heal) 55%, transparent); background: color-mix(in oklab, var(--heal) 10%, var(--surface-2)); animation: cs-heal 700ms var(--ease-settle) !important; }
+.cs-death.is-stable .cs-death-state { color: var(--heal); }
+.cs-death.is-dead { border-color: var(--line-strong); background: var(--surface-0); animation: none !important; }
+.cs-death.is-dead .cs-death-state { color: var(--text-3); }
+.cs-death.is-shaken { animation: cs-refuse 360ms var(--ease-settle) !important; }
+
+/* load thresholds (2024: encumbered above 5 × Str, heavily above 10 × Str) */
+.cs-load .bar i.is-enc { background: var(--warn); }
+.cs-load .bar i.is-heavy { background: var(--hp); }
+.cs-load.is-cross .bar { animation: cs-refuse 360ms var(--ease-settle); }
+
+/* level orb bubbles */
+.cs-bubble { position: absolute; bottom: 0; width: 3px; height: 3px; border-radius: 50%; background: rgb(255 255 255 / 0.65); animation: cs-bubble 2.6s ease-in infinite; }
+@keyframes cs-bubble { 0% { bottom: 0; opacity: 0; transform: translateX(0); } 20% { opacity: 0.9; } 100% { bottom: 92%; opacity: 0; transform: translateX(3px); } }
+.cs-level:hover { filter: brightness(1.15); }
+
+/* hover card for icon-only entries, doll slots and attunement sockets */
+.cs-hovercard {
+  position: absolute; z-index: 45; width: 230px; pointer-events: none;
+  display: grid; gap: 6px; padding: 10px 12px;
+  background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: var(--r-md);
+  box-shadow: var(--shadow-lift);
+  opacity: 0; transform: translateY(4px) scale(0.98); transform-origin: top left;
+  transition: opacity var(--d-fast), transform var(--d-base) var(--ease-snap);
+}
+.cs-hovercard.is-on { opacity: 1; transform: none; }
+.cs-hovercard .hc-top { display: flex; align-items: center; gap: 8px; }
+.cs-hovercard .cs-tile { --tile: 30px; }
+.cs-hovercard b { display: block; font: 600 13px/1.2 var(--font-display); }
+.cs-hovercard small { color: var(--tone, var(--text-3)); font-size: 11px; }
+.cs-hovercard p { margin: 0; font-size: 11.5px; line-height: 1.45; color: var(--text-2); }
+
+/* ability tile: hover swaps the score for the saving throw */
+.cs-ability .v, .cs-ability .svt { transition: transform var(--d-base) var(--ease-snap), opacity var(--d-fast); }
+.cs-ability .svt { position: absolute; bottom: 7px; inset-inline: 0; font: 600 10.5px var(--font-num); color: var(--accent); opacity: 0; transform: translateY(6px); }
+.cs-ability:hover .v { opacity: 0; transform: translateY(-6px); }
+.cs-ability:hover .svt { opacity: 1; transform: none; }
+
+/* long rest: night falls over the sheet, then dawn */
+.fx-night, .fx-dawn { position: absolute; inset: 0; z-index: 35; pointer-events: none; border-radius: inherit; opacity: 0; }
+.fx-night { background: radial-gradient(120% 90% at 70% 10%, rgb(40 48 110 / 0.55), rgb(8 10 30 / 0.8)); }
+.fx-dawn { background: linear-gradient(0deg, rgb(255 170 90 / 0.28), transparent 60%); }
+
+/* favourites: a quick cast slides in on hover */
+.cs-fav { position: relative; }
+.cs-fav-use { position: absolute; right: 6px; top: 50%; width: 26px; height: 26px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 7px; background: var(--accent); color: var(--accent-ink); cursor: pointer; opacity: 0; transform: translate(8px, -50%); transition: opacity var(--d-fast), transform var(--d-base) var(--ease-snap); }
+.cs-fav:hover .cs-fav-use, .cs-fav-use:focus-visible { opacity: 1; transform: translate(0, -50%); }
+.cs-fav:hover .cs-fav-meta { opacity: 0; }
+.cs-fav-meta { transition: opacity var(--d-fast); }
+
+/* coins roll to new totals */
+.cs-coin.is-glint i { animation: cs-coin-spin 600ms var(--ease-snap); }
+@keyframes cs-coin-spin { 50% { transform: scaleX(0.1); filter: brightness(1.8); } }
+
+.cs-root[data-motion="off"] .cs-bubble, .cs-root[data-motion="off"] .cs-chip .cs-ico, .cs-root[data-motion="off"] .cs-chip::after { animation: none !important; }
+
+/* ═══════════ Main column ═══════════ */
+.cs-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.cs-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s3) var(--s4);
+  padding: var(--s4) var(--s4) var(--s3);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 7%, var(--surface-0)), var(--surface-0));
+  border-bottom: 1px solid var(--line);
+}
+.cs-title { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
+/* Level orb: liquid height = progress to the next level; the glow grows with it. */
+.cs-level {
+  --xp: 0.72;
+  position: relative; flex: none; isolation: isolate;
+  display: grid; place-items: center;
+  width: 48px; height: 48px; border-radius: 50%; overflow: hidden;
+  border: 1.5px solid color-mix(in oklab, var(--accent) calc(45% + var(--xp) * 55%), transparent);
+  background: radial-gradient(circle at 50% 30%, var(--surface-3), var(--surface-0) 75%);
+  box-shadow:
+    0 0 calc(2px + var(--xp) * var(--xp) * 26px) calc(var(--xp) * var(--xp) * 5px) color-mix(in oklab, var(--accent) calc(var(--xp) * var(--xp) * 75%), transparent),
+    inset 0 -6px 12px rgb(0 0 0 / 0.35);
+  transition: box-shadow var(--d-slow) var(--ease-settle), border-color var(--d-slow);
+}
+.cs-level.is-near { animation: cs-orb-pulse 2.4s ease-in-out infinite; }
+@keyframes cs-orb-pulse { 50% { filter: brightness(1.25) saturate(1.15); } }
+.cs-liquid {
+  position: absolute; inset: auto 0 0 0; z-index: -1;
+  height: calc(var(--xp) * 100%);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 85%, #fff) 0%, var(--accent) 35%, color-mix(in oklab, var(--accent) 55%, #000) 100%);
+  transition: height 900ms var(--ease-settle);
+}
+.cs-wave { position: absolute; left: 0; bottom: calc(100% - 4px); width: 200%; height: 9px; fill: color-mix(in oklab, var(--accent) 85%, #fff); animation: cs-wave 3.2s linear infinite; }
+.cs-wave.is-back { bottom: calc(100% - 2px); opacity: 0.45; animation-duration: 5.4s; animation-direction: reverse; }
+@keyframes cs-wave { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.cs-level-n { font: 600 18px/1 var(--font-display); color: var(--text); text-shadow: 0 1px 3px rgb(0 0 0 / 0.65), 0 0 8px rgb(0 0 0 / 0.35); }
+/* Waves keep moving only while motion is on; reduced motion leaves a still surface. */
+.cs-root[data-motion="off"] .cs-wave, .cs-root[data-motion="off"] .cs-level { animation: none !important; }
+.cs-name { margin: 0; font: 600 22px/1.1 var(--font-display); letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-sub { color: var(--text-2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-tools { display: flex; align-items: flex-start; gap: var(--s1); }
+.cs-ibtn {
+  display: inline-grid; place-items: center;
+  width: 32px; height: 32px; padding: 0;
+  background: transparent; border: 1px solid transparent; border-radius: var(--r-md);
+  color: var(--text-2); cursor: pointer;
+  transition: background var(--d-fast), color var(--d-fast), transform var(--d-fast) var(--ease-snap);
+}
+.cs-ibtn:hover { background: var(--surface-2); color: var(--text); }
+.cs-ibtn:active { transform: scale(0.92); }
+.cs-ibtn.is-on { background: var(--accent-soft); color: var(--accent); }
+.cs-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 32px; padding: 0 12px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md);
+  cursor: pointer; white-space: nowrap;
+  transition: background var(--d-fast), border-color var(--d-fast), transform var(--d-fast) var(--ease-snap);
+}
+.cs-btn:hover { border-color: var(--line-strong); background: var(--surface-3); }
+.cs-btn:active { transform: scale(0.96); }
+.cs-btn.is-primary { background: var(--accent); border-color: transparent; color: var(--accent-ink); font-weight: 600; }
+.cs-readonly-badge { display: none; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 99px; background: var(--surface-2); color: var(--text-2); font-size: 11.5px; margin-top: 3px; }
+.cs-root[data-role="observer"] .cs-readonly-badge { display: inline-flex; }
+.cs-root[data-role="observer"] .cs-editonly { display: none !important; }
+
+.cs-abilities { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s2); }
+.cs-ability {
+  position: relative;
+  display: grid; justify-items: center; gap: 2px;
+  padding: 8px 4px 7px;
+  background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-md);
+  cursor: pointer;
+  transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-snap), background var(--d-fast);
+}
+.cs-ability:hover { border-color: var(--accent-line); background: var(--surface-2); }
+.cs-ability:active { transform: scale(0.96); }
+.cs-ability .k { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); }
+.cs-ability .m { font: 600 20px/1 var(--font-num); }
+.cs-ability .v { font: 500 11px var(--font-num); color: var(--text-2); }
+.cs-ability .sv { position: absolute; top: 6px; right: 6px; width: 6px; height: 6px; border-radius: 50%; border: 1px solid var(--text-3); }
+.cs-ability .sv.is-prof { background: var(--accent); border-color: var(--accent); }
+
+
+.cs-tabs { position: relative; display: flex; gap: 2px; padding: 0 var(--s3); border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.cs-tab {
+  position: relative; display: inline-flex; align-items: center; gap: 6px;
+  height: 40px; padding: 0 12px;
+  background: none; border: 0; color: var(--text-2); cursor: pointer;
+  transition: color var(--d-fast);
+  white-space: nowrap;
+}
+.cs-tab:hover { color: var(--text); }
+.cs-tab[aria-selected="true"] { color: var(--text); }
+.cs-tab .n { font: 500 10.5px var(--font-num); color: var(--text-3); }
+.cs-tab-ink { position: absolute; bottom: -1px; left: 0; height: 2px; width: 0; border-radius: 2px; background: var(--accent); transition: transform var(--d-slow) var(--ease-settle), width var(--d-slow) var(--ease-settle); }
+
+.cs-panels { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.cs-panel { position: absolute; inset: 0; overflow: auto; padding: var(--s3) var(--s4) var(--s5); }
+.cs-panel[hidden] { display: none; }
+.cs-panel.is-entering { animation: cs-enter var(--d-base) var(--ease-settle); }
+@keyframes cs-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.cs-toolbar { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s3); flex-wrap: wrap; }
+.cs-search {
+  flex: 1 1 180px; display: flex; align-items: center; gap: 6px;
+  height: 32px; padding: 0 10px;
+  background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-md);
+  color: var(--text-3);
+  transition: border-color var(--d-fast);
+}
+.cs-search:focus-within { border-color: var(--accent-line); }
+.cs-search input { flex: 1; min-width: 0; background: none; border: 0; outline: none; color: var(--text); font: inherit; }
+.cs-seg { display: inline-flex; padding: 2px; gap: 2px; background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-md); }
+.cs-seg button {
+  display: inline-grid; place-items: center; height: 26px; min-width: 28px; padding: 0 6px;
+  background: none; border: 0; border-radius: 7px; color: var(--text-3); cursor: pointer;
+  transition: background var(--d-fast), color var(--d-fast);
+}
+.cs-seg button[aria-pressed="true"] { background: var(--surface-3); color: var(--text); }
+.cs-seg.is-text button { padding: 0 10px; font-size: 12px; }
+
+/* sections */
+.cs-section { margin-bottom: var(--s3); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface-1); transition: border-color var(--d-base), background var(--d-base), box-shadow var(--d-base); }
+.cs-section.is-drop { border-color: var(--accent); background: color-mix(in oklab, var(--accent) 6%, var(--surface-1)); box-shadow: 0 0 0 3px var(--accent-soft); }
+.cs-sec-head { display: flex; align-items: center; gap: var(--s2); height: 38px; padding: 0 var(--s2) 0 var(--s3); cursor: pointer; user-select: none; }
+.cs-sec-head h3 { margin: 0; font: 600 13px var(--font-display); letter-spacing: 0.03em; }
+.cs-sec-head .n { font: 500 11px var(--font-num); color: var(--text-3); }
+.cs-sec-head .grow { flex: 1; }
+.cs-sec-head .chev { transition: transform var(--d-base) var(--ease-settle); color: var(--text-3); }
+.cs-section.is-collapsed .chev { transform: rotate(-90deg); }
+.cs-sec-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--d-slow) var(--ease-settle); }
+.cs-section.is-collapsed .cs-sec-body { grid-template-rows: 0fr; }
+.cs-sec-inner { min-height: 0; overflow: hidden; }
+.cs-sec-content { padding: 0 var(--s2) var(--s2); }
+.cs-sec-meta { display: inline-flex; align-items: center; gap: 6px; font: 500 11px var(--font-num); color: var(--text-3); }
+
+/* item tile */
+.cs-tile {
+  position: relative; flex: none;
+  width: var(--tile); height: var(--tile);
+  display: grid; place-items: center;
+  border-radius: var(--r-sm);
+  background: linear-gradient(145deg, color-mix(in oklab, var(--tone, var(--rarity-common)) 30%, var(--surface-3)), var(--surface-2));
+  border: 1px solid color-mix(in oklab, var(--tone, var(--rarity-common)) 55%, transparent);
+  color: var(--tone, var(--rarity-common));
+}
+.cs-tile .cs-ico { width: 60%; height: 60%; }
+.cs-tile .qty { position: absolute; right: -4px; bottom: -4px; min-width: 16px; height: 16px; padding: 0 3px; border-radius: 8px; background: var(--surface-0); border: 1px solid var(--line-strong); color: var(--text); font: 600 10px/14px var(--font-num); text-align: center; }
+[data-rarity="common"] { --tone: var(--rarity-common); }
+[data-rarity="uncommon"] { --tone: var(--rarity-uncommon); }
+[data-rarity="rare"] { --tone: var(--rarity-rare); }
+[data-rarity="veryRare"] { --tone: var(--rarity-veryRare); }
+[data-rarity="legendary"] { --tone: var(--rarity-legendary); }
+[data-school="abj"] { --tone: var(--school-abj); }
+[data-school="con"] { --tone: var(--school-con); }
+[data-school="div"] { --tone: var(--school-div); }
+[data-school="enc"] { --tone: var(--school-enc); }
+[data-school="evo"] { --tone: var(--school-evo); }
+[data-school="ill"] { --tone: var(--school-ill); }
+[data-school="nec"] { --tone: var(--school-nec); }
+[data-school="trs"] { --tone: var(--school-trs); }
+
+/* views: list */
+.cs-items { display: grid; gap: 2px; }
+.cs-items[data-view="grid"] { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--s2); }
+.cs-items[data-view="icons"] { grid-template-columns: repeat(auto-fill, minmax(calc(var(--tile) + 18px), 1fr)); gap: var(--s2); }
+.cs-row {
+  position: relative;
+  display: flex; align-items: center; gap: var(--s3);
+  min-height: var(--row-h); padding: 4px var(--s2);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background var(--d-fast), box-shadow var(--d-fast), opacity var(--d-base);
+}
+.cs-row:hover { background: var(--surface-2); }
+.cs-row.is-selected { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+.cs-row.is-dragging { opacity: 0.35; }
+.cs-row.is-equipped .cs-name-line::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 7px; border-radius: 50%; background: var(--accent); vertical-align: middle; }
+.cs-row-main { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.cs-name-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+.cs-meta { display: flex; gap: 6px; flex-wrap: wrap; color: var(--text-3); font-size: 11.5px; }
+.cs-tag { display: inline-flex; align-items: center; height: 18px; padding: 0 6px; border-radius: 5px; background: var(--surface-3); color: var(--text-2); font-size: 10.5px; }
+.cs-tag.is-conc { color: var(--arcane); background: color-mix(in oklab, var(--arcane) 15%, transparent); }
+.cs-tag.is-rit { color: var(--school-trs); background: color-mix(in oklab, var(--school-trs) 15%, transparent); }
+.cs-tag.is-att { color: var(--warn); background: color-mix(in oklab, var(--warn) 14%, transparent); }
+.cs-row-act { display: flex; align-items: center; gap: 2px; opacity: 0.55; transition: opacity var(--d-fast); }
+.cs-row:hover .cs-row-act, .cs-row.is-selected .cs-row-act { opacity: 1; }
+.cs-row-act .cs-ibtn { width: 28px; height: 28px; }
+.cs-row-act .cs-ibtn.is-on { opacity: 1; background: transparent; color: var(--accent); }
+.cs-row-act .cs-ibtn.is-on:hover { background: var(--accent-soft); }
+.cs-num { font: 600 12.5px var(--font-num); color: var(--text-2); min-width: 22px; text-align: right; font-variant-numeric: tabular-nums; }
+.cs-detail { overflow: hidden; display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--d-base) var(--ease-settle); }
+.cs-detail.is-open { grid-template-rows: 1fr; }
+.cs-detail > div { min-height: 0; overflow: hidden; }
+.cs-detail p { margin: 2px var(--s2) var(--s2) calc(var(--tile) + var(--s2) + var(--s3)); color: var(--text-2); font-size: 12.5px; }
+.cs-root[data-layout="wide"] .cs-detail { display: none; }
+
+.cs-row.is-unprepared .cs-tile, .cs-row.is-unprepared .cs-name-line { opacity: 0.5; }
+.cs-row.is-unprepared:hover .cs-tile, .cs-row.is-unprepared:hover .cs-name-line { opacity: 0.8; }
+.cs-section[data-section="prepared"] { border-color: color-mix(in oklab, var(--arcane) 35%, transparent); background: linear-gradient(180deg, color-mix(in oklab, var(--arcane) 7%, var(--surface-1)), var(--surface-1) 120px); }
+.cs-sec-meta.is-full { color: var(--warn); }
+.cs-row.is-refused { animation: cs-refuse 360ms var(--ease-settle); box-shadow: inset 0 0 0 1px var(--hp); }
+.cs-sec-meta.is-refused { animation: cs-refuse 360ms var(--ease-settle); }
+.cs-divider { display: flex; align-items: center; gap: var(--s2); margin: var(--s4) 2px var(--s2); font: 600 10.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
+.cs-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* views: grid card */
+.cs-items[data-view="grid"] .cs-row { flex-direction: column; align-items: flex-start; gap: var(--s2); padding: var(--s3); background: var(--surface-2); border: 1px solid var(--line); min-height: 112px; }
+.cs-items[data-view="grid"] .cs-row:hover { border-color: var(--line-strong); }
+.cs-items[data-view="grid"] .cs-row .cs-tile { --tile: 40px; }
+.cs-items[data-view="grid"] .cs-row-main { width: 100%; }
+.cs-items[data-view="grid"] .cs-row-act { position: absolute; top: 6px; right: 6px; }
+.cs-items[data-view="grid"] .cs-num { position: absolute; bottom: 10px; right: 12px; }
+.cs-items[data-view="grid"] .cs-detail { display: none; }
+/* views: icons only */
+.cs-items[data-view="icons"] .cs-row { justify-content: center; padding: 6px; min-height: 0; aspect-ratio: 1; }
+.cs-items[data-view="icons"] .cs-row .cs-tile { --tile: 100%; width: 100%; height: 100%; border-radius: var(--r-md); }
+.cs-items[data-view="icons"] .cs-row-main,
+.cs-items[data-view="icons"] .cs-row-act,
+.cs-items[data-view="icons"] .cs-num,
+.cs-items[data-view="icons"] .cs-detail { display: none; }
+.cs-items[data-view="icons"] .cs-row.is-equipped::after { content: ""; position: absolute; top: 9px; left: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--surface-1); }
+.cs-items[data-view="icons"] .cs-row .lvl { position: absolute; top: 8px; right: 9px; font: 700 10px var(--font-num); color: var(--text); text-shadow: 0 1px 2px rgb(0 0 0 / 0.6); }
+.cs-row .lvl { display: none; }
+.cs-items[data-view="icons"] .cs-row .lvl { display: block; }
+
+/* ═══════════ Equipment: doll + inventory ═══════════ */
+.cs-equip { display: grid; gap: var(--s4); }
+.cs-panel[data-panel="equipment"] { container-type: inline-size; }
+@container (min-width: 700px) { .cs-equip.has-doll { grid-template-columns: 296px minmax(0, 1fr); align-items: start; } }
+@container (max-width: 699.98px) { .cs-doll { width: 100%; max-width: 360px; margin-inline: auto; box-sizing: border-box; } }
+.cs-equip:not(.has-doll) .cs-doll { display: none; }
+/* Not sticky: a preset with many slots is taller than the panel, and a sticky doll would hide its bottom. */
+.cs-doll {
+  display: flex; flex-direction: column; gap: var(--s3);
+  padding: var(--s3) var(--s4) var(--s4);
+  background: radial-gradient(120% 70% at 50% 35%, color-mix(in oklab, var(--accent) 9%, var(--surface-1)), var(--surface-1));
+  border: 1px solid var(--line); border-radius: var(--r-lg);
+}
+.cs-root[data-layout="narrow"] .cs-doll { position: static; max-width: 360px; margin: 0 auto; width: 100%; }
+.cs-doll-grid { display: grid; grid-template-columns: 62px 1fr 62px; grid-template-rows: repeat(5, 62px); gap: 22px 10px; padding-bottom: 6px; }
+.cs-doll-head { display: flex; align-items: center; gap: var(--s2); min-height: 26px; }
+.cs-doll-title { font: 600 13px var(--font-display); }
+.cs-doll-preset { flex: 1; min-width: 0; font-size: 11px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-doll-select { display: none; flex: 1; min-width: 0; height: 26px; padding: 0 6px; background: var(--surface-0); border: 1px solid var(--line-strong); border-radius: var(--r-sm); color: var(--text); font: 12px var(--font-ui); }
+.cs-root[data-role="gm"] .cs-doll-select { display: block; }
+.cs-root[data-role="gm"] .cs-doll-preset { display: none; }
+.cs-gmonly { display: none; }
+.cs-root[data-role="gm"] .cs-gmonly { display: inline-grid; }
+.cs-doll-extra { display: grid; gap: var(--s2); padding-top: var(--s3); border-top: 1px solid var(--line); }
+.cs-doll-sub, .cs-attune.is-wide .cs-attune-label { font: 600 10px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); }
+.cs-doll-sub b { color: var(--text-2); }
+.cs-extra-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 22px 8px; padding-bottom: 14px; justify-items: center; }
+.cs-extra-grid .cs-slot { width: 52px; height: 52px; }
+.cs-extra-grid .cs-slot.is-filled .cs-tile { --tile: 44px; }
+.cs-figure { grid-column: 2; grid-row: 1 / 5; display: grid; place-items: center; color: var(--line-strong); }
+.cs-figure svg { width: 100%; height: 100%; }
+.cs-slot {
+  position: relative;
+  display: grid; place-items: center;
+  width: 62px; height: 62px; padding: 0;
+  background: var(--surface-0); border: 1px dashed var(--line-strong); border-radius: var(--r-md);
+  color: var(--text-3); cursor: pointer;
+  transition: border-color var(--d-fast), background var(--d-fast), transform var(--d-fast) var(--ease-snap), box-shadow var(--d-base);
+}
+.cs-slot:hover { border-color: var(--accent-line); }
+.cs-slot.is-filled { border-style: solid; border-color: var(--line-strong); background: var(--surface-2); }
+.cs-slot.is-filled .cs-tile { --tile: 54px; border: 0; }
+.cs-slot.is-target { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); transform: scale(1.05); }
+.cs-slot.is-landed { animation: cs-land var(--d-slow) var(--ease-snap); }
+.cs-slot.is-refused { animation: cs-refuse 360ms var(--ease-settle); border-color: var(--hp); }
+@keyframes cs-land { 0% { transform: scale(0.85); } 60% { transform: scale(1.08); } 100% { transform: none; } }
+@keyframes cs-refuse { 20% { transform: translateX(-4px); } 40% { transform: translateX(4px); } 60% { transform: translateX(-2px); } 100% { transform: none; } }
+.cs-slot-label { position: absolute; bottom: -17px; inset-inline: -10px; text-align: center; font-size: 9.5px; color: var(--text-3); white-space: nowrap; }
+.cs-slot:not(.is-filled) .cs-ico { opacity: 0.6; }
+/* Attunement: three sockets centred under the figure, between the two hand slots */
+.cs-attune { grid-column: 2; grid-row: 5; align-self: center; display: grid; justify-items: center; gap: 7px; }
+.cs-sockets { display: flex; gap: 8px; }
+.cs-attune.is-wide { grid-column: auto; grid-row: auto; padding-top: var(--s3); border-top: 1px solid var(--line); gap: var(--s2); }
+.cs-attune.is-wide .cs-sockets { flex-wrap: wrap; justify-content: center; gap: 8px 10px; max-width: calc(var(--cols) * 30px + (var(--cols) - 1) * 10px); justify-self: center; }
+.cs-attune.is-wide .cs-attune-label { order: -1; justify-self: stretch; display: flex; justify-content: space-between; }
+.cs-socket {
+  position: relative; box-sizing: border-box; width: 30px; height: 30px; padding: 0;
+  display: grid; place-items: center;
+  border-radius: 50%; border: 1.5px dashed color-mix(in oklab, var(--warn) 40%, transparent);
+  background: var(--surface-0); color: var(--text-3);
+  transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-snap), box-shadow var(--d-base);
+}
+.cs-socket.is-on { border: 1.5px solid var(--warn); background: var(--surface-2); cursor: pointer; box-shadow: 0 0 10px color-mix(in oklab, var(--warn) 30%, transparent); }
+.cs-socket.is-on:hover { transform: scale(1.08); }
+.cs-socket .cs-tile { --tile: 24px; border: 0; border-radius: 50%; background: none; }
+.cs-socket.is-new { animation: cs-land var(--d-slow) var(--ease-snap); }
+.cs-attune-label { display: inline-flex; gap: 4px; font: 500 10.5px var(--font-ui); color: var(--text-3); white-space: nowrap; }
+.cs-attune-label b { color: var(--warn); font: 600 11px var(--font-num); }
+
+.cs-purse { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; margin-bottom: var(--s3); }
+.cs-coin { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border-radius: 99px; background: var(--surface-1); border: 1px solid var(--line); font: 600 12px var(--font-num); }
+.cs-coin i { width: 9px; height: 9px; border-radius: 50%; background: var(--c); box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.25); }
+.cs-coin small { color: var(--text-3); font-weight: 500; }
+.cs-load { flex: 1 1 160px; display: grid; gap: 4px; font-size: 11px; color: var(--text-3); }
+.cs-load .bar { height: 5px; border-radius: 4px; background: var(--line-strong); overflow: hidden; }
+.cs-load .bar i { display: block; height: 100%; background: var(--heal); transition: width var(--d-slow) var(--ease-settle); }
+
+.cs-flyer { position: fixed; z-index: 1000; pointer-events: none; border-radius: var(--r-sm); box-shadow: var(--shadow-lift); }
+
+/* ═══════════ Spells ═══════════ */
+.cs-slots { display: flex; gap: var(--s2); flex-wrap: wrap; margin-bottom: var(--s3); }
+.cs-slotlvl { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-md); }
+.cs-slotlvl b { font: 600 11px var(--font-num); color: var(--text-3); }
+.cs-slotpips { display: flex; gap: 5px; }
+.cs-slotpip {
+  width: 14px; height: 14px; padding: 0;
+  border-radius: 4px; border: 1.5px solid var(--arcane);
+  background: var(--arcane);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--arcane) 45%, transparent);
+  cursor: pointer;
+  transition: background var(--d-base), box-shadow var(--d-base), transform var(--d-fast) var(--ease-snap);
+  rotate: 45deg; scale: 0.8;
+}
+.cs-slotpip.is-spent { background: transparent; box-shadow: none; opacity: 0.6; }
+.cs-slotpip.is-burst { animation: cs-burst 420ms var(--ease-settle); }
+.cs-slotpip.is-refill { animation: cs-refill 480ms var(--ease-snap) backwards; }
+@keyframes cs-burst { 0% { transform: scale(1); } 30% { transform: scale(1.5); box-shadow: 0 0 18px var(--arcane); } 100% { transform: scale(1); } }
+@keyframes cs-refill { from { transform: scale(0); } to { transform: scale(1); } }
+
+/* ═══════════ Overview ═══════════ */
+.cs-overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--s3); align-items: start; }
+.cs-card { padding: var(--s3); background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-lg); }
+.cs-card h3 { margin: 0 0 var(--s2); font: 600 13px var(--font-display); letter-spacing: 0.03em; }
+.cs-skill { display: flex; align-items: center; gap: var(--s2); height: 28px; padding: 0 6px; border-radius: var(--r-sm); cursor: pointer; transition: background var(--d-fast); }
+.cs-skill:hover { background: var(--surface-2); }
+.cs-skill .p { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--text-3); flex: none; }
+.cs-skill .p.is-prof { background: var(--accent); border-color: var(--accent); }
+.cs-skill .p.is-exp { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 2px var(--surface-1), 0 0 0 3px var(--accent); }
+.cs-skill .ab { font: 500 10px var(--font-num); color: var(--text-3); width: 26px; text-transform: uppercase; }
+.cs-skill .nm { flex: 1; }
+.cs-skill .bn { font: 600 12.5px var(--font-num); }
+.cs-kv { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--line); color: var(--text-2); }
+.cs-kv:last-child { border: 0; }
+.cs-kv b { color: var(--text); font-weight: 500; }
+
+/* uses pips (features) */
+.cs-uses { display: inline-flex; gap: 4px; }
+.cs-uses button { width: 12px; height: 12px; padding: 0; border-radius: 50%; border: 1.5px solid var(--accent); background: var(--accent); cursor: pointer; transition: background var(--d-fast), transform var(--d-fast) var(--ease-snap); }
+.cs-uses button.is-spent { background: transparent; }
+.cs-uses button:active { transform: scale(0.8); }
+
+.cs-notes textarea { width: 100%; min-height: 260px; box-sizing: border-box; padding: var(--s3); background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-lg); color: var(--text); font: 13px/1.6 var(--font-ui); resize: vertical; }
+
+/* ═══════════ Inspector (wide) ═══════════ */
+.cs-inspector { display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--line); background: var(--surface-1); overflow: auto; }
+.cs-insp-empty { margin: auto; padding: var(--s5); text-align: center; color: var(--text-3); font-size: 12px; }
+.cs-insp { padding: var(--s4); display: grid; gap: var(--s3); animation: cs-enter var(--d-base) var(--ease-settle); }
+.cs-insp .cs-tile { --tile: 64px; border-radius: var(--r-lg); }
+.cs-insp h4 { margin: 0; font: 600 18px/1.15 var(--font-display); }
+.cs-insp .rar { font-size: 12px; color: var(--tone); }
+.cs-insp p { margin: 0; color: var(--text-2); line-height: 1.55; }
+.cs-insp .acts { display: flex; gap: var(--s2); flex-wrap: wrap; }
+
+/* ═══════════ Trade panel ═══════════ */
+.cs-root[data-role="gm"] .cs-playeronly { display: none; }
+.cs-trade {
+  position: absolute; z-index: 19; top: 0; right: 0; bottom: 0;
+  width: min(344px, 100%);
+  display: flex; flex-direction: column;
+  background: var(--surface-1); border-left: 1px solid var(--line-strong);
+  box-shadow: -20px 0 50px rgb(0 0 0 / 0.4);
+  transform: translateX(105%);
+  transition: transform var(--d-slow) var(--ease-settle);
+}
+.cs-root.is-trading .cs-trade { transform: none; }
+.cs-trade-body { flex: 1; overflow: auto; padding: var(--s3) var(--s4) var(--s4); display: grid; gap: var(--s3); align-content: start; }
+.cs-trade-foot { display: flex; gap: var(--s2); padding: var(--s3) var(--s4); border-top: 1px solid var(--line); }
+.cs-trade-foot .cs-btn { flex: 1; justify-content: center; }
+.cs-trade-status { display: flex; align-items: center; gap: var(--s2); padding: 8px 10px; border-radius: var(--r-md); background: var(--surface-2); font-size: 12px; color: var(--text-2); }
+.cs-trade-status.is-ready { color: var(--heal); background: color-mix(in oklab, var(--heal) 12%, var(--surface-2)); }
+.cs-trade-status.is-reset { animation: cs-refuse 360ms var(--ease-settle); color: var(--warn); }
+.cs-offer { display: grid; gap: 6px; padding: var(--s3); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface-0); transition: border-color var(--d-base), box-shadow var(--d-base); }
+.cs-offer.is-confirmed { border-color: color-mix(in oklab, var(--heal) 55%, transparent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--heal) 14%, transparent); }
+.cs-offer-head { display: flex; align-items: center; justify-content: space-between; font: 600 12px var(--font-display); }
+.cs-offer-head span { font: 500 11px var(--font-ui); color: var(--text-3); }
+.cs-offer-head .ok { color: var(--heal); }
+.cs-offer-item { display: flex; align-items: center; gap: var(--s2); min-height: 34px; animation: cs-enter var(--d-base) var(--ease-settle); }
+.cs-offer-item .cs-tile { --tile: 28px; }
+.cs-offer-item .n { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-qty { display: inline-flex; align-items: center; gap: 2px; }
+.cs-qty button { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 6px; background: var(--surface-3); cursor: pointer; }
+.cs-qty b { min-width: 20px; text-align: center; font: 600 12px var(--font-num); }
+.cs-offer-coins { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.cs-offer-coins label { display: grid; gap: 2px; font-size: 10px; color: var(--text-3); text-align: center; }
+.cs-offer-coins input { width: 100%; box-sizing: border-box; height: 28px; background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: var(--r-sm); color: var(--text); font: 600 12px var(--font-num); text-align: center; }
+.cs-offer-coins input:disabled, .cs-offer-coins .ro { opacity: 0.8; }
+.cs-offer-coins .ro { height: 28px; display: grid; place-items: center; border-radius: var(--r-sm); background: var(--surface-1); font: 600 12px var(--font-num); color: var(--text); }
+.cs-offer-empty { font-size: 12px; color: var(--text-3); padding: 4px 0; }
+.cs-trade select { width: 100%; height: 34px; padding: 0 8px; background: var(--surface-0); border: 1px solid var(--line-strong); border-radius: var(--r-md); color: var(--text); font: 13px var(--font-ui); }
+.cs-trade p { margin: 0; color: var(--text-2); font-size: 12.5px; line-height: 1.5; }
+.cs-row-act [data-offer] { color: var(--accent); }
+.cs-done { display: grid; justify-items: center; gap: var(--s2); padding: var(--s5) 0; text-align: center; animation: cs-pop var(--d-slow) var(--ease-snap); }
+.cs-done .cs-ico { width: 40px; height: 40px; color: var(--heal); }
+
+/* ═══════════ Settings drawer ═══════════ */
+.cs-scrim { position: absolute; inset: 0; z-index: 20; background: var(--scrim); opacity: 0; pointer-events: none; transition: opacity var(--d-base); }
+.cs-root.is-settings .cs-scrim { opacity: 1; pointer-events: auto; }
+.cs-drawer {
+  position: absolute; z-index: 21; top: 0; right: 0; bottom: 0;
+  width: min(340px, 100%);
+  display: flex; flex-direction: column;
+  background: var(--surface-1); border-left: 1px solid var(--line-strong);
+  box-shadow: -20px 0 50px rgb(0 0 0 / 0.4);
+  transform: translateX(105%);
+  transition: transform var(--d-slow) var(--ease-settle);
+}
+.cs-root.is-settings .cs-drawer { transform: none; }
+.cs-drawer-head { display: flex; align-items: center; justify-content: space-between; padding: var(--s4); border-bottom: 1px solid var(--line); }
+.cs-drawer-head h3 { margin: 0; font: 600 16px var(--font-display); }
+.cs-drawer-body { flex: 1; overflow: auto; padding: var(--s2) var(--s4) var(--s4); display: grid; gap: var(--s4); align-content: start; }
+.cs-field { display: grid; gap: var(--s2); }
+.cs-field > span { font: 600 10.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
+.cs-swatches { display: flex; gap: var(--s2); }
+.cs-swatch { width: 28px; height: 28px; padding: 0; border-radius: 50%; border: 2px solid transparent; background: var(--sw); cursor: pointer; box-shadow: inset 0 0 0 2px var(--surface-1); transition: transform var(--d-fast) var(--ease-snap), border-color var(--d-fast); }
+.cs-swatch:hover { transform: scale(1.1); }
+.cs-swatch[aria-pressed="true"] { border-color: var(--sw); }
+.cs-toggle { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: 34px; cursor: pointer; }
+.cs-toggle input { appearance: none; width: 34px; height: 20px; margin: 0; border-radius: 99px; background: var(--surface-3); position: relative; cursor: pointer; transition: background var(--d-base); flex: none; }
+.cs-toggle input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--text-2); transition: transform var(--d-base) var(--ease-snap), background var(--d-base); }
+.cs-toggle input:checked { background: var(--accent); }
+.cs-toggle input:checked::after { transform: translateX(14px); background: var(--accent-ink); }
+
+/* ═══════════ Polish ═══════════ */
+/* scrollbars: slim rounded thumbs on a clear track, accent on hover */
+.cs-root ::-webkit-scrollbar { width: 10px; height: 10px; }
+.cs-root ::-webkit-scrollbar-track, .cs-root ::-webkit-scrollbar-corner { background: transparent; }
+.cs-root ::-webkit-scrollbar-thumb { min-height: 40px; background: var(--line-strong); background-clip: padding-box; border: 3px solid transparent; border-radius: 99px; }
+.cs-root ::-webkit-scrollbar-thumb:hover { background: var(--accent-line); background-clip: padding-box; border-width: 2px; }
+.cs-root ::-webkit-scrollbar-thumb:active { background: var(--accent); background-clip: padding-box; border-width: 2px; }
+.cs-rail::-webkit-scrollbar { width: 8px; height: 8px; }
+.cs-tabs::-webkit-scrollbar { display: none; }
+@supports not selector(::-webkit-scrollbar) {
+  .cs-root, .cs-root * { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+}
+
+/* narrow: the rail turns into one row of widgets that scrolls sideways and snaps */
+.cs-root[data-layout="narrow"] .cs-rail {
+  flex-direction: row; flex-wrap: nowrap; align-items: flex-start; gap: var(--s2);
+  overflow: auto hidden; scroll-snap-type: x proximity; scrollbar-gutter: auto;
+  padding: 10px 12px 8px;
+}
+.cs-root[data-layout="narrow"] .cs-rail > * { flex: 0 0 auto; scroll-snap-align: start; }
+.cs-root[data-layout="narrow"] .cs-vitals { display: grid; grid-template-columns: 232px 196px; grid-template-rows: auto auto; gap: 6px; }
+.cs-root[data-layout="narrow"] .cs-hpcard { grid-row: span 2; }
+.cs-root[data-layout="narrow"] .cs-rest { width: 212px; }
+.cs-root[data-layout="narrow"] .cs-stats { width: 236px; }
+.cs-root[data-layout="narrow"] .cs-magic { width: 224px; }
+.cs-root[data-layout="narrow"] .cs-effects { width: 244px; }
+.cs-root[data-layout="narrow"] .cs-chips { width: 168px; flex-direction: column; align-items: flex-start; }
+.cs-root[data-layout="narrow"] .cs-death { width: 196px; }
+
+/* rows: one line of tags with a soft fade, so row heights stay even */
+.cs-items[data-view="list"] .cs-meta > * { flex-shrink: 0; }
+.cs-items[data-view="list"] .cs-meta { flex-wrap: nowrap; white-space: nowrap; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+.cs-row:focus-visible { outline-offset: -2px; }
+.cs-sec-head h3 { transition: color var(--d-fast); }
+.cs-sec-head:hover h3 { color: var(--accent); }
+.cs-section[data-section="prepared"] .cs-sec-head .n { display: none; }
+
+/* features tinted by where they come from */
+[data-feat="class"] { --tone: var(--accent); }
+[data-feat="species"] { --tone: var(--school-trs); }
+[data-feat="background"] { --tone: var(--school-con); }
+
+/* settings: segmented controls share the width */
+.cs-drawer .cs-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+
+/* trade: the content steps aside so the offer buttons on rows stay reachable */
+.cs-root { transition: width var(--d-slow) var(--ease-settle), --accent 600ms var(--ease-settle), grid-template-columns var(--d-slow) var(--ease-settle); }
+.cs-root.is-trading:is([data-layout="standard"], [data-layout="wide"]) { --inspector-w: 344px; }
+.cs-root input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
+.cs-root input[type="number"]::-webkit-inner-spin-button, .cs-root input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* tabs shadow over scrolled content */
+.cs-tabs { z-index: 2; transition: box-shadow var(--d-base); }
+.cs-tabs.is-scrolled { box-shadow: 0 10px 18px -12px rgb(0 0 0 / 0.65); }
+
+/* ═══════════ Mock-only preview controls (outside the sheet) ═══════════ */
+.mock-preview { position: fixed; bottom: 14px; left: 50%; translate: -50% 0; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px; border-radius: 99px; background: #1a1d26; border: 1px solid rgb(255 255 255 / 0.12); font: 12px "Segoe UI", system-ui; color: #aaa499; z-index: 5; }
+.mock-xp { display: inline-flex; align-items: center; gap: 6px; margin-left: 6px; }
+.mock-xp input { width: 110px; accent-color: #d4a55a; }
+.mock-preview .cs-seg { background: #12141b; border-color: rgb(255 255 255 / 0.1); }
+.mock-preview .cs-seg button { color: #6e6a63; font: inherit; }
+.mock-preview .cs-seg button[aria-pressed="true"] { background: #2a2f3c; color: #ece6da; }
+/* Death tray: roll through dnd5e (rollDeathSave); marks stay clickable. */
+.cs-death-roll {
+  grid-column: 1 / -1; display: inline-flex; justify-content: center; align-items: center; gap: 6px;
+  padding: 6px; border-radius: var(--r-md); cursor: pointer;
+  border: 1px solid color-mix(in oklab, var(--hp) 45%, transparent);
+  background: color-mix(in oklab, var(--hp) 16%, var(--surface-2));
+  color: var(--text); font: 600 12px var(--font-ui);
+}
+.cs-death-roll .cs-ico { width: 14px; height: 14px; }
+.cs-death.is-stable .cs-death-roll, .cs-death.is-dead .cs-death-roll { display: none; }
+/* Roll result beside what was rolled: stands in for the dnd5e chat card in the mock. */
+.rp-chip {
+  position: absolute; translate: -50% -100%; z-index: 30; pointer-events: none; white-space: nowrap;
+  padding: 3px 8px; border-radius: 6px; background: var(--surface-3); border: 1px solid var(--line-strong);
+  color: var(--text); font: 600 11px var(--font-ui); animation: cs-pop var(--d-slow) var(--ease-snap);
+}
+
+/* ═══════════ PROTOTYPE (#10): rail HP variants, ?rail=A|B|C — throwaway ═══════════ */
+.rp-switch {
+  position: fixed; top: 12px; left: 50%; translate: -50% 0; z-index: 50;
+  display: flex; align-items: center; gap: 10px; padding: 5px 6px;
+  border-radius: 99px; background: #f4efe4; color: #1b1206; font: 600 12px system-ui, sans-serif;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.45);
+}
+.rp-switch button { width: 26px; height: 26px; border-radius: 50%; border: 0; background: #1b1206; color: #f4efe4; cursor: pointer; font: 700 13px system-ui, sans-serif; }
+.cs-hpcard { position: relative; }
+.rp-preview { opacity: 0; pointer-events: none; transition: opacity var(--d-fast); background: repeating-linear-gradient(135deg, currentColor 0 3px, transparent 3px 6px); }
+.rp-preview.is-on { opacity: 0.9; }
+.rp-preview.is-dmg { color: var(--hp); }
+.rp-preview.is-heal { color: var(--heal); }
+
+/* A — field */
+.rp-a { position: absolute; top: 6px; left: 8px; right: 8px; z-index: 2; }
+.rp-a input {
+  width: 100%; box-sizing: border-box; padding: 3px 10px; border-radius: var(--r-md);
+  background: var(--surface-0); color: var(--text); border: 1px solid var(--accent-line);
+  font: 700 20px var(--font-ui); outline: none;
+}
+.rp-a.is-bad input { border-color: var(--hp); }
+.rp-a-hint { display: none; color: var(--text-3); font-size: 10.5px; }
+.cs-hpcard.is-editing .rp-a-hint { display: inline; }
+.cs-hpcard.is-editing [data-hp-info] { display: none; }
+
+/* B — panel */
+.rp-b[hidden], .rp-a[hidden], .rp-c-tag[hidden] { display: none; }
+.rp-b { display: grid; gap: 6px; padding: 8px; background: var(--surface-2); border: 1px solid var(--accent-line); border-radius: var(--r-lg); }
+.rp-b button { border: 1px solid var(--line); background: var(--surface-3); color: var(--text); border-radius: var(--r-md); cursor: pointer; font: 600 12px var(--font-ui); padding: 5px 0; }
+.rp-b-amt { display: grid; grid-template-columns: 34px 1fr 34px; gap: 4px; }
+.rp-b-amt input { min-width: 0; text-align: center; font: 700 22px var(--font-ui); background: var(--surface-0); color: var(--text); border: 1px solid var(--line); border-radius: var(--r-md); }
+.rp-b-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.rp-b-acts { display: grid; grid-template-columns: 1fr 1fr 1.35fr; gap: 4px; }
+.rp-b-acts .is-dmg { color: var(--hp); border-color: color-mix(in oklab, var(--hp) 50%, transparent); }
+.rp-b-acts .is-heal { color: var(--heal); border-color: color-mix(in oklab, var(--heal) 50%, transparent); }
+.rp-b-acts .is-temp { color: var(--temp); border-color: color-mix(in oklab, var(--temp) 50%, transparent); }
+.rp-b .cs-ico { width: 12px; height: 12px; vertical-align: -2px; margin-right: 3px; }
+
+/* C — gesture */
+.cs-root[data-rail-variant="C"]:not([data-role="observer"]) .cs-hp { cursor: ew-resize; touch-action: none; }
+.rp-c-tag { position: absolute; top: 6px; right: 12px; z-index: 2; pointer-events: none; padding: 0 6px; border-radius: 6px; background: var(--surface-2); font: 800 20px var(--font-ui); }
+.rp-c-tag.is-dmg { color: var(--hp); }
+.rp-c-tag.is-heal { color: var(--heal); }
+.cs-hpcard.is-scrubbing .cs-hp-val { opacity: 0.3; }
+</style>
+</head>
+<body>
+<main data-mock-root="CharacterSheet">
+
+<div class="mock-preview" data-ui="mockRolePreview">
+  <span>Смотреть как</span>
+  <div class="cs-seg is-text" role="group" aria-label="Роль предпросмотра">
+    <button type="button" data-role-set="player" aria-pressed="true">Владелец</button>
+    <button type="button" data-role-set="observer" aria-pressed="false">Наблюдатель</button>
+    <button type="button" data-role-set="gm" aria-pressed="false">Мастер</button>
+  </div>
+  <label class="mock-xp" data-ui="mockXpPreview">Опыт <input type="range" min="0" max="100" value="72" data-mock-xp aria-label="Прогресс к следующему уровню"></label>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.4 8.4-7 10-3.6-1.6-7-5-7-10V6z"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></symbol>
+  <symbol id="i-sword" viewBox="0 0 24 24"><path d="M14.5 4H20v5.5L10 19.5 4.5 14z"/><path d="M7 17l-3 3M6 13l5 5"/></symbol>
+  <symbol id="i-staff" viewBox="0 0 24 24"><path d="M6 20L17 9"/><circle cx="18" cy="6" r="2.6"/><path d="M15 3.5l1 1M21 8.5l-1-1"/></symbol>
+  <symbol id="i-cloak" viewBox="0 0 24 24"><path d="M9 4h6l1 3 3 13H5L8 7z"/><path d="M12 7v13"/></symbol>
+  <symbol id="i-ring" viewBox="0 0 24 24"><circle cx="12" cy="14" r="6"/><path d="M10 5h4l-2 3z"/></symbol>
+  <symbol id="i-amulet" viewBox="0 0 24 24"><path d="M6 3c0 5 3 8 6 9 3-1 6-4 6-9"/><path d="M12 12l3 4-3 5-3-5z"/></symbol>
+  <symbol id="i-potion" viewBox="0 0 24 24"><path d="M10 3h4M10.5 3v5L6 15a4.5 4.5 0 0 0 4 6h4a4.5 4.5 0 0 0 4-6l-4.5-7V3"/><path d="M7.5 14h9"/></symbol>
+  <symbol id="i-scroll" viewBox="0 0 24 24"><path d="M7 4h11a2 2 0 0 1 0 4H8v10a2 2 0 1 1-4 0V7a3 3 0 0 1 3-3z"/><path d="M8 20h10a2 2 0 0 0 2-2v-1H10"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M12 8l1.2 2.2L15.5 11l-2.3.8L12 14l-1.2-2.2L8.5 11l2.3-.8z"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 9h12l1 11H5z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/></symbol>
+  <symbol id="i-boot" viewBox="0 0 24 24"><path d="M8 3h5v9l6 3v5H6V12z"/><path d="M6 17h13"/></symbol>
+  <symbol id="i-pouch" viewBox="0 0 24 24"><path d="M8 6h8l-1.5 2.5C18 10 19 13 18.5 16 18 19 15.5 21 12 21s-6-2-6.5-5C5 13 6 10 9.5 8.5z"/><path d="M9 6l3-2 3 2"/></symbol>
+  <symbol id="i-food" viewBox="0 0 24 24"><path d="M6 13a6 6 0 0 0 12 0z"/><path d="M4 13h16M9 9c0-2 2-2 2-4M13 9c0-2 2-2 2-4"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 21a6 6 0 0 0 6-6c0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-3-2 2-3 4-3 7a6 6 0 0 0 6 6z"/></symbol>
+  <symbol id="i-rope" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3.5"/><path d="M19 12c0 4 1 6 2 8"/></symbol>
+  <symbol id="i-tool" viewBox="0 0 24 24"><path d="M14 6a4 4 0 0 0 4 5l-8 8a2 2 0 0 1-3-3l8-8a4 4 0 0 0-1-2z"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3L5 13h6l-1 8 8-10h-6z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-hand" viewBox="0 0 24 24"><path d="M8 12V6a1.5 1.5 0 0 1 3 0v5M11 11V4.5a1.5 1.5 0 0 1 3 0V11M14 11V6a1.5 1.5 0 0 1 3 0v8a6 6 0 0 1-6 6h-.5A5.5 5.5 0 0 1 6 17.5L4.5 14a1.5 1.5 0 0 1 2.6-1.5L8 14"/></symbol>
+  <symbol id="i-head" viewBox="0 0 24 24"><path d="M5 14a7 7 0 0 1 14 0v2H5z"/><path d="M9 16v3h6v-3M12 7V4"/></symbol>
+  <symbol id="i-belt" viewBox="0 0 24 24"><path d="M3 10h18v4H3z"/><path d="M10 9h4v6h-4z"/></symbol>
+  <symbol id="i-armor" viewBox="0 0 24 24"><path d="M8 3l4 2 4-2 4 3-2 4v10H6V10L4 6z"/><path d="M12 5v15"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></symbol>
+  <symbol id="i-fire" viewBox="0 0 24 24"><path d="M5 20h14M8 20l4-6 4 6"/><path d="M12 13c2.5-1.5 3-3.5 1.5-6-.5 1.5-1.5 2-2.5 2 0-2-1-3.5-2.5-4.5 0 3-2 4-2 6.5a4 4 0 0 0 5.5 2z"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></symbol>
+  <symbol id="i-collapse" viewBox="0 0 24 24"><path d="M11 6l-6 6 6 6M19 6l-6 6 6 6"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path d="M13 6l6 6-6 6M5 6l6 6-6 6"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-tiles" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="4.5" height="4.5" rx="1"/><rect x="9.75" y="3.5" width="4.5" height="4.5" rx="1"/><rect x="16" y="3.5" width="4.5" height="4.5" rx="1"/><rect x="3.5" y="9.75" width="4.5" height="4.5" rx="1"/><rect x="9.75" y="9.75" width="4.5" height="4.5" rx="1"/><rect x="16" y="9.75" width="4.5" height="4.5" rx="1"/><rect x="3.5" y="16" width="4.5" height="4.5" rx="1"/><rect x="9.75" y="16" width="4.5" height="4.5" rx="1"/><rect x="16" y="16" width="4.5" height="4.5" rx="1"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+  <symbol id="i-dice" viewBox="0 0 24 24"><path d="M12 2.5l8.5 5v9L12 21.5l-8.5-5v-9z"/><path d="M12 2.5v19M3.5 7.5l17 9M20.5 7.5l-17 9"/></symbol>
+  <symbol id="i-doll" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><path d="M8.5 21l1-7.5-2.5-1L9 8.5h6l2 4-2.5 1 1 7.5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></symbol>
+  <symbol id="i-trade" viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
+  <symbol id="i-figure" viewBox="0 0 120 260"><path d="M60 8c11 0 19 9 19 21s-8 22-19 22-19-10-19-22S49 8 60 8zM38 58h44c12 0 20 8 22 20l8 62c1 6-8 8-10 2l-12-50v64l6 84c1 8-12 9-14 1L68 172h-16l-14 69c-2 8-15 7-14-1l6-84V92l-12 50c-2 6-11 4-10-2l8-62c2-12 10-20 22-20z" fill="currentColor" stroke="none" opacity=".35"/></symbol>
+</svg>
+
+<section class="cs-root" data-ui="CharacterSheet" data-layout="standard" data-theme="night" data-density="comfortable" data-motion="full" data-role="player" aria-label="Лист персонажа">
+
+  <!-- ═══════════ Rail ═══════════ -->
+  <aside class="cs-rail" data-ui="sheetRail" data-flip>
+    <div class="cs-rail-portrait" data-flip>
+      <div class="cs-avatar">ИВ</div>
+      <div style="flex:1;min-width:0">
+        <div class="cs-rail-name">Ирэн Вальмор</div>
+        <div class="cs-rail-sub">Волшебница 6 · Высший эльф</div>
+      </div>
+      <button type="button" class="cs-ibtn" data-ui="collapseButton" data-act="expand" aria-label="Развернуть лист"><svg class="cs-ico"><use href="#i-expand"/></svg></button>
+    </div>
+
+    <div class="cs-vitals" data-ui="vitals" data-flip>
+      <div class="cs-hpcard fx-spot" data-flip>
+        <button type="button" class="cs-hp" data-ui="hpBar" aria-label="Хиты: изменить">
+          <span class="cs-hp-top"><span class="cs-hp-label">Хиты</span><span class="cs-hp-val"><span data-hp-val>31</span><small>/<span data-hp-max>38</span></small><em data-hp-temp>+5</em></span></span>
+          <span class="cs-hp-bar"><i class="ghost" data-hp-ghost></i><i class="fill" data-hp-fill></i><i class="temp" data-hp-tempbar></i></span>
+        </button>
+        <div class="cs-hp-foot">
+          <span class="cs-hp-info" data-hp-info></span>
+          <span class="cs-hp-steps cs-editonly" data-ui="hpStepper">
+            <button type="button" data-hp-step="-5" aria-label="Урон 5">−5</button><button type="button" data-hp-step="-1" aria-label="Урон 1">−1</button><button type="button" data-hp-step="1" aria-label="Лечение 1">+1</button><button type="button" data-hp-step="5" aria-label="Лечение 5">+5</button><button type="button" class="is-temp-step" data-temp-set="8" aria-label="Временные хиты 8" title="Временные хиты 8: не складываются, остаётся большее"><svg class="cs-ico"><use href="#i-shield"/></svg>8</button>
+          </span>
+        </div>
+      </div>
+      <div class="cs-vrow" data-ui="hitDiceTrack" data-flip>
+        <span class="cs-vlabel">Кости хитов <b data-hd-val>4</b>/6 <span class="cs-formula">к6 + 2</span></span>
+        <span class="cs-dice" data-hd aria-label="Кости хитов: клик — бросить кость и вылечиться"></span>
+      </div>
+      <button type="button" class="cs-vrow is-link" data-ui="slotRunes" data-flip aria-label="Ячейки заклинаний: открыть заклинания">
+        <span class="cs-vlabel">Ячейки <b data-sl-val>9</b>/10</span>
+        <span class="cs-runes" data-runes></span>
+      </button>
+    </div>
+
+    <div class="cs-death" data-ui="deathSaves" data-flip hidden>
+      <span>Успехи</span><div class="row" data-death="ok"><button type="button" class="ok" aria-label="Успех 1"></button><button type="button" class="ok" aria-label="Успех 2"></button><button type="button" class="ok" aria-label="Успех 3"></button></div>
+      <span>Провалы</span><div class="row" data-death="bad"><button type="button" class="bad" aria-label="Провал 1"></button><button type="button" class="bad" aria-label="Провал 2"></button><button type="button" class="bad" aria-label="Провал 3"></button></div>
+      <div class="cs-death-state" data-death-state aria-live="polite"></div>
+      <button type="button" class="cs-death-roll" data-death-roll><svg class="cs-ico"><use href="#i-dice"/></svg>Бросить спасбросок от смерти</button>
+    </div>
+
+    <div class="cs-rest cs-editonly" data-ui="restBar" data-flip>
+      <button type="button" class="cs-rest-btn is-short fx-spot" data-ui="restButton" data-rest="short" data-oos="Открывает диалог короткого отдыха dnd5e: трата костей хитов, восстановление умений">
+        <span class="ic"><svg class="cs-ico"><use href="#i-fire"/></svg></span><span class="tx">Короткий отдых<small data-rest-short>4 кости хитов</small></span>
+      </button>
+      <button type="button" class="cs-rest-btn is-long fx-spot" data-ui="restButton" data-rest="long">
+        <span class="ic"><svg class="cs-ico"><use href="#i-moon"/></svg></span><span class="tx">Продолжительный отдых<small>Хиты, ячейки и умения</small></span>
+      </button>
+    </div>
+
+    <div class="cs-stats" data-flip>
+      <div class="cs-stat is-ac fx-spot" data-ui="vitalStat" title="Доспехи мага 13 + Лов 3 + Плащ защиты 1 + Кольцо защиты 1"><svg class="cs-ico cs-stat-bg"><use href="#i-shield"/></svg><b>18</b><span>КД</span></div>
+      <button type="button" class="cs-stat fx-spot" data-ui="vitalStat" data-oos="Бросает инициативу и добавляет в бой"><b>+3</b><span>Иниц.</span></button>
+      <div class="cs-stat" data-ui="vitalStat" title="Ходьба 30 фт"><b>30</b><span>Скор.</span></div>
+      <div class="cs-stat" data-ui="vitalStat"><b>+3</b><span>Маст.</span></div>
+    </div>
+
+    <div class="cs-magic" data-ui="spellcastingStrip" data-flip>
+      <span class="cs-magic-k">Интеллект</span>
+      <span class="cs-magic-v"><b>15</b><small>Сл</small></span>
+      <span class="cs-magic-v"><b>+7</b><small>Атака</small></span>
+      <span class="cs-magic-v" title="Пассивная внимательность"><b>14</b><small>Внимат.</small></span>
+    </div>
+
+    <div class="cs-effects" data-ui="effectsList" data-flip>
+      <div class="cs-rail-title"><span>Эффекты</span><button type="button" class="cs-ibtn cs-editonly cs-mini" data-ui="addEffectButton" aria-label="Добавить состояние" data-oos="Открывает список состояний dnd5e и эффектов на персонаже"><svg class="cs-ico"><use href="#i-plus"/></svg></button></div>
+      <div class="cs-effect-list" data-effects></div>
+    </div>
+
+    <div class="cs-chips" data-flip>
+      <button type="button" class="cs-chip" data-ui="inspirationToggle" aria-pressed="false"><svg class="cs-ico"><use href="#i-spark"/></svg>Вдохновение</button>
+      <button type="button" class="cs-chip" data-ui="exhaustionTrack" aria-label="Истощение: клик +1, правый клик −1">Истощение <span class="cs-pips" data-exh></span></button>
+      <button type="button" class="cs-chip is-conc" data-ui="concentrationBadge" hidden><svg class="cs-ico"><use href="#i-eye"/></svg><span data-conc-name></span><svg class="cs-ico"><use href="#i-close"/></svg></button>
+    </div>
+
+    <div class="cs-rail-fav" data-ui="favoritesList" data-flip>
+      <div class="cs-rail-title"><span>Избранное</span><span data-fav-count></span></div>
+      <ul class="cs-fav-list" data-fav-list></ul>
+    </div>
+  </aside>
+
+  <!-- ═══════════ Main ═══════════ -->
+  <div class="cs-main" data-flip>
+    <header class="cs-header" data-ui="sheetHeader">
+      <div class="cs-title">
+        <div class="cs-level" data-ui="levelOrb" role="img" data-level-orb>
+          <div class="cs-liquid"><svg class="cs-wave is-back" viewBox="0 0 120 14" preserveAspectRatio="none"><path d="M0 6 Q15 0 30 6 T60 6 T90 6 T120 6 V14 H0z"/></svg><svg class="cs-wave" viewBox="0 0 120 14" preserveAspectRatio="none"><path d="M0 6 Q15 0 30 6 T60 6 T90 6 T120 6 V14 H0z"/></svg><i class="cs-bubble" style="left:28%;animation-delay:0s"></i><i class="cs-bubble" style="left:58%;animation-delay:1.1s"></i><i class="cs-bubble" style="left:44%;animation-delay:1.9s"></i></div>
+          <span class="cs-level-n">6</span>
+        </div>
+        <div style="min-width:0">
+          <h2 class="cs-name">Ирэн Вальмор</h2>
+          <div class="cs-sub">Волшебница 6 · Школа Воплощения · Высший эльф · Мудрец</div>
+        </div>
+      </div>
+      <div class="cs-tools">
+        <span class="cs-readonly-badge"><svg class="cs-ico"><use href="#i-lock"/></svg>Только просмотр</span>
+        <button type="button" class="cs-ibtn" data-ui="settingsButton" aria-label="Настройки листа" title="Настройки листа"><svg class="cs-ico"><use href="#i-gear"/></svg></button>
+        <button type="button" class="cs-ibtn" data-ui="collapseButton" data-act="collapse" aria-label="Свернуть в колонку" title="Свернуть в колонку"><svg class="cs-ico"><use href="#i-collapse"/></svg></button>
+      </div>
+      <div class="cs-abilities" data-abilities></div>
+    </header>
+
+    <nav class="cs-tabs" role="tablist" data-ui="sheetTabs">
+      <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="overview" aria-selected="false">Обзор</button>
+      <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="equipment" aria-selected="true">Снаряжение <span class="n" data-count="items"></span></button>
+      <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="spells" aria-selected="false">Заклинания <span class="n" data-count="spells"></span></button>
+      <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="features" aria-selected="false">Умения <span class="n" data-count="features"></span></button>
+      <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="notes" aria-selected="false">Заметки</button>
+      <span class="cs-tab-ink" aria-hidden="true"></span>
+    </nav>
+
+    <div class="cs-panels">
+      <!-- Overview -->
+      <div class="cs-panel" data-panel="overview" data-ui="overviewTab" hidden>
+        <div class="cs-overview">
+          <div class="cs-card fx-spot" data-ui="skillsCard"><h3>Навыки</h3><div data-skills></div></div>
+          <div class="cs-card fx-spot" data-ui="savesCard"><h3>Спасброски</h3><div data-saves></div></div>
+          <div class="cs-card fx-spot" data-ui="sensesCard"><h3>Чувства и владения</h3>
+            <div class="cs-kv"><span>Пассивная внимательность</span><b>14</b></div>
+            <div class="cs-kv"><span>Пассивный анализ</span><b>17</b></div>
+            <div class="cs-kv"><span>Пассивная проницательность</span><b>14</b></div>
+            <div class="cs-kv"><span>Тёмное зрение</span><b>60 фт</b></div>
+            <div class="cs-kv"><span>Оружие</span><b>Простое</b></div>
+            <div class="cs-kv"><span>Языки</span><b>Общий, эльфийский, драконий</b></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Equipment -->
+      <div class="cs-panel" data-panel="equipment" data-ui="equipmentTab">
+        <div class="cs-toolbar" data-ui="inventoryToolbar">
+          <label class="cs-search" data-ui="searchField"><svg class="cs-ico"><use href="#i-search"/></svg><input type="search" placeholder="Найти предмет" data-search="items"></label>
+          <div class="cs-seg" role="group" aria-label="Вид" data-ui="viewModeSwitch" data-view-for="items">
+            <button type="button" data-view="list" aria-label="Список"><svg class="cs-ico"><use href="#i-list"/></svg></button>
+            <button type="button" data-view="grid" aria-label="Карточки"><svg class="cs-ico"><use href="#i-grid"/></svg></button>
+            <button type="button" data-view="icons" aria-label="Только иконки"><svg class="cs-ico"><use href="#i-tiles"/></svg></button>
+          </div>
+          <button type="button" class="cs-btn cs-editonly cs-playeronly" data-ui="tradeButton" aria-expanded="false"><svg class="cs-ico"><use href="#i-trade"/></svg>Обмен</button>
+          <button type="button" class="cs-ibtn is-on" data-ui="dollToggle" aria-pressed="true" aria-label="Показать куклу" title="Кукла"><svg class="cs-ico"><use href="#i-doll"/></svg></button>
+        </div>
+        <div class="cs-purse" data-ui="currencyBar">
+          <span data-coins style="display:contents"></span>
+          <div class="cs-load" data-ui="encumbranceMeter"><span data-load-text></span><div class="bar"><i data-load-bar></i></div></div>
+        </div>
+        <div class="cs-equip has-doll">
+          <div class="cs-doll" data-ui="paperdoll" data-doll></div>
+          <div data-inventory></div>
+        </div>
+      </div>
+
+      <!-- Spells -->
+      <div class="cs-panel" data-panel="spells" data-ui="spellsTab" hidden>
+        <div class="cs-toolbar">
+          <label class="cs-search" data-ui="searchField"><svg class="cs-ico"><use href="#i-search"/></svg><input type="search" placeholder="Найти заклинание" data-search="spells"></label>
+          <div class="cs-seg" role="group" aria-label="Вид" data-ui="viewModeSwitch" data-view-for="spells">
+            <button type="button" data-view="list" aria-label="Список"><svg class="cs-ico"><use href="#i-list"/></svg></button>
+            <button type="button" data-view="grid" aria-label="Карточки"><svg class="cs-ico"><use href="#i-grid"/></svg></button>
+            <button type="button" data-view="icons" aria-label="Только иконки"><svg class="cs-ico"><use href="#i-tiles"/></svg></button>
+          </div>
+        </div>
+        <div class="cs-slots" data-ui="slotTrack" data-slots></div>
+        <div data-spells></div>
+      </div>
+
+      <!-- Features -->
+      <div class="cs-panel" data-panel="features" data-ui="featuresTab" hidden>
+        <div class="cs-toolbar">
+          <label class="cs-search" data-ui="searchField"><svg class="cs-ico"><use href="#i-search"/></svg><input type="search" placeholder="Найти умение" data-search="features"></label>
+          <div class="cs-seg" role="group" aria-label="Вид" data-ui="viewModeSwitch" data-view-for="features">
+            <button type="button" data-view="list" aria-label="Список"><svg class="cs-ico"><use href="#i-list"/></svg></button>
+            <button type="button" data-view="grid" aria-label="Карточки"><svg class="cs-ico"><use href="#i-grid"/></svg></button>
+            <button type="button" data-view="icons" aria-label="Только иконки"><svg class="cs-ico"><use href="#i-tiles"/></svg></button>
+          </div>
+        </div>
+        <div data-features></div>
+      </div>
+
+      <!-- Notes -->
+      <div class="cs-panel cs-notes" data-panel="notes" data-ui="notesTab" hidden>
+        <textarea data-ui="notesField" aria-label="Заметки">Долг перед Гильдией свитков — 40 зм до конца месяца.
+Посох нашла в руинах Кель-Аммара; на навершии руна, которую никто не может прочесть.</textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ Inspector (wide only) ═══════════ -->
+  <aside class="cs-inspector" data-ui="inspectorPanel" data-flip>
+    <div class="cs-insp-empty" data-insp-empty>Выберите предмет, заклинание или умение,<br>чтобы увидеть подробности.</div>
+    <div data-insp></div>
+  </aside>
+
+  <!-- ═══════════ Trade (non-modal: the inventory stays usable beside it) ═══════════ -->
+  <div class="cs-trade" data-ui="tradePanel" role="dialog" aria-label="Обмен" data-trade></div>
+
+  <!-- ═══════════ Settings ═══════════ -->
+  <div class="cs-scrim" data-close-settings></div>
+  <div class="cs-drawer" data-ui="settingsDrawer" role="dialog" aria-label="Настройки листа">
+    <div class="cs-drawer-head"><h3>Настройки листа</h3><button type="button" class="cs-ibtn" data-close-settings aria-label="Закрыть"><svg class="cs-ico"><use href="#i-close"/></svg></button></div>
+    <div class="cs-drawer-body">
+      <div class="cs-field"><span>Тема</span>
+        <div class="cs-seg is-text" role="group" data-ui="themeSwitch" data-set="theme">
+          <button type="button" data-value="night" aria-pressed="true">Ночь</button>
+          <button type="button" data-value="parchment" aria-pressed="false">Пергамент</button>
+        </div>
+      </div>
+      <div class="cs-field"><span>Акцент</span>
+        <div class="cs-swatches" data-ui="accentSwatch" data-accent>
+          <button type="button" class="cs-swatch" style="--sw:#d4a55a" data-value="#d4a55a" aria-label="Латунь" aria-pressed="true"></button>
+          <button type="button" class="cs-swatch" style="--sw:#e2734a" data-value="#e2734a" aria-label="Угли" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:#9b7bff" data-value="#9b7bff" aria-label="Аркана" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:#5fbf8f" data-value="#5fbf8f" aria-label="Лес" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:#6fb7e8" data-value="#6fb7e8" aria-label="Иней" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:#e07aa0" data-value="#e07aa0" aria-label="Роза" aria-pressed="false"></button>
+        </div>
+      </div>
+      <div class="cs-field"><span>Плотность</span>
+        <div class="cs-seg is-text" role="group" data-ui="densitySwitch" data-set="density">
+          <button type="button" data-value="comfortable" aria-pressed="true">Свободно</button>
+          <button type="button" data-value="compact" aria-pressed="false">Плотно</button>
+        </div>
+      </div>
+      <div class="cs-field"><span>Анимации</span>
+        <div class="cs-seg is-text" role="group" data-ui="motionSwitch" data-set="motion">
+          <button type="button" data-value="full" aria-pressed="true">Все</button>
+          <button type="button" data-value="off" aria-pressed="false">Выключены</button>
+        </div>
+      </div>
+      <div class="cs-field" data-ui="railWidgetToggle"><span>Боковая колонка</span>
+        <label class="cs-toggle">Кости хитов<input type="checkbox" checked data-widget="hitDiceTrack"></label>
+        <label class="cs-toggle">Ячейки заклинаний<input type="checkbox" checked data-widget="slotRunes"></label>
+        <label class="cs-toggle">Характеристики КД, иниц., скорость<input type="checkbox" checked data-widget="vitalStat"></label>
+        <label class="cs-toggle">Сл и атака заклинаний<input type="checkbox" checked data-widget="spellcastingStrip"></label>
+        <label class="cs-toggle">Эффекты<input type="checkbox" checked data-widget="effectsList"></label>
+        <label class="cs-toggle">Вдохновение и истощение<input type="checkbox" checked data-widget="chips"></label>
+        <label class="cs-toggle">Кнопки отдыха<input type="checkbox" checked data-widget="restBar"></label>
+        <label class="cs-toggle">Избранное<input type="checkbox" checked data-widget="favoritesList"></label>
+      </div>
+      <div class="cs-field" data-ui="tabVisibilityToggle"><span>Вкладки</span>
+        <label class="cs-toggle">Обзор<input type="checkbox" checked data-tab-toggle="overview"></label>
+        <label class="cs-toggle">Умения<input type="checkbox" checked data-tab-toggle="features"></label>
+        <label class="cs-toggle">Заметки<input type="checkbox" checked data-tab-toggle="notes"></label>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<script>
+(() => {
+  const root = document.querySelector(".cs-root");
+  const $ = (s, el = root) => el.querySelector(s);
+  const $$ = (s, el = root) => [...el.querySelectorAll(s)];
+  const icon = (id) => `<svg class="cs-ico"><use href="#i-${id}"/></svg>`;
+  const motionOn = () => root.dataset.motion !== "off" && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const SETTLE = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+  /* ═══════════ Data, shaped like a dnd5e 5.3.3 actor ═══════════ */
+  const ABILITIES = [
+    { key: "str", label: "Сил", value: 8, save: false },
+    { key: "dex", label: "Лов", value: 16, save: false },
+    { key: "con", label: "Тел", value: 14, save: false },
+    { key: "int", label: "Инт", value: 18, save: true },
+    { key: "wis", label: "Мдр", value: 12, save: true },
+    { key: "cha", label: "Хар", value: 10, save: false }
+  ];
+  const PROF = 3;
+  const PREP_MAX = 10; // Wizard 6 (2024): prepared spells from the class table
+  const SKILLS = [
+    ["Акробатика", "dex", 0], ["Анализ", "int", 1], ["Атлетика", "str", 0], ["Внимательность", "wis", 1],
+    ["Выживание", "wis", 0], ["Выступление", "cha", 0], ["Запугивание", "cha", 0], ["История", "int", 1],
+    ["Ловкость рук", "dex", 0], ["Магия", "int", 2], ["Медицина", "wis", 0], ["Обман", "cha", 0],
+    ["Природа", "int", 0], ["Проницательность", "wis", 1], ["Религия", "int", 0], ["Скрытность", "dex", 0],
+    ["Убеждение", "cha", 0], ["Уход за животными", "wis", 0]
+  ];
+  const SLOTS = { head: ["Голова", "head"], neck: ["Шея", "amulet"], cloak: ["Плащ", "cloak"], armor: ["Доспех", "armor"], hands: ["Руки", "hand"],
+    waist: ["Пояс", "belt"], feet: ["Обувь", "boot"], ring1: ["Кольцо", "ring"], ring2: ["Кольцо", "ring"], mainHand: ["Осн. рука", "sword"], offHand: ["Вт. рука", "shield"],
+    eyes: ["Глаза", "eye"], ears: ["Уши", "spark"], shoulders: ["Плечи", "armor"], wrists: ["Наручи", "shield"],
+    ring3: ["Кольцо 3", "ring"], ring4: ["Кольцо 4", "ring"], quiver: ["Колчан", "sword"], beltPouch: ["Сумка", "pouch"] };
+  const DOLL_LAYOUT = [["head", 1, 1], ["neck", 1, 2], ["cloak", 1, 3], ["armor", 1, 4], ["mainHand", 1, 5],
+    ["hands", 3, 1], ["waist", 3, 2], ["feet", 3, 3], ["ring1", 3, 4], ["offHand", 3, 5]];
+  // A GM picks a preset per actor; slots past the ten beside the figure overflow into a wrapping grid.
+  const PRESETS = {
+    standard: { name: "Стандарт 2024", attune: 3, extras: [] },
+    extended: { name: "Расширенный · 19 слотов", attune: 8, extras: ["eyes", "ears", "shoulders", "wrists", "ring2", "ring3", "ring4", "quiver", "beltPouch"] }
+  };
+  const presetSlots = () => [...DOLL_LAYOUT.map(([slot]) => slot), ...PRESETS[S.preset].extras];
+  const fitsHere = (it) => (it.slots ?? []).filter((slot) => presetSlots().includes(slot));
+
+  const items = [
+    { id: "staff", name: "Боевой посох Кель-Аммара", group: "weapon", icon: "staff", rarity: "uncommon", act: "action", roll: "+3 · 1к6 + 1 дроб.", qty: 1, wt: 4, slots: ["mainHand"], tags: ["Универсальное", "1к6 / 1к8"], desc: "Магическое оружие +1. Пока посох у вас в руках, вы получаете +1 к броскам атаки заклинаниями." },
+    { id: "dagger", name: "Кинжал", group: "weapon", icon: "sword", rarity: "common", qty: 2, wt: 1, slots: ["mainHand", "offHand"], tags: ["Лёгкое", "Фехтовальное", "Метательное"], desc: "Колющий урон 1к4. Дистанция броска 20/60 фт." },
+    { id: "cloak", name: "Плащ защиты", group: "gear", icon: "cloak", rarity: "uncommon", qty: 1, wt: 1, slots: ["cloak"], attune: true, tags: ["Настройка"], desc: "+1 к КД и спасброскам, пока вы настроены на этот плащ." },
+    { id: "ring", name: "Кольцо защиты", group: "gear", icon: "ring", rarity: "rare", qty: 1, wt: 0, slots: ["ring1", "ring2", "ring3", "ring4"], attune: true, tags: ["Настройка"], desc: "+1 к КД и спасброскам, пока вы настроены на это кольцо." },
+    { id: "amulet", name: "Амулет здоровья", group: "gear", icon: "amulet", rarity: "rare", qty: 1, wt: 1, slots: ["neck"], attune: true, tags: ["Настройка"], desc: "Ваше Телосложение становится равным 19, пока вы носите амулет." },
+    { id: "goggles", name: "Очки ночного видения", group: "gear", icon: "eye", rarity: "uncommon", qty: 1, wt: 0, slots: ["eyes"], tags: [], desc: "Тёмное зрение 60 фт, пока очки на вас." },
+    { id: "bracers", name: "Наручи защиты", group: "gear", icon: "shield", rarity: "rare", qty: 1, wt: 1, slots: ["wrists"], attune: true, tags: ["Настройка"], desc: "+2 к КД, пока на вас нет доспеха и щита." },
+    { id: "boots", name: "Эльфийские сапоги", group: "gear", icon: "boot", rarity: "uncommon", qty: 1, wt: 1, slots: ["feet"], tags: [], desc: "Ваши шаги не издают звуков на любой поверхности." },
+    { id: "potion", name: "Зелье лечения", group: "consumable", icon: "potion", rarity: "common", act: "bonus", roll: "2к4 + 2 хита", qty: 3, wt: 0.5, tags: ["2к4+2"], desc: "Бонусным действием вы восстанавливаете 2к4 + 2 хита." },
+    { id: "scroll", name: "Свиток: Огненный шар", group: "consumable", icon: "scroll", rarity: "uncommon", qty: 1, wt: 0, tags: ["3 круг"], desc: "Одноразовый свиток заклинания 3 круга." },
+    { id: "book", name: "Книга заклинаний", group: "gear", icon: "book", rarity: "common", qty: 1, wt: 3, tags: ["Фокусировка"], desc: "Переплёт из кожи василиска, 14 заклинаний." },
+    { id: "pouch", name: "Мешочек с компонентами", group: "gear", icon: "pouch", rarity: "common", qty: 1, wt: 2, tags: [], desc: "Материальные компоненты без указанной стоимости." },
+    { id: "rope", name: "Верёвка, 50 фт", group: "pack", icon: "rope", rarity: "common", qty: 1, wt: 5, tags: [], desc: "Пеньковая верёвка." },
+    { id: "ration", name: "Рацион", group: "pack", icon: "food", rarity: "common", qty: 5, wt: 2, tags: [], desc: "Сухари, вяленое мясо, сушёные фрукты на день." },
+    { id: "torch", name: "Факел", group: "pack", icon: "flame", rarity: "common", qty: 3, wt: 1, tags: [], desc: "Яркий свет в радиусе 20 фт на 1 час." },
+    { id: "kit", name: "Набор учёного", group: "pack", icon: "tool", rarity: "common", qty: 1, wt: 1, tags: [], desc: "Перо, чернила, пергамент, песочные часы." }
+  ];
+  const GROUPS = [["weapon", "Оружие"], ["gear", "Снаряжение"], ["consumable", "Расходуемое"], ["pack", "Рюкзак"]];
+
+  const SCHOOLS = { abj: "Ограждение", con: "Вызов", div: "Прорицание", enc: "Очарование", evo: "Воплощение", ill: "Иллюзия", nec: "Некромантия", trs: "Преобразование" };
+  const spells = [
+    { id: "firebolt", name: "Огненный снаряд", lvl: 0, school: "evo", icon: "flame", act: "action", roll: "+7 · 2к10 огонь", tags: ["1 действие", "120 фт"], desc: "Дальнобойная атака заклинанием, 2к10 урона огнём." },
+    { id: "light", name: "Свет", lvl: 0, school: "evo", icon: "spark", tags: ["1 действие", "Касание"], desc: "Предмет испускает яркий свет в радиусе 20 фт." },
+    { id: "hand", name: "Волшебная рука", lvl: 0, school: "con", icon: "hand", tags: ["1 действие", "30 фт"], desc: "Призрачная рука переносит до 10 фунтов." },
+    { id: "presti", name: "Фокусы", lvl: 0, school: "trs", icon: "spark", tags: ["1 действие", "10 фт"], desc: "Небольшой магический трюк." },
+    { id: "missile", prep: true, name: "Волшебная стрела", lvl: 1, school: "evo", icon: "bolt", act: "action", roll: "3 × 1к4 + 1 силовым", tags: ["1 действие", "120 фт"], desc: "Три дротика по 1к4 + 1 урона силовым полем." },
+    { id: "shield", prep: true, name: "Щит", lvl: 1, school: "abj", icon: "shield", act: "reaction", roll: "+5 к КД до хода", tags: ["Реакция", "На себя"], desc: "+5 к КД до начала вашего следующего хода." },
+    { id: "armor", prep: true, name: "Доспехи мага", lvl: 1, school: "abj", icon: "armor", tags: ["1 действие", "8 часов"], desc: "КД цели становится 13 + модификатор Ловкости." },
+    { id: "detect", prep: true, name: "Обнаружение магии", lvl: 1, school: "div", icon: "eye", conc: true, ritual: true, tags: ["1 действие", "30 фт"], desc: "Вы чувствуете присутствие магии в радиусе 30 фт." },
+    { id: "familiar", name: "Поиск фамильяра", lvl: 1, school: "con", icon: "eye", ritual: true, tags: ["1 час", "10 фт"], desc: "Вы призываете духа, который принимает облик животного-фамильяра." },
+    { id: "misty", prep: true, name: "Туманный шаг", lvl: 2, school: "con", icon: "cloak", act: "bonus", roll: "Телепорт 30 фт", tags: ["Бонусное", "30 фт"], desc: "Вы телепортируетесь на 30 фт в видимое место." },
+    { id: "web", prep: true, name: "Паутина", lvl: 2, school: "con", icon: "rope", conc: true, tags: ["1 действие", "60 фт"], desc: "Куб 20 фт заполняется липкой паутиной." },
+    { id: "hold", name: "Удержание личности", lvl: 2, school: "enc", icon: "hand", conc: true, tags: ["1 действие", "60 фт"], desc: "Гуманоид должен преуспеть в спасброске Мудрости или стать парализованным." },
+    { id: "fireball", prep: true, name: "Огненный шар", lvl: 3, school: "evo", icon: "flame", act: "action", roll: "Сл 15 Лов · 8к6", tags: ["1 действие", "150 фт"], desc: "Сфера радиусом 20 фт, 8к6 урона огнём, спасбросок Ловкости." },
+    { id: "counter", prep: true, name: "Контрзаклинание", lvl: 3, school: "abj", icon: "close", tags: ["Реакция", "60 фт"], desc: "Прерывает сотворение заклинания 3 круга или ниже." },
+    { id: "fly", name: "Полёт", lvl: 3, school: "trs", icon: "cloak", conc: true, tags: ["1 действие", "Касание"], desc: "Цель получает скорость полёта 60 фт." }
+  ];
+  const features = [
+    { id: "recovery", name: "Магическое восстановление", src: "Волшебник", icon: "book", uses: [1, 1], tags: ["Короткий отдых"], desc: "Раз в день после короткого отдыха восстановите ячейки суммарного круга до 3." },
+    { id: "sculpt", name: "Скульптор заклинаний", src: "Волшебник", icon: "spark", tags: ["Воплощение"], desc: "Выбранные существа автоматически преуспевают в спасброске от вашего заклинания воплощения." },
+    { id: "potent", name: "Мощные заговоры", src: "Волшебник", icon: "flame", tags: ["Воплощение"], desc: "Существо получает половину урона от заговора даже при успешном спасброске." },
+    { id: "dark", name: "Тёмное зрение", src: "Высший эльф", icon: "eye", tags: ["60 фт"], desc: "Вы видите в тусклом свете как в ярком, а в темноте как в тусклом." },
+    { id: "fey", name: "Наследие фей", src: "Высший эльф", icon: "star", tags: [], desc: "Преимущество на спасброски от очарования, магия не может вас усыпить." },
+    { id: "initiate", name: "Посвящённый в магию", src: "Мудрец", icon: "scroll", uses: [1, 1], tags: ["Продолжительный отдых"], desc: "Одно заклинание 1 круга без ячейки раз в день." }
+  ];
+
+  /* ═══════════ State ═══════════ */
+  const S = {
+    tab: "equipment",
+    view: { items: "list", spells: "list", features: "list" },
+    search: { items: "", spells: "", features: "" },
+    collapsed: new Set(),
+    selected: null,
+    hp: 31, hpMax: 38, temp: 5, hd: 4,
+    slots: { 1: [4, 4], 2: [3, 3], 3: [2, 3] },
+    equipped: { mainHand: "staff", neck: "amulet", cloak: "cloak", feet: "boots", ring1: "ring" },
+    attuned: new Set(["cloak", "ring"]),
+    preset: "standard",
+    xp: { value: 20500, from: 14000, to: 23000, level: 6 },
+    coins: { pp: 2, gp: 147, sp: 23, cp: 41 },
+    trade: { status: "idle", partner: "torvin", mine: {}, myCoins: {}, theirs: [], theirCoins: {}, confirmed: [false, false] },
+    favorites: ["firebolt", "fireball", "staff", "misty", "potion", "shield"],
+    conc: null,
+    exh: 0,
+    death: { ok: 0, bad: 0 },
+    width: 1040
+  };
+  const byId = Object.fromEntries([...items, ...spells, ...features].map((x) => [x.id, x]));
+  const kind = (x) => (spells.includes(x) ? "spell" : features.includes(x) ? "feature" : "item");
+  const mod = (v) => Math.floor((v - 10) / 2);
+  const sign = (n) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
+  const canEdit = () => root.dataset.role !== "observer";
+  const slotOf = (id) => Object.keys(S.equipped).find((k) => S.equipped[k] === id);
+
+  /* ═══════════ Motion helpers ═══════════ */
+  function rects(els) { return new Map(els.map((el) => [el.dataset.key ?? el, el.getBoundingClientRect()])); }
+  // FLIP: elements keep their place visually while the layout changes, then glide to the new one.
+  function flip(container, selector, mutate, { fadeIn = true } = {}) {
+    if (!motionOn()) return mutate();
+    const before = rects($$(selector, container));
+    mutate();
+    for (const el of $$(selector, container)) {
+      const key = el.dataset.key ?? el;
+      const a = before.get(key);
+      const b = el.getBoundingClientRect();
+      if (!b.width) continue;
+      if (!a) { if (fadeIn) el.animate([{ opacity: 0, transform: "scale(0.92)" }, { opacity: 1, transform: "none" }], { duration: 260, easing: SETTLE }); continue; }
+      const dx = a.left - b.left, dy = a.top - b.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
+      el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }], { duration: 420, easing: SETTLE });
+    }
+  }
+  function fly(fromEl, toEl, tileHTML) {
+    if (!motionOn() || !fromEl || !toEl) return;
+    const a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect();
+    const ghost = document.createElement("div");
+    ghost.className = "cs-flyer";
+    ghost.innerHTML = tileHTML;
+    Object.assign(ghost.style, { left: `${a.left}px`, top: `${a.top}px`, width: `${a.width}px`, height: `${a.height}px` });
+    root.append(ghost);
+    const tile = ghost.firstElementChild;
+    if (tile) Object.assign(tile.style, { width: "100%", height: "100%" });
+    const dx = b.left + b.width / 2 - (a.left + a.width / 2), dy = b.top + b.height / 2 - (a.top + a.height / 2);
+    ghost.animate([
+      { transform: "translate(0,0) scale(1)", opacity: 1 },
+      { transform: `translate(${dx * 0.5}px, ${dy * 0.5 - 40}px) scale(1.15)`, opacity: 1, offset: 0.45 },
+      { transform: `translate(${dx}px, ${dy}px) scale(${b.width / a.width})`, opacity: 0.9 }
+    ], { duration: 520, easing: SETTLE }).finished.then(() => ghost.remove());
+  }
+  function countTo(el, to) {
+    const from = Number(el.textContent) || 0;
+    if (!motionOn() || from === to) { el.textContent = to; return; }
+    const t0 = performance.now();
+    const step = (t) => { const p = Math.min(1, (t - t0) / 420); const e = 1 - (1 - p) ** 3; el.textContent = Math.round(from + (to - from) * e); if (p < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+    // Hidden tabs get no animation frames: land on the final value anyway.
+    el.dataset.countTo = to;
+    setTimeout(() => { el.textContent = el.dataset.countTo; }, 460);
+  }
+  // Floating number over the HP value.
+  function floatText(text, cls) {
+    if (!motionOn()) return;
+    const anchor = $("[data-hp-val]").getBoundingClientRect(), box = root.getBoundingClientRect();
+    const el = document.createElement("span");
+    el.className = `cs-float ${cls}`;
+    el.textContent = text;
+    el.style.left = `${anchor.left - box.left + anchor.width / 2 + (Math.random() * 16 - 8)}px`;
+    el.style.top = `${anchor.top - box.top - 6}px`;
+    root.append(el);
+    el.addEventListener("animationend", () => el.remove(), { once: true });
+  }
+  // Sparks flying out of an element in a given colour.
+  function burst(from, color, n = 10) {
+    if (!motionOn() || !from) return;
+    const a = from.getBoundingClientRect(), box = root.getBoundingClientRect();
+    if (!a.width) return;
+    const cx = a.left - box.left + a.width / 2, cy = a.top - box.top + a.height / 2;
+    for (let i = 0; i < n; i++) {
+      const p = document.createElement("i");
+      p.className = "fx-spark";
+      p.style.setProperty("--c", color);
+      p.style.left = `${cx}px`; p.style.top = `${cy}px`;
+      root.append(p);
+      const ang = (Math.PI * 2 * i) / n + Math.random() * 0.6, dist = 18 + Math.random() * 22;
+      p.animate([{ transform: "translate(0,0) scale(1)", opacity: 1 }, { transform: `translate(${Math.cos(ang) * dist}px, ${Math.sin(ang) * dist}px) scale(0.2)`, opacity: 0 }],
+        { duration: 520 + Math.random() * 200, easing: SETTLE }).finished.then(() => p.remove());
+    }
+  }
+  // Shield shards: thin glints thrown out of the temp band, more and further when it breaks.
+  function shards(from, n, reach) {
+    if (!motionOn() || !from) return;
+    const a = from.getBoundingClientRect(), box = root.getBoundingClientRect();
+    const cx = a.right - box.left, cy = a.top - box.top + a.height / 2;
+    for (let i = 0; i < n; i++) {
+      const p = document.createElement("i");
+      p.className = "fx-shard";
+      p.style.left = `${cx}px`; p.style.top = `${cy}px`;
+      root.append(p);
+      const ang = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.6, dist = reach * (0.5 + Math.random() * 0.7), spin = Math.random() * 540 - 270;
+      p.animate([{ transform: "translate(0,0) rotate(0deg)", opacity: 1 }, { transform: `translate(${Math.cos(ang) * dist}px, ${Math.sin(ang) * dist + 10}px) rotate(${spin}deg)`, opacity: 0 }],
+        { duration: 600 + Math.random() * 300, easing: SETTLE }).finished.then(() => p.remove());
+    }
+  }
+  const toneOf = (el) => getComputedStyle(el).getPropertyValue("--tone").trim() || getComputedStyle(root).getPropertyValue("--accent").trim();
+  // Entries arrive in a short cascade instead of all at once.
+  function cascade(els) {
+    if (!motionOn()) return;
+    els.slice(0, 24).forEach((el, i) => el.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 280, delay: i * 18, easing: SETTLE, fill: "backwards" }));
+  }
+  function pulse(el, cls) { if (!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); el.addEventListener("animationend", () => el.classList.remove(cls), { once: true }); }
+  const pct = (v, max) => `${Math.max(0, Math.min(100, (v / max) * 100))}%`;
+
+  /* ═══════════ Render ═══════════ */
+  const FEAT_KIND = { "Волшебник": "class", "Высший эльф": "species", "Мудрец": "background" };
+  function tile(x, extra = "") {
+    const tone = kind(x) === "spell" ? `data-school="${x.school}"` : kind(x) === "item" ? `data-rarity="${x.rarity}"` : `data-feat="${FEAT_KIND[x.src] ?? "class"}"`;
+    const qty = x.qty > 1 ? `<span class="qty">${x.qty}</span>` : "";
+    return `<span class="cs-tile" ${tone}>${icon(x.icon)}${qty}${extra}</span>`;
+  }
+  function row(x, sec = "") {
+    const k = kind(x);
+    const eqSlot = k === "item" ? slotOf(x.id) : null;
+    const fav = S.favorites.includes(x.id);
+    let meta = "", num = "", acts = "";
+    if (k === "item") {
+      meta = [`${x.wt * x.qty} фнт`, ...x.tags.map((t) => `<span class="cs-tag ${t === "Настройка" ? "is-att" : ""}">${t}</span>`)].join("");
+      num = `<span class="cs-num">${x.qty}</span>`;
+      if (fitsHere(x).length) acts += `<button type="button" class="cs-ibtn cs-editonly ${eqSlot ? "is-on" : ""}" data-ui="equipButton" data-equip="${x.id}" aria-pressed="${!!eqSlot}" aria-label="${eqSlot ? "Снять" : "Надеть"}" title="${eqSlot ? "Снять" : "Надеть"}">${icon("hand")}</button>`;
+    } else if (k === "spell") {
+      meta = [`${SCHOOLS[x.school]}`, ...x.tags.map((t) => `<span class="cs-tag">${t}</span>`), x.conc ? `<span class="cs-tag is-conc">К</span>` : "", x.ritual ? `<span class="cs-tag is-rit">Р</span>` : ""].join("");
+      if (x.lvl) acts += `<button type="button" class="cs-ibtn cs-editonly ${x.prep ? "is-on" : ""}" data-ui="prepareButton" data-prep="${x.id}" aria-pressed="${!!x.prep}" aria-label="${x.prep ? "Убрать из подготовленных" : "Подготовить"}" title="${x.prep ? "Убрать из подготовленных" : "Подготовить"}">${icon("book")}</button>`;
+      if (!x.lvl || x.prep || x.ritual) acts += `<button type="button" class="cs-ibtn cs-editonly" data-ui="castButton" data-cast="${x.id}" aria-label="${!x.lvl || x.prep ? "Сотворить" : "Сотворить ритуалом"}" title="${!x.lvl || x.prep ? "Сотворить" : "Сотворить ритуалом"}">${icon("spark")}</button>`;
+    } else {
+      meta = x.tags.map((t) => `<span class="cs-tag">${t}</span>`).join("");
+      if (x.uses) num = `<span class="cs-uses cs-editonly" data-ui="usesTrack">${Array.from({ length: x.uses[1] }, (_, i) => `<button type="button" class="${i >= x.uses[0] ? "is-spent" : ""}" data-use="${x.id}" data-i="${i}" aria-label="Использование ${i + 1}"></button>`).join("")}</span>`;
+    }
+    if (k === "item" && S.trade.status === "open" && (S.trade.mine[x.id] ?? 0) < x.qty) acts += `<button type="button" class="cs-ibtn cs-editonly" data-ui="offerButton" data-offer="${x.id}" aria-label="В обмен" title="В обмен">${icon("trade")}</button>`;
+    acts += `<button type="button" class="cs-ibtn cs-editonly ${fav ? "is-on" : ""}" data-ui="favoriteButton" data-fav="${x.id}" aria-pressed="${fav}" aria-label="В избранное" title="В избранное">${icon("star")}</button>`;
+    acts += `<button type="button" class="cs-ibtn" data-ui="rowMenuButton" aria-label="Ещё" data-oos="Контекстное меню: изменить, дублировать, удалить, отправить в чат">${icon("dots")}</button>`;
+    const lvl = k === "spell" && x.lvl ? `<span class="lvl">${x.lvl}</span>` : "";
+    const draggable = k === "item" && canEdit() ? `draggable="true"` : "";
+    const unprepared = k === "spell" && x.lvl && !x.prep;
+    return `<div class="cs-rowwrap" data-key="${sec}:${x.id}">
+      <div class="cs-row ${S.selected === x.id ? "is-selected" : ""} ${eqSlot ? "is-equipped" : ""} ${unprepared ? "is-unprepared" : ""}" data-ui="${k}Row" data-row="${x.id}" ${draggable} title="${x.name}" tabindex="0">
+        ${tile(x)}${lvl}
+        <div class="cs-row-main"><div class="cs-name-line">${x.name}</div><div class="cs-meta">${meta}</div></div>
+        ${num}<div class="cs-row-act">${acts}</div>
+      </div>
+      <div class="cs-detail ${S.selected === x.id ? "is-open" : ""}" data-ui="itemDetail"><div><p>${x.desc}</p></div></div>
+    </div>`;
+  }
+  function section(id, title, list, viewFor, metaHTML = "") {
+    const collapsed = S.collapsed.has(id);
+    const view = S.view[viewFor];
+    return `<section class="cs-section fx-spot ${collapsed ? "is-collapsed" : ""}" data-ui="listSection" data-section="${id}" data-key="sec-${id}">
+      <div class="cs-sec-head" data-ui="sectionHeader" data-toggle-sec="${id}" role="button" tabindex="0" aria-expanded="${!collapsed}">
+        <span class="chev">${icon("chev")}</span><h3>${title}</h3><span class="n">${list.length}</span><span class="grow"></span>${metaHTML}
+        ${viewFor === "items" ? `<button type="button" class="cs-ibtn cs-editonly" data-ui="addItemButton" aria-label="Добавить" data-oos="Создаёт новый предмет этого типа или открывает компендиум">${icon("plus")}</button>` : ""}
+      </div>
+      <div class="cs-sec-body"><div class="cs-sec-inner"><div class="cs-sec-content">
+        ${list.length ? `<div class="cs-items" data-view="${view}">${list.map((x) => row(x, id)).join("")}</div>` : `<div class="cs-empty">Пусто${S.search[viewFor] ? " — ничего не найдено" : ""}</div>`}
+      </div></div></div>
+    </section>`;
+  }
+  const match = (x, q) => !q || x.name.toLowerCase().includes(q.toLowerCase());
+
+  function renderAbilities() {
+    $("[data-abilities]").innerHTML = ABILITIES.map((a) => `<button type="button" class="cs-ability fx-spot" data-ui="abilityTile" data-oos="Бросает проверку ${a.label}; Shift+клик — спасбросок" title="Проверка; Shift — спасбросок">
+      <span class="sv ${a.save ? "is-prof" : ""}"></span><span class="k">${a.label}</span><span class="m">${sign(mod(a.value))}</span><span class="v">${a.value}</span><span class="svt">Спас ${sign(mod(a.value) + (a.save ? PROF : 0) + 2)}</span></button>`).join("");
+  }
+  function renderOverview() {
+    $("[data-skills]").innerHTML = SKILLS.map(([n, ab, p]) => {
+      const b = mod(ABILITIES.find((a) => a.key === ab).value) + PROF * p;
+      return `<div class="cs-skill" data-ui="skillRow" data-oos="Бросает проверку навыка «${n}»"><span class="p ${p === 1 ? "is-prof" : p === 2 ? "is-exp" : ""}"></span><span class="ab">${ABILITIES.find((a) => a.key === ab).label}</span><span class="nm">${n}</span><span class="bn">${sign(b)}</span></div>`;
+    }).join("");
+    $("[data-saves]").innerHTML = ABILITIES.map((a) => `<div class="cs-skill" data-ui="saveRow" data-oos="Бросает спасбросок ${a.label}"><span class="p ${a.save ? "is-prof" : ""}"></span><span class="nm">${({ str: "Сила", dex: "Ловкость", con: "Телосложение", int: "Интеллект", wis: "Мудрость", cha: "Харизма" })[a.key]}</span><span class="bn">${sign(mod(a.value) + (a.save ? PROF : 0) + 2)}</span></div>`).join("");
+  }
+  function renderInventory() {
+    const q = S.search.items;
+    $("[data-inventory]").innerHTML = GROUPS.map(([g, title]) => {
+      const list = items.filter((x) => x.group === g && match(x, q));
+      const meta = g === "pack" ? `<span class="cs-sec-meta">${list.reduce((s, x) => s + x.wt * x.qty, 0)} / 30 фнт</span>` : "";
+      return section(g, title, list, "items", meta);
+    }).join("");
+    const load = items.reduce((s, x) => s + x.wt * x.qty, 0);
+    $("[data-load-text]").textContent = `Груз ${load} / 120 фнт`;
+    $("[data-load-bar]").style.width = `${Math.min(100, (load / 120) * 100)}%`;
+    const tier = load > 80 ? "heavy" : load > 40 ? "enc" : "ok";
+    const bar = $("[data-load-bar]");
+    if (bar.dataset.tier && bar.dataset.tier !== tier) pulse($(".cs-load"), "is-cross");
+    bar.dataset.tier = tier;
+    bar.classList.toggle("is-enc", tier === "enc");
+    bar.classList.toggle("is-heavy", tier === "heavy");
+    $('[data-count="items"]').textContent = items.length;
+  }
+  function slotButton(slot, pos = "") {
+    const id = S.equipped[slot];
+    const it = id ? byId[id] : null;
+    return `<button type="button" class="cs-slot ${it ? "is-filled" : ""}" ${pos} data-ui="dollSlot" data-slot="${slot}" aria-label="${SLOTS[slot][0]}${it ? `: ${it.name}` : ""}" title="${it ? it.name : SLOTS[slot][0]}">
+      ${it ? tile(it) : icon(SLOTS[slot][1])}<span class="cs-slot-label">${SLOTS[slot][0]}</span></button>`;
+  }
+  function renderDoll() {
+    const preset = PRESETS[S.preset];
+    const att = S.attuned.size, max = preset.attune;
+    const wide = max > 3;
+    const sockets = Array.from({ length: max }, (_, i) => [...S.attuned][i] ?? null).map((id) => id
+      ? `<button type="button" class="cs-socket is-on" data-ui="attunementSocket" data-socket="${id}" title="${byId[id].name}" aria-label="Настроен: ${byId[id].name}">${tile(byId[id])}</button>`
+      : `<span class="cs-socket" data-ui="attunementSocket" title="Свободная настройка"></span>`).join("");
+    const attune = `<div class="cs-attune ${wide ? "is-wide" : ""}" data-ui="attunementTrack" style="--cols:${Math.min(max, 5)}"><div class="cs-sockets">${sockets}</div><span class="cs-attune-label"><span>Настройка</span><span><b>${att}</b> / ${max}</span></span></div>`;
+    const head = `<div class="cs-doll-head" data-ui="dollHeader"><span class="cs-doll-title">Кукла</span>
+      <span class="cs-doll-preset">${preset.name}</span>
+      <select class="cs-doll-select" data-ui="dollPresetSelect" aria-label="Пресет куклы">${Object.entries(PRESETS).map(([k, p]) => `<option value="${k}" ${k === S.preset ? "selected" : ""}>${p.name}</option>`).join("")}</select>
+      <button type="button" class="cs-ibtn cs-mini cs-gmonly" data-ui="dollPresetEdit" aria-label="Редактор пресетов" title="Редактор пресетов" data-oos="Открывает редактор пресетов кукол: слоты, их порядок, допустимые типы предметов, лимит настройки">${icon("edit")}</button></div>`;
+    const grid = `<div class="cs-doll-grid"><div class="cs-figure"><svg viewBox="0 0 120 260"><use href="#i-figure"/></svg></div>`
+      + DOLL_LAYOUT.map(([slot, col, r]) => slotButton(slot, `style="grid-column:${col};grid-row:${r}"`)).join("")
+      + (wide ? "" : attune) + `</div>`;
+    const extra = preset.extras.length ? `<div class="cs-doll-extra" data-ui="extraSlots"><div class="cs-doll-sub">Дополнительные слоты <b>${preset.extras.length}</b></div><div class="cs-extra-grid">${preset.extras.map((slot) => slotButton(slot)).join("")}</div></div>` : "";
+    $("[data-doll]").innerHTML = head + grid + extra + (wide ? attune : "");
+  }
+  function renderSpells() {
+    const q = S.search.spells;
+    $("[data-slots]").innerHTML = Object.entries(S.slots).map(([lvl, [v, max]]) => `<div class="cs-slotlvl"><b>${lvl} КРУГ</b><div class="cs-slotpips">${Array.from({ length: max }, (_, i) => `<button type="button" class="cs-slotpip cs-editonly-dis ${i >= v ? "is-spent" : ""}" data-ui="slotPip" data-slot-lvl="${lvl}" data-i="${i}" aria-label="Ячейка ${lvl} круга ${i + 1}"></button>`).join("")}</div></div>`).join("");
+    const levels = [0, 1, 2, 3];
+    const prepared = spells.filter((s) => s.lvl && s.prep);
+    const shown = prepared.filter((s) => match(s, q)).sort((a, b) => a.lvl - b.lvl);
+    $("[data-spells]").innerHTML = section("prepared", "Подготовленные", shown, "spells", `<span class="cs-sec-meta ${prepared.length >= PREP_MAX ? "is-full" : ""}" data-ui="preparedCounter">${prepared.length} / ${PREP_MAX}</span>`)
+      + `<div class="cs-divider" data-key="div-book">Книга заклинаний</div>`
+      + levels.map((l) => {
+      const list = spells.filter((s) => s.lvl === l && match(s, q));
+      const meta = l ? `<span class="cs-sec-meta">${S.slots[l][0]} / ${S.slots[l][1]}</span>` : `<span class="cs-sec-meta">без ячеек</span>`;
+      return section(`lvl${l}`, l ? `${l} круг` : "Заговоры", list, "spells", meta);
+    }).join("");
+    $('[data-count="spells"]').textContent = spells.length;
+  }
+  function renderFeatures() {
+    const q = S.search.features;
+    const srcs = [...new Set(features.map((f) => f.src))];
+    $("[data-features]").innerHTML = srcs.map((src, i) => section(`src${i}`, src, features.filter((f) => f.src === src && match(f, q)), "features")).join("");
+    $('[data-count="features"]').textContent = features.length;
+  }
+  function renderFavorites() {
+    const list = S.favorites.map((id) => byId[id]).filter(Boolean);
+    $("[data-fav-count]").textContent = list.length || "";
+    const ACTS = [["action", "Действие"], ["bonus", "Бонусное действие"], ["reaction", "Реакция"], ["other", "Прочее"]];
+    const cost = (x) => kind(x) === "spell"
+      ? (x.lvl ? `<span class="cs-fav-meta" title="${x.lvl} круг">${Array.from({ length: x.lvl }, () => `<i class="cs-rune"></i>`).join("")}</span>` : `<span class="cs-fav-meta">загов.</span>`)
+      : kind(x) === "item" ? `<span class="cs-fav-meta">×${x.qty}</span>` : "";
+    const favRow = (x) => `<li class="cs-fav" data-ui="favoriteRow" data-fav-row="${x.id}" data-key="fav-${x.id}" title="${x.name}">${tile(x)}
+      <span class="cs-fav-body"><span class="cs-fav-name">${x.name}</span>${x.roll ? `<span class="cs-fav-roll">${x.roll}</span>` : ""}</span>${cost(x)}${kind(x) === "spell" ? `<button type="button" class="cs-fav-use cs-editonly" data-ui="favoriteCastButton" data-cast="${x.id}" aria-label="Сотворить: ${x.name}" title="Сотворить">${icon("spark")}</button>` : kind(x) === "item" ? `<button type="button" class="cs-fav-use cs-editonly" data-ui="favoriteCastButton" data-oos="Использует предмет через его действие dnd5e" aria-label="Использовать: ${x.name}" title="Использовать">${icon("hand")}</button>` : ""}</li>`;
+    $("[data-fav-list]").innerHTML = list.length
+      ? ACTS.map(([act, title]) => {
+          const group = list.filter((x) => (x.act ?? "other") === act);
+          return group.length ? `<li class="cs-fav-group" data-key="favg-${act}">${title}</li>${group.map(favRow).join("")}` : "";
+        }).join("")
+      : `<li class="cs-empty">Отметьте ★ предметы и заклинания, чтобы держать их под рукой</li>`;
+  }
+  const EFFECTS = [
+    { id: "mage-armor", name: "Доспехи мага", sub: "КД 13 + Лов", time: "7 ч 40 м", school: "abj", icon: "armor" },
+    { id: "darkvision", name: "Тёмное зрение", sub: "60 фт · пассивно", time: "∞", school: "div", icon: "eye" }
+  ];
+  function renderEffects() {
+    const list = S.conc ? [{ id: "conc", name: byId[S.conc].name, sub: "Концентрация · спасбросок Тел при уроне", time: "до 1 ч", school: byId[S.conc].school, icon: "eye", conc: true }, ...EFFECTS] : EFFECTS;
+    $("[data-effects]").innerHTML = list.map((e) => `<div class="cs-effect ${e.conc ? "is-conc" : ""}" data-ui="effectRow" data-key="eff-${e.id}"><span class="cs-effect-ic" data-school="${e.school}">${icon(e.icon)}</span><span class="cs-effect-n">${e.name}<small>${e.sub}</small></span><span class="cs-effect-t">${e.time}</span></div>`).join("");
+  }
+  function renderVitals(change = 0) {
+    const hp = $('[data-ui="hpBar"]');
+    countTo($("[data-hp-val]"), S.hp);
+    $("[data-hp-info]").innerHTML = `макс. <b>${S.hpMax}</b>${S.temp ? ` · врем. <b class="t">${S.temp}</b>` : ""}${S.hp < S.hpMax ? ` · −${S.hpMax - S.hp}` : ""}`;
+    renderEffects();
+    const tempEl = $("[data-hp-temp]");
+    tempEl.innerHTML = `${icon("shield")}${S.temp}`;
+    const prevTemp = S.shownTemp ?? S.temp;
+    S.shownTemp = S.temp;
+    const card = $(".cs-hpcard");
+    card.classList.toggle("has-shield", S.temp > 0);
+    if (S.temp !== prevTemp) pulse(tempEl, "is-pop");
+    if (S.temp > prevTemp) {
+      pulse(card, "is-shield-up");
+      requestAnimationFrame(() => shards($("[data-hp-tempbar]"), 6, 22));
+    } else if (S.temp < prevTemp && S.temp > 0) {
+      pulse($("[data-hp-tempbar]"), "is-absorb");
+      shards($("[data-hp-tempbar]"), 6, 26);
+    } else if (S.temp < prevTemp) {
+      pulse(card, "is-shield-break");
+      shards($("[data-hp-tempbar]"), 16, 46);
+    }
+    hp.classList.toggle("has-temp", S.temp > 0);
+    hp.classList.toggle("is-low", S.hp > 0 && S.hp <= S.hpMax / 4);
+    const ratio = S.hp / S.hpMax;
+    const prevVital = root.dataset.vital;
+    root.dataset.vital = S.hp === 0 ? "down" : ratio <= 0.25 ? "critical" : ratio <= 0.5 ? "hurt" : "ok";
+    $(".cs-hp-label").textContent = S.hp === 0 ? "Без сознания" : "Хиты";
+    if (prevVital === "down" && S.hp > 0) pulse($(".cs-hpcard"), "is-revive");
+    if (change) pulse($(".cs-hp-val"), "is-pop");
+    const fill = $("[data-hp-fill]"), ghost = $("[data-hp-ghost]"), tempBar = $("[data-hp-tempbar]");
+    fill.style.width = pct(S.hp, S.hpMax);
+    // On a heal the ghost jumps with the fill; on damage it lingers, then drains (its transition has a delay).
+    if (change > 0) { ghost.style.transition = "none"; ghost.style.width = fill.style.width; void ghost.offsetWidth; ghost.style.transition = ""; }
+    else ghost.style.width = pct(S.hp, S.hpMax);
+    tempBar.style.left = pct(Math.max(0, S.hp - S.temp), S.hpMax);
+    tempBar.style.width = pct(Math.min(S.temp, S.hp), S.hpMax);
+    if (change < 0) pulse(hp, "is-hit");
+    if (change > 0) pulse(hp, "is-heal");
+    $("[data-hd]").innerHTML = Array.from({ length: 6 }, (_, i) => `<button type="button" class="cs-die ${i >= S.hd ? "is-spent" : ""}" data-die="${i}" aria-label="Кость хитов ${i + 1}"></button>`).join("");
+    countTo($("[data-hd-val]"), S.hd);
+    $("[data-rest-short]").textContent = S.hd ? `${S.hd} ${S.hd === 1 ? "кость" : S.hd < 5 ? "кости" : "костей"} хитов` : "Костей хитов нет";
+    const sv = Object.values(S.slots).reduce((s, [v]) => s + v, 0);
+    $("[data-runes]").innerHTML = Object.values(S.slots).map(([v, max]) => `<span class="g">${Array.from({ length: max }, (_, i) => `<i class="cs-rune ${i >= v ? "is-spent" : ""}"></i>`).join("")}</span>`).join("");
+    countTo($("[data-sl-val]"), sv);
+    const death = $('[data-ui="deathSaves"]');
+    if (death.hidden !== (S.hp > 0)) flip($(".cs-rail"), "[data-flip]", () => { death.hidden = S.hp > 0; });
+    $$('[data-death="ok"] button').forEach((b, i) => b.classList.toggle("is-on", i < S.death.ok));
+    $$('[data-death="bad"] button').forEach((b, i) => b.classList.toggle("is-on", i < S.death.bad));
+    const deathCard = $('[data-ui="deathSaves"]');
+    deathCard.classList.toggle("is-stable", S.death.ok >= 3);
+    deathCard.classList.toggle("is-dead", S.death.bad >= 3);
+    $("[data-death-state]").textContent = S.death.bad >= 3 ? "Погибла" : S.death.ok >= 3 ? "Стабилизирована" : "";
+    $("[data-exh]").innerHTML = Array.from({ length: 6 }, (_, i) => `<i class="cs-pip-s ${i < S.exh ? "is-on" : ""}"></i>`).join("");
+    $('[data-ui="exhaustionTrack"]').classList.toggle("is-on", S.exh > 0);
+    const conc = $('[data-ui="concentrationBadge"]');
+    conc.hidden = !S.conc;
+    if (S.conc) $("[data-conc-name]").textContent = byId[S.conc].name;
+  }
+  function renderInspector() {
+    const x = S.selected && byId[S.selected];
+    $("[data-insp-empty]").hidden = !!x;
+    if (!x) { $("[data-insp]").innerHTML = ""; return; }
+    const k = kind(x);
+    const RAR = { common: "Обычный", uncommon: "Необычный", rare: "Редкий", veryRare: "Очень редкий", legendary: "Легендарный" };
+    const sub = k === "spell" ? `${x.lvl ? `${x.lvl} круг` : "Заговор"} · ${SCHOOLS[x.school]}` : k === "item" ? RAR[x.rarity] : x.src;
+    const tone = k === "spell" ? `data-school="${x.school}"` : `data-rarity="${x.rarity ?? "common"}"`;
+    const eq = k === "item" && fitsHere(x).length ? `<button type="button" class="cs-btn is-primary cs-editonly" data-equip="${x.id}">${slotOf(x.id) ? "Снять" : "Надеть"}</button>` : "";
+    const cast = k === "spell" && (!x.lvl || x.prep || x.ritual) ? `<button type="button" class="cs-btn is-primary cs-editonly" data-cast="${x.id}">${icon("spark")}${!x.lvl || x.prep ? "Сотворить" : "Ритуалом"}</button>` : "";
+    const prep = k === "spell" && x.lvl ? `<button type="button" class="cs-btn cs-editonly" data-prep="${x.id}">${icon("book")}${x.prep ? "Убрать из подготовленных" : "Подготовить"}</button>` : "";
+    $("[data-insp]").innerHTML = `<div class="cs-insp" ${tone}>${tile(x)}<div><h4>${x.name}</h4><div class="rar">${sub}</div></div>
+      <div class="cs-meta">${(x.tags ?? []).map((t) => `<span class="cs-tag">${t}</span>`).join("")}</div><p>${x.desc}</p>
+      <div class="acts">${eq}${cast}${prep}<button type="button" class="cs-btn" data-oos="Показывает карточку в чате">В чат</button></div></div>`;
+  }
+  const COIN_DEF = [["pp", "пм", "#c9d2e3"], ["gp", "зм", "#e7b04a"], ["sp", "см", "#c7c0b0"], ["cp", "мм", "#c2743f"]];
+  function renderCoins() {
+    const host = $("[data-coins]");
+    if (!host.children.length) host.innerHTML = COIN_DEF.map(([k, l, c]) => `<span class="cs-coin" style="--c:${c}" data-coin="${k}"><i></i><b data-coin-n>${S.coins[k]}</b><small>${l}</small></span>`).join("");
+    for (const [k] of COIN_DEF) {
+      const chip = host.querySelector(`[data-coin="${k}"]`), n = chip.querySelector("[data-coin-n]");
+      if (Number(n.textContent) !== S.coins[k]) { countTo(n, S.coins[k]); pulse(chip, "is-glint"); }
+    }
+  }
+  const PARTNERS = { torvin: "Торвин Камнелом · игрок Миша", sera: "Сэра Лин · игрок Аня" };
+  const PARTNER_OFFER = [{ id: "t-web", name: "Свиток: Паутина", icon: "scroll", rarity: "uncommon", qty: 1, group: "consumable", wt: 0, tags: ["2 круг"], desc: "Одноразовый свиток заклинания 2 круга." }];
+  function renderTrade() {
+    const T = S.trade;
+    const host = $("[data-trade]");
+    const head = `<div class="cs-drawer-head"><h3>Обмен</h3><button type="button" class="cs-ibtn" data-trade-close aria-label="Закрыть"><svg class="cs-ico"><use href="#i-close"/></svg></button></div>`;
+    if (T.status === "idle") {
+      host.innerHTML = head + `<div class="cs-trade-body"><p>Обменяйтесь предметами и монетами с персонажем другого игрока. Перенос выполняет мастер после подтверждения обеими сторонами.</p>
+        <label class="cs-field"><span>С кем</span><select data-ui="tradePartnerSelect" data-trade-partner>${Object.entries(PARTNERS).map(([k, n]) => `<option value="${k}" ${k === T.partner ? "selected" : ""}>${n}</option>`).join("")}</select></label></div>
+        <div class="cs-trade-foot"><button type="button" class="cs-btn is-primary" data-ui="tradeStartButton" data-trade-start>${icon("trade")}Предложить обмен</button></div>`;
+      return;
+    }
+    if (T.status === "done") {
+      host.innerHTML = head + `<div class="cs-trade-body"><div class="cs-done">${icon("check")}<b>Обмен завершён</b><p>Полученные предметы лежат в инвентаре, они не надеты и не настроены.</p></div></div>
+        <div class="cs-trade-foot"><button type="button" class="cs-btn" data-trade-new>Новый обмен</button></div>`;
+      return;
+    }
+    const mine = Object.entries(T.mine).filter(([, q]) => q > 0);
+    const coins = (obj, editable) => `<div class="cs-offer-coins">${COIN_DEF.map(([k, l]) => editable
+      ? `<label>${l}<input type="number" min="0" max="${S.coins[k]}" value="${obj[k] ?? 0}" data-trade-coin="${k}" aria-label="${l} в обмен"></label>`
+      : `<label>${l}<span class="ro">${obj[k] ?? 0}</span></label>`).join("")}</div>`;
+    const ready = T.confirmed.every(Boolean);
+    const partnerName = PARTNERS[T.partner].split(" · ")[0];
+    host.innerHTML = head + `<div class="cs-trade-body">
+      <div class="cs-trade-status ${ready ? "is-ready" : ""}" data-ui="tradeStatus" data-trade-status>${T.status === "executing" ? "Мастер проводит обмен…" : ready ? "Обе стороны подтвердили" : T.theirs.length ? "Проверьте предложения и подтвердите" : `Ждём предложение от ${partnerName}…`}</div>
+      <div class="cs-offer ${T.confirmed[0] ? "is-confirmed" : ""}" data-ui="myOffer"><div class="cs-offer-head">Вы отдаёте<span class="${T.confirmed[0] ? "ok" : ""}">${T.confirmed[0] ? "подтверждено" : "не подтверждено"}</span></div>
+        ${mine.length ? mine.map(([id, q]) => `<div class="cs-offer-item" data-ui="offerItem">${tile({ ...byId[id], qty: 1 })}<span class="n">${byId[id].name}</span><span class="cs-qty"><button type="button" data-offer-dec="${id}" aria-label="Меньше">−</button><b>${q}</b><button type="button" data-offer-inc="${id}" aria-label="Больше">+</button></span></div>`).join("") : `<div class="cs-offer-empty">Нажмите ${icon("trade")} у предмета в инвентаре, чтобы добавить его</div>`}
+        ${coins(T.myCoins, true)}</div>
+      <div class="cs-offer ${T.confirmed[1] ? "is-confirmed" : ""}" data-ui="partnerOffer"><div class="cs-offer-head">Вы получаете<span class="${T.confirmed[1] ? "ok" : ""}">${partnerName} · ${T.confirmed[1] ? "подтверждено" : "не подтверждено"}</span></div>
+        ${T.theirs.length ? T.theirs.map((x) => `<div class="cs-offer-item">${tile(x)}<span class="n">${x.name}</span><b>×${x.qty}</b></div>`).join("") : `<div class="cs-offer-empty">Пока ничего</div>`}
+        ${coins(T.theirCoins, false)}</div></div>
+      <div class="cs-trade-foot"><button type="button" class="cs-btn" data-ui="tradeCancelButton" data-trade-cancel>Отменить</button>
+        <button type="button" class="cs-btn is-primary" data-ui="tradeConfirmButton" data-trade-confirm ${T.status === "executing" ? "disabled" : ""}>${T.confirmed[0] ? "Снять подтверждение" : "Подтвердить"}</button></div>`;
+  }
+  // Any change to either offer clears both confirmations, as the coordinator does.
+  function offerChanged() {
+    const T = S.trade;
+    const had = T.confirmed.some(Boolean);
+    T.confirmed = [false, false];
+    renderTrade();
+    if (had) pulse($("[data-trade-status]"), "is-reset");
+  }
+  function settleTrade() {
+    const T = S.trade;
+    T.status = "executing"; renderTrade();
+    setTimeout(() => {
+      for (const [id, q] of Object.entries(T.mine)) {
+        const it = byId[id];
+        if (!q || !it) continue;
+        it.qty -= q;
+        if (it.qty <= 0) { const slot = slotOf(id); if (slot) delete S.equipped[slot]; S.attuned.delete(id); items.splice(items.indexOf(it), 1); }
+      }
+      for (const x of T.theirs) { const copy = { ...x, id: `${x.id}-${Date.now()}` }; items.push(copy); byId[copy.id] = copy; }
+      for (const [k] of COIN_DEF) S.coins[k] += (T.theirCoins[k] ?? 0) - (T.myCoins[k] ?? 0);
+      T.status = "done";
+      rerender("equipment", () => { renderInventory(); renderDoll(); });
+      renderCoins(); renderTrade(); applyRole();
+    }, motionOn() ? 900 : 0);
+  }
+  function renderLevel() {
+    const orb = $("[data-level-orb]");
+    const { value, from, to, level } = S.xp;
+    const p = Math.max(0, Math.min(1, (value - from) / (to - from)));
+    orb.style.setProperty("--xp", p.toFixed(3));
+    orb.classList.toggle("is-near", p >= 0.9);
+    const label = `Уровень ${level} · ${value.toLocaleString("ru")} / ${to.toLocaleString("ru")} опыта · до ${level + 1} уровня ${Math.round(p * 100)}%`;
+    orb.title = label;
+    orb.setAttribute("aria-label", label);
+  }
+  function renderLists() {
+    renderCoins(); renderTrade(); renderInventory(); renderDoll(); renderSpells(); renderFeatures(); renderFavorites(); renderInspector();
+    applyRole();
+  }
+  function rerender(panel, fn) {
+    const host = $(`[data-panel="${panel}"]`);
+    flip(host, "[data-key]", fn);
+  }
+
+  /* ═══════════ Tabs ═══════════ */
+  function moveInk() {
+    const tab = $(`.cs-tab[data-tab="${S.tab}"]`);
+    const ink = $(".cs-tab-ink");
+    if (!tab || tab.hidden) return;
+    ink.style.width = `${tab.offsetWidth - 16}px`;
+    ink.style.transform = `translateX(${tab.offsetLeft + 8}px)`;
+  }
+  function setTab(tab) {
+    if (tab === S.tab) return;
+    $(".cs-tabs").classList.toggle("is-scrolled", ($(`[data-panel="${tab}"]`)?.scrollTop ?? 0) > 2);
+    S.tab = tab;
+    $$(".cs-tab").forEach((t) => t.setAttribute("aria-selected", t.dataset.tab === tab));
+    $$(".cs-panel").forEach((p) => {
+      const on = p.dataset.panel === tab;
+      p.hidden = !on;
+      if (on && motionOn()) { pulse(p, "is-entering"); cascade($$(".cs-rowwrap, .cs-card, .cs-slot, .cs-section > .cs-sec-head", p).filter((e) => e.offsetParent)); }
+    });
+    moveInk();
+  }
+
+  /* ═══════════ Adaptive layout ═══════════ */
+  function layoutFor(w) { return w < 420 ? "compact" : w < 760 ? "narrow" : w < 1320 ? "standard" : "wide"; }
+  function applyLayout(next) {
+    if (root.dataset.layout === next) return;
+    flip(root, "[data-flip], .cs-slot, .cs-rowwrap", () => {
+      root.dataset.layout = next;
+      $(".cs-equip").classList.toggle("has-doll", S.doll !== false);
+    }, { fadeIn: true });
+    requestAnimationFrame(moveInk);
+  }
+  new ResizeObserver(([e]) => applyLayout(layoutFor(e.contentRect.width))).observe(root);
+
+  /* ═══════════ Actions ═══════════ */
+  // Only the GM changes HP by hand; rests still restore it through the rules.
+  function changeHP(delta) {
+    if (!canEdit()) return;
+    const before = { hp: S.hp, temp: S.temp };
+    queueMicrotask(() => {
+      const lostTemp = before.temp - S.temp, lostHp = before.hp - S.hp;
+      if (lostTemp > 0) floatText(`−${lostTemp} врем.`, "is-temp");
+      if (lostHp > 0) setTimeout(() => floatText(`−${lostHp}`, "is-dmg"), lostTemp > 0 ? 120 : 0);
+      if (lostHp < 0) floatText(`+${-lostHp}`, "is-heal");
+    });
+    if (delta < 0) {
+      let dmg = -delta;
+      const absorbed = Math.min(S.temp, dmg);
+      S.temp -= absorbed; dmg -= absorbed;
+      S.hp = Math.max(0, S.hp - dmg);
+    } else {
+      if (S.hp === 0) S.death = { ok: 0, bad: 0 };
+      S.hp = Math.min(S.hpMax, S.hp + delta);
+    }
+    renderVitals(delta);
+  }
+  function toggleEquip(id, sourceEl) {
+    if (!canEdit()) return;
+    const it = byId[id];
+    const current = slotOf(id);
+    if (current) {
+      const slotEl = $(`[data-slot="${current}"]`);
+      delete S.equipped[current];
+      S.attuned.delete(id);
+      rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
+      const target = $(`[data-row="${id}"] .cs-tile`) ?? $(`[data-row="${id}"]`);
+      fly(slotEl, target, tile(it));
+      return;
+    }
+    const fits = fitsHere(it);
+    if (!fits.length) return;
+    const slot = fits.find((s) => !S.equipped[s]) ?? fits[0];
+    if (it.attune && S.attuned.size >= PRESETS[S.preset].attune) { pulse($(`[data-slot="${slot}"]`), "is-refused"); return; }
+    const from = sourceEl ?? $(`[data-row="${id}"] .cs-tile`);
+    S.equipped[slot] = id;
+    if (it.attune) S.attuned.add(id);
+    rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
+    if (it.attune) setTimeout(() => pulse($(`[data-socket="${id}"]`), "is-new"), motionOn() ? 480 : 0);
+    const slotEl = $(`[data-slot="${slot}"]`);
+    fly(from, slotEl, tile(it));
+    setTimeout(() => pulse(slotEl, "is-landed"), motionOn() ? 480 : 0);
+  }
+  function toggleFav(id) {
+    if (!canEdit()) return;
+    const on = S.favorites.includes(id);
+    S.favorites = on ? S.favorites.filter((f) => f !== id) : [...S.favorites, id];
+    flip($(".cs-rail-fav"), "[data-key]", renderFavorites);
+    $$(`[data-fav="${id}"]`).forEach((b) => { b.classList.toggle("is-on", !on); b.setAttribute("aria-pressed", !on); if (!on) pulse(b, "is-landed"); });
+    if (!on) pulse($(`[data-fav-row="${id}"]`), "is-new");
+    if (!on) $$(`[data-fav="${id}"]`).forEach((b) => burst(b, getComputedStyle(root).getPropertyValue("--warn").trim(), 8));
+  }
+  function cast(id) {
+    if (!canEdit()) return;
+    const sp = byId[id];
+    if (sp.lvl && !sp.prep && !sp.ritual) { pulse($(`[data-row="${id}"]`), "is-refused"); return; }
+    if (sp.lvl && sp.prep) {
+      const lvl = Object.keys(S.slots).map(Number).find((l) => l >= sp.lvl && S.slots[l][0] > 0);
+      if (!lvl) { pulse($(`[data-row="${id}"]`), "is-refused"); return; }
+      S.slots[lvl][0] -= 1;
+      renderSpells();
+      pulse($$(`[data-slot-lvl="${lvl}"]`)[S.slots[lvl][0]], "is-burst");
+    }
+    if (sp.conc) S.conc = id;
+    renderVitals();
+    applyRole();
+    pulse($(`[data-row="${id}"] .cs-tile`), "is-landed");
+    const castTile = $(`[data-row="${id}"] .cs-tile`);
+    if (castTile) burst(castTile, toneOf(castTile), 12);
+  }
+  function togglePrepared(id) {
+    if (!canEdit()) return;
+    const sp = byId[id];
+    if (!sp.prep && spells.filter((s) => s.lvl && s.prep).length >= PREP_MAX) {
+      pulse($(`[data-ui="preparedCounter"]`), "is-refused");
+      $$(`[data-row="${id}"]`).forEach((r) => pulse(r, "is-refused"));
+      return;
+    }
+    sp.prep = !sp.prep;
+    rerender("spells", renderSpells);
+    renderInspector(); applyRole();
+    if (sp.prep) pulse($(`[data-section="prepared"] [data-row="${id}"] .cs-tile`), "is-landed");
+  }
+  function longRest() {
+    if (!canEdit()) return;
+    S.hp = S.hpMax; S.temp = 0; S.hd = Math.min(6, S.hd + 3); S.conc = null; S.exh = Math.max(0, S.exh - 1); S.death = { ok: 0, bad: 0 };
+    const refilled = [];
+    for (const [l, v] of Object.entries(S.slots)) { for (let i = v[0]; i < v[1]; i++) refilled.push([l, i]); v[0] = v[1]; }
+    features.forEach((f) => { if (f.uses) f.uses[0] = f.uses[1]; });
+    const apply = () => {
+      renderSpells(); renderFeatures(); renderVitals(1); applyRole();
+      refilled.forEach(([l, i], n) => { const pip = $$(`[data-slot-lvl="${l}"]`)[i]; if (pip) { pip.style.animationDelay = `${n * 70}ms`; pulse(pip, "is-refill"); } });
+    };
+    if (!motionOn()) return apply();
+    const night = document.createElement("div"), dawn = document.createElement("div");
+    night.className = "fx-night"; dawn.className = "fx-dawn";
+    root.append(night, dawn);
+    night.animate([{ opacity: 0 }, { opacity: 1, offset: 0.35 }, { opacity: 1, offset: 0.6 }, { opacity: 0 }], { duration: 1500, easing: "ease-in-out" }).finished.then(() => night.remove());
+    dawn.animate([{ opacity: 0 }, { opacity: 1, offset: 0.4 }, { opacity: 0 }], { duration: 1100, delay: 900, easing: "ease-out", fill: "backwards" }).finished.then(() => dawn.remove());
+    setTimeout(apply, 950);
+  }
+  function select(id) {
+    S.selected = S.selected === id ? null : id;
+    $$(".cs-row").forEach((r) => r.classList.toggle("is-selected", r.dataset.row === S.selected));
+    $$(".cs-detail").forEach((d) => d.classList.toggle("is-open", d.previousElementSibling?.dataset.row === S.selected));
+    renderInspector(); applyRole();
+  }
+  function collapseSheet(on) {
+    if (on) { S.width = root.offsetWidth; root.style.width = "320px"; }
+    else root.style.width = `${Math.max(S.width, 1040)}px`;
+  }
+  function applyRole() {
+    const ro = !canEdit();
+    $$('.cs-root input, .cs-root textarea, .cs-slotpip, .cs-uses button, [data-death] button, .cs-hp, .cs-die, .cs-chip, .cs-slot').forEach((el) => {
+      if (el.closest(".cs-drawer")) return;
+      if ("disabled" in el && el.tagName !== "DIV") el.disabled = ro && el.dataset.ui !== "slotRunes";
+    });
+    $('[data-ui="hpBar"]').disabled = !canEdit();
+    $$("[draggable]").forEach((el) => el.setAttribute("draggable", String(!ro)));
+    root.toggleAttribute("data-readonly", ro);
+    $(".cs-readonly-badge").style.display = ro ? "inline-flex" : "";
+  }
+
+  /* ═══════════ Events ═══════════ */
+  root.addEventListener("click", (e) => {
+    const t = e.target.closest("button, [data-toggle-sec], .cs-row, .cs-fav, [data-close-settings]");
+    if (!t || t.closest("[data-oos]")) return;
+    if (t.matches(".cs-tab")) return setTab(t.dataset.tab);
+    if (t.matches('[data-ui="hpBar"]')) return railHpClick(e, t);
+    if (t.matches("[data-hp-step]")) return changeHP(Number(t.dataset.hpStep));
+    if (t.matches("[data-temp-set]")) {
+      if (root.dataset.role !== "gm") return;
+      return setTemp(Number(t.dataset.tempSet));
+      const v = Number(t.dataset.tempSet);
+      if (v <= S.temp) { pulse($("[data-hp-temp]"), "is-pop"); return; }
+      floatText(`+${v - S.temp} врем.`, "is-temp");
+      S.temp = v;
+      renderVitals();
+      return;
+    }
+    if (t.matches("[data-die]")) return rollHitDie();
+    if (t.matches("[data-death-roll]")) return rollDeathSave();
+    if (t.matches('[data-ui="slotRunes"]')) return setTab("spells");
+    if (t.matches('[data-ui="inspirationToggle"]')) { if (!canEdit()) return; const on = t.getAttribute("aria-pressed") !== "true"; t.setAttribute("aria-pressed", on); t.classList.toggle("is-on", on); if (on) { pulse(t, "is-landed"); burst(t.querySelector(".cs-ico"), getComputedStyle(root).getPropertyValue("--warn").trim(), 12); } return; }
+    if (t.matches('[data-ui="exhaustionTrack"]')) { if (canEdit()) { S.exh = Math.min(6, S.exh + 1); renderVitals(); } return; }
+    if (t.matches('[data-ui="concentrationBadge"]')) { S.conc = null; flip($(".cs-rail"), "[data-flip]", renderVitals); return; }
+    if (t.closest("[data-death]")) {
+      if (!canEdit()) return;
+      const k = t.parentElement.dataset.death; const i = [...t.parentElement.children].indexOf(t);
+      const before = S.death[k];
+      S.death[k] = S.death[k] === i + 1 ? i : i + 1;
+      renderVitals();
+      if (S.death[k] > before) {
+        burst(t, getComputedStyle(root).getPropertyValue(k === "ok" ? "--heal" : "--hp").trim(), 8);
+        if (k === "bad") pulse($('[data-ui="deathSaves"]'), "is-shaken");
+      }
+      return;
+    }
+    if (t.matches("[data-rest='long']")) { pulse(t, "is-resting"); return longRest(); }
+    if (t.matches('[data-ui="settingsButton"]')) return root.classList.add("is-settings");
+    if (t.matches("[data-close-settings]")) return root.classList.remove("is-settings");
+    if (t.matches('[data-act="collapse"]')) return collapseSheet(true);
+    if (t.matches('[data-act="expand"]')) return collapseSheet(false);
+    if (t.matches("[data-view]") && t.closest("[data-view-for]")) {
+      const f = t.closest("[data-view-for]").dataset.viewFor;
+      S.view[f] = t.dataset.view;
+      t.parentElement.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b === t));
+      const panel = { items: "equipment", spells: "spells", features: "features" }[f];
+      rerender(panel, { items: renderInventory, spells: renderSpells, features: renderFeatures }[f]);
+      applyRole();
+      return;
+    }
+    if (t.matches('[data-ui="dollToggle"]')) { S.doll = S.doll === false; t.classList.toggle("is-on", S.doll); t.setAttribute("aria-pressed", S.doll); flip($('[data-panel="equipment"]'), ".cs-doll, .cs-rowwrap, .cs-section", () => $(".cs-equip").classList.toggle("has-doll", S.doll)); return; }
+    if (t.matches("[data-toggle-sec]")) { const id = t.dataset.toggleSec; S.collapsed.has(id) ? S.collapsed.delete(id) : S.collapsed.add(id); const sec = t.closest(".cs-section"); sec.classList.toggle("is-collapsed"); t.setAttribute("aria-expanded", !sec.classList.contains("is-collapsed")); if (!sec.classList.contains("is-collapsed")) cascade($$(".cs-rowwrap", sec)); return; }
+    if (t.matches("[data-equip]")) return toggleEquip(t.dataset.equip, t.closest(".cs-row")?.querySelector(".cs-tile"));
+    if (t.matches("[data-fav]")) return toggleFav(t.dataset.fav);
+    if (t.matches("[data-cast]")) return cast(t.dataset.cast);
+    if (t.matches("[data-prep]")) return togglePrepared(t.dataset.prep);
+    if (t.matches("[data-socket]")) return select(t.dataset.socket);
+    if (t.matches('[data-ui="tradeButton"]')) { const on = !root.classList.contains("is-trading"); root.classList.toggle("is-trading", on); t.setAttribute("aria-expanded", on); return; }
+    if (t.matches("[data-trade-close]")) { root.classList.remove("is-trading"); $('[data-ui="tradeButton"]').setAttribute("aria-expanded", "false"); return; }
+    if (t.matches("[data-trade-start]")) {
+      const T = S.trade; T.status = "open"; T.mine = {}; T.myCoins = {}; T.theirs = []; T.theirCoins = {}; T.confirmed = [false, false];
+      renderTrade(); rerender("equipment", renderInventory); applyRole();
+      setTimeout(() => { if (T.status !== "open") return; T.theirs = PARTNER_OFFER.map((x) => ({ ...x })); T.theirCoins = { gp: 20 }; offerChanged(); }, motionOn() ? 1100 : 0);
+      return;
+    }
+    if (t.matches("[data-trade-cancel]")) { S.trade.status = "idle"; renderTrade(); rerender("equipment", renderInventory); applyRole(); return; }
+    if (t.matches("[data-trade-new]")) { S.trade.status = "idle"; renderTrade(); return; }
+    if (t.matches("[data-offer]")) {
+      const T = S.trade, id = t.dataset.offer;
+      T.mine[id] = (T.mine[id] ?? 0) + 1;
+      fly(t.closest(".cs-row")?.querySelector(".cs-tile"), $('[data-ui="myOffer"]'), tile(byId[id]));
+      offerChanged(); rerender("equipment", renderInventory); applyRole();
+      return;
+    }
+    if (t.matches("[data-offer-inc], [data-offer-dec]")) {
+      const T = S.trade, id = t.dataset.offerInc ?? t.dataset.offerDec;
+      T.mine[id] = Math.max(0, Math.min(byId[id].qty, (T.mine[id] ?? 0) + (t.dataset.offerInc ? 1 : -1)));
+      if (!T.mine[id]) delete T.mine[id];
+      offerChanged(); rerender("equipment", renderInventory); applyRole();
+      return;
+    }
+    if (t.matches("[data-trade-confirm]")) {
+      const T = S.trade;
+      const empty = !Object.keys(T.mine).length && !Object.values(T.myCoins).some(Boolean) && !T.theirs.length && !Object.values(T.theirCoins).some(Boolean);
+      if (empty) { pulse($("[data-trade-status]"), "is-reset"); return; }
+      T.confirmed[0] = !T.confirmed[0];
+      renderTrade();
+      if (T.confirmed[0]) setTimeout(() => { if (!T.confirmed[0] || T.status !== "open") return; T.confirmed[1] = true; renderTrade(); setTimeout(() => T.confirmed.every(Boolean) && T.status === "open" && settleTrade(), 700); }, motionOn() ? 900 : 0);
+      return;
+    }
+    if (t.matches("[data-slot-lvl]")) { if (!canEdit()) return; const l = t.dataset.slotLvl, i = Number(t.dataset.i); const v = S.slots[l]; v[0] = i < v[0] ? i : i + 1; renderSpells(); renderVitals(); applyRole(); pulse($$(`[data-slot-lvl="${l}"]`)[i], i < v[0] ? "is-refill" : "is-burst"); return; }
+    if (t.matches("[data-use]")) { if (!canEdit()) return; const f = byId[t.dataset.use], i = Number(t.dataset.i); f.uses[0] = i < f.uses[0] ? i : i + 1; renderFeatures(); applyRole(); return; }
+    if (t.matches(".cs-slot")) {
+      const id = S.equipped[t.dataset.slot];
+      if (id) return toggleEquip(id);
+      const fits = items.filter((x) => x.slots?.includes(t.dataset.slot) && !slotOf(x.id));
+      if (!fits.length) return pulse(t, "is-refused");
+      return toggleEquip(fits[0].id, $(`[data-row="${fits[0].id}"] .cs-tile`));
+    }
+    if (t.matches(".cs-fav")) { const x = byId[t.dataset.favRow]; setTab(kind(x) === "spell" ? "spells" : kind(x) === "feature" ? "features" : "equipment"); select(x.id); return; }
+    if (t.matches(".cs-row")) return select(t.dataset.row);
+    if (t.closest("[data-set]") && t.dataset.value) { const k = t.closest("[data-set]").dataset.set; const v = t.dataset.value;
+      if (k === "theme" && document.startViewTransition && motionOn()) document.startViewTransition(() => { root.dataset.theme = v; });
+      else root.dataset[k] = v; t.parentElement.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b === t)); return; }
+    if (t.closest("[data-accent]")) { root.style.setProperty("--accent", t.dataset.value); $$("[data-accent] button").forEach((b) => b.setAttribute("aria-pressed", b === t)); return; }
+  });
+  root.addEventListener("contextmenu", (e) => {
+    const t = e.target.closest('[data-ui="hpBar"], [data-die], [data-ui="exhaustionTrack"]');
+    if (!t) return;
+    e.preventDefault();
+    if (!canEdit()) return;
+    if (t.dataset.ui === "hpBar") railHpContext(e, t);
+    else if (t.matches("[data-die]")) return;
+    else { S.exh = Math.max(0, S.exh - 1); renderVitals(); }
+  });
+  root.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-toggle-sec], .cs-row")) { e.preventDefault(); e.target.click(); }
+    if (e.key === "Escape" && root.classList.contains("is-settings")) root.classList.remove("is-settings");
+  });
+  root.addEventListener("input", (e) => {
+    if (e.target.dataset.tradeCoin) {
+      const k = e.target.dataset.tradeCoin;
+      S.trade.myCoins[k] = Math.max(0, Math.min(S.coins[k], Math.floor(Number(e.target.value) || 0)));
+      const T = S.trade; const had = T.confirmed.some(Boolean); T.confirmed = [false, false];
+      // keep focus in the field: refresh only the parts that show confirmation
+      $$(".cs-offer").forEach((o) => o.classList.remove("is-confirmed"));
+      if (had) renderTrade();
+      return;
+    }
+    const k = e.target.dataset.search;
+    if (k) { S.search[k] = e.target.value; ({ items: renderInventory, spells: renderSpells, features: renderFeatures })[k](); applyRole(); }
+  });
+  root.addEventListener("change", (e) => {
+    if (e.target.dataset.tradePartner) { S.trade.partner = e.target.value; return; }
+    if (e.target.matches('[data-ui="dollPresetSelect"]')) {
+      S.preset = e.target.value;
+      for (const [slot] of Object.entries(S.equipped)) if (!presetSlots().includes(slot)) delete S.equipped[slot];
+      while (S.attuned.size > PRESETS[S.preset].attune) S.attuned.delete([...S.attuned].at(-1));
+      rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
+      applyRole();
+      return;
+    }
+    const w = e.target.dataset.widget;
+    if (w) {
+      flip($(".cs-rail"), "[data-flip], .cs-stat", () => {
+        const els = w === "chips" ? [$(".cs-chips")] : w === "vitalStat" ? [$(".cs-stats")] : [$(`[data-ui="${w}"]`)];
+        els.forEach((el) => { el.style.display = e.target.checked ? "" : "none"; });
+      });
+    }
+    const tt = e.target.dataset.tabToggle;
+    if (tt) {
+      const tab = $(`.cs-tab[data-tab="${tt}"]`);
+      flip($(".cs-tabs"), ".cs-tab", () => { tab.hidden = !e.target.checked; });
+      if (!e.target.checked && S.tab === tt) setTab("equipment");
+      requestAnimationFrame(moveInk);
+    }
+  });
+
+  /* tabs lift off the content once it scrolls */
+  $$(".cs-panel").forEach((p) => p.addEventListener("scroll", () => $(".cs-tabs").classList.toggle("is-scrolled", p.scrollTop > 2), { passive: true }));
+  /* cursor spotlight */
+  root.addEventListener("pointermove", (e) => {
+    const el = e.target.closest(".fx-spot");
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+    el.style.setProperty("--my", `${e.clientY - r.top}px`);
+  });
+  /* press ripple from the pointer */
+  const RIPPLE = ".cs-btn, .cs-rest-btn, .cs-ability, .cs-chip, button.cs-stat, .cs-seg button, .cs-hp";
+  root.addEventListener("pointerdown", (e) => {
+    const el = e.target.closest(RIPPLE);
+    if (!el || el.disabled || !motionOn()) return;
+    el.classList.add("fx-ripple-host");
+    const r = el.getBoundingClientRect(), size = Math.max(r.width, r.height) * 2.2;
+    const dot = document.createElement("i");
+    dot.className = "fx-ripple";
+    Object.assign(dot.style, { width: `${size}px`, height: `${size}px`, left: `${e.clientX - r.left - size / 2}px`, top: `${e.clientY - r.top - size / 2}px` });
+    el.append(dot);
+    dot.addEventListener("animationend", () => dot.remove(), { once: true });
+  });
+
+  /* drag & drop: rows into sections and doll slots */
+  let dragId = null;
+  root.addEventListener("dragstart", (e) => {
+    const r = e.target.closest(".cs-row[data-row]");
+    if (!r || !canEdit()) return;
+    dragId = r.dataset.row;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", dragId);
+    requestAnimationFrame(() => r.classList.add("is-dragging"));
+    const it = byId[dragId];
+    $$(".cs-slot").forEach((s) => s.classList.toggle("is-target", !!it.slots?.includes(s.dataset.slot)));
+  });
+  root.addEventListener("dragend", () => {
+    dragId = null;
+    $$(".is-dragging, .is-target, .is-drop").forEach((el) => el.classList.remove("is-dragging", "is-target", "is-drop"));
+  });
+  root.addEventListener("dragover", (e) => {
+    if (!dragId) return;
+    const sec = e.target.closest('[data-panel="equipment"] .cs-section');
+    const slot = e.target.closest(".cs-slot");
+    if (sec || slot) e.preventDefault();
+    $$(".cs-section.is-drop").forEach((s) => s !== sec && s.classList.remove("is-drop"));
+    if (sec) sec.classList.add("is-drop");
+  });
+  root.addEventListener("drop", (e) => {
+    if (!dragId) return;
+    e.preventDefault();
+    const id = dragId;
+    const slot = e.target.closest(".cs-slot");
+    const sec = e.target.closest('[data-panel="equipment"] .cs-section');
+    if (slot) {
+      const it = byId[id];
+      if (!it.slots?.includes(slot.dataset.slot)) return pulse(slot, "is-refused");
+      const prev = slotOf(id); if (prev) delete S.equipped[prev];
+      S.equipped[slot.dataset.slot] = id;
+      if (it.attune) S.attuned.add(id);
+      rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
+      pulse($(`[data-slot="${slot.dataset.slot}"]`), "is-landed");
+    } else if (sec) {
+      byId[id].group = sec.dataset.section;
+      rerender("equipment", renderInventory);
+      pulse($(`[data-section="${sec.dataset.section}"]`), "is-landed");
+    }
+    applyRole();
+  });
+
+  /* mock-only: role preview */
+  document.querySelector('[data-ui="mockRolePreview"]').addEventListener("click", (e) => {
+    const b = e.target.closest("[data-role-set]");
+    if (!b) return;
+    root.dataset.role = b.dataset.roleSet;
+    b.parentElement.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    renderLists();
+    requestAnimationFrame(moveInk);
+  });
+
+  /* shell hook: show the state where an element is visible */
+  window.mockReveal = (id) => {
+    const tabOf = { overviewTab: "overview", skillsCard: "overview", savesCard: "overview", sensesCard: "overview", skillRow: "overview", saveRow: "overview",
+      spellsTab: "spells", prepareButton: "spells", preparedCounter: "spells", slotTrack: "spells", slotPip: "spells", spellRow: "spells", castButton: "spells",
+      featuresTab: "features", featureRow: "features", usesTrack: "features", notesTab: "notes", notesField: "notes",
+      equipmentTab: "equipment", paperdoll: "equipment", dollSlot: "equipment", itemRow: "equipment", equipButton: "equipment", inventoryToolbar: "equipment",
+      currencyBar: "equipment", restBar: "equipment", tradeButton: "equipment", dollHeader: "equipment", dollPresetSelect: "equipment", dollPresetEdit: "equipment", extraSlots: "equipment", attunementSocket: "equipment", encumbranceMeter: "equipment", attunementTrack: "equipment", dollToggle: "equipment", addItemButton: "equipment" };
+    root.classList.toggle("is-settings", ["settingsDrawer", "themeSwitch", "accentSwatch", "densitySwitch", "motionSwitch", "railWidgetToggle", "tabVisibilityToggle"].includes(id));
+    if (tabOf[id]) setTab(tabOf[id]);
+    if (id === "deathSaves" && S.hp > 0) { S.hp = 0; S.temp = 0; renderVitals(-1); }
+    if (id === "concentrationBadge" && !S.conc) { S.conc = "detect"; renderVitals(); }
+    if (["tradePanel", "tradePartnerSelect", "tradeStartButton", "tradeStatus", "myOffer", "partnerOffer", "offerItem", "tradeCancelButton", "tradeConfirmButton", "offerButton"].includes(id)) {
+      setTab("equipment"); root.classList.add("is-trading");
+      if (id !== "tradePartnerSelect" && id !== "tradeStartButton" && S.trade.status !== "open") $("[data-trade-start]")?.click();
+    }
+    if (["dollPresetSelect", "dollPresetEdit", "extraSlots"].includes(id)) {
+      document.querySelector('[data-role-set="gm"]').click();
+      if (id === "extraSlots" && S.preset !== "extended") { const sel = $('[data-ui="dollPresetSelect"]'); sel.value = "extended"; sel.dispatchEvent(new Event("change", { bubbles: true })); }
+    }
+    if (id === "inspectorPanel" || id === "itemDetail") { if (!S.selected) select("staff"); }
+    if (["collapseButton"].includes(id)) {/* both instances exist; nothing to switch */}
+  };
+
+  renderAbilities(); renderOverview(); renderLists(); renderVitals(); renderLevel();
+  /* idle twinkle: a random intact rune glints every couple of seconds */
+  setInterval(() => {
+    if (!motionOn() || document.hidden) return;
+    const lit = $$(".cs-rune:not(.is-spent), .cs-slotpip:not(.is-spent)").filter((e) => e.offsetParent);
+    if (lit.length) pulse(lit[Math.floor(Math.random() * lit.length)], "is-twinkle");
+  }, 1800);
+  /* hover card for icon-only entries, doll slots and sockets */
+  const hc = document.createElement("div");
+  hc.className = "cs-hovercard"; hc.setAttribute("role", "tooltip");
+  root.append(hc);
+  let hcTimer = null, hcFor = null;
+  const hcTarget = (el) => el?.closest('.cs-items[data-view="icons"] .cs-row, .cs-slot.is-filled, .cs-socket.is-on');
+  root.addEventListener("pointerover", (e) => {
+    const el = hcTarget(e.target);
+    if (!el || el === hcFor) return;
+    hcFor = el; clearTimeout(hcTimer); hc.classList.remove("is-on");
+    hcTimer = setTimeout(() => {
+      const id = el.dataset.row ?? el.dataset.socket ?? S.equipped[el.dataset.slot];
+      const x = byId[id]; if (!x) return;
+      const k = kind(x);
+      const RAR = { common: "Обычный", uncommon: "Необычный", rare: "Редкий", veryRare: "Очень редкий", legendary: "Легендарный" };
+      const sub = k === "spell" ? `${x.lvl ? `${x.lvl} круг` : "Заговор"} · ${SCHOOLS[x.school]}${x.prep === false || (x.lvl && !x.prep) ? " · не подготовлено" : ""}` : k === "item" ? RAR[x.rarity] : x.src;
+      hc.innerHTML = `<div class="hc-top">${tile(x)}<div><b>${x.name}</b><small ${k === "spell" ? `data-school="${x.school}"` : `data-rarity="${x.rarity ?? "common"}"`}>${sub}</small></div></div><p>${x.desc}</p>`;
+      const a = el.getBoundingClientRect(), box = root.getBoundingClientRect();
+      let left = a.right - box.left + 8, top = a.top - box.top;
+      if (left + 230 > box.width - 8) left = a.left - box.left - 238;
+      top = Math.max(8, Math.min(top, box.height - hc.offsetHeight - 8));
+      hc.style.left = `${Math.max(8, left)}px`; hc.style.top = `${top}px`;
+      hc.classList.add("is-on");
+    }, 320);
+  });
+  root.addEventListener("pointerout", (e) => {
+    const el = hcTarget(e.target);
+    if (!el || el.contains(e.relatedTarget)) return;
+    clearTimeout(hcTimer); hcFor = null; hc.classList.remove("is-on");
+  });
+  /* window entrance: the sheet settles in, rail blocks follow one by one */
+  if (motionOn()) {
+    root.animate([{ opacity: 0, transform: "translateY(12px) scale(0.985)" }, { opacity: 1, transform: "none" }], { duration: 520, easing: SETTLE });
+    cascade($$(".cs-rail > *").filter((e) => e.offsetParent));
+  }
+  document.querySelector("[data-mock-xp]").addEventListener("input", (e) => {
+    S.xp.value = Math.round(S.xp.from + (S.xp.to - S.xp.from) * (Number(e.target.value) / 100));
+    renderLevel();
+  });
+  $$('[data-view-for]').forEach((g) => g.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.view === S.view[g.dataset.viewFor])));
+  /* ═══════════ Rail rolls: dnd5e rolls them (rollHitDie, rollDeathSave), the mock fakes the dice ═══════════ */
+  function setTemp(v) {
+    if (!canEdit()) return;
+    // dnd5e's applyTempHP keeps the higher value
+    if (v <= S.temp) { pulse($("[data-hp-temp]"), "is-pop"); return; }
+    floatText(`+${v - S.temp} врем.`, "is-temp");
+    S.temp = v;
+    renderVitals();
+  }
+  function rollHitDie() {
+    if (!canEdit()) return;
+    if (!S.hd) { pulse($('[data-ui="hitDiceTrack"]'), "is-refused"); return; }
+    const die = $$("[data-die]")[S.hd - 1];
+    const r = 1 + Math.floor(Math.random() * 6);
+    chip(die, `к6: ${r} + 2`);
+    S.hd -= 1;
+    changeHP(Math.max(1, r + 2));
+    pulse($$("[data-die]")[S.hd], "is-roll");
+  }
+  function rollDeathSave() {
+    if (!canEdit() || S.hp > 0 || S.death.ok >= 3 || S.death.bad >= 3) return;
+    const r = 1 + Math.floor(Math.random() * 20);
+    const btn = $("[data-death-roll]");
+    chip(btn, r === 20 ? "20 — приходит в себя с 1 хитом" : r === 1 ? "1 — два провала" : `${r} — ${r >= 10 ? "успех" : "провал"}`);
+    if (r === 20) { S.death = { ok: 0, bad: 0 }; return changeHP(1); }
+    if (r === 1) S.death.bad = Math.min(3, S.death.bad + 2);
+    else if (r >= 10) S.death.ok += 1;
+    else S.death.bad += 1;
+    renderVitals();
+    burst($(`[data-death="${r >= 10 ? "ok" : "bad"}"]`), getComputedStyle(root).getPropertyValue(r >= 10 ? "--heal" : "--hp").trim(), 8);
+    if (r < 10) pulse($('[data-ui="deathSaves"]'), "is-shaken");
+  }
+  function chip(el, text) {
+    if (!el) return;
+    const a = el.getBoundingClientRect(), box = root.getBoundingClientRect();
+    const c = document.createElement("span");
+    c.className = "rp-chip";
+    c.textContent = text;
+    c.style.left = `${a.left - box.left + a.width / 2}px`;
+    c.style.top = `${a.top - box.top - 4}px`;
+    root.append(c);
+    setTimeout(() => c.remove(), 1700);
+  }
+
+  /* ═══════════ PROTOTYPE (#10): rail HP variants, ?rail=A|B|C — throwaway ═══════════ */
+  const RAIL_VARIANTS = { A: "Поле ввода", B: "Панель урона", C: "Жест по полосе" };
+  const railParam = new URLSearchParams(location.search).get("rail")?.toUpperCase();
+  root.dataset.railVariant = RAIL_VARIANTS[railParam] ? railParam : "A";
+  const hpCard = $(".cs-hpcard");
+  const hpBarEl = $('[data-ui="hpBar"]');
+  const signed = (n) => (n > 0 ? `+${n}` : `−${-n}`);
+
+  function applyHp(kind, n) {
+    if (!n) return;
+    if (kind === "temp") return setTemp(n);
+    changeHP(kind === "dmg" ? -n : n);
+  }
+  // The result drawn on the bar before anything is applied.
+  const preview = document.createElement("i");
+  preview.className = "rp-preview";
+  $(".cs-hp-bar").append(preview);
+  function showPreview(kind, n) {
+    if (!n || kind === "temp" || !kind) { preview.className = "rp-preview"; return; }
+    const hp = kind === "dmg" ? Math.max(0, S.hp - Math.max(0, n - S.temp)) : Math.min(S.hpMax, S.hp + n);
+    preview.className = `rp-preview is-on is-${kind}`;
+    preview.style.left = pct(Math.min(hp, S.hp), S.hpMax);
+    preview.style.width = pct(Math.abs(hp - S.hp), S.hpMax);
+  }
+
+  /* A — the number becomes a field: −7 damage, +5 heal, 20 sets, в8 temporary */
+  const fieldA = document.createElement("form");
+  fieldA.className = "rp-a";
+  fieldA.hidden = true;
+  fieldA.innerHTML = `<input name="v" autocomplete="off" spellcheck="false" aria-label="Изменить хиты" placeholder="−7 · +5 · 20 · в8">`;
+  hpCard.append(fieldA);
+  const hintA = document.createElement("span");
+  hintA.className = "rp-a-hint";
+  hintA.textContent = "−7 урон · +5 лечение · 20 задать · в8 временные · Esc";
+  $(".cs-hp-foot").prepend(hintA);
+  function parseA(raw) {
+    const m = raw.trim().replace(/−/g, "-").match(/^(в|т|t|b)?\s*([+-]?)\s*(\d+)$/i);
+    if (!m) return null;
+    const n = Number(m[3]);
+    if (m[1]) return ["temp", n];
+    if (m[2] === "-") return ["dmg", n];
+    if (m[2] === "+") return ["heal", n];
+    return n < S.hp ? ["dmg", S.hp - n] : ["heal", n - S.hp];
+  }
+  function openA(prefill = "") {
+    fieldA.hidden = false;
+    hpCard.classList.add("is-editing");
+    fieldA.v.value = prefill;
+    fieldA.v.focus();
+  }
+  function closeA() {
+    fieldA.hidden = true;
+    hpCard.classList.remove("is-editing", "is-bad");
+    showPreview(null, 0);
+  }
+  fieldA.addEventListener("input", () => {
+    const r = parseA(fieldA.v.value);
+    fieldA.classList.toggle("is-bad", !!fieldA.v.value.trim() && !r);
+    showPreview(...(r ?? [null, 0]));
+  });
+  fieldA.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const r = parseA(fieldA.v.value);
+    if (!r) { pulse(fieldA, "is-refused"); return; }
+    closeA();
+    applyHp(...r);
+  });
+  fieldA.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); closeA(); } });
+  fieldA.v.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== fieldA.v) closeA(); }, 150));
+
+  /* B — a panel under the card: amount, then Урон / Лечение / Временные; hovering an action previews it */
+  const panelB = document.createElement("div");
+  panelB.className = "rp-b";
+  panelB.hidden = true;
+  panelB.dataset.flip = "";
+  panelB.innerHTML = `
+    <div class="rp-b-amt"><button type="button" data-b-step="-1" aria-label="Меньше">−</button><input type="number" min="0" value="5" data-b-amt aria-label="Количество"><button type="button" data-b-step="1" aria-label="Больше">+</button></div>
+    <div class="rp-b-quick">${[1, 5, 10, 20].map((n) => `<button type="button" data-b-set="${n}">${n}</button>`).join("")}</div>
+    <div class="rp-b-acts"><button type="button" class="is-dmg" data-b-act="dmg">Урон</button><button type="button" class="is-heal" data-b-act="heal">Лечение</button><button type="button" class="is-temp" data-b-act="temp">${icon("shield")}Временные</button></div>`;
+  hpCard.after(panelB);
+  const amtInput = $("[data-b-amt]", panelB);
+  const amtB = () => Math.max(0, Math.floor(Number(amtInput.value) || 0));
+  function toggleB(on = panelB.hidden) {
+    if (on === !panelB.hidden) return;
+    flip($(".cs-rail"), "[data-flip]", () => { panelB.hidden = !on; });
+    if (on) amtInput.focus();
+    else showPreview(null, 0);
+  }
+  panelB.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    e.stopPropagation();
+    if (!b) return;
+    if (b.dataset.bStep) amtInput.value = Math.max(0, amtB() + Number(b.dataset.bStep));
+    if (b.dataset.bSet) amtInput.value = b.dataset.bSet;
+    if (b.dataset.bAct) { const n = amtB(); toggleB(false); applyHp(b.dataset.bAct, n); }
+  });
+  panelB.addEventListener("pointerover", (e) => {
+    const b = e.target.closest("[data-b-act]");
+    showPreview(b?.dataset.bAct, b ? amtB() : 0);
+  });
+  panelB.addEventListener("pointerleave", () => showPreview(null, 0));
+  panelB.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); toggleB(false); } });
+
+  /* C — drag along the bar (left damage, right heal), wheel ±1; right click opens a temporary HP field */
+  const tagC = document.createElement("span");
+  tagC.className = "rp-c-tag";
+  tagC.hidden = true;
+  hpCard.append(tagC);
+  let dragC = null, wheelC = 0, wheelTimer = 0, dragged = false;
+  function showTagC(n) {
+    tagC.hidden = !n;
+    tagC.textContent = n ? signed(n) : "";
+    tagC.className = `rp-c-tag ${n < 0 ? "is-dmg" : "is-heal"}`;
+    hpCard.classList.toggle("is-scrubbing", !!n);
+    showPreview(n < 0 ? "dmg" : "heal", Math.abs(n));
+  }
+  hpBarEl.addEventListener("pointerdown", (e) => {
+    if (root.dataset.railVariant !== "C" || !canEdit() || e.button !== 0) return;
+    dragC = { x: e.clientX, n: 0 };
+    dragged = false;
+    hpBarEl.setPointerCapture(e.pointerId);
+  });
+  hpBarEl.addEventListener("pointermove", (e) => {
+    if (!dragC) return;
+    const w = $(".cs-hp-bar").offsetWidth || 1;
+    dragC.n = Math.round(((e.clientX - dragC.x) / w) * S.hpMax);
+    if (dragC.n) dragged = true;
+    showTagC(dragC.n);
+  });
+  hpBarEl.addEventListener("pointerup", () => {
+    if (!dragC) return;
+    const n = dragC.n;
+    dragC = null;
+    showTagC(0);
+    if (n) changeHP(n);
+  });
+  hpBarEl.addEventListener("wheel", (e) => {
+    if (root.dataset.railVariant !== "C" || !canEdit()) return;
+    e.preventDefault();
+    wheelC += e.deltaY < 0 ? 1 : -1;
+    showTagC(wheelC);
+    clearTimeout(wheelTimer);
+    wheelTimer = setTimeout(() => { const n = wheelC; wheelC = 0; showTagC(0); changeHP(n); }, 700);
+  }, { passive: false });
+
+  function railHpClick() {
+    if (!canEdit()) return;
+    const v = root.dataset.railVariant;
+    if (v === "A") return openA();
+    if (v === "B") return toggleB();
+    if (dragged) { dragged = false; return; }
+    chip($(".cs-hp-bar"), "Тяните: ← урон, → лечение · колесо ±1 · ПКМ — временные");
+  }
+  function railHpContext() {
+    if (!canEdit()) return;
+    if (root.dataset.railVariant === "B") return toggleB(true);
+    openA("в");
+  }
+
+  const railSwitch = document.createElement("nav");
+  railSwitch.className = "rp-switch";
+  railSwitch.setAttribute("aria-label", "Прототип: варианты рейла");
+  document.body.append(railSwitch);
+  function renderRailSwitch() {
+    const k = root.dataset.railVariant;
+    railSwitch.innerHTML = `<button type="button" data-rp="-1" aria-label="Предыдущий вариант">←</button><span><b>Рейл ${k}</b> · ${RAIL_VARIANTS[k]}</span><button type="button" data-rp="1" aria-label="Следующий вариант">→</button>`;
+  }
+  function cycleRail(d) {
+    const keys = Object.keys(RAIL_VARIANTS);
+    const k = keys[(keys.indexOf(root.dataset.railVariant) + d + keys.length) % keys.length];
+    closeA();
+    toggleB(false);
+    root.dataset.railVariant = k;
+    try { const u = new URL(location.href); u.searchParams.set("rail", k); history.replaceState(null, "", u); } catch { /* file:// in some browsers */ }
+    renderRailSwitch();
+  }
+  railSwitch.addEventListener("click", (e) => { const b = e.target.closest("[data-rp]"); if (b) cycleRail(Number(b.dataset.rp)); });
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest?.("input, textarea, [contenteditable]")) return;
+    if (e.key === "ArrowLeft") cycleRail(-1);
+    if (e.key === "ArrowRight") cycleRail(1);
+  });
+  renderRailSwitch();
+
+  applyLayout(layoutFor(root.offsetWidth));
+  requestAnimationFrame(moveInk);
+})();
+</script>
+<script src="/__mock/shell.js"></script>
+</body>
+</html>

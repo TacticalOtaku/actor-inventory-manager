@@ -251,6 +251,10 @@
         {
           "text": "AC shows its breakdown (base, Dexterity, items, effects) on hover.",
           "source": "spec"
+        },
+        {
+          "text": "Right click on AC, initiative or speed opens the dnd5e dialog for it (ArmorClassConfig, InitiativeConfig, MovementSensesConfig) for the owner and the GM.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -344,12 +348,12 @@
     "abilityTile": {
       "behaviour": [
         {
-          "text": "Click rolls an ability check, Shift+click rolls the saving throw; a filled dot marks saving throw proficiency.",
-          "source": "assumption"
+          "text": "Click rolls an ability check (actor.rollAbilityCheck), Shift+click rolls the saving throw (actor.rollSavingThrow); a filled dot marks saving throw proficiency.",
+          "source": "spec"
         },
         {
           "text": "On hover the score slides away and the saving throw bonus («Спас +N») slides in.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -393,7 +397,7 @@
       "behaviour": [
         {
           "text": "Tabs: Обзор, Снаряжение, Заклинания, Умения, Заметки; Обзор, Умения and Заметки can be hidden in settings.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "The underline slides to the chosen tab over 420 ms; the new panel fades in from 8 px below.",
@@ -406,7 +410,7 @@
       "behaviour": [
         {
           "text": "Click shows its panel; counts show the number of items, spells or features.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -415,7 +419,7 @@
       "behaviour": [
         {
           "text": "Shows skills, saving throws, passive senses and proficiencies as cards that wrap by width.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -424,7 +428,7 @@
       "behaviour": [
         {
           "text": "Lists the 18 skills with ability, proficiency mark (hollow, filled, ringed for expertise) and total bonus.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -432,8 +436,8 @@
     "skillRow": {
       "behaviour": [
         {
-          "text": "Click rolls the skill check.",
-          "source": "assumption"
+          "text": "Click rolls the skill check (actor.rollSkill).",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -442,7 +446,7 @@
       "behaviour": [
         {
           "text": "Lists the six saving throws with proficiency and total bonus.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -450,8 +454,8 @@
     "saveRow": {
       "behaviour": [
         {
-          "text": "Click rolls the saving throw.",
-          "source": "assumption"
+          "text": "Click rolls the saving throw (actor.rollSavingThrow).",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -459,8 +463,12 @@
     "sensesCard": {
       "behaviour": [
         {
-          "text": "Read-only: passive scores, senses, proficiencies and languages.",
-          "source": "assumption"
+          "text": "Shows passive scores, senses, proficiencies and languages; values are not edited in place, the card's gear opens the dnd5e dialogs.",
+          "source": "spec"
+        },
+        {
+          "text": "Also lists armor proficiencies; tools have their own card.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1160,32 +1168,56 @@
           "source": "spec"
         },
         {
-          "text": "Progress is (XP − this level's threshold) / (next threshold − this level's threshold), from the dnd5e XP table.",
-          "source": "assumption"
+          "text": "Progress comes from dnd5e's prepared XP fields (system.details.xp.min, max and pct), so world rules apply.",
+          "source": "spec"
         },
         {
           "text": "Glow grows with the square of progress, so it stays faint early and builds near the level; from 90% the orb slowly pulses.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "When XP changes the liquid rises or falls over 900 ms.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "Hover shows level, current and next-level XP and the percentage; the same text is its accessible name.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "With motion off the surface stands still and the orb does not pulse.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "Characters using milestone levelling (XP hidden in dnd5e settings) get an orb with the level only, no liquid.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "Small bubbles rise through the liquid; hover brightens the orb.",
-          "source": "assumption"
+          "source": "spec"
+        },
+        {
+          "text": "Click (owner or GM) opens the XP card under the orb: level, progress bar with current and next-level XP, quick +50, +100, +250, +1000, and a field with Добавить and Задать. Escape or a click outside closes it.",
+          "source": "spec"
+        },
+        {
+          "text": "When XP reaches the next level, the orb grows, fills to the brim, glows gold, an arrow rises over it and the number reads 6→7; the card says «можно повысить — нажмите на сферу».",
+          "source": "spec"
+        },
+        {
+          "text": "Click on the ready orb levels up through dnd5e (AdvancementManager.forLevelChange), which asks which class when there are several; right click or Shift+click still opens the XP card.",
+          "source": "spec"
+        },
+        {
+          "text": "In milestone levelling (XP off in dnd5e settings) the orb shows only the level, without liquid or XP card; a click offers the level-up through the same dnd5e manager.",
+          "source": "spec"
+        },
+        {
+          "text": "Observers see the orb and its hover text but cannot open the card or level up.",
+          "source": "spec"
+        },
+        {
+          "text": "The pulse near the next level, the moving surface and the bubbles are ambient effects: «Все» motion level only, front window only.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1221,6 +1253,86 @@
         {
           "text": "Casts the spell or uses the item straight from the rail, under the same rules as in its tab.",
           "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "xpCard": {
+      "behaviour": [
+        {
+          "text": "XP card of the level orb: XP is written through actor.update on system.details.xp.value; the card has no level-up button, the ready orb is the button.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "headerLinks": {
+      "behaviour": [
+        {
+          "text": "Class, subclass, species and background in the header subtitle are links: click opens that item's dnd5e sheet.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "sheetMenuButton": {
+      "behaviour": [
+        {
+          "text": "«⋯» in the header opens a menu of rare entries; click outside or Escape closes it.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "sheetMenu": {
+      "behaviour": [
+        {
+          "text": "Открыть лист dnd5e — opens the vanilla sheet (actor.sheet.render).",
+          "source": "spec"
+        },
+        {
+          "text": "Особые черты and Бастион open the vanilla sheet on that tab, since dnd5e 5.3.3 has no standalone dialog for them; Бастион shows only when bastions are on in the world.",
+          "source": "spec"
+        },
+        {
+          "text": "Вернуть исходный облик shows only while the actor is transformed (actor.revertOriginalForm).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "toolsCard": {
+      "behaviour": [
+        {
+          "text": "Overview card listing tool proficiencies with ability, proficiency mark and total bonus.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "toolRow": {
+      "behaviour": [
+        {
+          "text": "Click rolls the tool check through dnd5e (actor.rollToolCheck).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "defensesCard": {
+      "behaviour": [
+        {
+          "text": "Overview card: damage resistances, immunities, vulnerabilities, condition immunities and damage modification, read from system.traits; empty entries read «нет».",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "cardConfigButton": {
+      "behaviour": [
+        {
+          "text": "Each Overview card shows a gear on hover for the owner and the GM; it opens the matching dnd5e dialog (SkillsConfig, AbilityConfig, ToolsConfig, DamagesConfig / TraitsConfig, MovementSensesConfig, LanguagesConfig, WeaponsConfig). Hidden for observers.",
+          "source": "spec"
         }
       ],
       "comments": []

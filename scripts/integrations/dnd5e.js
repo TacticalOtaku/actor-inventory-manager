@@ -182,7 +182,7 @@ export function formatItemForDisplay(item) {
 
   const system = item.system ?? {};
   const rarity = (system.rarity ?? "common").toLowerCase();
-  const rarityVisuals = getItemRarityVisuals(rarity, item);
+  const rarityVisuals = getItemRarityVisuals(rarity);
   const rarityColor = rarityVisuals.color;
   const hasGlow = rarityVisuals.hasGlow;
   const isEquipped = Boolean(system.equipped);

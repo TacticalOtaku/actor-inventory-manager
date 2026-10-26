@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- Colours from SC - Item Rarity Colors reach the window. Before, the module looked for settings SC does not have and
+  always showed its own colours: rarity colours, the rarity glow and spell-school colours (including SC's per-level
+  variants) now come from what the GM set in SC.
+
 ## 1.9.1
 
 ### Fixed

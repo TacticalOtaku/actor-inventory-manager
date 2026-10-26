@@ -53,6 +53,8 @@ export function computeActorCurrency(actor) {
         let primaryName = "GP";
 
         for (const curr of actorCurrencies) {
+          // Secondary currencies (Item Piles' SECONDARY_CURRENCIES) have no exchange rate and no gold value.
+          if (curr.secondary) continue;
           total += num(curr.quantity, 0) * num(curr.exchangeRate, 1);
           if (curr.primary) {
             const rawAbbr = curr.abbreviation || curr.name || "GP";

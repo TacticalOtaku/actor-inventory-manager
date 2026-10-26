@@ -707,6 +707,10 @@
         {
           "text": "Opens the item's menu, as on the vanilla sheet: Просмотр, Изменить, Дублировать, Удалить (item.deleteDialog), В чат (item.displayCard), and Идентифицировать for unidentified items.",
           "source": "spec"
+        },
+        {
+          "text": "For spells the menu is Просмотр, Изменить, Дублировать, Удалить, В чат and Создать свиток (Item5e.createScrollFromSpell).",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -719,11 +723,19 @@
         },
         {
           "text": "Подготовленные lists every prepared spell of circle 1 and higher, sorted by circle; cantrips are always ready and never listed there.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "In the spellbook, unprepared spells are dimmed to 50%.",
-          "source": "assumption"
+          "source": "spec"
+        },
+        {
+          "text": "After the spellbook come Врождённые and По желанию, shown only when the actor has such spells; they need no slots.",
+          "source": "spec"
+        },
+        {
+          "text": "Spell-school colours come from SC Rarity Colors when it is active (its spell-school-styles setting, including per-level variants), otherwise from the module's own school palette (--school-* tokens).",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -732,7 +744,11 @@
       "behaviour": [
         {
           "text": "One row of slot gems per circle.",
-          "source": "assumption"
+          "source": "spec"
+        },
+        {
+          "text": "A warlock's pact slots get their own track «Договор · N круг» after the circles, and their own rune group in the rail (system.spells.pact).",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -741,7 +757,7 @@
       "behaviour": [
         {
           "text": "Click a lit gem to spend slots down to it (it bursts), click a hollow one to restore up to it (it pops in).",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -749,8 +765,8 @@
     "spellRow": {
       "behaviour": [
         {
-          "text": "Shows school, casting time, range and marks for concentration (К) and ritual (Р).",
-          "source": "assumption"
+          "text": "Shows school, casting time, range, the components chip В / С / М (hover shows the material and its cost), К for concentration, Р for ritual and «Всегда» for always-prepared spells; innate spells show their uses as pips.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -758,20 +774,20 @@
     "castButton": {
       "behaviour": [
         {
-          "text": "Shown only for cantrips, prepared spells and ritual spells; an unprepared ritual is cast as a ritual without a slot.",
-          "source": "assumption"
+          "text": "Shown for everything dnd5e can cast now: cantrips, prepared, always-prepared, innate, at-will and pact spells, and rituals; an unprepared non-ritual spell has none.",
+          "source": "spec"
         },
         {
-          "text": "Casts the spell through its dnd5e activity; a levelled spell spends the lowest free slot of its circle or higher and that gem bursts.",
-          "source": "assumption"
+          "text": "Casting calls item.use(): dnd5e's usage dialog chooses the slot, upcasting or ritual casting; the sheet reacts to what dnd5e spent — that gem bursts and sparks fly in the school's colour. The mock imitates the dialog's default (the lowest free slot of the circle or higher).",
+          "source": "spec"
         },
         {
-          "text": "With no free slot the row shakes and nothing is cast.",
-          "source": "assumption"
+          "text": "With nothing to spend dnd5e refuses: the row shakes and says why; an innate spell used up waits for a long rest.",
+          "source": "spec"
         },
         {
           "text": "A concentration spell sets the concentration badge.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -932,6 +948,10 @@
         {
           "text": "Shows the spellcasting ability, spell save DC, spell attack bonus and passive Perception; hidden for actors without spellcasting.",
           "source": "spec"
+        },
+        {
+          "text": "With several casting classes it shows one line per class: ability, save DC and attack bonus.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -966,8 +986,12 @@
     "preparedCounter": {
       "behaviour": [
         {
-          "text": "Shows prepared spells against the class limit (wizard 6: 10) and turns amber at the limit.",
-          "source": "assumption"
+          "text": "Shows prepared spells against the class limit from dnd5e, per casting class; amber at the limit, red past it.",
+          "source": "spec"
+        },
+        {
+          "text": "Past the limit dnd5e only warns: the header shows its preparation warning («Подготовка 11 / 10»); nothing is refused.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -976,19 +1000,19 @@
       "behaviour": [
         {
           "text": "Toggles whether the spell is prepared; the row glides into or out of Подготовленные.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
-          "text": "At the limit, preparing another spell is refused: the counter and the row shake and nothing changes.",
-          "source": "assumption"
+          "text": "Preparing past the limit is allowed, as in dnd5e: the counter turns red and shakes, and the header warns.",
+          "source": "spec"
         },
         {
           "text": "Spells the class always has prepared show no toggle.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "Toggles on a row show their on state by colour only, without a filled box.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1475,6 +1499,33 @@
       "behaviour": [
         {
           "text": "Items equipped without a slot show as chips under the doll in «Без слота»; click selects, the × unequips.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "spellFilterChips": {
+      "behaviour": [
+        {
+          "text": "Подготовленные, Ритуал, Концентрация, Действие, Бонусное and Реакция narrow the spell lists; they combine.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "pactSlots": {
+      "behaviour": [
+        {
+          "text": "Pact slot pips work like circle pips: click a lit one to spend down to it, a hollow one to restore up to it; a long rest refills them (dnd5e decides, the mock imitates).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "preparationWarning": {
+      "behaviour": [
+        {
+          "text": "Header chip shown while prepared spells exceed a class limit; it mirrors dnd5e's preparation warning.",
           "source": "spec"
         }
       ],

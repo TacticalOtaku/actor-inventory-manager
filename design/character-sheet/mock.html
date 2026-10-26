@@ -638,6 +638,15 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-root[data-motion="off"] .cs-wave, .cs-root[data-motion="off"] .cs-level { animation: none !important; }
 .cs-name { margin: 0; font: 600 22px/1.1 var(--font-display); letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cs-sub { color: var(--text-2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-title-text { position: relative; min-width: 0; }
+.cs-sub-link { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; border-bottom: 1px dotted transparent; transition: color var(--d-fast), border-color var(--d-fast); }
+.cs-sub-link:hover { color: var(--text); border-bottom-color: var(--text-3); }
+.cs-menu-wrap { position: relative; }
+.cs-menu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 20; display: grid; min-width: 220px; padding: 4px; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--r-md); box-shadow: 0 10px 28px rgb(0 0 0 / 0.4); animation: cs-pop var(--d-base) var(--ease-snap); }
+.cs-menu[hidden] { display: none; }
+.cs-menu button { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 7px 10px; border: 0; border-radius: var(--r-sm); background: none; color: var(--text); font: 12.5px var(--font-ui); text-align: left; cursor: pointer; }
+.cs-menu button:hover { background: var(--surface-3); }
+.cs-menu small { color: var(--text-3); font-size: 10.5px; }
 .cs-tools { display: flex; align-items: flex-start; gap: var(--s1); }
 .cs-ibtn {
   display: inline-grid; place-items: center;
@@ -926,7 +935,11 @@ button.cs-stat:active { transform: scale(0.95); }
 /* ═══════════ Overview ═══════════ */
 .cs-overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--s3); align-items: start; }
 .cs-card { padding: var(--s3); background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-lg); }
-.cs-card h3 { margin: 0 0 var(--s2); font: 600 13px var(--font-display); letter-spacing: 0.03em; }
+.cs-card h3 { display: flex; align-items: center; justify-content: space-between; min-height: 22px; margin: 0 0 var(--s2); font: 600 13px var(--font-display); letter-spacing: 0.03em; }
+.cs-card-cfg { opacity: 0; transition: opacity var(--d-fast); }
+.cs-card:hover .cs-card-cfg, .cs-card-cfg:focus-visible { opacity: 1; }
+.cs-kv b.is-none { color: var(--text-3); font-weight: 400; }
+.cs-dmg { display: inline-flex; align-items: center; gap: 4px; padding: 0 7px; border-radius: 99px; background: color-mix(in oklab, var(--hp) 16%, transparent); color: color-mix(in oklab, var(--hp) 70%, var(--warn)); font-size: 11.5px; }
 .cs-skill { display: flex; align-items: center; gap: var(--s2); height: 28px; padding: 0 6px; border-radius: var(--r-sm); cursor: pointer; transition: background var(--d-fast); }
 .cs-skill:hover { background: var(--surface-2); }
 .cs-skill .p { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--text-3); flex: none; }
@@ -1122,6 +1135,54 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-hp-hint { display: none; color: var(--text-3); font-size: 10.5px; }
 .cs-hpcard.is-editing .cs-hp-hint { display: inline; }
 .cs-hpcard.is-editing [data-hp-info] { display: none; }
+/* ═══════════ PROTOTYPE (#11): level orb variants, ?orb=A|B|C — throwaway ═══════════ */
+.proto-switch {
+  position: fixed; top: 12px; left: 50%; translate: -50% 0; z-index: 50;
+  display: flex; align-items: center; gap: 10px; padding: 5px 6px;
+  border-radius: 99px; background: #f4efe4; color: #1b1206; font: 600 12px system-ui, sans-serif;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.45);
+}
+.proto-switch button { width: 26px; height: 26px; border-radius: 50%; border: 0; background: #1b1206; color: #f4efe4; cursor: pointer; font: 700 13px system-ui, sans-serif; }
+.cs-level[role="button"] { cursor: pointer; }
+.cs-root[data-role="observer"] .cs-level { cursor: default; }
+.cs-title { position: relative; }
+/* Ready to level: the liquid fills to the brim and the ring breathes in gold. */
+.cs-level.is-ready { --xp: 1; border-color: var(--warn); box-shadow: 0 0 22px 4px color-mix(in oklab, var(--warn) 55%, transparent), inset 0 -6px 12px rgb(0 0 0 / 0.35); animation: cs-orb-pulse 1.6s ease-in-out infinite; }
+.cs-root[data-orb-variant="C"] .cs-level.is-ready::after { content: "▲"; position: absolute; top: 3px; font-size: 8px; color: var(--accent-ink); animation: cs-float 1.4s ease-in-out infinite; }
+.cs-root[data-orb-variant="C"] .cs-level.is-ready .cs-level-n::after { content: "→" attr(data-next); }
+.cs-root[data-orb-variant="C"] .cs-level.is-ready { width: 54px; height: 54px; }
+
+/* A — field */
+.cs-xp-edit { position: absolute; left: 0; right: 0; top: 100%; z-index: 4; display: grid; gap: 2px; margin-top: 4px; }
+.cs-xp-edit[hidden], .cs-xp-card[hidden], .cs-levelup[hidden] { display: none; }
+.cs-xp-edit input { width: 220px; box-sizing: border-box; padding: 3px 10px; border-radius: var(--r-md); background: var(--surface-0); color: var(--text); border: 1px solid var(--accent-line); font: 600 16px var(--font-ui); outline: none; }
+.cs-xp-edit small { color: var(--text-3); font-size: 10.5px; }
+.cs-levelup { height: 26px; margin: 4px 0 2px; padding: 0 10px; font-size: 12px; animation: cs-pop var(--d-slow) var(--ease-snap); }
+.cs-levelup .cs-ico { width: 13px; height: 13px; }
+
+/* B — card */
+.cs-xp-card {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 20; width: 260px;
+  display: grid; gap: 7px; padding: 10px;
+  background: var(--surface-2); border: 1px solid var(--accent-line); border-radius: var(--r-lg);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.45); animation: cs-pop var(--d-base) var(--ease-snap);
+}
+.cs-xp-card-h { display: flex; justify-content: space-between; align-items: baseline; }
+.cs-xp-card-h span { color: var(--text-2); font-size: 11.5px; }
+.cs-xp-bar { height: 6px; border-radius: 4px; background: var(--surface-0); overflow: hidden; }
+.cs-xp-bar i { display: block; height: 100%; background: var(--accent); transition: width var(--d-slow) var(--ease-settle); }
+.cs-xp-nums { display: flex; justify-content: space-between; color: var(--text-3); font: 11px var(--font-num); }
+.cs-xp-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.cs-xp-card button:not(.cs-btn) { padding: 4px 0; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-3); color: var(--text); font: 600 11.5px var(--font-ui); cursor: pointer; }
+.cs-xp-row { display: grid; grid-template-columns: 1fr auto auto; gap: 4px; }
+.cs-xp-row input { min-width: 0; padding: 4px 8px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface-0); color: var(--text); font: 600 13px var(--font-ui); }
+.cs-xp-row button { padding: 0 8px !important; }
+.cs-xp-card .cs-btn.is-primary { justify-content: center; }
+
+/* C — «+ опыт» chip */
+.cs-xp-chip { display: none; align-items: center; gap: 2px; margin-left: 8px; padding: 0 7px; height: 18px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text-2); font: 600 10.5px var(--font-ui); cursor: pointer; vertical-align: 1px; }
+.cs-xp-chip .cs-ico { width: 10px; height: 10px; }
+.cs-root[data-orb-variant="C"] .cs-xp-chip { display: inline-flex; }
 </style>
 </head>
 <body>
@@ -1276,13 +1337,22 @@ button.cs-stat:active { transform: scale(0.95); }
           <div class="cs-liquid"><svg class="cs-wave is-back" viewBox="0 0 120 14" preserveAspectRatio="none"><path d="M0 6 Q15 0 30 6 T60 6 T90 6 T120 6 V14 H0z"/></svg><svg class="cs-wave" viewBox="0 0 120 14" preserveAspectRatio="none"><path d="M0 6 Q15 0 30 6 T60 6 T90 6 T120 6 V14 H0z"/></svg><i class="cs-bubble" style="left:28%;animation-delay:0s"></i><i class="cs-bubble" style="left:58%;animation-delay:1.1s"></i><i class="cs-bubble" style="left:44%;animation-delay:1.9s"></i></div>
           <span class="cs-level-n">6</span>
         </div>
-        <div style="min-width:0">
+        <div class="cs-title-text" data-title-text>
           <h2 class="cs-name">Ирэн Вальмор</h2>
-          <div class="cs-sub">Волшебница 6 · Школа Воплощения · Высший эльф · Мудрец</div>
+          <div class="cs-sub" data-ui="headerLinks"><button type="button" class="cs-sub-link" data-oos="Открывает лист класса «Волшебница» (item.sheet)"><span data-class-label>Волшебница 6</span></button> · <button type="button" class="cs-sub-link" data-oos="Открывает лист подкласса «Школа Воплощения»">Школа Воплощения</button> · <button type="button" class="cs-sub-link" data-oos="Открывает лист вида «Высший эльф»">Высший эльф</button> · <button type="button" class="cs-sub-link" data-oos="Открывает лист предыстории «Мудрец»">Мудрец</button></div>
         </div>
       </div>
       <div class="cs-tools">
         <span class="cs-readonly-badge"><svg class="cs-ico"><use href="#i-lock"/></svg>Только просмотр</span>
+        <div class="cs-menu-wrap">
+          <button type="button" class="cs-ibtn" data-ui="sheetMenuButton" aria-haspopup="menu" aria-expanded="false" aria-label="Ещё" title="Ещё"><svg class="cs-ico"><use href="#i-dots"/></svg></button>
+          <div class="cs-menu" role="menu" data-ui="sheetMenu" hidden>
+            <button type="button" role="menuitem" data-oos="actor.sheet.render(true): открывает ванильный лист dnd5e">Открыть лист dnd5e</button>
+            <button type="button" role="menuitem" data-oos="Открывает ванильный лист на вкладке «Особые черты»: своего окна у dnd5e 5.3.3 нет">Особые черты</button>
+            <button type="button" role="menuitem" data-oos="Открывает ванильный лист на вкладке «Бастион»; пункт виден, только если бастионы включены в мире">Бастион</button>
+            <button type="button" role="menuitem" class="is-cond" data-oos="actor.revertOriginalForm(); пункт виден только во время превращения">Вернуть исходный облик <small>при превращении</small></button>
+          </div>
+        </div>
         <button type="button" class="cs-ibtn" data-ui="settingsButton" aria-label="Настройки листа" title="Настройки листа"><svg class="cs-ico"><use href="#i-gear"/></svg></button>
         <button type="button" class="cs-ibtn" data-ui="collapseButton" data-act="collapse" aria-label="Свернуть в колонку" title="Свернуть в колонку"><svg class="cs-ico"><use href="#i-collapse"/></svg></button>
       </div>
@@ -1302,13 +1372,22 @@ button.cs-stat:active { transform: scale(0.95); }
       <!-- Overview -->
       <div class="cs-panel" data-panel="overview" data-ui="overviewTab" hidden>
         <div class="cs-overview">
-          <div class="cs-card fx-spot" data-ui="skillsCard"><h3>Навыки</h3><div data-skills></div></div>
-          <div class="cs-card fx-spot" data-ui="savesCard"><h3>Спасброски</h3><div data-saves></div></div>
-          <div class="cs-card fx-spot" data-ui="sensesCard"><h3>Чувства и владения</h3>
+          <div class="cs-card fx-spot" data-ui="skillsCard"><h3>Навыки<button type="button" class="cs-ibtn cs-mini cs-editonly cs-card-cfg" data-ui="cardConfigButton" aria-label="Настроить навыки" title="Настроить навыки" data-oos="Открывает SkillsConfig dnd5e"><svg class="cs-ico"><use href="#i-gear"/></svg></button></h3><div data-skills></div></div>
+          <div class="cs-card fx-spot" data-ui="savesCard"><h3>Спасброски<button type="button" class="cs-ibtn cs-mini cs-editonly cs-card-cfg" data-ui="cardConfigButton" aria-label="Настроить спасброски" title="Настроить спасброски" data-oos="Открывает AbilityConfig dnd5e"><svg class="cs-ico"><use href="#i-gear"/></svg></button></h3><div data-saves></div></div>
+          <div class="cs-card fx-spot" data-ui="toolsCard"><h3>Инструменты<button type="button" class="cs-ibtn cs-mini cs-editonly cs-card-cfg" data-ui="cardConfigButton" aria-label="Настроить инструменты" title="Настроить инструменты" data-oos="Открывает ToolsConfig dnd5e"><svg class="cs-ico"><use href="#i-gear"/></svg></button></h3><div data-tools></div></div>
+          <div class="cs-card fx-spot" data-ui="defensesCard"><h3>Защиты<button type="button" class="cs-ibtn cs-mini cs-editonly cs-card-cfg" data-ui="cardConfigButton" aria-label="Настроить защиты" title="Настроить защиты" data-oos="Открывает DamagesConfig / TraitsConfig dnd5e"><svg class="cs-ico"><use href="#i-gear"/></svg></button></h3>
+            <div class="cs-kv"><span>Сопротивления</span><b><span class="cs-dmg" data-dmg="fire">Огонь</span></b></div>
+            <div class="cs-kv"><span>Иммунитеты</span><b class="is-none">нет</b></div>
+            <div class="cs-kv"><span>Уязвимости</span><b class="is-none">нет</b></div>
+            <div class="cs-kv"><span>Иммунитет к состояниям</span><b class="is-none">нет</b></div>
+            <div class="cs-kv"><span>Изменение урона</span><b class="is-none">нет</b></div>
+          </div>
+          <div class="cs-card fx-spot" data-ui="sensesCard"><h3>Чувства и владения<button type="button" class="cs-ibtn cs-mini cs-editonly cs-card-cfg" data-ui="cardConfigButton" aria-label="Настроить чувства и владения" title="Настроить чувства и владения" data-oos="Открывает MovementSensesConfig / LanguagesConfig / WeaponsConfig dnd5e"><svg class="cs-ico"><use href="#i-gear"/></svg></button></h3>
             <div class="cs-kv"><span>Пассивная внимательность</span><b>14</b></div>
             <div class="cs-kv"><span>Пассивный анализ</span><b>17</b></div>
             <div class="cs-kv"><span>Пассивная проницательность</span><b>14</b></div>
             <div class="cs-kv"><span>Тёмное зрение</span><b>60 фт</b></div>
+            <div class="cs-kv"><span>Доспехи</span><b class="is-none">нет</b></div>
             <div class="cs-kv"><span>Оружие</span><b>Простое</b></div>
             <div class="cs-kv"><span>Языки</span><b>Общий, эльфийский, драконий</b></div>
           </div>
@@ -1706,7 +1785,12 @@ button.cs-stat:active { transform: scale(0.95); }
     $("[data-abilities]").innerHTML = ABILITIES.map((a) => `<button type="button" class="cs-ability fx-spot" data-ui="abilityTile" data-oos="Бросает проверку ${a.label}; Shift+клик — спасбросок" title="Проверка; Shift — спасбросок">
       <span class="sv ${a.save ? "is-prof" : ""}"></span><span class="k">${a.label}</span><span class="m">${sign(mod(a.value))}</span><span class="v">${a.value}</span><span class="svt">Спас ${sign(mod(a.value) + (a.save ? PROF : 0) + 2)}</span></button>`).join("");
   }
+  const TOOLS = [["Принадлежности каллиграфа", "dex", 1], ["Набор алхимика", "int", 1]];
   function renderOverview() {
+    $("[data-tools]").innerHTML = TOOLS.map(([n, ab, p]) => {
+      const a = ABILITIES.find((x) => x.key === ab);
+      return `<div class="cs-skill" data-ui="toolRow" data-oos="Бросает проверку инструмента «${n}» (actor.rollToolCheck)"><span class="p ${p === 1 ? "is-prof" : p === 2 ? "is-exp" : ""}"></span><span class="ab">${a.label}</span><span class="nm">${n}</span><span class="bn">${sign(mod(a.value) + PROF * p)}</span></div>`;
+    }).join("");
     $("[data-skills]").innerHTML = SKILLS.map(([n, ab, p]) => {
       const b = mod(ABILITIES.find((a) => a.key === ab).value) + PROF * p;
       return `<div class="cs-skill" data-ui="skillRow" data-oos="Бросает проверку навыка «${n}»"><span class="p ${p === 1 ? "is-prof" : p === 2 ? "is-exp" : ""}"></span><span class="ab">${ABILITIES.find((a) => a.key === ab).label}</span><span class="nm">${n}</span><span class="bn">${sign(b)}</span></div>`;
@@ -2153,6 +2237,7 @@ button.cs-stat:active { transform: scale(0.95); }
       return;
     }
     if (t.matches("[data-rest='long']")) { pulse(t, "is-resting"); return longRest(); }
+    if (t.matches('[data-ui="sheetMenuButton"]')) return toggleSheetMenu();
     if (t.matches('[data-ui="settingsButton"]')) return root.classList.add("is-settings");
     if (t.matches("[data-close-settings]")) return root.classList.remove("is-settings");
     if (t.matches('[data-act="collapse"]')) return collapseSheet(true);
@@ -2456,6 +2541,14 @@ button.cs-stat:active { transform: scale(0.95); }
     burst($(`[data-death="${r >= 10 ? "ok" : "bad"}"]`), getComputedStyle(root).getPropertyValue(r >= 10 ? "--heal" : "--hp").trim(), 8);
     if (r < 10) pulse($('[data-ui="deathSaves"]'), "is-shaken");
   }
+  function toggleSheetMenu(on) {
+    const menu = $('[data-ui="sheetMenu"]'), btn = $('[data-ui="sheetMenuButton"]');
+    on ??= menu.hidden;
+    menu.hidden = !on;
+    btn.setAttribute("aria-expanded", on);
+  }
+  document.addEventListener("pointerdown", (e) => { if (!e.target.closest(".cs-menu-wrap")) toggleSheetMenu(false); });
+  root.addEventListener("keydown", (e) => { if (e.key === "Escape") toggleSheetMenu(false); });
   function rollConcentration(btn) {
     if (!canEdit()) return;
     const r = 1 + Math.floor(Math.random() * 20);
@@ -2537,6 +2630,165 @@ button.cs-stat:active { transform: scale(0.95); }
   });
   hpEdit.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); closeHpEdit(); } });
   hpEdit.v.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== hpEdit.v) closeHpEdit(); }, 150));
+
+  /* ═══════════ PROTOTYPE (#11): level orb variants, ?orb=A|B|C — throwaway ═══════════ */
+  // dnd5e 2024 XP table: the XP needed to reach each level.
+  const XP_TABLE = { 2: 300, 3: 900, 4: 2700, 5: 6500, 6: 14000, 7: 23000, 8: 34000, 9: 48000, 10: 64000, 11: 85000 };
+  const ORB_VARIANTS = { A: "Поле у имени", B: "Карточка опыта", C: "Сфера-кнопка" };
+  const orbParam = new URLSearchParams(location.search).get("orb")?.toUpperCase();
+  root.dataset.orbVariant = ORB_VARIANTS[orbParam] ? orbParam : "A";
+  const orb = $("[data-level-orb]");
+  orb.setAttribute("role", "button");
+  orb.tabIndex = 0;
+  const xpReady = () => S.xp.value >= S.xp.to;
+  const fmt = (n) => n.toLocaleString("ru");
+
+  function parseXp(raw) {
+    const m = raw.trim().replace(/\s/g, "").replace(/−/g, "-").match(/^([+-]?)(\d+)$/);
+    if (!m) return null;
+    const n = Number(m[2]);
+    return m[1] === "+" ? S.xp.value + n : m[1] === "-" ? Math.max(0, S.xp.value - n) : n;
+  }
+  function setXp(value) {
+    const was = xpReady();
+    S.xp.value = value;
+    renderLevel();
+    renderOrbState();
+    if (!was && xpReady()) burst(orb, getComputedStyle(root).getPropertyValue("--accent").trim(), 14);
+  }
+  function levelUp() {
+    if (!canEdit() || !xpReady()) return;
+    chip(orb, "Откроется менеджер продвижения dnd5e: выбор класса, хиты, умения");
+    S.xp.level += 1;
+    S.xp.from = S.xp.to;
+    S.xp.to = XP_TABLE[S.xp.level + 1] ?? S.xp.to * 1.3;
+    $(".cs-level-n").textContent = S.xp.level;
+    $("[data-class-label]").textContent = `Волшебница ${S.xp.level}`;
+    pulse(orb, "is-landed");
+    burst(orb, getComputedStyle(root).getPropertyValue("--warn").trim(), 18);
+    renderLevel();
+    renderOrbState();
+  }
+
+  /* A — the XP field opens over the subtitle; a «Повысить уровень» button joins the name when ready */
+  const xpFieldA = document.createElement("form");
+  xpFieldA.className = "cs-xp-edit";
+  xpFieldA.hidden = true;
+  xpFieldA.innerHTML = `<input name="v" autocomplete="off" inputmode="numeric" aria-label="Опыт" placeholder="+300 · 23000"><small>+N прибавить · N задать · Esc</small>`;
+  $("[data-title-text]").append(xpFieldA);
+  const levelBtnA = document.createElement("button");
+  levelBtnA.type = "button";
+  levelBtnA.className = "cs-btn is-primary cs-levelup";
+  levelBtnA.hidden = true;
+  levelBtnA.innerHTML = `${icon("spark")}Повысить уровень`;
+  $(".cs-name").after(levelBtnA);
+  function openXpA() {
+    xpFieldA.hidden = false;
+    xpFieldA.v.value = "+";
+    xpFieldA.v.focus();
+  }
+  function closeXpA() { xpFieldA.hidden = true; }
+  xpFieldA.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const v = parseXp(xpFieldA.v.value);
+    if (v === null) { pulse(xpFieldA, "is-refused"); return; }
+    closeXpA();
+    setXp(v);
+  });
+  xpFieldA.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); closeXpA(); } });
+  xpFieldA.v.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== xpFieldA.v) closeXpA(); }, 150));
+  levelBtnA.addEventListener("click", (e) => { e.stopPropagation(); levelUp(); });
+
+  /* B — a card under the orb: progress, quick amounts, add or set; when ready its main button levels up */
+  const cardB = document.createElement("div");
+  cardB.className = "cs-xp-card";
+  cardB.hidden = true;
+  $(".cs-title").append(cardB);
+  function renderCardB() {
+    const { value, from, to, level } = S.xp;
+    const p = Math.max(0, Math.min(1, (value - from) / (to - from)));
+    cardB.innerHTML = `
+      <div class="cs-xp-card-h"><b>Уровень ${level}</b><span>${xpReady() ? "можно повысить" : `до ${level + 1}: ${fmt(Math.max(0, to - value))} оп.`}</span></div>
+      <div class="cs-xp-bar"><i style="width:${p * 100}%"></i></div>
+      <div class="cs-xp-nums"><span>${fmt(value)}</span><span>${fmt(to)}</span></div>
+      ${xpReady() ? `<button type="button" class="cs-btn is-primary" data-xp-levelup>${icon("spark")}Повысить до ${level + 1} уровня</button>` : ""}
+      <div class="cs-xp-quick">${[50, 100, 250, 1000].map((n) => `<button type="button" data-xp-add="${n}">+${n}</button>`).join("")}</div>
+      <form class="cs-xp-row" data-xp-form><input name="v" inputmode="numeric" placeholder="Опыт" aria-label="Опыт"><button type="submit" data-xp-mode="add">Добавить</button><button type="submit" data-xp-mode="set">Задать</button></form>`;
+  }
+  function toggleCardB(on = cardB.hidden) {
+    if (on) renderCardB();
+    cardB.hidden = !on;
+    if (on) cardB.querySelector("input").focus();
+  }
+  cardB.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.dataset.xpAdd) { setXp(S.xp.value + Number(b.dataset.xpAdd)); renderCardB(); }
+    if (b.matches("[data-xp-levelup]")) { levelUp(); renderCardB(); }
+  });
+  cardB.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const n = Number(e.target.v.value.replace(/\s/g, ""));
+    if (!Number.isFinite(n) || e.target.v.value.trim() === "") { pulse(e.target, "is-refused"); return; }
+    setXp(e.submitter?.dataset.xpMode === "set" ? n : S.xp.value + n);
+    renderCardB();
+  });
+  cardB.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); toggleCardB(false); } });
+  document.addEventListener("pointerdown", (e) => { if (!cardB.hidden && !e.target.closest(".cs-xp-card, [data-level-orb]")) toggleCardB(false); });
+
+  /* C — «+ опыт» chip after the subtitle opens the field; when ready the orb itself becomes the level-up button */
+  const xpChipC = document.createElement("button");
+  xpChipC.type = "button";
+  xpChipC.className = "cs-xp-chip cs-editonly";
+  xpChipC.innerHTML = `${icon("plus")}опыт`;
+  $(".cs-sub").append(xpChipC);
+  xpChipC.addEventListener("click", (e) => { e.stopPropagation(); openXpA(); });
+
+  function renderOrbState() {
+    const v = root.dataset.orbVariant, ready = xpReady();
+    orb.classList.toggle("is-ready", ready);
+    levelBtnA.hidden = !(v === "A" && ready && canEdit());
+    if (!cardB.hidden) renderCardB();
+    $(".cs-level-n").dataset.next = S.xp.level + 1;
+  }
+  function onOrb() {
+    if (!canEdit()) return;
+    const v = root.dataset.orbVariant;
+    if (v === "A") return openXpA();
+    if (v === "B") return toggleCardB();
+    if (xpReady()) return levelUp();
+    chip(orb, `${fmt(S.xp.value)} / ${fmt(S.xp.to)} опыта · «+ опыт» рядом с именем`);
+  }
+  orb.addEventListener("click", onOrb);
+  orb.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOrb(); } });
+  document.querySelector("[data-mock-xp]").addEventListener("input", renderOrbState);
+
+  const orbSwitch = document.createElement("nav");
+  orbSwitch.className = "proto-switch";
+  orbSwitch.setAttribute("aria-label", "Прототип: варианты сферы уровня");
+  document.body.append(orbSwitch);
+  function renderOrbSwitch() {
+    const k = root.dataset.orbVariant;
+    orbSwitch.innerHTML = `<button type="button" data-ov="-1" aria-label="Предыдущий вариант">←</button><span><b>Сфера ${k}</b> · ${ORB_VARIANTS[k]}</span><button type="button" data-ov="1" aria-label="Следующий вариант">→</button>`;
+  }
+  function cycleOrb(d) {
+    const keys = Object.keys(ORB_VARIANTS);
+    root.dataset.orbVariant = keys[(keys.indexOf(root.dataset.orbVariant) + d + keys.length) % keys.length];
+    closeXpA();
+    toggleCardB(false);
+    try { const u = new URL(location.href); u.searchParams.set("orb", root.dataset.orbVariant); history.replaceState(null, "", u); } catch { /* file:// */ }
+    renderOrbSwitch();
+    renderOrbState();
+  }
+  orbSwitch.addEventListener("click", (e) => { const b = e.target.closest("[data-ov]"); if (b) cycleOrb(Number(b.dataset.ov)); });
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest?.("input, textarea, [contenteditable]")) return;
+    if (e.key === "ArrowLeft") cycleOrb(-1);
+    if (e.key === "ArrowRight") cycleOrb(1);
+  });
+  renderOrbSwitch();
+  renderOrbState();
 
   applyLayout(layoutFor(root.offsetWidth));
   requestAnimationFrame(moveInk);

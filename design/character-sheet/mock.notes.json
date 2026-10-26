@@ -3,7 +3,7 @@
     "CharacterSheet": {
       "behaviour": [
         {
-          "text": "Replaces the dnd5e character sheet entirely: one window holds vitals, abilities, skills, equipment with the paperdoll, spells, features and notes.",
+          "text": "Replaces the dnd5e character sheet entirely: one window holds vitals, abilities, skills, equipment with the paperdoll, spells, features and the biography.",
           "source": "spec"
         },
         {
@@ -301,20 +301,20 @@
     "favoritesList": {
       "behaviour": [
         {
-          "text": "Lists starred items, spells and features in the order they were starred; a new favorite slides in with a pop, a removed one leaves and the rest close the gap.",
-          "source": "assumption"
+          "text": "Stored in dnd5e's system.favorites, so the vanilla sheet shows the same favorites.",
+          "source": "spec"
         },
         {
-          "text": "Click a favorite opens its tab and selects it.",
-          "source": "assumption"
+          "text": "Holds what dnd5e allows: items, spells, features, skills, tools, spell slot levels, effects and activities; add with ★ on a row or by dragging a row, a skill, a slot track or an effect onto the list.",
+          "source": "spec"
         },
         {
-          "text": "When empty, shows a hint to star items and spells.",
-          "source": "assumption"
+          "text": "Groups favorites by action cost: Действие, Бонусное действие, Реакция, Прочее; empty groups hide. Inside a group the order is manual: drag to reorder, written to system.favorites sort; a new favorite goes to the end of its group.",
+          "source": "spec"
         },
         {
-          "text": "Groups favorites by action cost: Действие, Бонусное действие, Реакция, Прочее; empty groups hide.",
-          "source": "assumption"
+          "text": "When empty, shows a hint to star or drag entries in.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -322,16 +322,20 @@
     "favoriteRow": {
       "behaviour": [
         {
-          "text": "Shows the tile, name and a short meta: quantity for items, circle for spells.",
-          "source": "assumption"
+          "text": "Shows the tile, name and a line under it: attack bonus or save DC and damage, a skill's bonus, a slot level's «2 из 3», an effect's state; on the right the circle as runes, the quantity, the uses or the slot pips.",
+          "source": "spec"
         },
         {
-          "text": "Shows the attack bonus or save DC and damage under the name, and on the right the slot circle as runes for spells or the quantity for items.",
-          "source": "assumption"
+          "text": "Click on the tile acts like dnd5e's useFavorite: uses an item or feature, casts a spell, rolls a skill or tool, toggles an effect; a slot level opens the spells tab.",
+          "source": "spec"
         },
         {
-          "text": "On hover a quick action slides in on the right: cast for a spell, use for an item.",
-          "source": "assumption"
+          "text": "Click elsewhere on the row opens the entry's tab and selects it; a skill opens Обзор, an effect shows it where the effects list lives.",
+          "source": "spec"
+        },
+        {
+          "text": "On hover a quick action slides in on the right: cast for a spell, use for an item or active feature.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -396,7 +400,7 @@
     "sheetTabs": {
       "behaviour": [
         {
-          "text": "Tabs: Обзор, Снаряжение, Заклинания, Умения, Заметки; Обзор, Умения and Заметки can be hidden in settings.",
+          "text": "Tabs: Обзор, Снаряжение, Заклинания, Умения, Биография; Обзор, Умения and Биография can be hidden in settings.",
           "source": "spec"
         },
         {
@@ -680,6 +684,10 @@
         {
           "text": "Opens and closes with a height animation; never shown in the wide layout.",
           "source": "spec"
+        },
+        {
+          "text": "Shows the same body as the inspector: the description with enriched links, one button per activity when there are several (activity.use) or the main action (use, equip, cast, prepare), the entry's own effects with their switches, then В чат and the row menu.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -710,6 +718,10 @@
         },
         {
           "text": "For spells the menu is Просмотр, Изменить, Дублировать, Удалить, В чат and Создать свиток (Item5e.createScrollFromSpell).",
+          "source": "spec"
+        },
+        {
+          "text": "For features the menu is Просмотр, Изменить, Дублировать, Удалить, В чат.",
           "source": "spec"
         }
       ],
@@ -795,12 +807,16 @@
     "featuresTab": {
       "behaviour": [
         {
-          "text": "Groups features by source: class, species, background.",
-          "source": "assumption"
+          "text": "Groups features by origin as dnd5e does (advancementOrigin): one section per class with its subclass features inside, then Вид, Предыстория and Прочее (feats and anything without an origin); each section names its source on the right; no class cards — the class and subclass are header links.",
+          "source": "spec"
         },
         {
-          "text": "Rows do not repeat the source their section is named after; tiles are tinted by source: class, species, background.",
-          "source": "assumption"
+          "text": "Filters Действие, Бонусное, Реакция, Пассивные, plus the tab search; «+» on a section opens dnd5e's Item.createDialog for a feat.",
+          "source": "spec"
+        },
+        {
+          "text": "Rows do not repeat the source their section is named after; tiles are tinted by origin: class, species, background, other.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -808,8 +824,16 @@
     "featureRow": {
       "behaviour": [
         {
-          "text": "Shows the source, tags and uses.",
-          "source": "assumption"
+          "text": "Shows the activation (Действие / Бонусное / Реакция) or «Пассивное», the recovery dnd5e labels (Короткий отдых, Продолжительный отдых, Рассвет, Перезарядка 5–6), tags and uses.",
+          "source": "spec"
+        },
+        {
+          "text": "A passive feature (no activities, or the «trait» property) has a dimmed tile with no action; clicking the row shows its details like any row.",
+          "source": "spec"
+        },
+        {
+          "text": "The row menu is Просмотр, Изменить, Дублировать, Удалить (item.deleteDialog), В чат (item.displayCard).",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -817,26 +841,16 @@
     "usesTrack": {
       "behaviour": [
         {
-          "text": "Click a lit pip to spend uses down to it, a hollow one to restore up to it.",
-          "source": "assumption"
-        }
-      ],
-      "comments": []
-    },
-    "notesTab": {
-      "behaviour": [
+          "text": "Up to 8 uses are pips: click a lit pip to spend down to it, a hollow one to restore up to it (item.update on system.uses.spent).",
+          "source": "spec"
+        },
         {
-          "text": "One free-text field for the player's notes.",
-          "source": "assumption"
-        }
-      ],
-      "comments": []
-    },
-    "notesField": {
-      "behaviour": [
+          "text": "Above 8 uses a counter «7 / 10» opens the same edit as HP and coins: −1 spends, +2 restores, 5 sets, capped at the maximum.",
+          "source": "spec"
+        },
         {
-          "text": "Saves on blur.",
-          "source": "assumption"
+          "text": "A recharge feature with uses spent shows a d6 button: uses.rollRecharge(), a 5–6 refills it.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -844,7 +858,7 @@
     "inspectorPanel": {
       "behaviour": [
         {
-          "text": "Exists only in the wide layout; shows the selected entry's tile, name, rarity or circle, tags, description and its main action.",
+          "text": "Exists only in the wide layout; shows the selected entry's tile, name, rarity, circle or origin, tags, uses with their recovery, then the same body as the row details.",
           "source": "spec"
         },
         {
@@ -959,7 +973,11 @@
     "effectsList": {
       "behaviour": [
         {
-          "text": "Lists active effects and conditions with a short effect line and the time left; concentration appears first while it lasts.",
+          "text": "Effects are listed in dnd5e's categories from actor.allApplicableEffects(): Временные, Пассивные, Выключенные, Недоступные; concentration and conditions come first among the temporary ones.",
+          "source": "spec"
+        },
+        {
+          "text": "Where the full list lives is open (#15 prototype, ?effects=A|B|C): A — all in the rail, temporary effects shown and «Все эффекты» unfolding the rest; B — its own Эффекты tab, the rail keeps the temporary ones; C — the rail keeps the temporary ones, the full list and conditions close the Умения tab.",
           "source": "assumption"
         }
       ],
@@ -968,8 +986,20 @@
     "effectRow": {
       "behaviour": [
         {
-          "text": "Click opens the effect; right click ends or removes it.",
-          "source": "assumption"
+          "text": "Shows the effect's icon, name, a short line with its source («от: Плащ защиты») and the time left; permanent effects show no time.",
+          "source": "spec"
+        },
+        {
+          "text": "The switch on the right enables or disables the effect (effect.update({ disabled })); a condition has × to remove it (actor.toggleStatusEffect), concentration has × to end it.",
+          "source": "spec"
+        },
+        {
+          "text": "A suppressed effect (its item unequipped or unattuned) is dashed and dimmed, says why, and its switch is locked.",
+          "source": "spec"
+        },
+        {
+          "text": "Click on the row opens its description and changes under it; right click opens dnd5e's effect menu: Изменить, Дублировать, Удалить, Включить / Выключить.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -977,7 +1007,7 @@
     "addEffectButton": {
       "behaviour": [
         {
-          "text": "Opens the dnd5e conditions list to add a condition.",
+          "text": "Opens the conditions grid: as a popover under the rail title (A), or by switching to where the full effects list lives (B, C).",
           "source": "assumption"
         }
       ],
@@ -1299,8 +1329,8 @@
     "favoriteCastButton": {
       "behaviour": [
         {
-          "text": "Casts the spell or uses the item straight from the rail, under the same rules as in its tab.",
-          "source": "assumption"
+          "text": "Casts the spell or uses the item or feature straight from the rail, under the same rules as in its tab.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1526,6 +1556,103 @@
       "behaviour": [
         {
           "text": "Header chip shown while prepared spells exceed a class limit; it mirrors dnd5e's preparation warning.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "featureUseButton": {
+      "behaviour": [
+        {
+          "text": "The tile of an active feature is a button: click calls item.use() — dnd5e picks the activity (asking when there are several), spends the use and rolls.",
+          "source": "spec"
+        },
+        {
+          "text": "With no uses left dnd5e refuses: the row shakes and says when it recovers, or asks for the recharge roll.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "featureFilterChips": {
+      "behaviour": [
+        {
+          "text": "Filters features by Действие, Бонусное, Реакция and Пассивные; filters combine with the search.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "activityButton": {
+      "behaviour": [
+        {
+          "text": "One per activity of an item or feature that has several; click calls activity.use() for that activity and spends what it consumes.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "conditionGrid": {
+      "behaviour": [
+        {
+          "text": "Our own list (dnd5e has no conditions dialog), built from CONFIG.statusEffects: the 14 conditions, then statuses such as Уклоняется, Прячется, Летит, Кровотечение; active ones are lit.",
+          "source": "spec"
+        },
+        {
+          "text": "Click toggles the condition with actor.toggleStatusEffect(id); it then appears among the temporary effects. Exhaustion and concentration keep their own rail chips.",
+          "source": "spec"
+        },
+        {
+          "text": "«Новый эффект» creates an effect on the actor (ActiveEffect.implementation.create) and opens its sheet.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "effectsTab": {
+      "behaviour": [
+        {
+          "text": "Only in variant B: a tab Эффекты with the conditions grid on top and the effect categories in columns below.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "biographyTab": {
+      "behaviour": [
+        {
+          "text": "Repeats the dnd5e biography and writes to dnd5e's own fields, so the vanilla sheet sees the same text: characteristics, personality, and the biography; no module flags.",
+          "source": "spec"
+        },
+        {
+          "text": "Observer sees it read-only.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "characteristicsCard": {
+      "behaviour": [
+        {
+          "text": "Nine fields from system.details: alignment, age, height, weight, eyes, hair, skin, gender, faith; saved on change.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "personalityCard": {
+      "behaviour": [
+        {
+          "text": "Personality traits, ideals, bonds, flaws and appearance (system.details.trait/ideal/bond/flaw/appearance); saved on change.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "biographyEditor": {
+      "behaviour": [
+        {
+          "text": "Rich text in system.details.biography.value, edited with Foundry's ProseMirror editor (headings, bold, italic, lists, document links); links are enriched content links.",
           "source": "spec"
         }
       ],

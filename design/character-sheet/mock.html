@@ -11,8 +11,10 @@
 body {
   margin: 0;
   min-height: 100vh;
+  box-sizing: border-box;
+  padding: 64px 16px 88px;
   display: grid;
-  place-items: center;
+  place-items: start center;
   background: radial-gradient(1200px 800px at 30% 20%, #1b1f2a 0%, #0b0d12 60%) fixed;
   font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   color: #ece6da;
@@ -120,7 +122,6 @@ body {
   min-width: 300px;
   min-height: 520px;
   max-width: calc(100vw - 32px);
-  max-height: calc(100vh - 96px);
   resize: both;
   overflow: hidden;
   display: grid;
@@ -820,6 +821,8 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-items[data-view="grid"] .cs-row-main { width: 100%; }
 .cs-items[data-view="grid"] .cs-row-act { position: absolute; top: 6px; right: 6px; }
 .cs-items[data-view="grid"] .cs-num { position: absolute; bottom: 10px; right: 12px; }
+.cs-items[data-view="grid"] .cs-qty { position: absolute; bottom: 8px; right: 10px; }
+.cs-items[data-view="grid"] .cs-qty .cs-num { position: static; }
 .cs-items[data-view="grid"] .cs-detail { display: none; }
 /* views: icons only */
 .cs-items[data-view="icons"] .cs-row { justify-content: center; padding: 6px; min-height: 0; aspect-ratio: 1; }
@@ -827,6 +830,8 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-items[data-view="icons"] .cs-row-main,
 .cs-items[data-view="icons"] .cs-row-act,
 .cs-items[data-view="icons"] .cs-num,
+.cs-items[data-view="icons"] .cs-qty,
+.cs-items[data-view="icons"] .cs-uses,
 .cs-items[data-view="icons"] .cs-detail { display: none; }
 .cs-items[data-view="icons"] .cs-row.is-equipped::after { content: ""; position: absolute; top: 9px; left: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px var(--surface-1); }
 .cs-items[data-view="icons"] .cs-row .lvl { position: absolute; top: 8px; right: 9px; font: 700 10px var(--font-num); color: var(--text); text-shadow: 0 1px 2px rgb(0 0 0 / 0.6); }
@@ -1182,7 +1187,6 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-load b { color: var(--text-2); font-weight: 600; }
 [data-panel="equipment"].is-external-drop { outline: 2px dashed var(--accent-line); outline-offset: -6px; }
 [data-panel="equipment"].is-external-drop::after { content: "Отпустите, чтобы добавить"; position: absolute; left: 50%; top: 50%; translate: -50% -50%; padding: 8px 14px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); font: 600 12px var(--font-ui); pointer-events: none; z-index: 5; }
-[data-panel="equipment"] { position: relative; }
 /* Containers: load band, Weighty Containers reduction, drop target */
 .cs-bag-load { position: relative; display: inline-flex; align-items: center; min-width: 96px; height: 18px; padding: 0 7px; border-radius: 99px; background: var(--surface-0); overflow: hidden; font: 600 10.5px var(--font-num); color: var(--text-2); }
 .cs-bag-load i { position: absolute; inset: 0 auto 0 0; background: color-mix(in oklab, var(--heal) 35%, transparent); }
@@ -1209,6 +1213,41 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-tray-peek .more { font: 600 10.5px var(--font-num); color: var(--text-3); }
 .cs-linkbtn { border: 0; background: none; color: var(--text-3); font: 600 11px var(--font-ui); cursor: pointer; padding: 2px 4px; }
 .cs-linkbtn:hover { color: var(--text); }
+/* Doll (#13): rules, slotless strip, sockets, portrait backdrop, figures and geometry variants */
+.cs-doll-grid { position: relative; }
+.cs-figure svg { color: var(--line-strong); }
+.cs-doll-portrait { position: absolute; inset: 8% 22%; z-index: 0; display: grid; place-items: center; border-radius: 50%; background: radial-gradient(circle, color-mix(in oklab, var(--accent) 14%, transparent), transparent 70%); color: color-mix(in oklab, var(--text) 8%, transparent); font: 700 64px var(--font-display); pointer-events: none; }
+.cs-figure, .cs-slot { z-index: 1; }
+.cs-slot-x, .cs-socket-x { position: absolute; top: -6px; right: -6px; z-index: 2; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--surface-3); border: 1px solid var(--line-strong); color: var(--text-2); opacity: 0; transition: opacity var(--d-fast); cursor: pointer; }
+.cs-slot-x .cs-ico, .cs-socket-x .cs-ico { width: 10px; height: 10px; }
+.cs-slot:hover .cs-slot-x, .cs-noslot-item:hover .cs-slot-x, .cs-socket:hover .cs-socket-x { opacity: 1; }
+.cs-slot.is-locked { border-style: solid; border-color: color-mix(in oklab, var(--warn) 40%, transparent); }
+.cs-slot-ghost { opacity: 0.3; filter: grayscale(1); }
+.cs-slot-lock { position: absolute; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--surface-2); color: var(--warn); }
+.cs-slot-lock .cs-ico { width: 12px; height: 12px; }
+.cs-socket.is-over { border-color: var(--hp); box-shadow: 0 0 10px color-mix(in oklab, var(--hp) 35%, transparent); }
+.cs-attune.is-over .cs-attune-label b { color: var(--hp); }
+.cs-socket[data-drop-attune].is-drop, span.cs-socket[data-drop-attune]:hover { border-color: var(--warn); }
+.cs-noslot { display: grid; gap: var(--s2); padding-top: var(--s3); border-top: 1px solid var(--line); }
+.cs-noslot-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.cs-noslot-item { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font: 11.5px var(--font-ui); cursor: pointer; }
+.cs-noslot-item .cs-tile { --tile: 22px; }
+.cs-doll-stage { position: relative; height: 420px; }
+.cs-doll-stage.is-beast, .cs-doll-stage.is-wagon, .cs-doll-stage.is-ship, .cs-doll-stage.is-airship { height: 260px; }
+.cs-doll-stage .cs-figure { position: absolute; inset: 8px 70px; display: grid; place-items: center; }
+.cs-doll-stage.is-C .cs-figure { inset: 64px 76px; }
+.cs-doll-stage .cs-figure svg { width: 100%; height: 100%; }
+.cs-doll-stage .cs-slot { position: absolute; width: 52px; height: 52px; transition: left var(--d-base) var(--ease-settle), top var(--d-base) var(--ease-settle), border-color var(--d-fast), transform var(--d-fast) var(--ease-snap); }
+.cs-doll-stage .cs-slot.is-filled .cs-tile { --tile: 44px; }
+.cs-doll-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; fill: none; stroke: color-mix(in oklab, var(--accent) 45%, transparent); stroke-width: 1; }
+.cs-doll-lines circle { fill: var(--accent); stroke: none; opacity: 0.7; }
+.cs-doll-stage .cs-doll-portrait { inset: 10% 26%; }
+.cs-figure.is-beast, .cs-figure.is-wagon, .cs-figure.is-ship, .cs-figure.is-airship { align-self: center; }
+.proto-switch { position: fixed; top: 12px; left: 50%; translate: -50% 0; z-index: 50; display: flex; align-items: center; gap: 10px; padding: 5px 6px; border-radius: 99px; background: #f4efe4; color: #1b1206; font: 600 12px system-ui, sans-serif; box-shadow: 0 6px 20px rgb(0 0 0 / 0.45); }
+.proto-switch button { min-width: 26px; height: 26px; border-radius: 99px; border: 0; background: #1b1206; color: #f4efe4; cursor: pointer; font: 700 12px system-ui, sans-serif; padding: 0 8px; }
+.proto-fig { display: inline-flex; gap: 3px; padding-left: 8px; border-left: 1px solid #1b120633; }
+.proto-fig button { background: #e3dccd; color: #1b1206; font-weight: 600; }
+.proto-fig button.is-on { background: #1b1206; color: #f4efe4; }
 </style>
 </head>
 <body>
@@ -1269,6 +1308,10 @@ button.cs-stat:active { transform: scale(0.95); }
   <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></symbol>
   <symbol id="i-trade" viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
+  <symbol id="fig-beast" viewBox="0 0 240 160"><path d="M40 60c4-18 22-26 34-20l10-14c4-6 12-2 10 4l-6 14c40-6 90-4 112 6 14 6 20 18 18 30l-4 20c-2 6-10 6-10 0l2-14-10 4 4 40c1 8-10 9-12 1l-8-38c-26 6-52 6-78 2l-6 36c-1 8-12 8-12 0l2-38c-14-4-24-14-28-26l-14 2c-8 0-10-8-4-12z" fill="currentColor" opacity=".35"/></symbol>
+  <symbol id="fig-wagon" viewBox="0 0 240 160"><path d="M50 40h150l8 62H42zM30 100h190v10H30zM2 104l40-4v8L2 112z" fill="currentColor" opacity=".35"/><circle cx="72" cy="128" r="22" fill="none" stroke="currentColor" stroke-width="7" opacity=".35"/><circle cx="182" cy="128" r="22" fill="none" stroke="currentColor" stroke-width="7" opacity=".35"/><path d="M60 40c20-36 110-36 130 0" fill="none" stroke="currentColor" stroke-width="6" opacity=".35"/></symbol>
+  <symbol id="fig-ship" viewBox="0 0 240 160"><path d="M14 104h212l-24 42H44zM118 8v94M122 14l70 70h-70zM114 22l-60 64h60z" fill="currentColor" opacity=".35"/></symbol>
+  <symbol id="fig-airship" viewBox="0 0 240 160"><ellipse cx="120" cy="56" rx="100" ry="40" fill="currentColor" opacity=".35"/><path d="M84 104h72l-10 26H94zM96 94l-6 10M144 94l6 10M214 44l20-14v52l-20-14z" fill="currentColor" stroke="currentColor" stroke-width="3" opacity=".35"/></symbol>
   <symbol id="i-figure" viewBox="0 0 120 260"><path d="M60 8c11 0 19 9 19 21s-8 22-19 22-19-10-19-22S49 8 60 8zM38 58h44c12 0 20 8 22 20l8 62c1 6-8 8-10 2l-12-50v64l6 84c1 8-12 9-14 1L68 172h-16l-14 69c-2 8-15 7-14-1l6-84V92l-12 50c-2 6-11 4-10-2l8-62c2-12 10-20 22-20z" fill="currentColor" stroke="none" opacity=".35"/></symbol>
 </svg>
 
@@ -1571,21 +1614,43 @@ button.cs-stat:active { transform: scale(0.95); }
   const SLOTS = { head: ["Голова", "head"], neck: ["Шея", "amulet"], cloak: ["Плащ", "cloak"], armor: ["Доспех", "armor"], hands: ["Руки", "hand"],
     waist: ["Пояс", "belt"], feet: ["Обувь", "boot"], ring1: ["Кольцо", "ring"], ring2: ["Кольцо", "ring"], mainHand: ["Осн. рука", "sword"], offHand: ["Вт. рука", "shield"],
     eyes: ["Глаза", "eye"], ears: ["Уши", "spark"], shoulders: ["Плечи", "armor"], wrists: ["Наручи", "shield"],
-    ring3: ["Кольцо 3", "ring"], ring4: ["Кольцо 4", "ring"], quiver: ["Колчан", "sword"], beltPouch: ["Сумка", "pouch"] };
-  const DOLL_LAYOUT = [["head", 1, 1], ["neck", 1, 2], ["cloak", 1, 3], ["armor", 1, 4], ["mainHand", 1, 5],
-    ["hands", 3, 1], ["waist", 3, 2], ["feet", 3, 3], ["ring1", 3, 4], ["offHand", 3, 5]];
-  // A GM picks a preset per actor; slots past the ten beside the figure overflow into a wrapping grid.
-  const PRESETS = {
-    standard: { name: "Стандарт 2024", attune: 3, extras: [] },
-    extended: { name: "Расширенный · 19 слотов", attune: 8, extras: ["eyes", "ears", "shoulders", "wrists", "ring2", "ring3", "ring4", "quiver", "beltPouch"] }
+    ring3: ["Кольцо 3", "ring"], ring4: ["Кольцо 4", "ring"], quiver: ["Колчан", "sword"], beltPouch: ["Сумка", "pouch"],
+    barding: ["Попона", "armor"], saddle: ["Седло", "belt"], collar: ["Ошейник", "amulet"],
+    harness: ["Упряжь", "belt"], lantern: ["Фонарь", "flame"], mount: ["Орудие", "sword"], banner: ["Знамя", "scroll"],
+    figurehead: ["Носовая фигура", "spark"], cannon: ["Пушка", "sword"], sail: ["Парус", "cloak"], envelope: ["Оболочка", "shield"], gondola: ["Гондола", "bag"] };
+  // Where each slot sits on its figure: [x %, y % of the figure box, side to hang the slot on].
+  const ANCHORS = {
+    human: { head: [50, 8, "L"], eyes: [56, 9, "R"], ears: [40, 10, "L"], neck: [50, 19, "L"], cloak: [64, 24, "R"], shoulders: [34, 25, "L"], armor: [50, 36, "L"], hands: [80, 52, "R"],
+      wrists: [20, 50, "L"], waist: [50, 62, "R"], beltPouch: [60, 64, "R"], mainHand: [12, 58, "L"], offHand: [88, 58, "R"], ring1: [16, 64, "L"], ring2: [84, 64, "R"],
+      ring3: [18, 66, "L"], ring4: [82, 66, "R"], quiver: [70, 30, "R"], feet: [44, 96, "L"] },
+    beast: { collar: [24, 30, "L"], saddle: [52, 34, "R"], barding: [58, 54, "R"] },
+    wagon: { harness: [6, 68, "L"], mount: [40, 24, "L"], lantern: [86, 30, "R"], banner: [70, 6, "R"] },
+    ship: { figurehead: [8, 66, "L"], cannon: [62, 70, "R"], sail: [74, 46, "R"] },
+    airship: { envelope: [40, 34, "L"], gondola: [56, 76, "R"] }
   };
-  const presetSlots = () => [...DOLL_LAYOUT.map(([slot]) => slot), ...PRESETS[S.preset].extras];
+  const FIGURE_VIEW = { human: "0 0 120 260", beast: "0 0 240 160", wagon: "0 0 240 160", ship: "0 0 240 160", airship: "0 0 240 160" };
+  const FIGURE_ID = { human: "i-figure", beast: "fig-beast", wagon: "fig-wagon", ship: "fig-ship", airship: "fig-airship" };
+  const STD = ["head", "neck", "cloak", "armor", "mainHand", "hands", "waist", "feet", "ring1", "offHand"];
+  // A doll preset = a figure plus its slots (GLOSSARY). The GM picks one per actor; slots past what the figure holds overflow into a grid.
+  const PRESETS = {
+    standard: { name: "Стандарт 2024", figure: "human", attune: 3, slots: [...STD, "ring2"] },
+    std2014: { name: "Стандарт 2014", figure: "human", attune: 3, slots: [...STD, "ring2"] },
+    extended: { name: "Расширенный · 19 слотов", figure: "human", attune: 8, slots: [...STD, "eyes", "ears", "shoulders", "wrists", "ring2", "ring3", "ring4", "quiver", "beltPouch"] },
+    beast: { name: "Зверь", figure: "beast", attune: 0, slots: ["collar", "saddle", "barding"] },
+    wagon: { name: "Повозка", figure: "wagon", attune: 0, slots: ["harness", "mount", "lantern", "banner"] },
+    ship: { name: "Корабль", figure: "ship", attune: 0, slots: ["figurehead", "cannon", "sail"] },
+    airship: { name: "Воздушное судно", figure: "airship", attune: 0, slots: ["envelope", "gondola"] }
+  };
+  const presetSlots = () => PRESETS[S.preset].slots;
   const fitsHere = (it) => (it.slots ?? []).filter((slot) => presetSlots().includes(slot));
 
   // group = dnd5e item type; in = id of the container holding it; price in gp
   const items = [
     { id: "staff", name: "Боевой посох Кель-Аммара", group: "weapon", icon: "staff", rarity: "uncommon", act: "action", roll: "+3 · 1к6 + 1 дроб.", qty: 1, wt: 4, price: 500, slots: ["mainHand"], tags: ["Универсальное", "1к6 / 1к8"], desc: "Магическое оружие +1. Пока посох у вас в руках, вы получаете +1 к броскам атаки заклинаниями." },
     { id: "dagger", name: "Кинжал", group: "weapon", icon: "sword", rarity: "common", qty: 2, wt: 1, price: 2, slots: ["mainHand", "offHand"], tags: ["Лёгкое", "Фехтовальное", "Метательное"], desc: "Колющий урон 1к4. Дистанция броска 20/60 фт." },
+    { id: "bow", name: "Длинный лук", group: "weapon", icon: "staff", rarity: "common", qty: 1, wt: 2, price: 50, slots: ["mainHand"], twoHanded: true, tags: ["Двуручное", "Боеприпасы"], desc: "Колющий урон 1к8. Дистанция 150/600 фт. Двуручное." },
+    { id: "shieldItem", name: "Щит", group: "equipment", icon: "shield", rarity: "common", qty: 1, wt: 6, price: 10, slots: ["offHand"], shield: true, tags: ["+2 КД"], desc: "Щит: +2 к КД." },
+    { id: "ioun", name: "Камень Йоун бдительности", group: "equipment", icon: "spark", rarity: "uncommon", qty: 1, wt: 0, price: 1000, equippable: true, attune: true, tags: [], desc: "Камень кружит вокруг головы. Пока вы настроены на него, вас нельзя застать врасплох, и у вас преимущество на броски инициативы." },
     { id: "cloak", name: "Плащ защиты", group: "equipment", icon: "cloak", rarity: "uncommon", qty: 1, wt: 1, price: 500, slots: ["cloak"], attune: true, tags: [], desc: "+1 к КД и спасброскам, пока вы настроены на этот плащ." },
     { id: "ring", name: "Кольцо защиты", group: "equipment", icon: "ring", rarity: "rare", qty: 1, wt: 0, price: 3500, slots: ["ring1", "ring2", "ring3", "ring4"], attune: true, tags: [], desc: "+1 к КД и спасброскам, пока вы настроены на это кольцо." },
     { id: "amulet", name: "Амулет здоровья", group: "equipment", icon: "amulet", rarity: "rare", qty: 1, wt: 1, price: 8000, slots: ["neck"], attune: true, tags: [], desc: "Ваше Телосложение становится равным 19, пока вы носите амулет." },
@@ -1655,6 +1720,8 @@ button.cs-stat:active { transform: scale(0.95); }
     slots: { 1: [4, 4], 2: [3, 3], 3: [2, 3] },
     equipped: { mainHand: "staff", neck: "amulet", cloak: "cloak", feet: "boots", ring1: "ring" },
     attuned: new Set(["cloak", "ring"]),
+    noSlot: new Set(),
+    enforce: "block",
     preset: "standard",
     xp: { value: 20500, from: 14000, to: 23000, level: 6 },
     coins: { pp: 2, gp: 147, ep: 5, sp: 23, cp: 41 },
@@ -1792,7 +1859,8 @@ button.cs-stat:active { transform: scale(0.95); }
         ? `<span class="cs-uses cs-charges" data-ui="chargesTrack" title="Заряды ${x.uses[0]} / ${x.uses[1]}: клик — потратить, правый клик — вернуть">${Array.from({ length: x.uses[1] }, (_, i) => `<button type="button" class="${i >= x.uses[0] ? "is-spent" : ""}" data-charge="${x.id}" data-i="${i}" aria-label="Заряд ${i + 1}"></button>`).join("")}</span>`
         : `<span class="cs-qty" data-ui="quantityStepper"><button type="button" class="cs-editonly" data-qty="${x.id}" data-d="-1" aria-label="Меньше">−</button><b class="cs-num">${x.qty}</b><button type="button" class="cs-editonly" data-qty="${x.id}" data-d="1" aria-label="Больше">+</button></span>`;
       if (x.attune) acts += `<button type="button" class="cs-ibtn cs-editonly ${S.attuned.has(x.id) ? "is-on" : ""}" data-ui="attuneButton" data-attune="${x.id}" aria-pressed="${S.attuned.has(x.id)}" aria-label="${S.attuned.has(x.id) ? "Прервать настройку" : "Настроиться"}" title="${S.attuned.has(x.id) ? "Прервать настройку" : "Настроиться"}">${icon("spark")}</button>`;
-      if (fitsHere(x).length) acts += `<button type="button" class="cs-ibtn cs-editonly ${eqSlot ? "is-on" : ""}" data-ui="equipButton" data-equip="${x.id}" aria-pressed="${!!eqSlot}" aria-label="${eqSlot ? "Снять" : "Надеть"}" title="${eqSlot ? "Снять" : "Надеть"}">${icon("hand")}</button>`;
+      const worn = eqSlot || S.noSlot.has(x.id);
+      if (fitsHere(x).length || x.equippable) acts += `<button type="button" class="cs-ibtn cs-editonly ${worn ? "is-on" : ""}" data-ui="equipButton" data-equip="${x.id}" aria-pressed="${!!worn}" aria-label="${worn ? "Снять" : "Надеть"}" title="${worn ? "Снять" : "Надеть"}">${icon("hand")}</button>`;
     } else if (k === "spell") {
       meta = [`${SCHOOLS[x.school]}`, ...x.tags.map((t) => `<span class="cs-tag">${t}</span>`), x.conc ? `<span class="cs-tag is-conc">К</span>` : "", x.ritual ? `<span class="cs-tag is-rit">Р</span>` : ""].join("");
       if (x.lvl) acts += `<button type="button" class="cs-ibtn cs-editonly ${x.prep ? "is-on" : ""}" data-ui="prepareButton" data-prep="${x.id}" aria-pressed="${!!x.prep}" aria-label="${x.prep ? "Убрать из подготовленных" : "Подготовить"}" title="${x.prep ? "Убрать из подготовленных" : "Подготовить"}">${icon("book")}</button>`;
@@ -1902,26 +1970,89 @@ button.cs-stat:active { transform: scale(0.95); }
   function slotButton(slot, pos = "") {
     const id = S.equipped[slot];
     const it = id ? byId[id] : null;
-    return `<button type="button" class="cs-slot ${it ? "is-filled" : ""}" ${pos} data-ui="dollSlot" data-slot="${slot}" aria-label="${SLOTS[slot][0]}${it ? `: ${it.name}` : ""}" title="${it ? it.name : SLOTS[slot][0]}">
-      ${it ? tile(it) : icon(SLOTS[slot][1])}<span class="cs-slot-label">${SLOTS[slot][0]}</span></button>`;
+    const lock = slot === "offHand" && !it && offHandLockedBy();
+    const inner = it ? tile(it) + `<span class="cs-slot-x cs-editonly" data-unequip="${id}" role="button" aria-label="Снять: ${it.name}" title="Снять">${icon("close")}</span>`
+      : lock ? `<span class="cs-slot-ghost">${tile(lock)}</span><span class="cs-slot-lock">${icon("lock")}</span>` : icon(SLOTS[slot][1]);
+    return `<button type="button" class="cs-slot ${it ? "is-filled" : ""} ${lock ? "is-locked" : ""}" ${pos} data-ui="dollSlot" data-slot="${slot}" ${it && canEdit() ? `draggable="true" data-row-drag="${id}"` : ""} aria-label="${SLOTS[slot][0]}${it ? `: ${it.name}` : lock ? `: занято двуручным «${lock.name}»` : ""}" title="${it ? it.name : lock ? `Занято двуручным: ${lock.name}` : SLOTS[slot][0]}">
+      ${inner}<span class="cs-slot-label">${SLOTS[slot][0]}</span></button>`;
   }
+  function figureSVG(fig) { return `<svg viewBox="${FIGURE_VIEW[fig]}" preserveAspectRatio="xMidYMid meet"><use href="#${FIGURE_ID[fig]}"/></svg>`; }
   function renderDoll() {
     const preset = PRESETS[S.preset];
     const att = S.attuned.size, max = preset.attune;
     const wide = max > 3;
-    const sockets = Array.from({ length: max }, (_, i) => [...S.attuned][i] ?? null).map((id) => id
-      ? `<button type="button" class="cs-socket is-on" data-ui="attunementSocket" data-socket="${id}" title="${byId[id].name}" aria-label="Настроен: ${byId[id].name}">${tile(byId[id])}</button>`
-      : `<span class="cs-socket" data-ui="attunementSocket" title="Свободная настройка"></span>`).join("");
-    const attune = `<div class="cs-attune ${wide ? "is-wide" : ""}" data-ui="attunementTrack" style="--cols:${Math.min(max, 5)}"><div class="cs-sockets">${sockets}</div><span class="cs-attune-label"><span>Настройка</span><span><b>${att}</b> / ${max}</span></span></div>`;
+    const sockets = Array.from({ length: Math.max(max, att) }, (_, i) => [...S.attuned][i] ?? null).map((id, i) => id
+      ? `<button type="button" class="cs-socket is-on ${i >= max ? "is-over" : ""}" data-ui="attunementSocket" data-socket="${id}" data-drop-attune title="${byId[id].name}" aria-label="Настроен: ${byId[id].name}">${tile(byId[id])}<span class="cs-socket-x cs-editonly" data-unattune="${id}" role="button" aria-label="Прервать настройку: ${byId[id].name}" title="Прервать настройку">${icon("close")}</span></button>`
+      : `<span class="cs-socket" data-ui="attunementSocket" data-drop-attune title="Свободная настройка: перетащите предмет"></span>`).join("");
+    const attune = max || att ? `<div class="cs-attune ${wide ? "is-wide" : ""} ${att > max ? "is-over" : ""}" data-ui="attunementTrack" style="--cols:${Math.min(Math.max(max, att), 5)}"><div class="cs-sockets">${sockets}</div><span class="cs-attune-label"><span>Настройка</span><span><b>${att}</b> / ${max}</span></span></div>` : "";
     const head = `<div class="cs-doll-head" data-ui="dollHeader"><span class="cs-doll-title">Кукла</span>
       <span class="cs-doll-preset">${preset.name}</span>
       <select class="cs-doll-select" data-ui="dollPresetSelect" aria-label="Пресет куклы">${Object.entries(PRESETS).map(([k, p]) => `<option value="${k}" ${k === S.preset ? "selected" : ""}>${p.name}</option>`).join("")}</select>
-      <button type="button" class="cs-ibtn cs-mini cs-gmonly" data-ui="dollPresetEdit" aria-label="Редактор пресетов" title="Редактор пресетов" data-oos="Открывает редактор пресетов кукол: слоты, их порядок, допустимые типы предметов, лимит настройки">${icon("edit")}</button></div>`;
-    const grid = `<div class="cs-doll-grid"><div class="cs-figure"><svg viewBox="0 0 120 260"><use href="#i-figure"/></svg></div>`
-      + DOLL_LAYOUT.map(([slot, col, r]) => slotButton(slot, `style="grid-column:${col};grid-row:${r}"`)).join("")
-      + (wide ? "" : attune) + `</div>`;
-    const extra = preset.extras.length ? `<div class="cs-doll-extra" data-ui="extraSlots"><div class="cs-doll-sub">Дополнительные слоты <b>${preset.extras.length}</b></div><div class="cs-extra-grid">${preset.extras.map((slot) => slotButton(slot)).join("")}</div></div>` : "";
-    $("[data-doll]").innerHTML = head + grid + extra + (wide ? attune : "");
+      <button type="button" class="cs-ibtn cs-mini cs-gmonly" data-ui="dollPresetEdit" aria-label="Редактор пресетов" title="Редактор пресетов" data-oos="Открывает редактор пресетов кукол: фигура, слоты, их места, допустимые типы предметов, лимит настройки">${icon("edit")}</button></div>`;
+    const v = root.dataset.dollVariant ?? "A";
+    const fig = preset.figure, anchors = ANCHORS[fig];
+    // A: ten beside the figure; B: at most six per side; C: up to eleven on the ring. The rest overflow into a grid.
+    const perSide = { L: 0, R: 0 };
+    const placed = v === "A" ? preset.slots.slice(0, 10)
+      : v === "B" ? preset.slots.filter((x) => anchors[x] && perSide[anchors[x][2]]++ < 6)
+      : preset.slots.filter((x) => anchors[x]).slice(0, 11);
+    const rest = preset.slots.filter((x) => !placed.includes(x));
+    const backdrop = `<div class="cs-doll-portrait" aria-hidden="true">ИВ</div>`;
+    let stage;
+    if (v === "A") {
+      const half = Math.ceil(placed.length / 2), rows = Math.max(half, 3);
+      stage = `<div class="cs-doll-grid" style="grid-template-rows: repeat(${rows}, 62px)">${backdrop}<div class="cs-figure is-${fig}" style="grid-row: 1 / ${rows + 1}">${figureSVG(fig)}</div>`
+        + placed.map((slot, i) => slotButton(slot, `style="grid-column:${i < half ? 1 : 3};grid-row:${(i % half) + 1}"`)).join("") + `</div>`;
+    } else {
+      stage = `<div class="cs-doll-stage is-${v} is-${fig}" data-doll-stage>${backdrop}<svg class="cs-doll-lines" data-doll-lines></svg><div class="cs-figure">${figureSVG(fig)}</div>${placed.map((slot) => slotButton(slot, `data-anchor="${slot}"`)).join("")}</div>`;
+    }
+    const extra = rest.length ? `<div class="cs-doll-extra" data-ui="extraSlots"><div class="cs-doll-sub">Дополнительные слоты <b>${rest.length}</b></div><div class="cs-extra-grid">${rest.map((slot) => slotButton(slot)).join("")}</div></div>` : "";
+    const noSlot = S.noSlot.size ? `<div class="cs-noslot" data-ui="slotlessStrip"><div class="cs-doll-sub">Без слота <b>${S.noSlot.size}</b></div><div class="cs-noslot-list">${[...S.noSlot].map((id) => `<button type="button" class="cs-noslot-item" data-noslot="${id}" title="${byId[id].name}">${tile(byId[id])}<span>${byId[id].name}</span><span class="cs-slot-x cs-editonly" data-unequip="${id}" role="button" aria-label="Снять: ${byId[id].name}">${icon("close")}</span></button>`).join("")}</div></div>` : "";
+    $("[data-doll]").innerHTML = head + stage + extra + noSlot + attune;
+    // The stage lays out its slots whenever it gets or changes a size.
+    stageObserver.disconnect();
+    if (v !== "A") stageObserver.observe($("[data-doll-stage]"));
+  }
+  const stageObserver = new ResizeObserver(() => layoutStage());
+  // B hangs each slot beside its anchor with a leader line; C spreads the slots on an ellipse around the figure.
+  function layoutStage() {
+    const stage = $("[data-doll-stage]");
+    if (!stage) return;
+    const v = root.dataset.dollVariant, fig = PRESETS[S.preset].figure, anchors = ANCHORS[fig];
+    const W = stage.clientWidth, H = stage.clientHeight, sz = 52, gap = 22;
+    const figEl = stage.querySelector(".cs-figure svg").getBoundingClientRect(), box = stage.getBoundingClientRect();
+    // The figure is drawn letterboxed inside its svg box (meet): anchors are relative to the drawn area.
+    const [, , vw, vh] = FIGURE_VIEW[fig].split(" ").map(Number);
+    const k = Math.min(figEl.width / vw, figEl.height / vh), fw = vw * k, fh = vh * k;
+    const fx = figEl.left - box.left + (figEl.width - fw) / 2, fy = figEl.top - box.top + (figEl.height - fh) / 2;
+    const slots = [...stage.querySelectorAll("[data-anchor]")];
+    const lines = [];
+    if (v === "B") {
+      for (const side of ["L", "R"]) {
+        const list = slots.filter((el) => anchors[el.dataset.anchor][2] === side).map((el) => ({ el, a: anchors[el.dataset.anchor] })).sort((p, q) => p.a[1] - q.a[1]);
+        let y = -Infinity;
+        const step = sz + Math.max(4, Math.min(gap, (H - list.length * sz) / Math.max(1, list.length - 1)));
+        const placedYs = list.map(({ a }) => { const ay = fy + (a[1] / 100) * fh; y = Math.max(ay - sz / 2, y + step); return y; });
+        // Keep the stack inside the stage: shift it up when it runs past the bottom.
+        const over = Math.max(0, (placedYs.at(-1) ?? 0) + sz - H);
+        list.forEach(({ el, a }, i) => {
+          const ax = fx + (a[0] / 100) * fw, ay = fy + (a[1] / 100) * fh, sy = placedYs[i] - over;
+          const x = side === "L" ? 0 : W - sz, edge = side === "L" ? x + sz : x;
+          el.style.left = `${x}px`;
+          el.style.top = `${sy}px`;
+          lines.push(`<path d="M${edge} ${sy + sz / 2} L${edge + (side === "L" ? 10 : -10)} ${sy + sz / 2} L${ax} ${ay}"/><circle cx="${ax}" cy="${ay}" r="3"/>`);
+        });
+      }
+    } else {
+      const cx = W / 2, cy = H / 2, rx = W / 2 - sz / 2 - 2, ry = H / 2 - sz / 2 - 10;
+      slots.forEach((el, i) => {
+        const t = -Math.PI / 2 + (i / slots.length) * Math.PI * 2;
+        el.style.left = `${cx + rx * Math.cos(t) - sz / 2}px`; el.style.top = `${cy + ry * Math.sin(t) - sz / 2}px`;
+      });
+    }
+    const svg = stage.querySelector("[data-doll-lines]");
+    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svg.innerHTML = lines.join("");
   }
   function renderSpells() {
     const q = S.search.spells;
@@ -2187,27 +2318,56 @@ button.cs-stat:active { transform: scale(0.95); }
     }
     renderVitals(delta);
   }
+  // Equipment rules, as the module's rule engine: slot fit, two-handed lock, one armour, one shield, swap on an
+  // occupied slot. enforcementMode (block / auto_swap / warn) decides what a broken rule does.
+  const offHandLockedBy = () => { const m = byId[S.equipped.mainHand]; return m?.twoHanded ? m : null; };
+  function ruleCheck(it, slot) {
+    if (!it.slots?.includes(slot)) return { why: `«${it.name}» не подходит для слота «${SLOTS[slot][0]}»`, hard: true };
+    const lock = offHandLockedBy();
+    if (slot === "offHand" && lock && lock.id !== it.id) return { why: `Вторая рука занята: «${lock.name}» — двуручное`, fix: () => delete S.equipped.mainHand };
+    return null;
+  }
+  function refuse(el, why) { pulse(el, "is-refused"); chip(el, why); }
+  function equipTo(id, slot, fromEl) {
+    if (!canEdit()) return;
+    const it = byId[id], slotEl = $(`[data-slot="${slot}"]`);
+    const r = ruleCheck(it, slot);
+    if (r) {
+      if (r.hard || S.enforce === "block") return refuse(slotEl, r.why);
+      if (S.enforce === "auto_swap") r.fix();
+      else chip(slotEl, `Предупреждение: ${r.why}`);
+    }
+    const prev = slotOf(id); if (prev) delete S.equipped[prev];
+    S.noSlot.delete(id);
+    const bumped = S.equipped[slot];
+    S.equipped[slot] = id;
+    delete it.in;
+    // A two-handed weapon also clears the off hand.
+    if (it.twoHanded && S.equipped.offHand && S.enforce !== "warn") delete S.equipped.offHand;
+    rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
+    const landed = $(`[data-slot="${slot}"]`);
+    if (fromEl) fly(fromEl, landed, tile(it));
+    setTimeout(() => pulse(landed, "is-landed"), motionOn() && fromEl ? 480 : 0);
+    if (bumped && bumped !== id) { const back = $(`[data-row="${bumped}"] .cs-tile`); if (back) fly(landed, back, tile(byId[bumped])); }
+  }
+  function unequip(id) {
+    if (!canEdit()) return;
+    const slot = slotOf(id);
+    const slotEl = slot && $(`[data-slot="${slot}"]`);
+    if (slot) delete S.equipped[slot];
+    S.noSlot.delete(id);
+    rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
+    const target = $(`[data-row="${id}"] .cs-tile`);
+    if (slotEl && target) fly(slotEl, target, tile(byId[id]));
+  }
   function toggleEquip(id, sourceEl) {
     if (!canEdit()) return;
     const it = byId[id];
-    const current = slotOf(id);
-    if (current) {
-      const slotEl = $(`[data-slot="${current}"]`);
-      delete S.equipped[current];
-      rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
-      const target = $(`[data-row="${id}"] .cs-tile`) ?? $(`[data-row="${id}"]`);
-      fly(slotEl, target, tile(it));
-      return;
-    }
+    if (slotOf(id) || S.noSlot.has(id)) return unequip(id);
     const fits = fitsHere(it);
-    if (!fits.length) return;
-    const slot = fits.find((s) => !S.equipped[s]) ?? fits[0];
-    const from = sourceEl ?? $(`[data-row="${id}"] .cs-tile`);
-    S.equipped[slot] = id;
-    rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
-    const slotEl = $(`[data-slot="${slot}"]`);
-    fly(from, slotEl, tile(it));
-    setTimeout(() => pulse(slotEl, "is-landed"), motionOn() ? 480 : 0);
+    // Items with no slot in this preset (Ioun stones, trinkets) are still equipped, without a slot.
+    if (!fits.length) { S.noSlot.add(id); return rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); }); }
+    equipTo(id, fits.find((x) => !S.equipped[x]) ?? fits[0], sourceEl ?? $(`[data-row="${id}"] .cs-tile`));
   }
   function toggleFav(id) {
     if (!canEdit()) return;
@@ -2290,6 +2450,14 @@ button.cs-stat:active { transform: scale(0.95); }
   }
 
   /* ═══════════ Events ═══════════ */
+  // × on a slot, a slotless item or a socket acts before the button around it.
+  root.addEventListener("click", (e) => {
+    const x = e.target.closest("[data-unequip], [data-unattune]");
+    if (!x) return;
+    e.stopPropagation();
+    if (x.dataset.unequip) unequip(x.dataset.unequip);
+    else toggleAttune(x.dataset.unattune);
+  }, true);
   root.addEventListener("click", (e) => {
     const t = e.target.closest("button, [data-toggle-sec], .cs-row, .cs-fav, [data-close-settings]");
     if (!t || t.closest("[data-oos]")) return;
@@ -2386,11 +2554,13 @@ button.cs-stat:active { transform: scale(0.95); }
     if (t.matches("[data-use]")) { if (!canEdit()) return; const f = byId[t.dataset.use], i = Number(t.dataset.i); f.uses[0] = i < f.uses[0] ? i : i + 1; renderFeatures(); applyRole(); return; }
     if (t.matches(".cs-slot")) {
       const id = S.equipped[t.dataset.slot];
-      if (id) return toggleEquip(id);
+      if (id) return select(id);
+      if (!canEdit()) return;
       const fits = items.filter((x) => x.slots?.includes(t.dataset.slot) && !slotOf(x.id));
-      if (!fits.length) return pulse(t, "is-refused");
-      return toggleEquip(fits[0].id, $(`[data-row="${fits[0].id}"] .cs-tile`));
+      if (!fits.length) return refuse(t, `Нет подходящего предмета для слота «${SLOTS[t.dataset.slot][0]}»`);
+      return equipTo(fits[0].id, t.dataset.slot, $(`[data-row="${fits[0].id}"] .cs-tile`));
     }
+    if (t.matches("[data-noslot]")) return select(t.dataset.noslot);
     if (t.matches(".cs-fav")) { const x = byId[t.dataset.favRow]; setTab(kind(x) === "spell" ? "spells" : kind(x) === "feature" ? "features" : "equipment"); select(x.id); return; }
     if (t.matches(".cs-row")) return select(t.dataset.row);
     if (t.closest("[data-set]") && t.dataset.value) { const k = t.closest("[data-set]").dataset.set; const v = t.dataset.value;
@@ -2432,8 +2602,15 @@ button.cs-stat:active { transform: scale(0.95); }
     if (e.target.dataset.tradePartner) { S.trade.partner = e.target.value; return; }
     if (e.target.matches('[data-ui="dollPresetSelect"]')) {
       S.preset = e.target.value;
-      for (const [slot] of Object.entries(S.equipped)) if (!presetSlots().includes(slot)) delete S.equipped[slot];
-      while (S.attuned.size > PRESETS[S.preset].attune) S.attuned.delete([...S.attuned].at(-1));
+      // autoReconcileSlots: items whose slot is gone move to a free fitting slot, or stay equipped without a slot.
+      for (const [slot, id] of Object.entries(S.equipped)) {
+        if (presetSlots().includes(slot)) continue;
+        delete S.equipped[slot];
+        const to = fitsHere(byId[id]).find((x) => !S.equipped[x]);
+        if (to) S.equipped[to] = id; else S.noSlot.add(id);
+      }
+      // Slotless items that fit a free slot of the new preset take it.
+      for (const id of [...S.noSlot]) { const to = fitsHere(byId[id]).find((x) => !S.equipped[x]); if (to) { S.equipped[to] = id; S.noSlot.delete(id); } }
       rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
       applyRole();
       return;
@@ -2479,11 +2656,12 @@ button.cs-stat:active { transform: scale(0.95); }
   });
 
   /* drag & drop: rows into sections and doll slots */
-  let dragId = null;
+  let dragId = null, dragFromSlot = false;
   root.addEventListener("dragstart", (e) => {
-    const r = e.target.closest(".cs-row[data-row]");
+    const r = e.target.closest(".cs-row[data-row], .cs-slot[data-row-drag]");
     if (!r || !canEdit()) return;
-    dragId = r.dataset.row;
+    dragId = r.dataset.row ?? r.dataset.rowDrag;
+    dragFromSlot = !!r.dataset.rowDrag;
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", dragId);
     requestAnimationFrame(() => r.classList.add("is-dragging"));
@@ -2511,7 +2689,8 @@ button.cs-stat:active { transform: scale(0.95); }
     } else if (!bag) { clearTimeout(spring.timer); spring.id = null; }
     const sec = !bag && e.target.closest('[data-panel="equipment"] .cs-section');
     const slot = e.target.closest(".cs-slot");
-    if (bag || sec || slot) e.preventDefault();
+    const sock = e.target.closest("[data-drop-attune]");
+    if (bag || sec || slot || sock) e.preventDefault();
     $$(".is-drop").forEach((s) => s !== (bag || sec) && s.classList.remove("is-drop"));
     (bag || sec)?.classList.add("is-drop");
   });
@@ -2539,13 +2718,14 @@ button.cs-stat:active { transform: scale(0.95); }
     const slot = e.target.closest(".cs-slot");
     const bagEl = e.target.closest("[data-drop-bag]");
     const sec = !bagEl && e.target.closest('[data-panel="equipment"] .cs-section');
-    if (slot) {
-      if (!it.slots?.includes(slot.dataset.slot)) return pulse(slot, "is-refused");
-      const prev = slotOf(id); if (prev) delete S.equipped[prev];
-      S.equipped[slot.dataset.slot] = id;
-      delete it.in;
-      rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
-      pulse($(`[data-slot="${slot.dataset.slot}"]`), "is-landed");
+    const sock = e.target.closest("[data-drop-attune]");
+    if (sock) {
+      if (!it.attune) refuse(sock, `«${it.name}» не требует настройки`);
+      else if (!S.attuned.has(id)) toggleAttune(id);
+    } else if (slot) {
+      equipTo(id, slot.dataset.slot);
+    } else if (sec && dragFromSlot) {
+      unequip(id);
     } else if (bagEl) {
       const bag = byId[bagEl.dataset.dropBag];
       if (it.in === bag.id) return;
@@ -2710,7 +2890,8 @@ button.cs-stat:active { transform: scale(0.95); }
   function toggleAttune(id) {
     if (!canEdit()) return;
     if (S.attuned.has(id)) S.attuned.delete(id);
-    else if (S.attuned.size >= PRESETS[S.preset].attune) { pulse($('[data-ui="attunementTrack"]'), "is-refused"); pulse($(`[data-row="${id}"]`), "is-refused"); return; }
+    else if (S.attuned.size >= PRESETS[S.preset].attune) {
+      chip($('[data-ui="attunementTrack"]') ?? $(`[data-row="${id}"]`), `Лимит настройки: ${S.attuned.size} / ${PRESETS[S.preset].attune}`); pulse($('[data-ui="attunementTrack"]'), "is-refused"); pulse($(`[data-row="${id}"]`), "is-refused"); return; }
     else S.attuned.add(id);
     rerender("equipment", () => { renderDoll(); renderInventory(); renderInspector(); });
     if (S.attuned.has(id)) setTimeout(() => pulse($(`[data-socket="${id}"]`), "is-new"), motionOn() ? 300 : 0);
@@ -2900,6 +3081,40 @@ button.cs-stat:active { transform: scale(0.95); }
   orb.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOrb(e); } });
   document.querySelector("[data-mock-xp]").addEventListener("input", renderOrbState);
   renderOrbState();
+
+  /* ═══════════ PROTOTYPE (#13): doll geometry, ?doll=A|B|C — throwaway ═══════════ */
+  const DOLL_VARIANTS = { A: "Колонки", B: "Якоря с выносками", C: "Орбита" };
+  const dollParam = new URLSearchParams(location.search).get("doll")?.toUpperCase();
+  root.dataset.dollVariant = DOLL_VARIANTS[dollParam] ? dollParam : "A";
+  const dollSwitch = document.createElement("nav");
+  dollSwitch.className = "proto-switch";
+  document.body.append(dollSwitch);
+  function renderDollSwitch() {
+    const k = root.dataset.dollVariant;
+    dollSwitch.innerHTML = `<button type="button" data-dv="-1" aria-label="Предыдущий вариант">←</button><span><b>Кукла ${k}</b> · ${DOLL_VARIANTS[k]}</span><button type="button" data-dv="1" aria-label="Следующий вариант">→</button>`
+      + `<span class="proto-fig">${["standard", "extended", "beast", "wagon", "ship"].map((p) => `<button type="button" data-fig="${p}" class="${S.preset === p ? "is-on" : ""}">${PRESETS[p].name.split(" ·")[0]}</button>`).join("")}</span>`;
+  }
+  function cycleDoll(d) {
+    const keys = Object.keys(DOLL_VARIANTS);
+    root.dataset.dollVariant = keys[(keys.indexOf(root.dataset.dollVariant) + d + keys.length) % keys.length];
+    try { const u = new URL(location.href); u.searchParams.set("doll", root.dataset.dollVariant); history.replaceState(null, "", u); } catch { /* file:// */ }
+    renderDollSwitch();
+    rerender("equipment", renderDoll);
+    applyRole();
+  }
+  dollSwitch.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-dv]");
+    if (b) return cycleDoll(Number(b.dataset.dv));
+    const f = e.target.closest("[data-fig]");
+    if (f) { const sel = $('[data-ui="dollPresetSelect"]'); sel.value = f.dataset.fig; sel.dispatchEvent(new Event("change", { bubbles: true })); renderDollSwitch(); }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest?.("input, textarea, select, [contenteditable]")) return;
+    if (e.key === "ArrowLeft") cycleDoll(-1);
+    if (e.key === "ArrowRight") cycleDoll(1);
+  });
+  renderDollSwitch();
+  renderDoll();
 
   // More than three containers start folded to one line each.
   const topBags = items.filter((x) => x.group === "container" && !x.in);

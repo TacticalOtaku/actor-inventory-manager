@@ -963,7 +963,6 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-uses button.is-spent { background: transparent; }
 .cs-uses button:active { transform: scale(0.8); }
 
-.cs-notes textarea { width: 100%; min-height: 260px; box-sizing: border-box; padding: var(--s3); background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-lg); color: var(--text); font: 13px/1.6 var(--font-ui); resize: vertical; }
 
 /* ═══════════ Inspector (wide) ═══════════ */
 .cs-inspector { display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--line); background: var(--surface-1); overflow: auto; }
@@ -1085,6 +1084,15 @@ button.cs-stat:active { transform: scale(0.95); }
 [data-feat="class"] { --tone: var(--accent); }
 [data-feat="species"] { --tone: var(--school-trs); }
 [data-feat="background"] { --tone: var(--school-con); }
+[data-feat="other"] { --tone: var(--warn); }
+.cs-uses-wrap { display: inline-flex; align-items: center; gap: 4px; }
+.cs-uses-count { height: 22px; padding: 0 7px; border: 1px solid var(--accent-line); border-radius: 6px; background: var(--accent-soft); color: var(--text); font: 600 12px var(--font-num); cursor: pointer; }
+.cs-uses-count small { margin-left: 2px; font-size: 10.5px; color: var(--text-3); }
+.cs-uses-count:disabled { cursor: default; border-color: var(--line); background: transparent; }
+.cs-tag.is-rec { color: var(--temp); background: color-mix(in oklab, var(--temp) 13%, transparent); }
+.cs-tag.is-passive { color: var(--text-3); background: transparent; border: 1px solid var(--line); }
+.cs-row.is-passive .cs-tile { opacity: 0.6; }
+.cs-row.is-passive:hover .cs-tile { opacity: 0.9; }
 
 /* settings: segmented controls share the width */
 .cs-drawer .cs-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
@@ -1244,6 +1252,85 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-prep-warn { display: inline-flex; align-items: center; gap: 5px; height: 26px; margin-top: 3px; padding: 0 10px; border-radius: 99px; background: color-mix(in oklab, var(--hp) 16%, var(--surface-2)); color: var(--hp); font-size: 11.5px; }
 .cs-prep-warn[hidden] { display: none; }
 .cs-spell-filters { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: var(--s2); }
+
+/* ═══ #15: effects, conditions, favorites order, inspector body, biography ═══ */
+.cs-effwrap { display: grid; }
+.cs-effect { cursor: pointer; transition: border-color var(--d-fast), opacity var(--d-fast); }
+.cs-effect:hover { border-color: var(--line-strong); }
+.cs-effect.is-open { border-color: var(--accent-line); }
+.cs-effect.is-off .cs-effect-ic, .cs-effect.is-off .cs-effect-n { opacity: 0.5; }
+.cs-effect.is-supp { border-style: dashed; }
+.cs-effect.is-supp .cs-effect-ic, .cs-effect.is-supp .cs-effect-n, .cs-effect.is-supp .cs-effect-t { opacity: 0.45; }
+.cs-effect.is-cond { border-color: color-mix(in oklab, var(--hp) 40%, transparent); }
+.cs-effect.is-cond .cs-effect-ic { --tone: var(--hp); font: 700 12px var(--font-display); }
+.cs-effect .cs-ibtn.cs-mini { width: 22px; height: 22px; flex: none; }
+.cs-switch { position: relative; flex: none; width: 28px; height: 16px; padding: 0; border: 0; border-radius: 99px; background: var(--surface-3); cursor: pointer; transition: background var(--d-base); }
+.cs-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--text-2); transition: transform var(--d-base) var(--ease-snap), background var(--d-base); }
+.cs-switch[aria-checked="true"] { background: var(--accent); }
+.cs-switch[aria-checked="true"]::after { transform: translateX(12px); background: var(--accent-ink); }
+.cs-switch:disabled { opacity: 0.4; cursor: not-allowed; }
+.cs-eff-detail p { margin: 4px 8px 2px 32px; font-size: 11.5px; }
+.cs-eff-changes { margin: 0 8px 6px 32px; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 4px; }
+.cs-eff-changes li { padding: 1px 6px; border-radius: 5px; background: var(--surface-3); color: var(--text-2); font: 500 10.5px var(--font-num); }
+.cs-eff-cat { display: grid; gap: 3px; }
+.cs-eff-cat + .cs-eff-cat { margin-top: var(--s2); }
+.cs-eff-cat-h { display: flex; align-items: center; gap: 6px; margin: 2px 4px; font: 600 9.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
+.cs-eff-cat-h span { font-family: var(--font-num); }
+.cs-eff-cat-h::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.cs-conds { display: grid; gap: 6px; }
+.cs-conds-h { font: 600 9.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
+.cs-conds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 4px; }
+.cs-cond { display: flex; align-items: center; gap: 6px; min-width: 0; height: 28px; padding: 0 6px 0 8px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface-1); color: var(--text-2); font: 11.5px var(--font-ui); cursor: pointer; transition: border-color var(--d-fast), color var(--d-fast), transform var(--d-fast) var(--ease-snap); }
+.cs-cond i { width: 7px; height: 7px; flex: none; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--text-3); transition: background var(--d-fast), box-shadow var(--d-fast); }
+.cs-cond span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-cond:hover { border-color: var(--line-strong); color: var(--text); }
+.cs-cond:active { transform: scale(0.95); }
+.cs-cond.is-on { border-color: color-mix(in oklab, var(--hp) 55%, transparent); color: var(--text); background: color-mix(in oklab, var(--hp) 12%, var(--surface-1)); }
+.cs-cond.is-on i { background: var(--hp); box-shadow: 0 0 6px color-mix(in oklab, var(--hp) 60%, transparent); }
+.cs-eff-new { justify-self: start; }
+.cs-eff-home { display: grid; gap: var(--s3); }
+.cs-eff-home > .cs-conds { padding: var(--s3); background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-lg); }
+.cs-eff-home .cs-conds-grid { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); }
+.cs-eff-cats { columns: 280px; column-gap: var(--s3); }
+.cs-eff-cats .cs-eff-cat { break-inside: avoid; margin: 0 0 var(--s3); }
+[data-panel="effects"] { padding-top: var(--s3); }
+.cs-fav.is-off .cs-tile, .cs-fav.is-off .cs-fav-body { opacity: 0.5; }
+.cs-fav.is-dragging { opacity: 0.35; }
+.cs-fav.is-drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+.cs-fav.is-drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
+.cs-rail-fav.is-drop { outline: 1px dashed var(--accent-line); outline-offset: 3px; border-radius: var(--r-md); }
+.cs-fav .cs-tile-btn > .cs-tile { --tile: 26px; }
+.cs-fav-meta .cs-rune.is-spent { opacity: 0.25; }
+[data-fav-src][draggable="true"] { cursor: grab; }
+.cs-insp-uses { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s2); font-size: 12px; color: var(--text-3); }
+.cs-insp-uses b { font: 600 13px var(--font-num); color: var(--text); }
+.cs-insp-effs { display: grid; gap: 3px; }
+.cs-insp .acts .grow, .cs-detail-body .acts .grow { flex: 1; }
+/* margins, not padding: a collapsed .cs-detail (0fr) still shows its child's padding */
+.cs-detail-body { display: grid; gap: var(--s2); }
+.cs-detail-body > * { margin-left: calc(var(--tile) + var(--s2) + var(--s3)); margin-right: var(--s2); }
+.cs-detail-body > :first-child { margin-top: 2px; }
+.cs-detail-body > :last-child { margin-bottom: var(--s3); }
+.cs-detail-body > p { margin: 0; color: var(--text-2); font-size: 12.5px; }
+.cs-detail-body .acts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); }
+.cs-bio { display: grid; gap: var(--s3); align-content: start; }
+.cs-bio-chars { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--s2) var(--s3); }
+.cs-bio-field, .cs-bio-trait { display: grid; gap: 3px; }
+.cs-bio-field span, .cs-bio-trait span { font: 600 9.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
+.cs-bio-field input, .cs-bio-trait textarea { width: 100%; box-sizing: border-box; padding: 4px 0; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text); font: 13px var(--font-ui); resize: none; }
+.cs-bio-trait textarea { line-height: 1.45; }
+.cs-bio-field input:focus, .cs-bio-trait textarea:focus { outline: none; border-bottom-color: var(--accent); }
+.cs-bio-field input:disabled, .cs-bio-trait textarea:disabled { border-bottom-color: transparent; }
+.cs-bio-traits { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--s3); }
+.cs-bio-trait.is-wide { grid-column: 1 / -1; }
+.cs-bio-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s2); }
+.cs-bio-head h3 { margin: 0; font: 600 16px var(--font-display); }
+.cs-bio-tools { display: flex; gap: 2px; }
+.cs-prose { min-height: 180px; padding: var(--s2) 2px; color: var(--text); font: 13.5px/1.65 var(--font-ui); outline: none; }
+.cs-prose p { margin: 0 0 var(--s2); }
+.cs-prose ul { margin: 0 0 var(--s2); padding-left: 18px; }
+.cs-prose .content-link { padding: 0 4px; border-radius: 4px; background: var(--surface-3); color: var(--accent); text-decoration: none; cursor: pointer; }
+.cs-prose:focus { box-shadow: inset 0 -1px 0 var(--accent-line); }
 </style>
 </head>
 <body>
@@ -1379,7 +1466,7 @@ button.cs-stat:active { transform: scale(0.95); }
     </div>
 
     <div class="cs-effects" data-ui="effectsList" data-flip>
-      <div class="cs-rail-title"><span>Эффекты</span><button type="button" class="cs-ibtn cs-editonly cs-mini" data-ui="addEffectButton" aria-label="Добавить состояние" data-oos="Открывает список состояний dnd5e и эффектов на персонаже"><svg class="cs-ico"><use href="#i-plus"/></svg></button></div>
+      <div class="cs-rail-title"><span>Эффекты</span><button type="button" class="cs-ibtn cs-editonly cs-mini" data-ui="addEffectButton" data-eff-add aria-label="Состояния и все эффекты" title="Состояния и все эффекты"><svg class="cs-ico"><use href="#i-plus"/></svg></button></div>
       <div class="cs-effect-list" data-effects></div>
     </div>
 
@@ -1431,7 +1518,8 @@ button.cs-stat:active { transform: scale(0.95); }
       <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="equipment" aria-selected="true">Снаряжение <span class="n" data-count="items"></span></button>
       <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="spells" aria-selected="false">Заклинания <span class="n" data-count="spells"></span></button>
       <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="features" aria-selected="false">Умения <span class="n" data-count="features"></span></button>
-      <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="notes" aria-selected="false">Заметки</button>
+      <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="effects" aria-selected="false">Эффекты</button>
+      <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="biography" aria-selected="false">Биография</button>
       <span class="cs-tab-ink" aria-hidden="true"></span>
     </nav>
 
@@ -1510,13 +1598,25 @@ button.cs-stat:active { transform: scale(0.95); }
             <button type="button" data-view="icons" aria-label="Только иконки"><svg class="cs-ico"><use href="#i-tiles"/></svg></button>
           </div>
         </div>
+        <div class="cs-filters cs-spell-filters" data-ui="featureFilterChips"><button type="button" class="cs-chip" data-feat-filter="action" aria-pressed="false">Действие</button><button type="button" class="cs-chip" data-feat-filter="bonus" aria-pressed="false">Бонусное</button><button type="button" class="cs-chip" data-feat-filter="reaction" aria-pressed="false">Реакция</button><button type="button" class="cs-chip" data-feat-filter="passive" aria-pressed="false">Пассивные</button></div>
         <div data-features></div>
       </div>
 
-      <!-- Notes -->
-      <div class="cs-panel cs-notes" data-panel="notes" data-ui="notesTab" hidden>
-        <textarea data-ui="notesField" aria-label="Заметки">Долг перед Гильдией свитков — 40 зм до конца месяца.
-Посох нашла в руинах Кель-Аммара; на навершии руна, которую никто не может прочесть.</textarea>
+      <!-- Effects (variant B) -->
+      <div class="cs-panel" data-panel="effects" data-ui="effectsTab" hidden><div data-effects-tab></div></div>
+
+      <!-- Biography -->
+      <div class="cs-panel cs-bio" data-panel="biography" data-ui="biographyTab" hidden>
+        <div class="cs-card cs-bio-chars" data-ui="characteristicsCard"><label class="cs-bio-field"><span>Мировоззрение</span><input type="text" value="Нейтрально-добрый" data-bio></label><label class="cs-bio-field"><span>Возраст</span><input type="text" value="142" data-bio></label><label class="cs-bio-field"><span>Рост</span><input type="text" value="5 фт 9 дюймов" data-bio></label><label class="cs-bio-field"><span>Вес</span><input type="text" value="130 фнт" data-bio></label><label class="cs-bio-field"><span>Глаза</span><input type="text" value="Серые" data-bio></label><label class="cs-bio-field"><span>Волосы</span><input type="text" value="Пепельные" data-bio></label><label class="cs-bio-field"><span>Кожа</span><input type="text" value="Бледная" data-bio></label><label class="cs-bio-field"><span>Пол</span><input type="text" value="Женский" data-bio></label><label class="cs-bio-field"><span>Вера</span><input type="text" value="Корелон Ларетиан" data-bio></label></div>
+        <div class="cs-bio-traits" data-ui="personalityCard"><label class="cs-card cs-bio-trait"><span>Черты характера</span><textarea rows="2" data-bio>Цитирует трактаты к месту и не к месту; не выносит небрежных почерков.</textarea></label><label class="cs-card cs-bio-trait"><span>Идеалы</span><textarea rows="2" data-bio>Знание. Любая тайна должна быть записана, прежде чем её забудут.</textarea></label><label class="cs-card cs-bio-trait"><span>Привязанности</span><textarea rows="2" data-bio>Гильдия свитков Невервинтера, где меня научили читать руны.</textarea></label><label class="cs-card cs-bio-trait"><span>Слабости</span><textarea rows="2" data-bio>Не могу пройти мимо запертой библиотеки.</textarea></label><label class="cs-card cs-bio-trait is-wide"><span>Внешность</span><textarea rows="2" data-bio>Высокая эльфийка в выцветшей мантии, пальцы в чернилах, на поясе футляр для свитков.</textarea></label></div>
+        <div class="cs-card cs-bio-text" data-ui="biographyEditor">
+          <div class="cs-bio-head"><h3>Биография</h3><div class="cs-bio-tools cs-editonly" data-oos="Панель ProseMirror Foundry: заголовки, жирный, курсив, списки, ссылки на документы"><button type="button" class="cs-ibtn cs-mini" aria-label="Жирный"><b>Ж</b></button><button type="button" class="cs-ibtn cs-mini" aria-label="Курсив"><i>К</i></button><button type="button" class="cs-ibtn cs-mini" aria-label="Список">•</button><button type="button" class="cs-ibtn cs-mini" aria-label="Ссылка">@</button></div></div>
+          <div class="cs-prose" contenteditable="true" data-bio-prose aria-label="Биография" role="textbox" aria-multiline="true">
+            <p>Долг перед <a class="content-link" data-uuid="JournalEntry.guild">Гильдией свитков</a> — 40 зм до конца месяца.</p>
+            <p>Посох нашла в руинах Кель-Аммара; на навершии руна, которую никто не может прочесть. Мастер Орвин считает, что это <em>древнеэльфийский</em>, а не драконий.</p>
+            <ul><li>Спросить о руне в храме Огмы</li><li>Вернуть «Трактат о вратах» в библиотеку</li></ul>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1576,7 +1676,7 @@ button.cs-stat:active { transform: scale(0.95); }
       <div class="cs-field" data-ui="tabVisibilityToggle"><span>Вкладки</span>
         <label class="cs-toggle">Обзор<input type="checkbox" checked data-tab-toggle="overview"></label>
         <label class="cs-toggle">Умения<input type="checkbox" checked data-tab-toggle="features"></label>
-        <label class="cs-toggle">Заметки<input type="checkbox" checked data-tab-toggle="notes"></label>
+        <label class="cs-toggle">Биография<input type="checkbox" checked data-tab-toggle="biography"></label>
       </div>
     </div>
   </div>
@@ -1637,7 +1737,7 @@ button.cs-stat:active { transform: scale(0.95); }
 
   // group = dnd5e item type; in = id of the container holding it; price in gp
   const items = [
-    { id: "staff", name: "Боевой посох Кель-Аммара", group: "weapon", icon: "staff", rarity: "uncommon", act: "action", roll: "+3 · 1к6 + 1 дроб.", qty: 1, wt: 4, price: 500, slots: ["mainHand"], tags: ["Универсальное", "1к6 / 1к8"], desc: "Магическое оружие +1. Пока посох у вас в руках, вы получаете +1 к броскам атаки заклинаниями." },
+    { id: "staff", acts: [["Атака посохом", "staff"], ["Зажечь навершие", "spark"]], name: "Боевой посох Кель-Аммара", group: "weapon", icon: "staff", rarity: "uncommon", act: "action", roll: "+3 · 1к6 + 1 дроб.", qty: 1, wt: 4, price: 500, slots: ["mainHand"], tags: ["Универсальное", "1к6 / 1к8"], desc: "Магическое оружие +1. Пока посох у вас в руках, вы получаете +1 к броскам атаки заклинаниями." },
     { id: "dagger", name: "Кинжал", group: "weapon", icon: "sword", rarity: "common", qty: 2, wt: 1, price: 2, slots: ["mainHand", "offHand"], tags: ["Лёгкое", "Фехтовальное", "Метательное"], desc: "Колющий урон 1к4. Дистанция броска 20/60 фт." },
     { id: "bow", name: "Длинный лук", group: "weapon", icon: "staff", rarity: "common", qty: 1, wt: 2, price: 50, slots: ["mainHand"], twoHanded: true, tags: ["Двуручное", "Боеприпасы"], desc: "Колющий урон 1к8. Дистанция 150/600 фт. Двуручное." },
     { id: "shieldItem", name: "Щит", group: "equipment", icon: "shield", rarity: "common", qty: 1, wt: 6, price: 10, slots: ["offHand"], shield: true, tags: ["+2 КД"], desc: "Щит: +2 к КД." },
@@ -1650,7 +1750,7 @@ button.cs-stat:active { transform: scale(0.95); }
     { id: "boots", name: "Эльфийские сапоги", group: "equipment", icon: "boot", rarity: "uncommon", qty: 1, wt: 1, price: 2500, slots: ["feet"], tags: [], desc: "Ваши шаги не издают звуков на любой поверхности." },
     { id: "book", name: "Книга заклинаний", group: "equipment", icon: "book", rarity: "common", qty: 1, wt: 3, price: 50, tags: ["Фокусировка"], desc: "Переплёт из кожи василиска, 14 заклинаний." },
     { id: "pouch", name: "Мешочек с компонентами", group: "equipment", icon: "pouch", rarity: "common", qty: 1, wt: 2, price: 25, tags: ["Фокусировка"], desc: "Материальные компоненты без указанной стоимости." },
-    { id: "wand", name: "Жезл волшебных стрел", group: "consumable", icon: "staff", rarity: "uncommon", act: "action", qty: 1, wt: 1, price: 800, uses: [5, 7], tags: ["Заряды"], desc: "7 зарядов. Действием потратьте 1–3 заряда, чтобы сотворить «Волшебную стрелу». Восстанавливает 1к6 + 1 заряд на рассвете." },
+    { id: "wand", acts: [["Выпустить стрелы", "bolt"]], name: "Жезл волшебных стрел", group: "consumable", icon: "staff", rarity: "uncommon", act: "action", qty: 1, wt: 1, price: 800, uses: [5, 7], tags: ["Заряды"], desc: "7 зарядов. Действием потратьте 1–3 заряда, чтобы сотворить «Волшебную стрелу». Восстанавливает 1к6 + 1 заряд на рассвете." },
     { id: "potion", name: "Зелье лечения", group: "consumable", icon: "potion", rarity: "common", act: "bonus", roll: "2к4 + 2 хита", qty: 3, wt: 0.5, price: 50, tags: ["2к4+2"], desc: "Бонусным действием вы восстанавливаете 2к4 + 2 хита." },
     { id: "scroll", name: "Свиток: Огненный шар", group: "consumable", icon: "scroll", rarity: "uncommon", qty: 1, wt: 0, price: 200, tags: ["3 круг"], desc: "Одноразовый свиток заклинания 3 круга." },
     { id: "callig", name: "Принадлежности каллиграфа", group: "tool", icon: "tool", rarity: "common", qty: 1, wt: 5, price: 10, tags: ["Лов"], desc: "Перья, чернила, пергамент. Владение: проверка с бонусом мастерства." },
@@ -1696,14 +1796,21 @@ button.cs-stat:active { transform: scale(0.95); }
     { id: "innDetect", method: "innate", uses: [1, 1], comp: "В, С", mat: "", name: "Обнаружение магии", lvl: 1, school: "div", icon: "eye", conc: true, tags: ["1 действие", "Высший эльф"], desc: "Врождённое: раз в день без ячейки." },
     { id: "innMisty", method: "innate", uses: [1, 1], comp: "В", mat: "", name: "Туманный шаг", lvl: 2, school: "con", icon: "cloak", act: "bonus", tags: ["Бонусное", "Высший эльф"], desc: "Врождённое: раз в день без ячейки." }
   );
+  // src is the origin dnd5e reads from advancementOrigin: a class, the species, the background, or none (Прочее).
+  // rec is uses.recovery as dnd5e labels it; recharge is the 5–6 recovery rolled with uses.rollRecharge().
   const features = [
-    { id: "recovery", name: "Магическое восстановление", src: "Волшебник", icon: "book", uses: [1, 1], tags: ["Короткий отдых"], desc: "Раз в день после короткого отдыха восстановите ячейки суммарного круга до 3." },
-    { id: "sculpt", name: "Скульптор заклинаний", src: "Волшебник", icon: "spark", tags: ["Воплощение"], desc: "Выбранные существа автоматически преуспевают в спасброске от вашего заклинания воплощения." },
-    { id: "potent", name: "Мощные заговоры", src: "Волшебник", icon: "flame", tags: ["Воплощение"], desc: "Существо получает половину урона от заговора даже при успешном спасброске." },
-    { id: "dark", name: "Тёмное зрение", src: "Высший эльф", icon: "eye", tags: ["60 фт"], desc: "Вы видите в тусклом свете как в ярком, а в темноте как в тусклом." },
-    { id: "fey", name: "Наследие фей", src: "Высший эльф", icon: "star", tags: [], desc: "Преимущество на спасброски от очарования, магия не может вас усыпить." },
-    { id: "initiate", name: "Посвящённый в магию", src: "Мудрец", icon: "scroll", uses: [1, 1], tags: ["Продолжительный отдых"], desc: "Одно заклинание 1 круга без ячейки раз в день." }
+    { id: "recovery", name: "Магическое восстановление", src: "Волшебник", icon: "book", uses: [1, 1], rec: "Продолжительный отдых", tags: ["После короткого отдыха"], desc: "Раз в день после короткого отдыха восстановите ячейки суммарного круга до 3.", acts: [["Восстановить ячейки", "spark"]] },
+    { id: "sculpt", name: "Скульптор заклинаний", src: "Волшебник", icon: "spark", passive: true, tags: ["Воплощение"], desc: "Выбранные существа автоматически преуспевают в спасброске от вашего заклинания воплощения." },
+    { id: "potent", name: "Мощные заговоры", src: "Волшебник", icon: "flame", passive: true, tags: ["Воплощение"], desc: "Существо получает половину урона от заговора даже при успешном спасброске." },
+    { id: "dark", name: "Тёмное зрение", src: "Высший эльф", icon: "eye", passive: true, tags: ["60 фт"], desc: "Вы видите в тусклом свете как в ярком, а в темноте как в тусклом." },
+    { id: "fey", name: "Наследие фей", src: "Высший эльф", icon: "star", passive: true, tags: [], desc: "Преимущество на спасброски от очарования, магия не может вас усыпить." },
+    { id: "initiate", name: "Посвящённый в магию", src: "Мудрец", icon: "scroll", act: "action", uses: [1, 1], rec: "Продолжительный отдых", tags: [], desc: "Одно заклинание 1 круга без ячейки раз в день.", acts: [["Сотворить «Щит»", "shield"], ["Сотворить «Волшебную стрелу»", "bolt"]] },
+    { id: "lucky", name: "Удачливый", src: "Прочее", icon: "dice", uses: [2, 3], rec: "Продолжительный отдых", tags: ["Черта"], desc: "Потратьте очко удачи, чтобы получить преимущество на бросок к20 или навязать помеху атаке по вам." },
+    { id: "rune", name: "Руна навершия", src: "Прочее", icon: "staff", act: "action", uses: [7, 10], rec: "Рассвет", tags: ["Дар истории"], desc: "Руна на навершии посоха копит силу: заряд — свет на 1 минуту, 3 заряда — «Обнаружение магии» без ячейки." },
+    { id: "flare", name: "Вспышка руны", src: "Прочее", icon: "bolt", act: "bonus", uses: [0, 1], recharge: "5–6", tags: ["Дар истории"], desc: "Существа в 10 фт от вас — спасбросок Телосложения Сл 15 или ослеплены до конца вашего следующего хода." }
   ];
+  const ORIGINS = [["Волшебник", "Волшебник", "6 ур. · Воплощение"], ["Высший эльф", "Вид", "Высший эльф"], ["Мудрец", "Предыстория", "Мудрец"], ["Прочее", "Прочее", "черты и без происхождения"]];
+  const ACT_LABEL = { action: "Действие", bonus: "Бонусное", reaction: "Реакция" };
 
   /* ═══════════ State ═══════════ */
   const S = {
@@ -1724,10 +1831,13 @@ button.cs-stat:active { transform: scale(0.95); }
     sort: { items: "name" },
     pact: null, // { lvl, v, max } for a warlock; the mock toggles it from the preview bar
     spellFilter: new Set(),
+    featFilter: new Set(),
     filter: { items: new Set() },
 
     trade: { status: "idle", partner: "torvin", mine: {}, myCoins: {}, theirs: [], theirCoins: {}, confirmed: [false, false] },
-    favorites: ["firebolt", "fireball", "staff", "misty", "potion", "shield"],
+    favorites: ["firebolt", "fireball", "misty", "flare", "potion", "shield", "skill:Магия", "slots:3", "effect:mage-armor"],
+    conds: new Set(),
+    effOpen: null,
     conc: null,
     exh: 0,
     death: { ok: 0, bad: 0 },
@@ -1839,7 +1949,23 @@ button.cs-stat:active { transform: scale(0.95); }
   const pct = (v, max) => `${Math.max(0, Math.min(100, (v / max) * 100))}%`;
 
   /* ═══════════ Render ═══════════ */
-  const FEAT_KIND = { "Волшебник": "class", "Высший эльф": "species", "Мудрец": "background" };
+  const FEAT_KIND = { "Волшебник": "class", "Высший эльф": "species", "Мудрец": "background", "Прочее": "other" };
+  // Uses as pips up to 8, a counter edited like HP above that; a recharge feature gets its d6 button.
+  function usesHTML(x) {
+    if (!x.uses) return "";
+    const [v, max] = x.uses;
+    const track = max > 8
+      ? `<button type="button" class="cs-uses-count" data-ui="usesTrack" data-uses-edit="${x.id}" aria-label="Использования ${v} из ${max}: изменить" title="Изменить: −1, +2, 5">${v}<small>/ ${max}</small></button>`
+      : `<span class="cs-uses" data-ui="usesTrack">${Array.from({ length: max }, (_, i) => `<button type="button" class="${i >= v ? "is-spent" : ""}" data-use="${x.id}" data-i="${i}" aria-label="Использование ${i + 1}"></button>`).join("")}</span>`;
+    const roll = x.recharge && v < max ? `<button type="button" class="cs-ibtn cs-mini cs-editonly" data-recharge="${x.id}" aria-label="Бросок перезарядки ${x.recharge}" title="Перезарядка ${x.recharge}: бросить к6">${icon("dice")}</button>` : "";
+    return `<span class="cs-uses-wrap">${track}${roll}</span>`;
+  }
+  const MENU_OOS = {
+    item: "Меню: просмотр, изменить, дублировать, удалить (item.deleteDialog), в чат (item.displayCard), идентифицировать — у неопознанных",
+    spell: "Меню: просмотр, изменить, дублировать, удалить (item.deleteDialog), в чат (item.displayCard), создать свиток (Item5e.createScrollFromSpell)",
+    feature: "Меню: просмотр, изменить, дублировать, удалить (item.deleteDialog), в чат (item.displayCard)"
+  };
+  const recTag = (x) => (x.recharge ? `<span class="cs-tag is-rec">Перезарядка ${x.recharge}</span>` : x.rec ? `<span class="cs-tag is-rec">${x.rec}</span>` : "");
   function tile(x, extra = "") {
     const tone = kind(x) === "spell" ? `data-school="${x.school}"` : kind(x) === "item" ? `data-rarity="${x.rarity}"` : `data-feat="${FEAT_KIND[x.src] ?? "class"}"`;
     const qty = x.qty > 1 ? `<span class="qty">${x.qty}</span>` : "";
@@ -1865,22 +1991,24 @@ button.cs-stat:active { transform: scale(0.95); }
       if (x.lvl && !x.method && !x.always) acts += `<button type="button" class="cs-ibtn cs-editonly ${x.prep ? "is-on" : ""}" data-ui="prepareButton" data-prep="${x.id}" aria-pressed="${!!x.prep}" aria-label="${x.prep ? "Убрать из подготовленных" : "Подготовить"}" title="${x.prep ? "Убрать из подготовленных" : "Подготовить"}">${icon("book")}</button>`;
       if (castable(x)) { const ritualOnly = x.lvl && !x.prep && !x.always && !x.method; acts += `<button type="button" class="cs-ibtn cs-editonly" data-ui="castButton" data-cast="${x.id}" aria-label="${ritualOnly ? "Сотворить ритуалом" : "Сотворить"}" title="${ritualOnly ? "Сотворить ритуалом" : "Сотворить"}">${icon("spark")}</button>`; }
     } else {
-      meta = x.tags.map((t) => `<span class="cs-tag">${t}</span>`).join("");
-      if (x.uses) num = `<span class="cs-uses cs-editonly" data-ui="usesTrack">${Array.from({ length: x.uses[1] }, (_, i) => `<button type="button" class="${i >= x.uses[0] ? "is-spent" : ""}" data-use="${x.id}" data-i="${i}" aria-label="Использование ${i + 1}"></button>`).join("")}</span>`;
+      meta = [x.passive ? `<span class="cs-tag is-passive">Пассивное</span>` : x.act ? `<span class="cs-tag">${ACT_LABEL[x.act]}</span>` : "", recTag(x), ...x.tags.map((t) => `<span class="cs-tag">${t}</span>`)].join("");
+      num = usesHTML(x);
     }
     if (k === "item" && S.trade.status === "open" && (S.trade.mine[x.id] ?? 0) < x.qty) acts += `<button type="button" class="cs-ibtn cs-editonly" data-ui="offerButton" data-offer="${x.id}" aria-label="В обмен" title="В обмен">${icon("trade")}</button>`;
     acts += `<button type="button" class="cs-ibtn cs-editonly ${fav ? "is-on" : ""}" data-ui="favoriteButton" data-fav="${x.id}" aria-pressed="${fav}" aria-label="В избранное" title="В избранное">${icon("star")}</button>`;
-    acts += `<button type="button" class="cs-ibtn" data-ui="rowMenuButton" aria-label="Ещё" data-oos="${k === "spell" ? "Меню: просмотр, изменить, дублировать, удалить (item.deleteDialog), в чат (item.displayCard), создать свиток (Item5e.createScrollFromSpell)" : "Меню: просмотр, изменить, дублировать, удалить (item.deleteDialog), в чат (item.displayCard), идентифицировать — у неопознанных"}">${icon("dots")}</button>`;
+    acts += `<button type="button" class="cs-ibtn" data-ui="rowMenuButton" aria-label="Ещё" data-oos="${MENU_OOS[k]}">${icon("dots")}</button>`;
     const lvl = k === "spell" && x.lvl ? `<span class="lvl">${x.lvl}</span>` : "";
     const draggable = k === "item" && canEdit() ? `draggable="true"` : "";
     const unprepared = k === "spell" && x.lvl && !x.prep && !x.always && !x.method;
+    const tileHTML = k === "item" ? `<button type="button" class="cs-tile-btn" data-ui="itemUseButton" data-use-item="${x.id}" aria-label="Использовать: ${x.name}" title="Использовать">${tile(x)}</button>`
+      : k === "feature" && !x.passive ? `<button type="button" class="cs-tile-btn" data-ui="featureUseButton" data-use-feat="${x.id}" aria-label="Использовать: ${x.name}" title="Использовать">${tile(x)}</button>` : tile(x);
     return `<div class="cs-rowwrap" data-key="${sec}:${x.id}">
-      <div class="cs-row ${S.selected === x.id ? "is-selected" : ""} ${eqSlot ? "is-equipped" : ""} ${unprepared ? "is-unprepared" : ""}" data-ui="${k}Row" data-row="${x.id}" ${draggable} title="${x.name}" tabindex="0">
-        ${k === "item" ? `<button type="button" class="cs-tile-btn" data-ui="itemUseButton" data-use-item="${x.id}" aria-label="Использовать: ${x.name}" title="Использовать">${tile(x)}</button>` : tile(x)}${lvl}
+      <div class="cs-row ${S.selected === x.id ? "is-selected" : ""} ${eqSlot ? "is-equipped" : ""} ${unprepared ? "is-unprepared" : ""} ${x.passive ? "is-passive" : ""}" data-ui="${k}Row" data-row="${x.id}" ${draggable} title="${x.name}" tabindex="0">
+        ${tileHTML}${lvl}
         <div class="cs-row-main"><div class="cs-name-line">${x.name}</div><div class="cs-meta">${meta}</div></div>
         ${num}<div class="cs-row-act">${acts}</div>
       </div>
-      <div class="cs-detail ${S.selected === x.id ? "is-open" : ""}" data-ui="itemDetail"><div><p>${x.desc}</p></div></div>
+      <div class="cs-detail ${S.selected === x.id ? "is-open" : ""}" data-ui="itemDetail"><div class="cs-detail-body">${S.selected === x.id ? detailBody(x) : `<p>${x.desc}</p>`}</div></div>
     </div>`;
   }
   function section(id, title, list, viewFor, metaHTML = "") {
@@ -1889,7 +2017,8 @@ button.cs-stat:active { transform: scale(0.95); }
     return `<section class="cs-section fx-spot ${collapsed ? "is-collapsed" : ""}" data-ui="listSection" data-section="${id}" data-key="sec-${id}">
       <div class="cs-sec-head" data-ui="sectionHeader" data-toggle-sec="${id}" role="button" tabindex="0" aria-expanded="${!collapsed}">
         <span class="chev">${icon("chev")}</span><h3>${title}</h3><span class="n">${list.length}</span><span class="grow"></span>${metaHTML}
-        ${viewFor === "items" ? `<button type="button" class="cs-ibtn cs-editonly" data-ui="addItemButton" aria-label="Добавить" data-oos="Открывает создание предмета этого типа в dnd5e (Item.createDialog)">${icon("plus")}</button>` : ""}
+        ${viewFor === "items" ? `<button type="button" class="cs-ibtn cs-editonly" data-ui="addItemButton" aria-label="Добавить" data-oos="Открывает создание предмета этого типа в dnd5e (Item.createDialog)">${icon("plus")}</button>`
+          : viewFor === "features" ? `<button type="button" class="cs-ibtn cs-editonly" data-ui="addItemButton" aria-label="Добавить умение" data-oos="Открывает создание умения в dnd5e (Item.createDialog, тип «feat»)">${icon("plus")}</button>` : ""}
       </div>
       <div class="cs-sec-body"><div class="cs-sec-inner"><div class="cs-sec-content">
         ${list.length ? `<div class="cs-items" data-view="${view}">${list.map((x) => row(x, id)).join("")}</div>` : `<div class="cs-empty">Пусто${S.search[viewFor] ? " — ничего не найдено" : ""}</div>`}
@@ -1923,7 +2052,7 @@ button.cs-stat:active { transform: scale(0.95); }
     }).join("");
     $("[data-skills]").innerHTML = SKILLS.map(([n, ab, p]) => {
       const b = mod(ABILITIES.find((a) => a.key === ab).value) + PROF * p;
-      return `<div class="cs-skill" data-ui="skillRow" data-oos="Бросает проверку навыка «${n}»"><span class="p ${p === 1 ? "is-prof" : p === 2 ? "is-exp" : ""}"></span><span class="ab">${ABILITIES.find((a) => a.key === ab).label}</span><span class="nm">${n}</span><span class="bn">${sign(b)}</span></div>`;
+      return `<div class="cs-skill" data-ui="skillRow" data-fav-src="skill:${n}" draggable="${canEdit()}" data-oos="Бросает проверку навыка «${n}»; перетащите в «Избранное», чтобы держать под рукой"><span class="p ${p === 1 ? "is-prof" : p === 2 ? "is-exp" : ""}"></span><span class="ab">${ABILITIES.find((a) => a.key === ab).label}</span><span class="nm">${n}</span><span class="bn">${sign(b)}</span></div>`;
     }).join("");
     $("[data-saves]").innerHTML = ABILITIES.map((a) => `<div class="cs-skill" data-ui="saveRow" data-oos="Бросает спасбросок ${a.label}"><span class="p ${a.save ? "is-prof" : ""}"></span><span class="nm">${({ str: "Сила", dex: "Ловкость", con: "Телосложение", int: "Интеллект", wis: "Мудрость", cha: "Харизма" })[a.key]}</span><span class="bn">${sign(mod(a.value) + (a.save ? PROF : 0) + 2)}</span></div>`).join("");
   }
@@ -1942,6 +2071,8 @@ button.cs-stat:active { transform: scale(0.95); }
     bar.classList.toggle("is-enc", tier === "enc");
     bar.classList.toggle("is-heavy", tier === "heavy");
     $('[data-count="items"]').textContent = items.length;
+    // Equipping and attuning decide which item effects dnd5e suppresses; favorites show quantities.
+    renderEffects(); renderFavorites();
   }
   function bagHead(bag) {
     const load = rawLoad(bag.id), full = load > bag.cap;
@@ -2008,7 +2139,7 @@ button.cs-stat:active { transform: scale(0.95); }
   const castable = (x) => !x.lvl || x.prep || x.always || x.method === "innate" || x.method === "atwill" || x.ritual;
   function renderSpells() {
     const pips = (key, v, max) => Array.from({ length: max }, (_, i) => `<button type="button" class="cs-slotpip cs-editonly-dis ${i >= v ? "is-spent" : ""}" data-ui="slotPip" data-slot-lvl="${key}" data-i="${i}" aria-label="Ячейка ${key === "pact" ? "договора" : `${key} круга`} ${i + 1}"></button>`).join("");
-    $("[data-slots]").innerHTML = Object.entries(S.slots).map(([lvl, [v, max]]) => `<div class="cs-slotlvl"><b>${lvl} КРУГ</b><div class="cs-slotpips">${pips(lvl, v, max)}</div></div>`).join("")
+    $("[data-slots]").innerHTML = Object.entries(S.slots).map(([lvl, [v, max]]) => `<div class="cs-slotlvl" data-fav-src="slots:${lvl}" draggable="${canEdit()}" title="Перетащите в «Избранное»"><b>${lvl} КРУГ</b><div class="cs-slotpips">${pips(lvl, v, max)}</div></div>`).join("")
       + (S.pact ? `<div class="cs-slotlvl is-pact" data-ui="pactSlots"><b>ДОГОВОР · ${S.pact.lvl} КРУГ</b><div class="cs-slotpips">${pips("pact", S.pact.v, S.pact.max)}</div></div>` : "");
     const book = spells.filter((s) => !s.method);
     const prepared = book.filter((s) => s.lvl && s.prep);
@@ -2021,35 +2152,172 @@ button.cs-stat:active { transform: scale(0.95); }
     $('[data-ui="preparationWarning"]').hidden = !over;
     $('[data-ui="preparationWarning"] b').textContent = `${prepared.length} / ${PREP_MAX}`;
   }
+  const FEAT_FILTERS = { action: (x) => x.act === "action", bonus: (x) => x.act === "bonus", reaction: (x) => x.act === "reaction", passive: (x) => !!x.passive };
+  const featShown = (x) => match(x, S.search.features) && [...S.featFilter].every((f) => FEAT_FILTERS[f](x));
   function renderFeatures() {
-    const q = S.search.features;
-    const srcs = [...new Set(features.map((f) => f.src))];
-    $("[data-features]").innerHTML = srcs.map((src, i) => section(`src${i}`, src, features.filter((f) => f.src === src && match(f, q)), "features")).join("");
+    $("[data-features]").innerHTML = ORIGINS.map(([src, title, sub], i) => {
+      const all = features.filter((f) => f.src === src);
+      return all.length ? section(`src${i}`, title, all.filter(featShown), "features", `<span class="cs-sec-meta">${sub}</span>`) : "";
+    }).join("");
     $('[data-count="features"]').textContent = features.length;
   }
+  /* ═══════════ Favorites: dnd5e system.favorites (item, skill, slots, effect…), grouped by action cost ═══════════ */
+  // Ids of non-item favorites carry their dnd5e type: "skill:Магия", "slots:3", "effect:mage-armor".
+  function favEntry(id) {
+    const [type, key] = id.includes(":") ? id.split(":") : [kind(byId[id]), id];
+    if (type === "skill") {
+      const sk = SKILLS.find((s) => s[0] === key), b = mod(ABILITIES.find((a) => a.key === sk[1]).value) + PROF * sk[2];
+      return { id, type, name: key, tile: `<span class="cs-tile" data-feat="other">${icon("dice")}</span>`, roll: `Навык · ${sign(b)}`, meta: `<span class="cs-fav-meta">${sign(b)}</span>`, act: "other", bonus: b };
+    }
+    if (type === "slots") {
+      const [v, max] = S.slots[key];
+      return { id, type, name: `Ячейки ${key} круга`, tile: `<span class="cs-tile" data-school="evo">${icon("spark")}</span>`, roll: `${v} из ${max}`, meta: `<span class="cs-fav-meta">${Array.from({ length: max }, (_, i) => `<i class="cs-rune ${i >= v ? "is-spent" : ""}"></i>`).join("")}</span>`, act: "other" };
+    }
+    if (type === "effect") {
+      const e = allEffects().find((x) => x.id === key);
+      if (!e) return null;
+      return { id, type, name: e.name, tile: `<span class="cs-tile" data-school="${e.school}">${icon(e.icon)}</span>`, roll: e.cat === "suppressed" ? "недоступен" : e.disabled ? "выключен" : (e.time ? `включён · ${e.time}` : "включён"), meta: "", act: "other", off: e.disabled || e.cat === "suppressed" };
+    }
+    const x = byId[id];
+    if (!x) return null;
+    const meta = type === "spell" ? (x.lvl ? `<span class="cs-fav-meta" title="${x.lvl} круг">${Array.from({ length: x.lvl }, () => `<i class="cs-rune"></i>`).join("")}</span>` : `<span class="cs-fav-meta">загов.</span>`)
+      : type === "item" ? `<span class="cs-fav-meta">×${x.qty}</span>` : x.uses ? `<span class="cs-fav-meta">${x.uses[0]}/${x.uses[1]}</span>` : "";
+    return { id, type, name: x.name, tile: tile(x), roll: x.roll ?? (type === "feature" && x.rec ? x.rec : ""), meta, act: x.act ?? "other", x };
+  }
+  const FAV_ACTS = [["action", "Действие"], ["bonus", "Бонусное действие"], ["reaction", "Реакция"], ["other", "Прочее"]];
   function renderFavorites() {
-    const list = S.favorites.map((id) => byId[id]).filter(Boolean);
+    const list = S.favorites.map(favEntry).filter(Boolean);
     $("[data-fav-count]").textContent = list.length || "";
-    const ACTS = [["action", "Действие"], ["bonus", "Бонусное действие"], ["reaction", "Реакция"], ["other", "Прочее"]];
-    const cost = (x) => kind(x) === "spell"
-      ? (x.lvl ? `<span class="cs-fav-meta" title="${x.lvl} круг">${Array.from({ length: x.lvl }, () => `<i class="cs-rune"></i>`).join("")}</span>` : `<span class="cs-fav-meta">загов.</span>`)
-      : kind(x) === "item" ? `<span class="cs-fav-meta">×${x.qty}</span>` : "";
-    const favRow = (x) => `<li class="cs-fav" data-ui="favoriteRow" data-fav-row="${x.id}" data-key="fav-${x.id}" title="${x.name}">${tile(x)}
-      <span class="cs-fav-body"><span class="cs-fav-name">${x.name}</span>${x.roll ? `<span class="cs-fav-roll">${x.roll}</span>` : ""}</span>${cost(x)}${kind(x) === "spell" ? `<button type="button" class="cs-fav-use cs-editonly" data-ui="favoriteCastButton" data-cast="${x.id}" aria-label="Сотворить: ${x.name}" title="Сотворить">${icon("spark")}</button>` : kind(x) === "item" ? `<button type="button" class="cs-fav-use cs-editonly" data-ui="favoriteCastButton" data-oos="Использует предмет через его действие dnd5e" aria-label="Использовать: ${x.name}" title="Использовать">${icon("hand")}</button>` : ""}</li>`;
+    const quick = (f) => f.type === "spell" ? `<button type="button" class="cs-fav-use cs-editonly" data-ui="favoriteCastButton" data-cast="${f.id}" aria-label="Сотворить: ${f.name}" title="Сотворить">${icon("spark")}</button>`
+      : f.type === "item" || (f.type === "feature" && !f.x.passive) ? `<button type="button" class="cs-fav-use cs-editonly" data-ui="favoriteCastButton" data-fav-use="${f.id}" aria-label="Использовать: ${f.name}" title="Использовать">${icon("hand")}</button>` : "";
+    const favRow = (f) => `<li class="cs-fav ${f.off ? "is-off" : ""}" data-ui="favoriteRow" data-fav-row="${f.id}" data-fav-act="${f.act}" data-key="fav-${f.id}" title="${f.name}" draggable="${canEdit()}">
+      <button type="button" class="cs-tile-btn" data-fav-use="${f.id}" aria-label="${f.type === "skill" ? "Бросить" : f.type === "effect" ? "Включить или выключить" : "Использовать"}: ${f.name}">${f.tile}</button>
+      <span class="cs-fav-body"><span class="cs-fav-name">${f.name}</span>${f.roll ? `<span class="cs-fav-roll">${f.roll}</span>` : ""}</span>${f.meta}${quick(f)}</li>`;
     $("[data-fav-list]").innerHTML = list.length
-      ? ACTS.map(([act, title]) => {
-          const group = list.filter((x) => (x.act ?? "other") === act);
+      ? FAV_ACTS.map(([act, title]) => {
+          const group = list.filter((f) => f.act === act);
           return group.length ? `<li class="cs-fav-group" data-key="favg-${act}">${title}</li>${group.map(favRow).join("")}` : "";
         }).join("")
-      : `<li class="cs-empty">Отметьте ★ предметы и заклинания, чтобы держать их под рукой</li>`;
+      : `<li class="cs-empty">Отметьте ★ или перетащите сюда предмет, заклинание, умение, навык, ячейки или эффект</li>`;
   }
+  // useFavorite in dnd5e: an item is used, a spell cast, a skill rolled, an effect toggled; slots open their tab.
+  function useFav(id, el) {
+    const f = favEntry(id);
+    if (f.type === "spell") return cast(id);
+    if (f.type === "item") return useItem(id, el);
+    if (f.type === "feature") return f.x.passive ? goToFav(id) : useFeature(id, el);
+    if (f.type === "effect") return toggleEffect(id.split(":")[1], el);
+    if (f.type === "slots") return goToFav(id);
+    if (!canEdit()) return;
+    const r = 1 + Math.floor(Math.random() * 20);
+    chip(el, `${f.name}: ${r} ${sign(f.bonus)} = ${r + f.bonus}`);
+    pulse(el.querySelector(".cs-tile"), "is-roll");
+  }
+  function goToFav(id) {
+    const f = favEntry(id);
+    if (f.type === "skill") return setTab("overview");
+    if (f.type === "slots") return setTab("spells");
+    if (f.type === "effect") return revealEffect(id.split(":")[1]);
+    setTab(f.type === "spell" ? "spells" : f.type === "feature" ? "features" : "equipment");
+    select(id);
+  }
+  function addFav(id) {
+    if (!canEdit() || S.favorites.includes(id) || !favEntry(id)) return;
+    S.favorites = [...S.favorites, id];
+    flip($(".cs-rail-fav"), "[data-key]", renderFavorites);
+    pulse($(`[data-fav-row="${id}"]`), "is-new");
+    $$(`[data-fav="${id}"]`).forEach((b) => { b.classList.add("is-on"); b.setAttribute("aria-pressed", true); });
+  }
+
+  /* ═══════════ Effects: actor.allApplicableEffects() in dnd5e's categories, conditions from CONFIG.statusEffects ═══════════ */
+  // item: the effect is transferred from that item; dnd5e suppresses it while the item is unequipped or unattuned.
   const EFFECTS = [
-    { id: "mage-armor", name: "Доспехи мага", sub: "КД 13 + Лов", time: "7 ч 40 м", school: "abj", icon: "armor" },
-    { id: "darkvision", name: "Тёмное зрение", sub: "60 фт · пассивно", time: "∞", school: "div", icon: "eye" }
+    { id: "mage-armor", name: "Доспехи мага", sub: "КД 13 + Лов", time: "7 ч 40 м", school: "abj", icon: "armor", temporary: true, from: "Доспехи мага", changes: ["КД: формула 13 + Лов"], desc: "Пока вы не надели доспех, ваш КД равен 13 + модификатор Ловкости." },
+    { id: "cloak", name: "Плащ защиты", sub: "+1 КД и спасброски", time: "", school: "abj", icon: "cloak", item: "cloak", changes: ["КД +1", "Спасброски +1"], desc: "Пока плащ надет и настроен, +1 к КД и спасброскам." },
+    { id: "ring", name: "Кольцо защиты", sub: "+1 КД и спасброски", time: "", school: "abj", icon: "ring", item: "ring", changes: ["КД +1", "Спасброски +1"], desc: "Пока кольцо надето и настроено, +1 к КД и спасброскам." },
+    { id: "darkvision", name: "Тёмное зрение", sub: "60 фт", time: "", school: "div", icon: "eye", from: "Высший эльф", changes: ["Чувства: тёмное зрение 60 фт"], desc: "Вы видите в тусклом свете как в ярком, а в темноте как в тусклом." },
+    { id: "staff-light", name: "Свет навершия", sub: "Яркий свет 20 фт", time: "", school: "evo", icon: "spark", item: "staff", disabled: true, changes: ["Свет: яркий 20 фт, тусклый ещё 20 фт"], desc: "Руна на навершии светится, пока эффект включён." },
+    { id: "amulet", name: "Амулет здоровья", sub: "Телосложение 19", time: "", school: "nec", icon: "amulet", item: "amulet", changes: ["Телосложение: 19"], desc: "Ваше Телосложение равно 19, пока амулет надет и настроен." },
+    { id: "bracers", name: "Наручи защиты", sub: "+2 КД без доспеха и щита", time: "", school: "abj", icon: "shield", item: "bracers", changes: ["КД +2"], desc: "+2 к КД, пока вы без доспеха и щита." }
   ];
+  const CONDITIONS = [
+    ["blinded", "Ослеплён", "проваливает проверки зрения; атаки с помехой"], ["charmed", "Очарован", "не атакует очарователя"], ["deafened", "Оглох", "проваливает проверки слуха"],
+    ["frightened", "Испуган", "помеха, пока источник виден"], ["grappled", "Схвачен", "скорость 0"], ["incapacitated", "Недееспособен", "нет действий и реакций"],
+    ["invisible", "Невидим", "атаки по вам с помехой"], ["paralyzed", "Парализован", "недееспособен; крит вблизи"], ["petrified", "Окаменел", "недееспособен; сопротивление всему"],
+    ["poisoned", "Отравлен", "помеха на атаки и проверки"], ["prone", "Лежит", "помеха на атаки; встать — полскорости"], ["restrained", "Опутан", "скорость 0; помеха на атаки"],
+    ["stunned", "Ошеломлён", "недееспособен; провал Сил и Лов"], ["unconscious", "Без сознания", "недееспособен; лежит"]
+  ];
+  const STATUSES = [["dodging", "Уклоняется", "атаки по вам с помехой"], ["hiding", "Прячется", "скрыт от врагов"], ["flying", "Летит", "в воздухе"], ["bleeding", "Кровотечение", "теряет хиты каждый ход"]];
+  const EFF_CATS = [["temporary", "Временные"], ["passive", "Пассивные"], ["inactive", "Выключенные"], ["suppressed", "Недоступные"]];
+  const suppressedBy = (e) => { if (!e.item) return ""; const it = byId[e.item]; if (!slotOf(it.id) && !S.noSlot.has(it.id)) return "предмет не надет"; if (it.attune && !S.attuned.has(it.id)) return "нужна настройка"; return ""; };
+  function allEffects() {
+    const conc = S.conc ? [{ id: "conc", name: byId[S.conc].name, sub: "Концентрация · спасбросок Тел при уроне", time: "до 1 ч", school: byId[S.conc].school, icon: "eye", conc: true, temporary: true, changes: [], desc: "Урон требует спасброска Телосложения; провал прерывает заклинание." }] : [];
+    const conds = [...CONDITIONS, ...STATUSES].filter(([id]) => S.conds.has(id)).map(([id, name, sub]) => ({ id: `cond-${id}`, cond: id, name, sub, time: "", school: "nec", icon: "close", temporary: true, changes: [], desc: `Состояние dnd5e: ${sub}.` }));
+    return [...conc, ...conds, ...EFFECTS].map((e) => {
+      const why = suppressedBy(e);
+      return { ...e, why, cat: why ? "suppressed" : e.disabled ? "inactive" : e.temporary ? "temporary" : "passive", from: e.from ?? (e.item ? byId[e.item].name : "") };
+    });
+  }
+  function effRow(e, where) {
+    const ctl = e.conc ? `<button type="button" class="cs-ibtn cs-mini cs-editonly" data-conc-end aria-label="Прервать концентрацию" title="Прервать концентрацию">${icon("close")}</button>`
+      : e.cond ? `<button type="button" class="cs-ibtn cs-mini cs-editonly" data-cond="${e.cond}" aria-label="Снять: ${e.name}" title="Снять (actor.toggleStatusEffect)">${icon("close")}</button>`
+      : `<button type="button" class="cs-switch" role="switch" aria-checked="${!e.disabled && !e.why}" data-effect-toggle="${e.id}" ${e.why ? "disabled data-why" : ""} aria-label="${e.disabled ? "Включить" : "Выключить"}: ${e.name}" title="${e.why ? `Недоступен: ${e.why}` : e.disabled ? "Включить (effect.update)" : "Выключить (effect.update)"}"></button>`;
+    const sub = [e.sub, e.from && e.from !== e.name ? `от: ${e.from}` : "", e.why].filter(Boolean).join(" · ");
+    const open = S.effOpen === `${where}:${e.id}`;
+    return `<div class="cs-effwrap" data-key="eff-${where}-${e.id}">
+      <div class="cs-effect ${e.conc ? "is-conc" : ""} ${e.cond ? "is-cond" : ""} ${e.disabled ? "is-off" : ""} ${e.why ? "is-supp" : ""} ${open ? "is-open" : ""}" data-ui="effectRow" data-effect="${e.id}" data-eff-where="${where}" ${e.cond || e.conc ? "" : `data-fav-src="effect:${e.id}" draggable="${canEdit()}"`} tabindex="0" aria-expanded="${open}">
+        <span class="cs-effect-ic" data-school="${e.school}">${e.cond ? `<b>${e.name[0]}</b>` : icon(e.icon)}</span><span class="cs-effect-n">${e.name}<small>${sub}</small></span>${e.time ? `<span class="cs-effect-t">${e.time}</span>` : ""}${ctl}
+      </div>
+      <div class="cs-detail cs-eff-detail ${open ? "is-open" : ""}"><div><p>${e.desc}</p>${e.changes.length ? `<ul class="cs-eff-changes">${e.changes.map((c) => `<li>${c}</li>`).join("")}</ul>` : ""}</div></div>
+    </div>`;
+  }
+  // dnd5e has no conditions dialog: the grid is ours and calls actor.toggleStatusEffect(id).
+  function condGrid() {
+    const btn = ([id, name, sub]) => `<button type="button" class="cs-cond ${S.conds.has(id) ? "is-on" : ""}" data-cond="${id}" aria-pressed="${S.conds.has(id)}" title="${name}: ${sub}"><i></i><span>${name}</span></button>`;
+    return `<div class="cs-conds" data-ui="conditionGrid"><div class="cs-conds-h">Состояния</div><div class="cs-conds-grid">${CONDITIONS.map(btn).join("")}</div>
+      <div class="cs-conds-h">Статусы</div><div class="cs-conds-grid">${STATUSES.map(btn).join("")}</div>
+      <button type="button" class="cs-btn cs-editonly cs-eff-new" data-oos="Создаёт эффект на персонаже (ActiveEffect.implementation.create) и открывает его лист">${icon("plus")}Новый эффект</button></div>`;
+  }
+  function effCats(cats, where) {
+    const all = allEffects();
+    return cats.map(([cat, label]) => {
+      const list = all.filter((e) => e.cat === cat);
+      return list.length ? `<div class="cs-eff-cat" data-key="effc-${where}-${cat}"><div class="cs-eff-cat-h">${label}<span>${list.length}</span></div>${list.map((e) => effRow(e, where)).join("")}</div>` : "";
+    }).join("");
+  }
+  // The rail keeps the temporary effects; the Эффекты tab holds the conditions grid and every category.
   function renderEffects() {
-    const list = S.conc ? [{ id: "conc", name: byId[S.conc].name, sub: "Концентрация · спасбросок Тел при уроне", time: "до 1 ч", school: byId[S.conc].school, icon: "eye", conc: true }, ...EFFECTS] : EFFECTS;
-    $("[data-effects]").innerHTML = list.map((e) => `<div class="cs-effect ${e.conc ? "is-conc" : ""}" data-ui="effectRow" data-key="eff-${e.id}"><span class="cs-effect-ic" data-school="${e.school}">${icon(e.icon)}</span><span class="cs-effect-n">${e.name}<small>${e.sub}</small></span><span class="cs-effect-t">${e.time}</span></div>`).join("");
+    const all = allEffects();
+    $("[data-effects]").innerHTML = all.filter((e) => e.cat === "temporary").map((e) => effRow(e, "rail")).join("");
+    $("[data-effects-tab]").innerHTML = `<div class="cs-eff-home">${condGrid()}<div class="cs-eff-cats">${effCats(EFF_CATS, "tab")}</div></div>`;
+  }
+  function rerenderEffects() {
+    flip(root, ".cs-effwrap, .cs-eff-cat, .cs-rail > [data-flip]", () => { renderEffects(); renderFavorites(); renderInspector(); applyRole(); });
+  }
+  // effect.update({ disabled }); a suppressed effect cannot be switched until its item is equipped and attuned.
+  function toggleEffect(id, el) {
+    if (!canEdit()) return;
+    const e = EFFECTS.find((x) => x.id === id);
+    if (!e) return;
+    const why = suppressedBy(e);
+    if (why) { chip(el, `Недоступен: ${why}`); pulse(el.closest(".cs-effect, .cs-fav") ?? el, "is-refused"); return; }
+    e.disabled = !e.disabled;
+    rerenderEffects();
+    $$(`[data-effect="${id}"] .cs-effect-ic`).forEach((ic) => { pulse(ic, "is-landed"); if (!e.disabled) burst(ic, toneOf(ic), 8); });
+  }
+  function toggleCond(id, el) {
+    if (!canEdit()) return;
+    const on = !S.conds.has(id);
+    on ? S.conds.add(id) : S.conds.delete(id);
+    rerenderEffects();
+    if (on) $$(`[data-effect="cond-${id}"] .cs-effect-ic`).forEach((ic) => pulse(ic, "is-landed"));
+  }
+  function revealEffect(id) {
+    setTab("effects");
+    const el = $(`[data-effect="${id}"][data-eff-where="tab"]`);
+    if (!el) return;
+    el.scrollIntoView({ block: "nearest", behavior: motionOn() ? "smooth" : "auto" });
+    pulse(el, "is-new");
   }
   function renderVitals(change = 0) {
     const hp = $('[data-ui="hpBar"]');
@@ -2111,20 +2379,46 @@ button.cs-stat:active { transform: scale(0.95); }
     conc.hidden = !S.conc;
     if (S.conc) $("[data-conc-name]").textContent = byId[S.conc].name;
   }
+  // One body for the inspector (wide) and the description under the row (other layouts): description, the
+  // activities as buttons (activity.use) or the main action, the entry's own effects, chat and the row menu.
+  function detailBody(x) {
+    const k = kind(x);
+    const btn = (attrs, ic, label, primary) => `<button type="button" class="cs-btn ${primary ? "is-primary" : ""} cs-editonly" ${attrs}>${ic ? icon(ic) : ""}${label}</button>`;
+    const multi = x.acts?.length > 1 ? x.acts.map(([label, ic], i) => btn(`data-activity="${x.id}" data-i="${i}" data-ui="activityButton"`, ic, label, i === 0)).join("") : "";
+    let main;
+    if (k === "item") main = multi + (x.acts?.length === 1 ? btn(`data-use-item="${x.id}"`, x.acts[0][1], x.acts[0][0], true) : "")
+      + (fitsHere(x).length ? btn(`data-equip="${x.id}"`, "hand", slotOf(x.id) ? "Снять" : "Надеть", !x.acts) : "");
+    else if (k === "spell") main = (castable(x) ? btn(`data-cast="${x.id}"`, "spark", !x.lvl || x.prep || x.always || x.method ? "Сотворить" : "Ритуалом", true) : "")
+      + (x.lvl && !x.method && !x.always ? btn(`data-prep="${x.id}"`, "book", x.prep ? "Убрать из подготовленных" : "Подготовить") : "");
+    else main = multi || (x.passive ? "" : btn(`data-use-feat="${x.id}"`, x.acts?.[0]?.[1] ?? "hand", x.acts?.[0]?.[0] ?? "Использовать", true));
+    const effs = allEffects().filter((e) => e.item === x.id);
+    return `<p>${x.desc}</p>
+      ${effs.length ? `<div class="cs-insp-effs"><div class="cs-eff-cat-h">Эффекты</div>${effs.map((e) => effRow(e, `in-${x.id}`)).join("")}</div>` : ""}
+      <div class="acts">${main}<span class="grow"></span><button type="button" class="cs-btn" data-oos="Показывает карточку в чате (item.displayCard)">В чат</button><button type="button" class="cs-ibtn" aria-label="Ещё" data-oos="${MENU_OOS[k]}">${icon("dots")}</button></div>`;
+  }
   function renderInspector() {
     const x = S.selected && byId[S.selected];
     $("[data-insp-empty]").hidden = !!x;
     if (!x) { $("[data-insp]").innerHTML = ""; return; }
     const k = kind(x);
     const RAR = { common: "Обычный", uncommon: "Необычный", rare: "Редкий", veryRare: "Очень редкий", legendary: "Легендарный" };
-    const sub = k === "spell" ? `${x.lvl ? `${x.lvl} круг` : "Заговор"} · ${SCHOOLS[x.school]}` : k === "item" ? RAR[x.rarity] : x.src;
-    const tone = k === "spell" ? `data-school="${x.school}"` : `data-rarity="${x.rarity ?? "common"}"`;
-    const eq = k === "item" && fitsHere(x).length ? `<button type="button" class="cs-btn is-primary cs-editonly" data-equip="${x.id}">${slotOf(x.id) ? "Снять" : "Надеть"}</button>` : "";
-    const cast = k === "spell" && (!x.lvl || x.prep || x.ritual) ? `<button type="button" class="cs-btn is-primary cs-editonly" data-cast="${x.id}">${icon("spark")}${!x.lvl || x.prep ? "Сотворить" : "Ритуалом"}</button>` : "";
-    const prep = k === "spell" && x.lvl ? `<button type="button" class="cs-btn cs-editonly" data-prep="${x.id}">${icon("book")}${x.prep ? "Убрать из подготовленных" : "Подготовить"}</button>` : "";
+    const sub = k === "spell" ? `${x.lvl ? `${x.lvl} круг` : "Заговор"} · ${SCHOOLS[x.school]}` : k === "item" ? RAR[x.rarity] : ORIGINS.find(([src]) => src === x.src)?.slice(1).join(" · ");
+    const tone = k === "spell" ? `data-school="${x.school}"` : k === "item" ? `data-rarity="${x.rarity ?? "common"}"` : `data-feat="${FEAT_KIND[x.src]}"`;
+    const uses = k === "item" ? (x.uses ? `<div class="cs-insp-uses"><span>Заряды</span><b>${x.uses[0]} / ${x.uses[1]}</b></div>` : "")
+      : x.uses ? `<div class="cs-insp-uses"><span>Использования</span>${usesHTML(x)}${recTag(x)}</div>` : "";
     $("[data-insp]").innerHTML = `<div class="cs-insp" ${tone}>${tile(x)}<div><h4>${x.name}</h4><div class="rar">${sub}</div></div>
-      <div class="cs-meta">${(x.tags ?? []).map((t) => `<span class="cs-tag">${t}</span>`).join("")}</div><p>${x.desc}</p>
-      <div class="acts">${eq}${cast}${prep}<button type="button" class="cs-btn" data-oos="Показывает карточку в чате">В чат</button></div></div>`;
+      <div class="cs-meta">${x.passive ? `<span class="cs-tag is-passive">Пассивное</span>` : ""}${(x.tags ?? []).map((t) => `<span class="cs-tag">${t}</span>`).join("")}</div>${uses}${detailBody(x)}</div>`;
+  }
+  // activity.use(): the chosen activity runs through dnd5e and spends what it consumes.
+  function useActivity(id, i, el) {
+    if (!canEdit()) return;
+    const x = byId[id];
+    if (x.uses && kind(x) === "feature") {
+      if (!x.uses[0]) { pulse(el, "is-refused"); chip(el, "dnd5e: нет использований"); return; }
+      x.uses[0] -= 1;
+    }
+    chip(el, `activity.use(): ${x.acts[i][0]}`);
+    renderFeatures(); renderFavorites(); renderInspector(); applyRole();
   }
   const COIN_DEF = [["pp", "пм", "#c9d2e3"], ["gp", "зм", "#e7b04a"], ["ep", "эм", "#b9c79a"], ["sp", "см", "#c7c0b0"], ["cp", "мм", "#c2743f"]];
   const COIN_GP = { pp: 10, gp: 1, ep: 0.5, sp: 0.1, cp: 0.01 };
@@ -2390,7 +2684,11 @@ button.cs-stat:active { transform: scale(0.95); }
   function select(id) {
     S.selected = S.selected === id ? null : id;
     $$(".cs-row").forEach((r) => r.classList.toggle("is-selected", r.dataset.row === S.selected));
-    $$(".cs-detail").forEach((d) => d.classList.toggle("is-open", d.previousElementSibling?.dataset.row === S.selected));
+    $$(".cs-rowwrap > .cs-detail").forEach((d) => {
+      const id = d.previousElementSibling?.dataset.row, on = id === S.selected;
+      if (on) d.firstElementChild.innerHTML = detailBody(byId[id]);
+      d.classList.toggle("is-open", on);
+    });
     renderInspector(); applyRole();
   }
   function collapseSheet(on) {
@@ -2399,13 +2697,14 @@ button.cs-stat:active { transform: scale(0.95); }
   }
   function applyRole() {
     const ro = !canEdit();
-    $$('.cs-root input, .cs-root textarea, .cs-slotpip, .cs-uses button, [data-death] button, [data-death-roll], .cs-conc button, .cs-hp, .cs-die, .cs-chip, .cs-slot').forEach((el) => {
+    $$('.cs-root input, .cs-root textarea, .cs-slotpip, .cs-uses button, .cs-uses-count, .cs-switch:not([data-why]), .cs-cond, [data-death] button, [data-death-roll], .cs-conc button, .cs-hp, .cs-die, .cs-chip, .cs-slot').forEach((el) => {
       if (el.closest(".cs-drawer")) return;
       if ("disabled" in el && el.tagName !== "DIV") el.disabled = ro && el.dataset.ui !== "slotRunes";
     });
     $('[data-ui="hpBar"]').disabled = !canEdit();
     $$("[draggable]").forEach((el) => el.setAttribute("draggable", String(!ro)));
     root.toggleAttribute("data-readonly", ro);
+    $("[data-bio-prose]").contentEditable = String(!ro);
     $(".cs-readonly-badge").style.display = ro ? "inline-flex" : "";
   }
 
@@ -2419,7 +2718,7 @@ button.cs-stat:active { transform: scale(0.95); }
     else toggleAttune(x.dataset.unattune);
   }, true);
   root.addEventListener("click", (e) => {
-    const t = e.target.closest("button, [data-toggle-sec], .cs-row, .cs-fav, [data-close-settings]");
+    const t = e.target.closest("button, [data-toggle-sec], .cs-row, .cs-fav, .cs-effect, [data-close-settings]");
     if (!t || t.closest("[data-oos]")) return;
     if (t.matches(".cs-tab")) return setTab(t.dataset.tab);
     if (t.matches('[data-ui="hpBar"]')) return openHpEdit();
@@ -2521,7 +2820,12 @@ button.cs-stat:active { transform: scale(0.95); }
       return;
     }
     if (t.matches("[data-spell-filter]")) { const f = S.spellFilter, k = t.dataset.spellFilter; f.has(k) ? f.delete(k) : f.add(k); t.classList.toggle("is-on", f.has(k)); t.setAttribute("aria-pressed", f.has(k)); return rerender("spells", renderSpells); }
-    if (t.matches("[data-use]")) { if (!canEdit()) return; const f = byId[t.dataset.use], i = Number(t.dataset.i); f.uses[0] = i < f.uses[0] ? i : i + 1; renderFeatures(); renderSpells(); applyRole(); return; }
+    if (t.matches("[data-use]")) { if (!canEdit()) return; const f = byId[t.dataset.use], i = Number(t.dataset.i); f.uses[0] = i < f.uses[0] ? i : i + 1; renderFeatures(); renderSpells(); renderInspector(); applyRole(); return; }
+    if (t.matches("[data-activity]")) return useActivity(t.dataset.activity, Number(t.dataset.i), t);
+    if (t.matches("[data-use-feat]")) { e.stopPropagation(); return useFeature(t.dataset.useFeat, t); }
+    if (t.matches("[data-uses-edit]")) return openUsesEdit(t);
+    if (t.matches("[data-recharge]")) return rollRecharge(t.dataset.recharge, t);
+    if (t.matches("[data-feat-filter]")) { const f = S.featFilter, k = t.dataset.featFilter; f.has(k) ? f.delete(k) : f.add(k); t.classList.toggle("is-on", f.has(k)); t.setAttribute("aria-pressed", f.has(k)); return rerender("features", renderFeatures); }
     if (t.matches(".cs-slot")) {
       const id = S.equipped[t.dataset.slot];
       if (id) return select(id);
@@ -2531,7 +2835,12 @@ button.cs-stat:active { transform: scale(0.95); }
       return equipTo(fits[0].id, t.dataset.slot, $(`[data-row="${fits[0].id}"] .cs-tile`));
     }
     if (t.matches("[data-noslot]")) return select(t.dataset.noslot);
-    if (t.matches(".cs-fav")) { const x = byId[t.dataset.favRow]; setTab(kind(x) === "spell" ? "spells" : kind(x) === "feature" ? "features" : "equipment"); select(x.id); return; }
+    if (t.matches("[data-fav-use]")) { e.stopPropagation(); return useFav(t.dataset.favUse, t); }
+    if (t.matches(".cs-fav")) return goToFav(t.dataset.favRow);
+    if (t.matches("[data-effect-toggle]")) return toggleEffect(t.dataset.effectToggle, t);
+    if (t.matches("[data-cond]")) return toggleCond(t.dataset.cond, t);
+    if (t.matches("[data-eff-add]")) return setTab("effects");
+    if (t.matches(".cs-effect")) { const k = `${t.dataset.effWhere}:${t.dataset.effect}`; S.effOpen = S.effOpen === k ? null : k; t.classList.toggle("is-open", S.effOpen === k); t.setAttribute("aria-expanded", S.effOpen === k); $$(".cs-effect").forEach((r) => { const on = `${r.dataset.effWhere}:${r.dataset.effect}` === S.effOpen; r.classList.toggle("is-open", on); r.nextElementSibling?.classList.toggle("is-open", on); }); return; }
     if (t.matches(".cs-row")) return select(t.dataset.row);
     if (t.closest("[data-set]") && t.dataset.value) { const k = t.closest("[data-set]").dataset.set; const v = t.dataset.value;
       if (k === "theme" && document.startViewTransition && motionOn()) document.startViewTransition(() => { root.dataset.theme = v; });
@@ -2539,6 +2848,14 @@ button.cs-stat:active { transform: scale(0.95); }
     if (t.closest("[data-accent]")) { root.style.setProperty("--accent", t.dataset.value); $$("[data-accent] button").forEach((b) => b.setAttribute("aria-pressed", b === t)); return; }
   });
   root.addEventListener("contextmenu", (e) => {
+    const eff = e.target.closest(".cs-effect");
+    if (eff) {
+      // dnd5e's effect context menu (mjs:51181): edit, duplicate, delete, enable or disable.
+      e.preventDefault();
+      if (!canEdit()) return;
+      chip(eff, eff.dataset.effect.startsWith("cond-") ? "Меню: снять состояние" : eff.dataset.effect === "conc" ? "Меню: прервать концентрацию" : "Меню dnd5e: изменить · дублировать · удалить · вкл/выкл");
+      return;
+    }
     const t = e.target.closest('[data-ui="hpBar"], [data-die], [data-ui="exhaustionTrack"], [data-charge]');
     if (!t) return;
     e.preventDefault();
@@ -2549,7 +2866,7 @@ button.cs-stat:active { transform: scale(0.95); }
     else { S.exh = Math.max(0, S.exh - 1); renderVitals(); }
   });
   root.addEventListener("keydown", (e) => {
-    if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-toggle-sec], .cs-row")) { e.preventDefault(); e.target.click(); }
+    if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-toggle-sec], .cs-row, .cs-effect")) { e.preventDefault(); e.target.click(); }
     if (e.key === "Escape" && root.classList.contains("is-settings")) root.classList.remove("is-settings");
   });
   root.addEventListener("change", (e) => {
@@ -2713,6 +3030,54 @@ button.cs-stat:active { transform: scale(0.95); }
     applyRole();
   });
 
+  /* favorites: drag in from rows, skills, slot tracks and effects; drag within a group to reorder (system.favorites sort) */
+  let favDrag = null, favMove = null;
+  root.addEventListener("dragstart", (e) => {
+    if (!canEdit()) return;
+    const fav = e.target.closest(".cs-fav[data-fav-row]");
+    const src = !fav && e.target.closest("[data-fav-src]");
+    if (!fav && !src) return;
+    favMove = fav ? fav.dataset.favRow : null;
+    favDrag = fav ? null : src.dataset.favSrc;
+    e.dataTransfer.effectAllowed = fav ? "move" : "copy";
+    e.dataTransfer.setData("text/plain", favMove ?? favDrag);
+    if (fav) requestAnimationFrame(() => fav.classList.add("is-dragging"));
+  });
+  root.addEventListener("dragover", (e) => {
+    const list = e.target.closest('[data-ui="favoritesList"]');
+    if (!list) return;
+    if (favMove) {
+      const over = e.target.closest(".cs-fav[data-fav-row]");
+      const same = over && over.dataset.favAct === favEntry(favMove).act;
+      $$(".cs-fav.is-drop-before, .cs-fav.is-drop-after").forEach((el) => el.classList.remove("is-drop-before", "is-drop-after"));
+      if (!same || over.dataset.favRow === favMove) return;
+      e.preventDefault();
+      const r = over.getBoundingClientRect();
+      over.classList.add(e.clientY < r.top + r.height / 2 ? "is-drop-before" : "is-drop-after");
+      return;
+    }
+    const id = favDrag ?? dragId;
+    if (!id || S.favorites.includes(id)) return;
+    e.preventDefault();
+    list.classList.add("is-drop");
+  });
+  root.addEventListener("dragleave", (e) => { const list = e.target.closest('[data-ui="favoritesList"]'); if (list && !list.contains(e.relatedTarget)) list.classList.remove("is-drop"); });
+  root.addEventListener("drop", (e) => {
+    const list = e.target.closest('[data-ui="favoritesList"]');
+    if (!list) return;
+    e.preventDefault();
+    list.classList.remove("is-drop");
+    const over = $(".cs-fav.is-drop-before, .cs-fav.is-drop-after");
+    if (favMove && over) {
+      const after = over.classList.contains("is-drop-after");
+      const order = S.favorites.filter((f) => f !== favMove);
+      order.splice(order.indexOf(over.dataset.favRow) + (after ? 1 : 0), 0, favMove);
+      S.favorites = order;
+      flip($(".cs-rail-fav"), "[data-key]", renderFavorites);
+    } else if (!favMove) addFav(favDrag ?? dragId);
+  });
+  root.addEventListener("dragend", () => { favDrag = favMove = null; $$(".cs-fav.is-dragging, .cs-fav.is-drop-before, .cs-fav.is-drop-after, .is-drop").forEach((el) => el.classList.remove("is-dragging", "is-drop-before", "is-drop-after", "is-drop")); });
+
   /* mock-only: role preview */
   document.querySelector('[data-ui="mockRolePreview"]').addEventListener("click", (e) => {
     const b = e.target.closest("[data-role-set]");
@@ -2727,7 +3092,7 @@ button.cs-stat:active { transform: scale(0.95); }
   window.mockReveal = (id) => {
     const tabOf = { overviewTab: "overview", skillsCard: "overview", savesCard: "overview", sensesCard: "overview", skillRow: "overview", saveRow: "overview",
       spellsTab: "spells", prepareButton: "spells", preparedCounter: "spells", slotTrack: "spells", slotPip: "spells", spellRow: "spells", castButton: "spells",
-      featuresTab: "features", featureRow: "features", usesTrack: "features", notesTab: "notes", notesField: "notes",
+      featuresTab: "features", featureRow: "features", usesTrack: "features", biographyTab: "biography", characteristicsCard: "biography", personalityCard: "biography", biographyEditor: "biography", featureUseButton: "features", featureFilterChips: "features", effectsTab: "effects", conditionGrid: "effects", addEffectButton: "effects",
       equipmentTab: "equipment", paperdoll: "equipment", dollSlot: "equipment", itemRow: "equipment", equipButton: "equipment", inventoryToolbar: "equipment",
       currencyBar: "equipment", restBar: "equipment", tradeButton: "equipment", dollHeader: "equipment", dollPresetSelect: "equipment", dollPresetEdit: "equipment", extraSlots: "equipment", attunementSocket: "equipment", encumbranceMeter: "equipment", attunementTrack: "equipment", dollToggle: "equipment", addItemButton: "equipment" };
     root.classList.toggle("is-settings", ["settingsDrawer", "themeSwitch", "accentSwatch", "densitySwitch", "motionSwitch", "railWidgetToggle", "tabVisibilityToggle"].includes(id));
@@ -2873,11 +3238,19 @@ button.cs-stat:active { transform: scale(0.95); }
   }
   // Coins: −5 spends, +10 adds, 20 sets (actor.update on system.currency).
   function openCoinEdit(btn) {
-    if (!canEdit()) return;
     const k = btn.dataset.coin;
+    openDeltaEdit(btn, "Монеты", () => S.coins[k], (next) => { S.coins[k] = next; renderCoins(); });
+  }
+  // Uses above eight pips: the same −1 / +2 / 5 edit, capped at the maximum (item.update on system.uses.spent).
+  function openUsesEdit(btn) {
+    const x = byId[btn.dataset.usesEdit];
+    openDeltaEdit(btn, "Использования", () => x.uses[0], (next) => { x.uses[0] = Math.min(x.uses[1], next); renderFeatures(); renderInspector(); applyRole(); });
+  }
+  function openDeltaEdit(btn, label, get, set) {
+    if (!canEdit()) return;
     const f = document.createElement("form");
     f.className = "cs-coin-edit";
-    f.innerHTML = `<input name="v" autocomplete="off" aria-label="Монеты" placeholder="+10 · −5 · 20">`;
+    f.innerHTML = `<input name="v" autocomplete="off" aria-label="${label}" placeholder="+10 · −5 · 20">`;
     btn.after(f);
     f.v.focus();
     const close = () => f.remove();
@@ -2887,13 +3260,35 @@ button.cs-stat:active { transform: scale(0.95); }
       e.preventDefault();
       const m = f.v.value.trim().replace(/−/g, "-").match(/^([+-]?)(\d+)$/);
       if (!m) { pulse(f, "is-refused"); return; }
-      const n = Number(m[2]), cur = S.coins[k];
+      const n = Number(m[2]), cur = get();
       const next = m[1] === "+" ? cur + n : m[1] === "-" ? cur - n : n;
       if (next < 0) { pulse(btn, "is-refused"); return; }
-      S.coins[k] = next;
       close();
-      renderCoins();
+      set(next);
     });
+  }
+  // item.use() on a feature: dnd5e picks the activity and spends the use; with none left it refuses and says why.
+  function useFeature(id, el) {
+    if (!canEdit()) return;
+    const f = byId[id], rowEl = $(`[data-row="${id}"]`) ?? el;
+    if (f.uses && !f.uses[0]) { pulse(rowEl, "is-refused"); chip(el, f.recharge ? `dnd5e: не перезаряжено — бросьте ${f.recharge}` : `dnd5e: нет использований — восстановится: ${f.rec.toLowerCase()}`); return; }
+    if (f.uses) f.uses[0] -= 1;
+    chip(el, f.acts?.length > 1 ? "item.use(): dnd5e спросит, какую активность" : `item.use(): ${f.name}`);
+    renderFeatures(); renderFavorites(); renderInspector(); applyRole();
+    const t = $(`[data-row="${id}"] .cs-tile`);
+    pulse(t, "is-landed");
+    if (t) burst(t, toneOf(t), 10);
+  }
+  // uses.rollRecharge(): a 5 or 6 on the d6 refills the feature.
+  function rollRecharge(id, el) {
+    if (!canEdit()) return;
+    const f = byId[id], r = 1 + Math.floor(Math.random() * 6), ok = r >= Number(f.recharge[0]);
+    chip(el, `Перезарядка: ${r} — ${ok ? "готово" : "нет"}`);
+    pulse(el, "is-roll");
+    if (!ok) return;
+    f.uses[0] = f.uses[1];
+    renderFeatures(); renderFavorites(); renderInspector(); applyRole();
+    pulse($(`[data-row="${id}"] .cs-uses button`), "is-refill");
   }
   function rollConcentration(btn) {
     if (!canEdit()) return;

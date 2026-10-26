@@ -521,11 +521,11 @@
       "behaviour": [
         {
           "text": "Shows or hides the paperdoll; the inventory glides to fill the space.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "Uses a figure icon; the hand icon is reserved for equip.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -559,8 +559,12 @@
     "paperdoll": {
       "behaviour": [
         {
-          "text": "Shows the equipment slots around a figure: head, neck, cloak, armor, main hand on the left; hands, waist, feet, ring, off hand on the right; attunement under it.",
-          "source": "assumption"
+          "text": "Shows the preset's figure (humanoid, four-legged beast, wagon, ship or airship) with up to twelve slots in two columns beside it: the first half of the preset's slots fills the left column top-down, the rest the right column bottom-aligned, so the main hand and the off hand face each other on the bottom row.",
+          "source": "spec"
+        },
+        {
+          "text": "With the world setting showActorPortraitBackdrop on, the actor's portrait shows faintly behind the figure.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -568,20 +572,28 @@
     "dollSlot": {
       "behaviour": [
         {
-          "text": "A filled slot shows the item's tile; click it to unequip and the tile flies back to its row.",
-          "source": "assumption"
+          "text": "A filled slot shows the item's tile; click selects the item (details or inspector, as a row does). Unequip with the × that appears on hover or by dragging the tile out of the slot onto the list; the tile flies back to its row.",
+          "source": "spec"
         },
         {
-          "text": "An empty slot equips the first unequipped item that fits; with none it shakes.",
-          "source": "assumption"
+          "text": "An empty slot equips the first unequipped item that fits; with none it shakes and says so.",
+          "source": "spec"
         },
         {
-          "text": "While an item is dragged, the slots it fits glow; dropping it on one equips it, dropping it on a slot it does not fit shakes the slot.",
-          "source": "assumption"
+          "text": "While an item is dragged, the slots it fits glow; dropping it on one equips it through the equipment rules; dropping it on a slot it does not fit shakes the slot with the reason.",
+          "source": "spec"
         },
         {
           "text": "A landed item bounces the slot once.",
-          "source": "assumption"
+          "source": "spec"
+        },
+        {
+          "text": "Equipment rules (the module's rule engine): slot fit, one body armour, one shield, an occupied slot swaps its item back to its row; while a two-handed weapon is held the off-hand slot shows a lock and a faded copy of that weapon. Third-party rules (registerRule) apply too.",
+          "source": "spec"
+        },
+        {
+          "text": "The world's enforcementMode decides a broken rule: block refuses with the reason (default), auto_swap clears what is in the way, warn allows it and says so. The same rules guard equips made from the vanilla sheet.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -593,16 +605,16 @@
           "source": "spec"
         },
         {
-          "text": "The attunement limit can be raised (up to 10); with more than three sockets the track moves to its own full-width strip under the doll.",
+          "text": "The attunement limit is 0–9 (set in the preset editor); with more than three sockets the track moves to its own full-width strip under the doll.",
           "source": "spec"
         },
         {
           "text": "In the strip, sockets form rows of at most five, centred.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
-          "text": "A filled socket shows the attuned item; an empty one is a dashed ring; equipping past the limit is refused with a shake.",
-          "source": "assumption"
+          "text": "A filled socket shows the attuned item; an empty one is a dashed ring. Attunement is independent of equipping: dropping an item on a socket attunes it, the × on a filled socket ends it. Past the limit a new attunement is refused with a shake; when a preset switch leaves more attuned items than the limit, the count turns red («4 / 3») and new attunements are refused until it drops.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -675,7 +687,7 @@
     "equipButton": {
       "behaviour": [
         {
-          "text": "Equips the item to its first free slot and the tile flies to the doll, or unequips it and the tile flies back.",
+          "text": "Equips the item to its first free fitting slot through the equipment rules and the tile flies to the doll, or unequips it and the tile flies back. Items with no fitting slot in the preset (Ioun stones, trinkets) are equipped without a slot.",
           "source": "spec"
         }
       ],
@@ -985,7 +997,7 @@
       "behaviour": [
         {
           "text": "Click a filled socket to select its item (inspector in the wide layout, inline details otherwise).",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1121,7 +1133,7 @@
       "behaviour": [
         {
           "text": "Shows «Кукла» and the actor's preset name.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1133,8 +1145,12 @@
           "source": "spec"
         },
         {
-          "text": "Visible to the GM only; players see the preset name. Switching presets drops equipment from slots the new preset lacks.",
-          "source": "assumption"
+          "text": "Visible to the GM only; players see the preset name. Switching presets re-slots equipment (autoReconcileSlots): an item whose slot is gone moves to a free fitting slot of the new preset, or stays equipped in Без слота; slotless items take a fitting free slot when one appears. Attunement is never removed by a switch.",
+          "source": "spec"
+        },
+        {
+          "text": "Standard presets: Стандарт 2024, Стандарт 2014, Зверь, Повозка, Корабль, Воздушное судно; the GM adds custom ones. A preset is a figure plus its slots; the default follows the actor type.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1147,7 +1163,7 @@
         },
         {
           "text": "GM only.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1159,8 +1175,8 @@
           "source": "spec"
         },
         {
-          "text": "Ten slots sit beside the figure; the rest go here at 52 px, as many per row as fit.",
-          "source": "assumption"
+          "text": "Twelve slots sit beside the figure; the rest go here at 52 px, as many per row as fit.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1450,6 +1466,15 @@
       "behaviour": [
         {
           "text": "Something dragged in from outside the window (compendium, sidebar, chat, another actor) outlines the Снаряжение tab with «Отпустите, чтобы добавить»; what happens on the drop is settled in «Перенос предметов извне в окно актора: решение».",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "slotlessStrip": {
+      "behaviour": [
+        {
+          "text": "Items equipped without a slot show as chips under the doll in «Без слота»; click selects, the × unequips.",
           "source": "spec"
         }
       ],

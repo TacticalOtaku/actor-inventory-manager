@@ -975,7 +975,7 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-insp .acts { display: flex; gap: var(--s2); flex-wrap: wrap; }
 
 /* ═══════════ Trade panel ═══════════ */
-.cs-root[data-role="gm"] .cs-playeronly { display: none; }
+.cs-root[data-role="gm"] .cs-playeronly:not(.is-gm-visible) { display: none; }
 .cs-trade {
   position: absolute; z-index: 19; top: 0; right: 0; bottom: 0;
   width: min(344px, 100%);
@@ -1003,7 +1003,7 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-qty { display: inline-flex; align-items: center; gap: 2px; }
 .cs-qty button { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 6px; background: var(--surface-3); cursor: pointer; }
 .cs-qty b { min-width: 20px; text-align: center; font: 600 12px var(--font-num); }
-.cs-offer-coins { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.cs-offer-coins { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
 .cs-offer-coins label { display: grid; gap: 2px; font-size: 10px; color: var(--text-3); text-align: center; }
 .cs-offer-coins input { width: 100%; box-sizing: border-box; height: 28px; background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: var(--r-sm); color: var(--text); font: 600 12px var(--font-num); text-align: center; }
 .cs-offer-coins input:disabled, .cs-offer-coins .ro { opacity: 0.8; }
@@ -1331,6 +1331,42 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-prose ul { margin: 0 0 var(--s2); padding-left: 18px; }
 .cs-prose .content-link { padding: 0 4px; border-radius: 4px; background: var(--surface-3); color: var(--accent); text-decoration: none; cursor: pointer; }
 .cs-prose:focus { box-shadow: inset 0 -1px 0 var(--accent-line); }
+
+/* ═══ #16: trade in the new shell ═══ */
+[data-ui="tradeButton"] { position: relative; }
+[data-ui="tradeButton"].is-invited::after { content: ""; position: absolute; top: -3px; right: -3px; width: 9px; height: 9px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 2px var(--surface-1), 0 0 10px var(--warn); animation: cs-invite 1.6s ease-in-out infinite; }
+@keyframes cs-invite { 50% { transform: scale(1.35); } }
+.cs-root[data-motion="off"] [data-ui="tradeButton"].is-invited::after { animation: none; }
+.cs-drawer-head h3 small { font: 500 12px var(--font-ui); color: var(--text-3); }
+.cs-trade-warn, .cs-trade-err { display: flex; align-items: center; gap: var(--s2); padding: 8px 10px; border-radius: var(--r-md); font-size: 12px; line-height: 1.35; }
+.cs-trade-warn { color: var(--warn); background: color-mix(in oklab, var(--warn) 12%, var(--surface-2)); }
+.cs-trade-err { color: var(--hp); background: color-mix(in oklab, var(--hp) 12%, var(--surface-2)); animation: cs-refuse 360ms var(--ease-settle); }
+.cs-trade-warn .cs-ico, .cs-trade-err .cs-ico { width: 14px; height: 14px; flex: none; }
+.cs-trade-status.is-sending { color: var(--text-3); }
+.cs-trade-status.is-warn { color: var(--warn); background: color-mix(in oklab, var(--warn) 12%, var(--surface-2)); }
+.cs-trade-status.is-sending::before { content: ""; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; animation: cs-spin-slow 0.8s linear infinite; }
+.cs-offer.is-drop { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.cs-offer-item .cs-qty button { opacity: 1; }
+.cs-offer-item .cs-qty input { width: 34px; height: 22px; padding: 0; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface-1); color: var(--text); font: 600 12px var(--font-num); text-align: center; -moz-appearance: textfield; }
+.cs-offer-item .cs-qty input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.cs-piles-hint { display: flex; justify-content: space-between; gap: var(--s2); font-size: 10.5px; color: var(--text-3); }
+.cs-piles-hint b { font: 600 10.5px var(--font-num); color: var(--text-2); white-space: nowrap; }
+.cs-piles-hint b.is-over { color: var(--hp); }
+.cs-trade-note { font-size: 11.5px !important; color: var(--text-3) !important; }
+.cs-trade-ask { display: grid; gap: var(--s2); padding: var(--s3) var(--s4); border-top: 1px solid var(--line); }
+.cs-trade-foot.is-inline { padding: 0; border: 0; }
+.cs-btn.is-danger { background: var(--hp); border-color: var(--hp); color: var(--surface-0); }
+.cs-done.is-warn .cs-ico { color: var(--warn); }
+.cs-done-cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
+.cs-done-cols h4 { margin: 0 0 6px; font: 600 10.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
+.cs-done-cols > div { display: grid; gap: 6px; align-content: start; }
+.cs-done-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.cs-done-item .cs-tile { --tile: 24px; }
+.cs-trade-lock { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s3); padding: 8px 12px; border-radius: var(--r-md); border: 1px solid color-mix(in oklab, var(--warn) 45%, transparent); background: color-mix(in oklab, var(--warn) 10%, var(--surface-1)); color: var(--warn); font-size: 12.5px; }
+.cs-trade-lock[hidden] { display: none; }
+.cs-trade-lock .cs-ico { width: 14px; height: 14px; }
+.cs-tag.is-new { color: var(--accent-ink); background: var(--accent); font-weight: 600; }
+.cs-row.is-fresh { box-shadow: inset 2px 0 0 var(--accent); background: color-mix(in oklab, var(--accent) 7%, transparent); }
 </style>
 </head>
 <body>
@@ -1344,6 +1380,9 @@ button.cs-stat:active { transform: scale(0.95); }
     <button type="button" data-role-set="gm" aria-pressed="false">Мастер</button>
   </div>
   <label class="mock-xp" data-ui="mockPactPreview"><input type="checkbox" data-mock-pact> Пакт</label>
+  <label class="mock-xp" data-ui="mockTradePreview">Обмен <select data-mock-trade aria-label="Сценарий обмена"><option value="">обычный</option><option value="invite">вас пригласили</option><option value="cancel">партнёр отменил</option><option value="recovery">сбой у мастера</option><option value="preparing">прервана подготовка</option></select></label>
+  <label class="mock-xp"><input type="checkbox" data-mock-piles> Item Piles</label>
+  <label class="mock-xp"><input type="checkbox" data-mock-nogm> Мастер не в сети</label>
   <label class="mock-xp" data-ui="mockXpPreview">Опыт <input type="range" min="0" max="100" value="72" data-mock-xp aria-label="Прогресс к следующему уровню"></label>
 </div>
 
@@ -1551,6 +1590,7 @@ button.cs-stat:active { transform: scale(0.95); }
 
       <!-- Equipment -->
       <div class="cs-panel" data-panel="equipment" data-ui="equipmentTab">
+        <div class="cs-trade-lock" data-ui="tradeLockBanner" data-trade-lock hidden role="status"><svg class="cs-ico"><use href="#i-lock"/></svg>Идёт обмен — инвентарь заблокирован, пока мастер его не завершит</div>
         <div class="cs-toolbar" data-ui="inventoryToolbar">
           <label class="cs-search" data-ui="searchField"><svg class="cs-ico"><use href="#i-search"/></svg><input type="search" placeholder="Найти предмет" data-search="items"></label>
           <div class="cs-seg" role="group" aria-label="Вид" data-ui="viewModeSwitch" data-view-for="items">
@@ -1834,7 +1874,8 @@ button.cs-stat:active { transform: scale(0.95); }
     featFilter: new Set(),
     filter: { items: new Set() },
 
-    trade: { status: "idle", partner: "torvin", mine: {}, myCoins: {}, theirs: [], theirCoins: {}, confirmed: [false, false] },
+    trade: { status: "idle", partner: "torvin", mine: {}, myCoins: {}, theirs: [], theirCoins: {}, confirmed: [false, false], sending: false, error: null, invited: false, askRestore: false, last: { gave: [], got: [] } },
+    piles: false, gmOnline: true, // mock-only: Item Piles active, an active GM connected
     favorites: ["firebolt", "fireball", "misty", "flare", "potion", "shield", "skill:Магия", "slots:3", "effect:mage-armor"],
     conds: new Set(),
     effOpen: null,
@@ -1994,8 +2035,10 @@ button.cs-stat:active { transform: scale(0.95); }
       meta = [x.passive ? `<span class="cs-tag is-passive">Пассивное</span>` : x.act ? `<span class="cs-tag">${ACT_LABEL[x.act]}</span>` : "", recTag(x), ...x.tags.map((t) => `<span class="cs-tag">${t}</span>`)].join("");
       num = usesHTML(x);
     }
-    if (k === "item" && S.trade.status === "open" && (S.trade.mine[x.id] ?? 0) < x.qty) acts += `<button type="button" class="cs-ibtn cs-editonly" data-ui="offerButton" data-offer="${x.id}" aria-label="В обмен" title="В обмен">${icon("trade")}</button>`;
+    if (k === "item" && S.trade.status === "open" && x.group === "container" && bagContents(x.id).length) acts += `<button type="button" class="cs-ibtn cs-editonly" data-ui="offerButton" disabled aria-label="В обмен" title="Сначала выньте содержимое">${icon("trade")}</button>`;
+    else if (k === "item" && S.trade.status === "open" && (S.trade.mine[x.id] ?? 0) < x.qty) acts += `<button type="button" class="cs-ibtn cs-editonly" data-ui="offerButton" data-offer="${x.id}" aria-label="В обмен" title="В обмен">${icon("trade")}</button>`;
     acts += `<button type="button" class="cs-ibtn cs-editonly ${fav ? "is-on" : ""}" data-ui="favoriteButton" data-fav="${x.id}" aria-pressed="${fav}" aria-label="В избранное" title="В избранное">${icon("star")}</button>`;
+    if (x.fresh) meta = `<span class="cs-tag is-new">Новое</span>` + meta;
     acts += `<button type="button" class="cs-ibtn" data-ui="rowMenuButton" aria-label="Ещё" data-oos="${MENU_OOS[k]}">${icon("dots")}</button>`;
     const lvl = k === "spell" && x.lvl ? `<span class="lvl">${x.lvl}</span>` : "";
     const draggable = k === "item" && canEdit() ? `draggable="true"` : "";
@@ -2003,7 +2046,7 @@ button.cs-stat:active { transform: scale(0.95); }
     const tileHTML = k === "item" ? `<button type="button" class="cs-tile-btn" data-ui="itemUseButton" data-use-item="${x.id}" aria-label="Использовать: ${x.name}" title="Использовать">${tile(x)}</button>`
       : k === "feature" && !x.passive ? `<button type="button" class="cs-tile-btn" data-ui="featureUseButton" data-use-feat="${x.id}" aria-label="Использовать: ${x.name}" title="Использовать">${tile(x)}</button>` : tile(x);
     return `<div class="cs-rowwrap" data-key="${sec}:${x.id}">
-      <div class="cs-row ${S.selected === x.id ? "is-selected" : ""} ${eqSlot ? "is-equipped" : ""} ${unprepared ? "is-unprepared" : ""} ${x.passive ? "is-passive" : ""}" data-ui="${k}Row" data-row="${x.id}" ${draggable} title="${x.name}" tabindex="0">
+      <div class="cs-row ${S.selected === x.id ? "is-selected" : ""} ${eqSlot ? "is-equipped" : ""} ${unprepared ? "is-unprepared" : ""} ${x.fresh ? "is-fresh" : ""} ${x.passive ? "is-passive" : ""}" data-ui="${k}Row" data-row="${x.id}" ${draggable} title="${x.name}" tabindex="0">
         ${tileHTML}${lvl}
         <div class="cs-row-main"><div class="cs-name-line">${x.name}</div><div class="cs-meta">${meta}</div></div>
         ${num}<div class="cs-row-act">${acts}</div>
@@ -2432,61 +2475,150 @@ button.cs-stat:active { transform: scale(0.95); }
       if (Number(n.textContent) !== S.coins[k]) { countTo(n, S.coins[k]); pulse(chip, "is-glint"); }
     }
   }
-  const PARTNERS = { torvin: "Торвин Камнелом · игрок Миша", sera: "Сэра Лин · игрок Аня" };
+  // Other players' characters whose owner is online; one already in a trade cannot be picked.
+  const PARTNERS = [["torvin", "Торвин Камнелом", "Миша"], ["sera", "Сэра Лин", "Аня"], ["kira", "Кира Тень", "Лёша", true]];
+  const partnerOf = (k) => PARTNERS.find(([id]) => id === k);
   const PARTNER_OFFER = [{ id: "t-web", name: "Свиток: Паутина", icon: "scroll", rarity: "uncommon", qty: 1, group: "consumable", wt: 0, price: 150, tags: ["2 круг"], desc: "Одноразовый свиток заклинания 2 круга." }];
+  const offerValue = (coins) => Object.entries(coins).reduce((t, [k, n]) => t + (n || 0) * COIN_GP[k], 0);
+  const offerEmpty = (T) => !Object.values(T.mine).some(Boolean) && !Object.values(T.myCoins).some(Boolean) && !T.theirs.length && !Object.values(T.theirCoins).some(Boolean);
+  function tradeStatusText() {
+    const T = S.trade, p = partnerOf(T.partner)[1].split(" ")[0];
+    if (T.status === "executing") return "Мастер проводит обмен…";
+    if (T.status === "recovery") return "Обмен прерван: инвентари заблокированы до решения мастера";
+    if (T.sending) return "Отправляется…";
+    if (T.confirmed.every(Boolean)) return "Обе стороны подтвердили";
+    if (T.confirmed[0]) return `Ждём подтверждения: ${p}`;
+    if (offerEmpty(T)) return `Ждём предложения: ${p}`;
+    return T.confirmed[1] ? `${p} подтверждает — проверьте и подтвердите` : "Проверьте предложения и подтвердите";
+  }
+  // Parts that change while typing; a full render would steal focus from the coin and quantity fields.
+  function refreshTrade() {
+    const T = S.trade, el = $("[data-trade-status]");
+    if (!el) return;
+    el.textContent = tradeStatusText();
+    el.classList.toggle("is-ready", T.status === "open" && T.confirmed.every(Boolean));
+    el.classList.toggle("is-warn", T.status === "recovery");
+    el.classList.toggle("is-sending", !!T.sending);
+    $$(".cs-offer").forEach((o, i) => o.classList.toggle("is-confirmed", !!T.confirmed[i]));
+    const c = $("[data-trade-confirm]");
+    if (c) { c.disabled = T.sending || !S.gmOnline || T.status !== "open"; c.textContent = T.confirmed[0] ? "Снять подтверждение" : "Подтвердить"; }
+    const sum = $("[data-piles-sum]");
+    if (sum) { const v = offerValue(T.myCoins), have = offerValue(S.coins); sum.textContent = `≈ ${fmtPrice(v)} из ${fmtPrice(have)}`; sum.classList.toggle("is-over", v > have); }
+  }
   function renderTrade() {
-    const T = S.trade;
+    const T = S.trade, gm = root.dataset.role === "gm";
     const host = $("[data-trade]");
-    const head = `<div class="cs-drawer-head"><h3>Обмен</h3><button type="button" class="cs-ibtn" data-trade-close aria-label="Закрыть"><svg class="cs-ico"><use href="#i-close"/></svg></button></div>`;
+    const p = partnerOf(T.partner), pName = p[1];
+    const active = ["open", "executing", "recovery"].includes(T.status);
+    // The GM sees the button only while this actor has an active trade; observers never do.
+    const btn = $('[data-ui="tradeButton"]');
+    btn.classList.toggle("is-gm-visible", active);
+    btn.classList.toggle("is-invited", !!T.invited);
+    $("[data-trade-lock]").hidden = !["executing", "recovery"].includes(T.status);
+    const head = `<div class="cs-drawer-head"><h3>Обмен${active ? ` <small>· ${pName}</small>` : ""}</h3><button type="button" class="cs-ibtn" data-trade-close aria-label="Закрыть"><svg class="cs-ico"><use href="#i-close"/></svg></button></div>`;
+    const noGm = S.gmOnline ? "" : `<div class="cs-trade-warn" role="alert">${icon("lock")}Мастер не в сети: обмен не начнётся и не завершится</div>`;
+    const err = T.error ? `<div class="cs-trade-err" role="alert">${icon("close")}${T.error}</div>` : "";
     if (T.status === "idle") {
-      host.innerHTML = head + `<div class="cs-trade-body"><p>Обменяйтесь предметами и монетами с персонажем другого игрока. Перенос выполняет мастер после подтверждения обеими сторонами.</p>
-        <label class="cs-field"><span>С кем</span><select data-ui="tradePartnerSelect" data-trade-partner>${Object.entries(PARTNERS).map(([k, n]) => `<option value="${k}" ${k === T.partner ? "selected" : ""}>${n}</option>`).join("")}</select></label></div>
-        <div class="cs-trade-foot"><button type="button" class="cs-btn is-primary" data-ui="tradeStartButton" data-trade-start>${icon("trade")}Предложить обмен</button></div>`;
+      host.innerHTML = head + `<div class="cs-trade-body">${noGm}<p>Обменяйтесь предметами и монетами с персонажем другого игрока. Перенос выполняет мастер после подтверждения обеими сторонами.</p>
+        <label class="cs-field"><span>С кем</span><select data-ui="tradePartnerSelect" data-trade-partner>${PARTNERS.map(([k, n, who, busy]) => `<option value="${k}" ${k === T.partner ? "selected" : ""} ${busy ? "disabled" : ""}>${n} · игрок ${who}${busy ? " — уже в обмене" : ""}</option>`).join("")}</select></label></div>
+        <div class="cs-trade-foot"><button type="button" class="cs-btn is-primary" data-ui="tradeStartButton" data-trade-start ${S.gmOnline ? "" : "disabled"}>${icon("trade")}Предложить обмен</button></div>`;
       return;
     }
-    if (T.status === "done") {
-      host.innerHTML = head + `<div class="cs-trade-body"><div class="cs-done">${icon("check")}<b>Обмен завершён</b><p>Полученные предметы лежат в инвентаре, они не надеты и не настроены.</p></div></div>
-        <div class="cs-trade-foot"><button type="button" class="cs-btn" data-trade-new>Новый обмен</button></div>`;
+    if (T.status === "done" || T.status === "cancelled" || T.status === "restored") {
+      const list = (xs) => xs.length ? xs.map((x) => `<span class="cs-done-item">${tile({ ...x, qty: 1 })}${x.name}${x.n > 1 ? ` ×${x.n}` : ""}</span>`).join("") : `<span class="cs-offer-empty">ничего</span>`;
+      const body = T.status === "done"
+        ? `<div class="cs-done">${icon("check")}<b>Обмен завершён</b><p>Полученное лежит в инвентаре с меткой «Новое»: не надето, не настроено, вне контейнеров.</p></div>
+           <div class="cs-done-cols"><div><h4>Отдали</h4>${list(T.last.gave)}</div><div><h4>Получили</h4>${list(T.last.got)}</div></div>`
+        : T.status === "restored"
+          ? `<div class="cs-done is-warn">${icon("lock")}<b>Инвентари восстановлены</b><p>Оба инвентаря возвращены к снимку до обмена; снимок удалён из журнала.</p></div>`
+          : `<div class="cs-done is-warn">${icon("close")}<b>${pName} отменяет обмен</b><p>Ничего не передано.</p></div>`;
+      host.innerHTML = head + `<div class="cs-trade-body">${body}</div><div class="cs-trade-foot"><button type="button" class="cs-btn" data-trade-new>Новый обмен</button></div>`;
       return;
     }
     const mine = Object.entries(T.mine).filter(([, q]) => q > 0);
+    const piles = S.piles;
+    const ro = gm || T.status !== "open";
     const coins = (obj, editable) => `<div class="cs-offer-coins">${COIN_DEF.map(([k, l]) => editable
-      ? `<label>${l}<input type="number" min="0" max="${S.coins[k]}" value="${obj[k] ?? 0}" data-trade-coin="${k}" aria-label="${l} в обмен"></label>`
-      : `<label>${l}<span class="ro">${obj[k] ?? 0}</span></label>`).join("")}</div>`;
-    const ready = T.confirmed.every(Boolean);
-    const partnerName = PARTNERS[T.partner].split(" · ")[0];
-    host.innerHTML = head + `<div class="cs-trade-body">
-      <div class="cs-trade-status ${ready ? "is-ready" : ""}" data-ui="tradeStatus" data-trade-status>${T.status === "executing" ? "Мастер проводит обмен…" : ready ? "Обе стороны подтвердили" : T.theirs.length ? "Проверьте предложения и подтвердите" : `Ждём предложение от ${partnerName}…`}</div>
-      <div class="cs-offer ${T.confirmed[0] ? "is-confirmed" : ""}" data-ui="myOffer"><div class="cs-offer-head">Вы отдаёте<span class="${T.confirmed[0] ? "ok" : ""}">${T.confirmed[0] ? "подтверждено" : "не подтверждено"}</span></div>
-        ${mine.length ? mine.map(([id, q]) => `<div class="cs-offer-item" data-ui="offerItem">${tile({ ...byId[id], qty: 1 })}<span class="n">${byId[id].name}</span><span class="cs-qty"><button type="button" data-offer-dec="${id}" aria-label="Меньше">−</button><b>${q}</b><button type="button" data-offer-inc="${id}" aria-label="Больше">+</button></span></div>`).join("") : `<div class="cs-offer-empty">Нажмите ${icon("trade")} у предмета в инвентаре, чтобы добавить его</div>`}
-        ${coins(T.myCoins, true)}</div>
-      <div class="cs-offer ${T.confirmed[1] ? "is-confirmed" : ""}" data-ui="partnerOffer"><div class="cs-offer-head">Вы получаете<span class="${T.confirmed[1] ? "ok" : ""}">${partnerName} · ${T.confirmed[1] ? "подтверждено" : "не подтверждено"}</span></div>
+      ? `<label>${l}<input type="number" min="0" ${piles ? "" : `max="${S.coins[k]}"`} value="${obj[k] ?? 0}" data-trade-coin="${k}" aria-label="${l} в обмен"></label>`
+      : `<label>${l}<span class="ro">${obj[k] ?? 0}</span></label>`).join("")}</div>
+      ${editable && piles ? `<div class="cs-piles-hint"><span>Item Piles: оплата со сдачей — хватает ли, решает Item Piles</span><b data-piles-sum></b></div>` : ""}`;
+    const me = gm ? "Ирэн отдаёт" : "Вы отдаёте", them = gm ? `${pName.split(" ")[0]} отдаёт` : "Вы получаете";
+    const conf = (on) => `<span class="${on ? "ok" : ""}">${on ? "подтверждено" : "не подтверждено"}</span>`;
+    const recovery = gm && T.status === "recovery"
+      ? (T.askRestore
+        ? `<div class="cs-trade-ask"><p>Вернуть оба инвентаря к снимку до обмена? Снимок лежит в приватном журнале мастера.</p><div class="cs-trade-foot is-inline"><button type="button" class="cs-btn" data-trade-restore-no>Не сейчас</button><button type="button" class="cs-btn is-danger" data-trade-restore-yes>Вернуть</button></div></div>`
+        : T.phase === "preparing"
+          // Preparation never debits anything: there is nothing to restore, only the lock to lift.
+          ? `<div class="cs-trade-foot"><button type="button" class="cs-btn is-primary" data-ui="tradeRecoveryButton" data-trade-unlock>${icon("lock")}Снять блокировку</button></div>`
+          : `<div class="cs-trade-foot"><button type="button" class="cs-btn is-primary" data-ui="tradeRecoveryButton" data-trade-restore>${icon("lock")}Восстановить инвентари</button></div>`)
+      : "";
+    host.innerHTML = head + `<div class="cs-trade-body">${noGm}${err}
+      <div class="cs-trade-status" data-ui="tradeStatus" data-trade-status></div>
+      <div class="cs-offer" data-ui="myOffer" data-offer-drop><div class="cs-offer-head">${me}${conf(T.confirmed[0])}</div>
+        ${mine.length ? mine.map(([id, q]) => `<div class="cs-offer-item" data-ui="offerItem">${tile({ ...byId[id], qty: 1 })}<span class="n">${byId[id].name}</span>${ro ? `<b>×${q}</b>` : `<span class="cs-qty"><button type="button" data-offer-dec="${id}" aria-label="Меньше">−</button><input class="cs-num" type="number" min="0" max="${byId[id].qty}" value="${q}" data-offer-qty="${id}" aria-label="Количество: ${byId[id].name}"><button type="button" data-offer-inc="${id}" aria-label="Больше">+</button></span>`}</div>`).join("")
+          : `<div class="cs-offer-empty">${ro ? "Ничего" : "Нажмите ⇄ на строке инвентаря или перетащите предмет сюда — весь стек"}</div>`}
+        ${coins(T.myCoins, !ro)}</div>
+      <div class="cs-offer" data-ui="partnerOffer"><div class="cs-offer-head">${them}${conf(T.confirmed[1])}</div>
         ${T.theirs.length ? T.theirs.map((x) => `<div class="cs-offer-item">${tile(x)}<span class="n">${x.name}</span><b>×${x.qty}</b></div>`).join("") : `<div class="cs-offer-empty">Пока ничего</div>`}
-        ${coins(T.theirCoins, false)}</div></div>
-      <div class="cs-trade-foot"><button type="button" class="cs-btn" data-ui="tradeCancelButton" data-trade-cancel>Отменить</button>
-        <button type="button" class="cs-btn is-primary" data-ui="tradeConfirmButton" data-trade-confirm ${T.status === "executing" ? "disabled" : ""}>${T.confirmed[0] ? "Снять подтверждение" : "Подтвердить"}</button></div>`;
+        ${coins(T.theirCoins, false)}</div>
+      ${gm && T.status === "open" ? `<p class="cs-trade-note">Мастер видит обмен только для чтения: предложения меняют и подтверждают игроки.</p>` : ""}</div>
+      ${gm ? recovery : `<div class="cs-trade-foot"><button type="button" class="cs-btn" data-ui="tradeCancelButton" data-trade-cancel ${T.status === "open" ? "" : "disabled"}>Отменить</button>
+        <button type="button" class="cs-btn is-primary" data-ui="tradeConfirmButton" data-trade-confirm></button></div>`}`;
+    refreshTrade();
   }
-  // Any change to either offer clears both confirmations, as the coordinator does.
+  // Offer edits leave by themselves after a short pause, as the same `offer` request through the user flag;
+  // a stale revision is re-sent with the new one. Any change clears both confirmations, as the coordinator does.
+  let sendTimer = 0;
   function offerChanged() {
     const T = S.trade;
     const had = T.confirmed.some(Boolean);
     T.confirmed = [false, false];
-    renderTrade();
+    T.error = null;
+    T.sending = true;
+    refreshTrade();
     if (had) pulse($("[data-trade-status]"), "is-reset");
+    clearTimeout(sendTimer);
+    sendTimer = setTimeout(() => { T.sending = false; refreshTrade(); }, 500);
+  }
+  function addToOffer(id, n, fromEl) {
+    const T = S.trade, it = byId[id];
+    if (T.status !== "open" || !canEdit()) return;
+    if (it.group === "container" && bagContents(id).length) { refuse(fromEl ?? $('[data-ui="myOffer"]'), "Сначала выньте содержимое"); return; }
+    T.mine[id] = Math.min(it.qty, (T.mine[id] ?? 0) + n);
+    renderTrade(); offerChanged();
+    fly(fromEl, $('[data-ui="myOffer"]'), tile(it));
+    rerender("equipment", renderInventory); applyRole();
+  }
+  function confirmTrade() {
+    const T = S.trade;
+    if (offerEmpty(T)) { pulse($("[data-trade-status]"), "is-reset"); return; }
+    // Item Piles pays by value with change: the coordinator asks getPaymentData whether the purse covers it.
+    if (!T.confirmed[0] && S.piles && offerValue(T.myCoins) > offerValue(S.coins)) {
+      T.error = "Item Piles: не хватает средств на эту сумму"; T.confirmed = [false, false];
+      return renderTrade();
+    }
+    T.confirmed[0] = !T.confirmed[0];
+    refreshTrade();
+    if (T.confirmed[0]) setTimeout(() => { if (!T.confirmed[0] || T.status !== "open") return; T.confirmed[1] = true; refreshTrade(); setTimeout(() => T.confirmed.every(Boolean) && T.status === "open" && settleTrade(), 700); }, motionOn() ? 900 : 0);
   }
   function settleTrade() {
     const T = S.trade;
     T.status = "executing"; renderTrade();
     setTimeout(() => {
+      const gave = [], got = [];
       for (const [id, q] of Object.entries(T.mine)) {
         const it = byId[id];
         if (!q || !it) continue;
+        gave.push({ ...it, n: q });
         it.qty -= q;
-        if (it.qty <= 0) { const slot = slotOf(id); if (slot) delete S.equipped[slot]; S.attuned.delete(id); items.splice(items.indexOf(it), 1); }
+        if (it.qty <= 0) { const slot = slotOf(id); if (slot) delete S.equipped[slot]; S.attuned.delete(id); S.noSlot.delete(id); items.splice(items.indexOf(it), 1); }
       }
-      for (const x of T.theirs) { const copy = { ...x, id: `${x.id}-${Date.now()}` }; items.push(copy); byId[copy.id] = copy; }
+      // Received items arrive unequipped, unattuned and outside any container.
+      for (const x of T.theirs) { const copy = { ...x, id: `${x.id}-${Date.now()}`, fresh: true }; delete copy.in; items.push(copy); byId[copy.id] = copy; got.push({ ...copy, n: x.qty }); }
       for (const [k] of COIN_DEF) S.coins[k] += (T.theirCoins[k] ?? 0) - (T.myCoins[k] ?? 0);
-      T.status = "done";
+      if (S.piles) S.coins.gp = Math.max(0, S.coins.gp); // the mock skips Item Piles' change-making
+      T.last = { gave, got };
+      T.status = "done"; T.invited = false;
       rerender("equipment", () => { renderInventory(); renderDoll(); });
       renderCoins(); renderTrade(); applyRole();
     }, motionOn() ? 900 : 0);
@@ -2683,6 +2815,7 @@ button.cs-stat:active { transform: scale(0.95); }
   }
   function select(id) {
     S.selected = S.selected === id ? null : id;
+    if (byId[id]?.fresh) { delete byId[id].fresh; $$(`[data-row="${id}"]`).forEach((r) => { r.classList.remove("is-fresh"); r.querySelector(".cs-tag.is-new")?.remove(); }); }
     $$(".cs-row").forEach((r) => r.classList.toggle("is-selected", r.dataset.row === S.selected));
     $$(".cs-rowwrap > .cs-detail").forEach((d) => {
       const id = d.previousElementSibling?.dataset.row, on = id === S.selected;
@@ -2776,39 +2909,29 @@ button.cs-stat:active { transform: scale(0.95); }
     if (t.matches("[data-cast]")) return cast(t.dataset.cast);
     if (t.matches("[data-prep]")) return togglePrepared(t.dataset.prep);
     if (t.matches("[data-socket]")) return select(t.dataset.socket);
-    if (t.matches('[data-ui="tradeButton"]')) { const on = !root.classList.contains("is-trading"); root.classList.toggle("is-trading", on); t.setAttribute("aria-expanded", on); return; }
+    if (t.matches('[data-ui="tradeButton"]')) { const on = !root.classList.contains("is-trading"); root.classList.toggle("is-trading", on); t.setAttribute("aria-expanded", on); if (on && S.trade.invited) { S.trade.invited = false; t.classList.remove("is-invited"); } return; }
     if (t.matches("[data-trade-close]")) { root.classList.remove("is-trading"); $('[data-ui="tradeButton"]').setAttribute("aria-expanded", "false"); return; }
     if (t.matches("[data-trade-start]")) {
-      const T = S.trade; T.status = "open"; T.mine = {}; T.myCoins = {}; T.theirs = []; T.theirCoins = {}; T.confirmed = [false, false];
+      const T = S.trade; Object.assign(T, { status: "open", mine: {}, myCoins: {}, theirs: [], theirCoins: {}, confirmed: [false, false], error: null, sending: false });
       renderTrade(); rerender("equipment", renderInventory); applyRole();
-      setTimeout(() => { if (T.status !== "open") return; T.theirs = PARTNER_OFFER.map((x) => ({ ...x })); T.theirCoins = { gp: 20 }; offerChanged(); }, motionOn() ? 1100 : 0);
+      setTimeout(() => { if (T.status !== "open") return; T.theirs = PARTNER_OFFER.map((x) => ({ ...x })); T.theirCoins = { gp: 20 }; renderTrade(); offerChanged(); }, motionOn() ? 1100 : 0);
       return;
     }
-    if (t.matches("[data-trade-cancel]")) { S.trade.status = "idle"; renderTrade(); rerender("equipment", renderInventory); applyRole(); return; }
+    if (t.matches("[data-trade-cancel]")) { S.trade.status = "idle"; S.trade.invited = false; renderTrade(); rerender("equipment", renderInventory); applyRole(); return; }
     if (t.matches("[data-trade-new]")) { S.trade.status = "idle"; renderTrade(); return; }
-    if (t.matches("[data-offer]")) {
-      const T = S.trade, id = t.dataset.offer;
-      T.mine[id] = (T.mine[id] ?? 0) + 1;
-      fly(t.closest(".cs-row")?.querySelector(".cs-tile"), $('[data-ui="myOffer"]'), tile(byId[id]));
-      offerChanged(); rerender("equipment", renderInventory); applyRole();
-      return;
-    }
+    if (t.matches("[data-offer]")) return addToOffer(t.dataset.offer, 1, t.closest(".cs-row")?.querySelector(".cs-tile"));
     if (t.matches("[data-offer-inc], [data-offer-dec]")) {
       const T = S.trade, id = t.dataset.offerInc ?? t.dataset.offerDec;
       T.mine[id] = Math.max(0, Math.min(byId[id].qty, (T.mine[id] ?? 0) + (t.dataset.offerInc ? 1 : -1)));
       if (!T.mine[id]) delete T.mine[id];
-      offerChanged(); rerender("equipment", renderInventory); applyRole();
+      renderTrade(); offerChanged(); rerender("equipment", renderInventory); applyRole();
       return;
     }
-    if (t.matches("[data-trade-confirm]")) {
-      const T = S.trade;
-      const empty = !Object.keys(T.mine).length && !Object.values(T.myCoins).some(Boolean) && !T.theirs.length && !Object.values(T.theirCoins).some(Boolean);
-      if (empty) { pulse($("[data-trade-status]"), "is-reset"); return; }
-      T.confirmed[0] = !T.confirmed[0];
-      renderTrade();
-      if (T.confirmed[0]) setTimeout(() => { if (!T.confirmed[0] || T.status !== "open") return; T.confirmed[1] = true; renderTrade(); setTimeout(() => T.confirmed.every(Boolean) && T.status === "open" && settleTrade(), 700); }, motionOn() ? 900 : 0);
-      return;
-    }
+    if (t.matches("[data-trade-confirm]")) return confirmTrade();
+    if (t.matches("[data-trade-restore]")) { S.trade.askRestore = true; return renderTrade(); }
+    if (t.matches("[data-trade-restore-no]")) { S.trade.askRestore = false; return renderTrade(); }
+    if (t.matches("[data-trade-unlock]")) { Object.assign(S.trade, { status: "idle", phase: null }); renderTrade(); rerender("equipment", renderInventory); applyRole(); return; }
+    if (t.matches("[data-trade-restore-yes]")) { Object.assign(S.trade, { status: "restored", askRestore: false }); renderTrade(); rerender("equipment", renderInventory); applyRole(); return; }
     if (t.matches("[data-slot-lvl]")) {
       if (!canEdit()) return;
       const l = t.dataset.slotLvl, i = Number(t.dataset.i);
@@ -2874,19 +2997,24 @@ button.cs-stat:active { transform: scale(0.95); }
   });
   root.addEventListener("input", (e) => {
     if (e.target.dataset.tradeCoin) {
-      const k = e.target.dataset.tradeCoin;
-      S.trade.myCoins[k] = Math.max(0, Math.min(S.coins[k], Math.floor(Number(e.target.value) || 0)));
-      const T = S.trade; const had = T.confirmed.some(Boolean); T.confirmed = [false, false];
-      // keep focus in the field: refresh only the parts that show confirmation
-      $$(".cs-offer").forEach((o) => o.classList.remove("is-confirmed"));
-      if (had) renderTrade();
-      return;
+      // Without Item Piles each coin is capped by the purse; with it the whole sum is checked by value.
+      const k = e.target.dataset.tradeCoin, n = Math.max(0, Math.floor(Number(e.target.value) || 0));
+      S.trade.myCoins[k] = S.piles ? n : Math.min(S.coins[k], n);
+      if (String(S.trade.myCoins[k]) !== e.target.value) e.target.value = S.trade.myCoins[k];
+      return offerChanged();
+    }
+    if (e.target.dataset.offerQty) {
+      const id = e.target.dataset.offerQty;
+      S.trade.mine[id] = Math.max(0, Math.min(byId[id].qty, Math.floor(Number(e.target.value) || 0)));
+      if (String(S.trade.mine[id]) !== e.target.value) e.target.value = S.trade.mine[id];
+      return offerChanged();
     }
     const k = e.target.dataset.search;
     if (k) { S.search[k] = e.target.value; ({ items: renderInventory, spells: renderSpells, features: renderFeatures })[k](); applyRole(); }
   });
   root.addEventListener("change", (e) => {
     if (e.target.dataset.tradePartner) { S.trade.partner = e.target.value; return; }
+    if (e.target.dataset.offerQty) { if (!S.trade.mine[e.target.dataset.offerQty]) delete S.trade.mine[e.target.dataset.offerQty]; renderTrade(); rerender("equipment", renderInventory); applyRole(); return; }
     if (e.target.matches('[data-ui="dollPresetSelect"]')) {
       S.preset = e.target.value;
       // autoReconcileSlots: items whose slot is gone move to a free fitting slot, or stay equipped without a slot.
@@ -3078,6 +3206,21 @@ button.cs-stat:active { transform: scale(0.95); }
   });
   root.addEventListener("dragend", () => { favDrag = favMove = null; $$(".cs-fav.is-dragging, .cs-fav.is-drop-before, .cs-fav.is-drop-after, .is-drop").forEach((el) => el.classList.remove("is-dragging", "is-drop-before", "is-drop-after", "is-drop")); });
 
+  /* trade: dropping an inventory row on «Вы отдаёте» offers the whole stack */
+  root.addEventListener("dragover", (e) => {
+    const box = dragId && S.trade.status === "open" && e.target.closest("[data-offer-drop]");
+    $$(".cs-offer.is-drop").forEach((el) => el !== box && el.classList.remove("is-drop"));
+    if (!box) return;
+    e.preventDefault();
+    box.classList.add("is-drop");
+  });
+  root.addEventListener("drop", (e) => {
+    const box = e.target.closest("[data-offer-drop]");
+    if (!box || !dragId) return;
+    box.classList.remove("is-drop");
+    addToOffer(dragId, byId[dragId].qty, null);
+  });
+
   /* mock-only: role preview */
   document.querySelector('[data-ui="mockRolePreview"]').addEventListener("click", (e) => {
     const b = e.target.closest("[data-role-set]");
@@ -3102,6 +3245,11 @@ button.cs-stat:active { transform: scale(0.95); }
     if (["tradePanel", "tradePartnerSelect", "tradeStartButton", "tradeStatus", "myOffer", "partnerOffer", "offerItem", "tradeCancelButton", "tradeConfirmButton", "offerButton"].includes(id)) {
       setTab("equipment"); root.classList.add("is-trading");
       if (id !== "tradePartnerSelect" && id !== "tradeStartButton" && S.trade.status !== "open") $("[data-trade-start]")?.click();
+    }
+    if (["tradeRecoveryButton", "tradeLockBanner"].includes(id)) {
+      setTab("equipment");
+      const sel = document.querySelector("[data-mock-trade]"); sel.value = "recovery"; sel.dispatchEvent(new Event("change", { bubbles: true }));
+      if (id === "tradeRecoveryButton") { document.querySelector('[data-role-set="gm"]').click(); root.classList.add("is-trading"); }
     }
     if (["dollPresetSelect", "dollPresetEdit", "extraSlots"].includes(id)) {
       document.querySelector('[data-role-set="gm"]').click();
@@ -3153,6 +3301,19 @@ button.cs-stat:active { transform: scale(0.95); }
     root.animate([{ opacity: 0, transform: "translateY(12px) scale(0.985)" }, { opacity: 1, transform: "none" }], { duration: 520, easing: SETTLE });
     cascade($$(".cs-rail > *").filter((e) => e.offsetParent));
   }
+  // mock-only: trade scenarios, Item Piles and an absent GM
+  document.querySelector("[data-mock-trade]").addEventListener("change", (e) => {
+    const T = S.trade, v = e.target.value;
+    const base = { mine: {}, myCoins: {}, confirmed: [false, false], error: null, sending: false, askRestore: false, invited: false, partner: "sera", phase: null };
+    if (v === "invite") Object.assign(T, base, { status: "open", invited: true, theirs: PARTNER_OFFER.map((x) => ({ ...x })), theirCoins: { gp: 20 } });
+    else if (v === "cancel") Object.assign(T, base, { status: "cancelled", theirs: [], theirCoins: {} });
+    else if (v === "recovery" || v === "preparing") Object.assign(T, base, { phase: v === "preparing" ? "preparing" : "transfer", status: "recovery", mine: { dagger: 1 }, theirs: PARTNER_OFFER.map((x) => ({ ...x })), theirCoins: { gp: 20 }, confirmed: [true, true] });
+    else Object.assign(T, base, { status: "idle", partner: "torvin", theirs: [], theirCoins: {} });
+    if (v === "invite") { root.classList.remove("is-trading"); chip($('[data-ui="tradeButton"]'), "Сэра Лин предлагает обмен"); }
+    renderTrade(); rerender("equipment", renderInventory); applyRole();
+  });
+  document.querySelector("[data-mock-piles]").addEventListener("change", (e) => { S.piles = e.target.checked; renderTrade(); });
+  document.querySelector("[data-mock-nogm]").addEventListener("change", (e) => { S.gmOnline = !e.target.checked; renderTrade(); });
   // mock-only: show a warlock's pact slots
   document.querySelector("[data-mock-pact]").addEventListener("change", (e) => {
     S.pact = e.target.checked ? { lvl: 2, v: 2, max: 2 } : null;

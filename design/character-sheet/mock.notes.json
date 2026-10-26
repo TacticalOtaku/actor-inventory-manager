@@ -1063,8 +1063,12 @@
           "source": "spec"
         },
         {
-          "text": "Shown to owners only; observers never see it, and the GM sees it only when a trade waits for GM recovery.",
-          "source": "assumption"
+          "text": "Owners see it; observers never do. The GM sees it only while this actor has an active trade (open, executing or waiting for recovery).",
+          "source": "spec"
+        },
+        {
+          "text": "When another player invites this character, a Foundry notification appears and the button carries a glowing dot until the panel is opened.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1076,16 +1080,24 @@
           "source": "spec"
         },
         {
-          "text": "Opens beside the inventory without a scrim, so items can be added while it is open.",
-          "source": "assumption"
+          "text": "Opens beside the inventory without a scrim, so items can be added while it is open; in the standard and wide layouts the content steps aside, in narrow and compact the panel covers the tabs at full width.",
+          "source": "spec"
         },
         {
-          "text": "One trade at a time per actor; the partner is another player's character whose owner is online.",
-          "source": "assumption"
+          "text": "One trade at a time per actor; there is no separate accept step — confirming is accepting, cancelling is declining.",
+          "source": "spec"
         },
         {
-          "text": "In the standard and wide layouts the content steps aside while the panel is open, so the offer buttons on rows stay reachable.",
-          "source": "assumption"
+          "text": "For the GM the panel is read-only («Ирэн отдаёт» / «Сэра отдаёт» and the status): the GM never edits or confirms for players.",
+          "source": "spec"
+        },
+        {
+          "text": "Without an active GM a warning says the trade will neither start nor finish; starting and confirming are disabled.",
+          "source": "spec"
+        },
+        {
+          "text": "The last request's error from the coordinator shows as a red line with its reason (not enough funds, the offer changed, different currencies); the coordinator clears confirmations as it does now.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1093,8 +1105,8 @@
     "tradePartnerSelect": {
       "behaviour": [
         {
-          "text": "Lists other players' characters as «Персонаж · игрок».",
-          "source": "assumption"
+          "text": "Lists other players' characters whose owner is online (never the GM) as «Персонаж · игрок»; a character already in a trade is disabled with «уже в обмене»; with nobody to pick, a hint replaces the list.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1102,8 +1114,8 @@
     "tradeStartButton": {
       "behaviour": [
         {
-          "text": "Sends the trade request; the panel switches to the two offers.",
-          "source": "assumption"
+          "text": "Sends the start request; the panel switches to the two offers. Disabled without an active GM.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1111,8 +1123,8 @@
     "tradeStatus": {
       "behaviour": [
         {
-          "text": "Says what the trade waits for: the partner's offer, confirmations, or the GM carrying it out; a reset of confirmations shakes it.",
-          "source": "assumption"
+          "text": "Says what the trade waits for: «Ждём предложения», «Отправляется…», «Проверьте и подтвердите», «Ждём подтверждения», «Мастер проводит обмен…», or that a broken trade waits for the GM; a reset of confirmations shakes it.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1120,12 +1132,28 @@
     "myOffer": {
       "behaviour": [
         {
+          "text": "No Save step: an edit leaves by itself about 0.5 s after the last change, as the same offer request through the user flag; while it is on the way the status says «Отправляется…» and Подтвердить is disabled; a stale revision is re-sent with the new one.",
+          "source": "spec"
+        },
+        {
           "text": "Changing either offer clears both confirmations.",
           "source": "spec"
         },
         {
-          "text": "Lists offered items with quantity steppers and four coin fields capped by the purse; partial stacks are allowed.",
-          "source": "assumption"
+          "text": "Dropping an inventory row here offers the whole stack.",
+          "source": "spec"
+        },
+        {
+          "text": "Without Item Piles: the five dnd5e coins (пм, зм, эм, см, мм), each capped by the purse; exactly those coins move.",
+          "source": "spec"
+        },
+        {
+          "text": "With Item Piles: one field per Item Piles currency; payment goes by value — the sender pays with what it has and gets change, the receiver gets exactly the named coins; Item Piles' getPaymentData decides whether the purse covers it, so fields have no per-coin cap and a hint shows the sum against the purse.",
+          "source": "spec"
+        },
+        {
+          "text": "If the two sides have different currency setups the trade does not start and says why.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1134,7 +1162,7 @@
       "behaviour": [
         {
           "text": "Read-only view of the partner's items and coins with their confirmation state.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1142,8 +1170,8 @@
     "offerItem": {
       "behaviour": [
         {
-          "text": "− and + change the offered quantity between 0 and the stack; 0 removes it.",
-          "source": "assumption"
+          "text": "− and + and a number field change the offered quantity between 0 and the stack; partial stacks are allowed; 0 removes it.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1151,8 +1179,12 @@
     "offerButton": {
       "behaviour": [
         {
-          "text": "Shown on inventory rows while a trade is open; adds one of the item to the offer and the tile flies into the panel.",
-          "source": "assumption"
+          "text": "Shown on inventory rows while a trade is open; adds one of the item and the tile flies into the panel.",
+          "source": "spec"
+        },
+        {
+          "text": "Non-empty containers and Item Piles currency items cannot be offered: the button is disabled and says why («Сначала выньте содержимое»). Equipped and attuned items can be offered.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1165,10 +1197,14 @@
         },
         {
           "text": "Toggles your confirmation; an empty trade cannot be confirmed.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
-          "text": "Received items arrive unequipped, unattuned and outside any container.",
+          "text": "Received items arrive unequipped, unattuned and outside any container, marked «Новое» in the inventory until opened.",
+          "source": "spec"
+        },
+        {
+          "text": "The finished trade shows a card «Обмен завершён» with what was given and received.",
           "source": "spec"
         }
       ],
@@ -1177,8 +1213,8 @@
     "tradeCancelButton": {
       "behaviour": [
         {
-          "text": "Cancels the trade for both sides.",
-          "source": "assumption"
+          "text": "Cancels the trade for both sides at once, without a dialog — nothing has moved; the other side sees «<партнёр> отменяет обмен».",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1657,6 +1693,37 @@
       "behaviour": [
         {
           "text": "Rich text in system.details.biography.value, edited with Foundry's ProseMirror editor (headings, bold, italic, lists, document links); links are enriched content links.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tradeRecoveryButton": {
+      "behaviour": [
+        {
+          "text": "GM only, while a trade waits for recovery or hangs while executing: «Восстановить инвентари» asks to confirm, then the coordinator restores both inventories from the private journal snapshot.",
+          "source": "spec"
+        },
+        {
+          "text": "After a preparation that was interrupted before any debit, the GM gets «Снять блокировку» instead: nothing to restore, the lock is lifted.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tradeLockBanner": {
+      "behaviour": [
+        {
+          "text": "While a trade is executing or waits for recovery, everyone looking at the window sees «Идёт обмен — инвентарь заблокирован»; edits stay blocked by the current hooks.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "mockTradePreview": {
+      "behaviour": [
+        {
+          "text": "Mock-only: switches trade scenarios (invited, partner cancelled, GM recovery) and toggles Item Piles and an absent GM.",
           "source": "spec"
         }
       ],

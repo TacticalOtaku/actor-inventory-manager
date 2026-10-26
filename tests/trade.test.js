@@ -49,6 +49,10 @@ test("active but broken Item Piles never falls back", () => {
   setup({});
   assert.throws(() => currencyProfile(actor()), /provider/);
 });
+test("Item Piles without system currencies refuses with a hint, never falls back", () => {
+  setup({ getActorCurrencies: () => [], getPaymentData: () => ({ canBuy: true }), transferCurrencies: async () => ({}) });
+  assert.throws(() => currencyProfile(actor()), /providerNoCurrencies/);
+});
 test("item currencies have the same definition across different actor item IDs", () => {
   setup({
     getActorCurrencies: a => [{ name: "Token", abbreviation: "{#}tok", type: "item", data: { item: { _id: a.id, name: "Token", type: "loot", system: { quantity: 1 } } }, item: { id: a.id }, quantity: 2, exchangeRate: 3 }],

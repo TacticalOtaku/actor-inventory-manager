@@ -16,7 +16,9 @@ export function currencyProfile(actor) {
   const api = pilesAPI();
   if (!api?.getActorCurrencies || !api?.getPaymentData || !api?.transferCurrencies) throw tradeError("provider");
   const currencies = api.getActorCurrencies(actor, { getAll: true, secondary: true });
-  if (!Array.isArray(currencies) || !currencies.length) throw tradeError("provider");
+  // Item Piles 3.3+ ships no system currencies; dnd5e gets them from the "Item Piles: D&D 5e" module.
+  if (Array.isArray(currencies) && !currencies.length) throw tradeError("providerNoCurrencies");
+  if (!Array.isArray(currencies)) throw tradeError("provider");
   const rows = currencies.map((c, index) => {
     const definition = structuredClone(c.data?.uuid ?? c.data?.path ?? c.path ?? c.data?.item);
     if (definition && typeof definition === "object") { delete definition._id; delete definition._stats; }

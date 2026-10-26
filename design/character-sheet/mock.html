@@ -1233,6 +1233,17 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-noslot-item { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface-2); color: var(--text); font: 11.5px var(--font-ui); cursor: pointer; }
 .cs-noslot-item .cs-tile { --tile: 22px; }
 .cs-figure.is-beast, .cs-figure.is-wagon, .cs-figure.is-ship, .cs-figure.is-airship { align-self: center; }
+/* Spells (#14): pact track, components, preparation warning, filters */
+.cs-slotlvl.is-pact { border-color: color-mix(in oklab, var(--school-nec, var(--arcane)) 45%, transparent); }
+.cs-slotlvl.is-pact .cs-slotpip { --gem: var(--school-nec, var(--arcane)); }
+.cs-runes .g.is-pact .cs-rune { background: color-mix(in oklab, var(--hp) 60%, var(--arcane)); }
+.cs-tag.is-comp { font: 600 10px var(--font-num); letter-spacing: 0.02em; }
+.cs-tag.is-comp[title] { text-decoration: underline dotted; text-underline-offset: 2px; }
+.cs-tag.is-always { color: var(--heal); background: color-mix(in oklab, var(--heal) 15%, transparent); }
+.cs-sec-meta.is-over { color: var(--hp); }
+.cs-prep-warn { display: inline-flex; align-items: center; gap: 5px; height: 26px; margin-top: 3px; padding: 0 10px; border-radius: 99px; background: color-mix(in oklab, var(--hp) 16%, var(--surface-2)); color: var(--hp); font-size: 11.5px; }
+.cs-prep-warn[hidden] { display: none; }
+.cs-spell-filters { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: var(--s2); }
 </style>
 </head>
 <body>
@@ -1245,6 +1256,7 @@ button.cs-stat:active { transform: scale(0.95); }
     <button type="button" data-role-set="observer" aria-pressed="false">Наблюдатель</button>
     <button type="button" data-role-set="gm" aria-pressed="false">Мастер</button>
   </div>
+  <label class="mock-xp" data-ui="mockPactPreview"><input type="checkbox" data-mock-pact> Пакт</label>
   <label class="mock-xp" data-ui="mockXpPreview">Опыт <input type="range" min="0" max="100" value="72" data-mock-xp aria-label="Прогресс к следующему уровню"></label>
 </div>
 
@@ -1397,6 +1409,7 @@ button.cs-stat:active { transform: scale(0.95); }
         </div>
       </div>
       <div class="cs-tools">
+        <span class="cs-prep-warn" data-ui="preparationWarning" hidden title="Предупреждение dnd5e о подготовке: подготовлено больше лимита класса"><svg class="cs-ico"><use href="#i-book"/></svg>Подготовка <b></b></span>
         <span class="cs-readonly-badge"><svg class="cs-ico"><use href="#i-lock"/></svg>Только просмотр</span>
         <div class="cs-menu-wrap">
           <button type="button" class="cs-ibtn" data-ui="sheetMenuButton" aria-haspopup="menu" aria-expanded="false" aria-label="Ещё" title="Ещё"><svg class="cs-ico"><use href="#i-dots"/></svg></button>
@@ -1482,6 +1495,7 @@ button.cs-stat:active { transform: scale(0.95); }
             <button type="button" data-view="icons" aria-label="Только иконки"><svg class="cs-ico"><use href="#i-tiles"/></svg></button>
           </div>
         </div>
+        <div class="cs-filters cs-spell-filters" data-ui="spellFilterChips"><button type="button" class="cs-chip" data-spell-filter="prepared" aria-pressed="false">Подготовленные</button><button type="button" class="cs-chip" data-spell-filter="ritual" aria-pressed="false">Ритуал</button><button type="button" class="cs-chip" data-spell-filter="conc" aria-pressed="false">Концентрация</button><button type="button" class="cs-chip" data-spell-filter="action" aria-pressed="false">Действие</button><button type="button" class="cs-chip" data-spell-filter="bonus" aria-pressed="false">Бонусное</button><button type="button" class="cs-chip" data-spell-filter="reaction" aria-pressed="false">Реакция</button></div>
         <div class="cs-slots" data-ui="slotTrack" data-slots></div>
         <div data-spells></div>
       </div>
@@ -1661,22 +1675,27 @@ button.cs-stat:active { transform: scale(0.95); }
 
   const SCHOOLS = { abj: "Ограждение", con: "Вызов", div: "Прорицание", enc: "Очарование", evo: "Воплощение", ill: "Иллюзия", nec: "Некромантия", trs: "Преобразование" };
   const spells = [
-    { id: "firebolt", name: "Огненный снаряд", lvl: 0, school: "evo", icon: "flame", act: "action", roll: "+7 · 2к10 огонь", tags: ["1 действие", "120 фт"], desc: "Дальнобойная атака заклинанием, 2к10 урона огнём." },
-    { id: "light", name: "Свет", lvl: 0, school: "evo", icon: "spark", tags: ["1 действие", "Касание"], desc: "Предмет испускает яркий свет в радиусе 20 фт." },
-    { id: "hand", name: "Волшебная рука", lvl: 0, school: "con", icon: "hand", tags: ["1 действие", "30 фт"], desc: "Призрачная рука переносит до 10 фунтов." },
-    { id: "presti", name: "Фокусы", lvl: 0, school: "trs", icon: "spark", tags: ["1 действие", "10 фт"], desc: "Небольшой магический трюк." },
-    { id: "missile", prep: true, name: "Волшебная стрела", lvl: 1, school: "evo", icon: "bolt", act: "action", roll: "3 × 1к4 + 1 силовым", tags: ["1 действие", "120 фт"], desc: "Три дротика по 1к4 + 1 урона силовым полем." },
-    { id: "shield", prep: true, name: "Щит", lvl: 1, school: "abj", icon: "shield", act: "reaction", roll: "+5 к КД до хода", tags: ["Реакция", "На себя"], desc: "+5 к КД до начала вашего следующего хода." },
-    { id: "armor", prep: true, name: "Доспехи мага", lvl: 1, school: "abj", icon: "armor", tags: ["1 действие", "8 часов"], desc: "КД цели становится 13 + модификатор Ловкости." },
-    { id: "detect", prep: true, name: "Обнаружение магии", lvl: 1, school: "div", icon: "eye", conc: true, ritual: true, tags: ["1 действие", "30 фт"], desc: "Вы чувствуете присутствие магии в радиусе 30 фт." },
-    { id: "familiar", name: "Поиск фамильяра", lvl: 1, school: "con", icon: "eye", ritual: true, tags: ["1 час", "10 фт"], desc: "Вы призываете духа, который принимает облик животного-фамильяра." },
-    { id: "misty", prep: true, name: "Туманный шаг", lvl: 2, school: "con", icon: "cloak", act: "bonus", roll: "Телепорт 30 фт", tags: ["Бонусное", "30 фт"], desc: "Вы телепортируетесь на 30 фт в видимое место." },
-    { id: "web", prep: true, name: "Паутина", lvl: 2, school: "con", icon: "rope", conc: true, tags: ["1 действие", "60 фт"], desc: "Куб 20 фт заполняется липкой паутиной." },
-    { id: "hold", name: "Удержание личности", lvl: 2, school: "enc", icon: "hand", conc: true, tags: ["1 действие", "60 фт"], desc: "Гуманоид должен преуспеть в спасброске Мудрости или стать парализованным." },
-    { id: "fireball", prep: true, name: "Огненный шар", lvl: 3, school: "evo", icon: "flame", act: "action", roll: "Сл 15 Лов · 8к6", tags: ["1 действие", "150 фт"], desc: "Сфера радиусом 20 фт, 8к6 урона огнём, спасбросок Ловкости." },
-    { id: "counter", prep: true, name: "Контрзаклинание", lvl: 3, school: "abj", icon: "close", tags: ["Реакция", "60 фт"], desc: "Прерывает сотворение заклинания 3 круга или ниже." },
-    { id: "fly", name: "Полёт", lvl: 3, school: "trs", icon: "cloak", conc: true, tags: ["1 действие", "Касание"], desc: "Цель получает скорость полёта 60 фт." }
+    { id: "firebolt", comp: "В, С", mat: "", name: "Огненный снаряд", lvl: 0, school: "evo", icon: "flame", act: "action", roll: "+7 · 2к10 огонь", tags: ["1 действие", "120 фт"], desc: "Дальнобойная атака заклинанием, 2к10 урона огнём." },
+    { id: "light", comp: "В, М", mat: "светлячок или фосфоресцирующий мох", name: "Свет", lvl: 0, school: "evo", icon: "spark", tags: ["1 действие", "Касание"], desc: "Предмет испускает яркий свет в радиусе 20 фт." },
+    { id: "hand", comp: "В, С", mat: "", name: "Волшебная рука", lvl: 0, school: "con", icon: "hand", tags: ["1 действие", "30 фт"], desc: "Призрачная рука переносит до 10 фунтов." },
+    { id: "presti", comp: "В, С", mat: "", name: "Фокусы", lvl: 0, school: "trs", icon: "spark", tags: ["1 действие", "10 фт"], desc: "Небольшой магический трюк." },
+    { id: "missile", comp: "В, С", mat: "", prep: true, name: "Волшебная стрела", lvl: 1, school: "evo", icon: "bolt", act: "action", roll: "3 × 1к4 + 1 силовым", tags: ["1 действие", "120 фт"], desc: "Три дротика по 1к4 + 1 урона силовым полем." },
+    { id: "shield", comp: "В, С", mat: "", prep: true, name: "Щит", lvl: 1, school: "abj", icon: "shield", act: "reaction", roll: "+5 к КД до хода", tags: ["Реакция", "На себя"], desc: "+5 к КД до начала вашего следующего хода." },
+    { id: "armor", comp: "В, С, М", mat: "кусок выделанной кожи", prep: true, name: "Доспехи мага", lvl: 1, school: "abj", icon: "armor", tags: ["1 действие", "8 часов"], desc: "КД цели становится 13 + модификатор Ловкости." },
+    { id: "detect", comp: "В, С", mat: "", prep: true, name: "Обнаружение магии", lvl: 1, school: "div", icon: "eye", conc: true, ritual: true, tags: ["1 действие", "30 фт"], desc: "Вы чувствуете присутствие магии в радиусе 30 фт." },
+    { id: "familiar", comp: "В, С, М", mat: "уголь, ладан и травы на 10 зм, расходуются", name: "Поиск фамильяра", lvl: 1, school: "con", icon: "eye", ritual: true, tags: ["1 час", "10 фт"], desc: "Вы призываете духа, который принимает облик животного-фамильяра." },
+    { id: "misty", comp: "В", mat: "", prep: true, name: "Туманный шаг", lvl: 2, school: "con", icon: "cloak", act: "bonus", roll: "Телепорт 30 фт", tags: ["Бонусное", "30 фт"], desc: "Вы телепортируетесь на 30 фт в видимое место." },
+    { id: "web", comp: "В, С, М", mat: "кусок паутины", prep: true, name: "Паутина", lvl: 2, school: "con", icon: "rope", conc: true, tags: ["1 действие", "60 фт"], desc: "Куб 20 фт заполняется липкой паутиной." },
+    { id: "hold", comp: "В, С, М", mat: "маленький прямой кусок железа", name: "Удержание личности", lvl: 2, school: "enc", icon: "hand", conc: true, tags: ["1 действие", "60 фт"], desc: "Гуманоид должен преуспеть в спасброске Мудрости или стать парализованным." },
+    { id: "fireball", comp: "В, С, М", mat: "шарик гуано летучей мыши и сера", prep: true, name: "Огненный шар", lvl: 3, school: "evo", icon: "flame", act: "action", roll: "Сл 15 Лов · 8к6", tags: ["1 действие", "150 фт"], desc: "Сфера радиусом 20 фт, 8к6 урона огнём, спасбросок Ловкости." },
+    { id: "counter", comp: "С", mat: "", prep: true, name: "Контрзаклинание", lvl: 3, school: "abj", icon: "close", tags: ["Реакция", "60 фт"], desc: "Прерывает сотворение заклинания 3 круга или ниже." },
+    { id: "fly", comp: "В, С, М", mat: "перо из крыла птицы", name: "Полёт", lvl: 3, school: "trs", icon: "cloak", conc: true, tags: ["1 действие", "Касание"], desc: "Цель получает скорость полёта 60 фт." }
   ];
+  // Innate spells from the species (high elf, 2024): once per long rest without a slot.
+  spells.push(
+    { id: "innDetect", method: "innate", uses: [1, 1], comp: "В, С", mat: "", name: "Обнаружение магии", lvl: 1, school: "div", icon: "eye", conc: true, tags: ["1 действие", "Высший эльф"], desc: "Врождённое: раз в день без ячейки." },
+    { id: "innMisty", method: "innate", uses: [1, 1], comp: "В", mat: "", name: "Туманный шаг", lvl: 2, school: "con", icon: "cloak", act: "bonus", tags: ["Бонусное", "Высший эльф"], desc: "Врождённое: раз в день без ячейки." }
+  );
   const features = [
     { id: "recovery", name: "Магическое восстановление", src: "Волшебник", icon: "book", uses: [1, 1], tags: ["Короткий отдых"], desc: "Раз в день после короткого отдыха восстановите ячейки суммарного круга до 3." },
     { id: "sculpt", name: "Скульптор заклинаний", src: "Волшебник", icon: "spark", tags: ["Воплощение"], desc: "Выбранные существа автоматически преуспевают в спасброске от вашего заклинания воплощения." },
@@ -1703,6 +1722,8 @@ button.cs-stat:active { transform: scale(0.95); }
     xp: { value: 20500, from: 14000, to: 23000, level: 6 },
     coins: { pp: 2, gp: 147, ep: 5, sp: 23, cp: 41 },
     sort: { items: "name" },
+    pact: null, // { lvl, v, max } for a warlock; the mock toggles it from the preview bar
+    spellFilter: new Set(),
     filter: { items: new Set() },
 
     trade: { status: "idle", partner: "torvin", mine: {}, myCoins: {}, theirs: [], theirCoins: {}, confirmed: [false, false] },
@@ -1839,19 +1860,20 @@ button.cs-stat:active { transform: scale(0.95); }
       const worn = eqSlot || S.noSlot.has(x.id);
       if (fitsHere(x).length || x.equippable) acts += `<button type="button" class="cs-ibtn cs-editonly ${worn ? "is-on" : ""}" data-ui="equipButton" data-equip="${x.id}" aria-pressed="${!!worn}" aria-label="${worn ? "Снять" : "Надеть"}" title="${worn ? "Снять" : "Надеть"}">${icon("hand")}</button>`;
     } else if (k === "spell") {
-      meta = [`${SCHOOLS[x.school]}`, ...x.tags.map((t) => `<span class="cs-tag">${t}</span>`), x.conc ? `<span class="cs-tag is-conc">К</span>` : "", x.ritual ? `<span class="cs-tag is-rit">Р</span>` : ""].join("");
-      if (x.lvl) acts += `<button type="button" class="cs-ibtn cs-editonly ${x.prep ? "is-on" : ""}" data-ui="prepareButton" data-prep="${x.id}" aria-pressed="${!!x.prep}" aria-label="${x.prep ? "Убрать из подготовленных" : "Подготовить"}" title="${x.prep ? "Убрать из подготовленных" : "Подготовить"}">${icon("book")}</button>`;
-      if (!x.lvl || x.prep || x.ritual) acts += `<button type="button" class="cs-ibtn cs-editonly" data-ui="castButton" data-cast="${x.id}" aria-label="${!x.lvl || x.prep ? "Сотворить" : "Сотворить ритуалом"}" title="${!x.lvl || x.prep ? "Сотворить" : "Сотворить ритуалом"}">${icon("spark")}</button>`;
+      meta = [`${SCHOOLS[x.school]}`, ...x.tags.map((t) => `<span class="cs-tag">${t}</span>`), x.comp ? `<span class="cs-tag is-comp" ${x.mat ? `title="М: ${x.mat}"` : ""}>${x.comp}</span>` : "", x.conc ? `<span class="cs-tag is-conc">К</span>` : "", x.ritual ? `<span class="cs-tag is-rit">Р</span>` : "", x.always ? `<span class="cs-tag is-always" title="Всегда подготовлено">Всегда</span>` : ""].join("");
+      if (x.uses) num = `<span class="cs-uses cs-editonly" data-ui="usesTrack">${Array.from({ length: x.uses[1] }, (_, i) => `<button type="button" class="${i >= x.uses[0] ? "is-spent" : ""}" data-use="${x.id}" data-i="${i}" aria-label="Использование ${i + 1}"></button>`).join("")}</span>`;
+      if (x.lvl && !x.method && !x.always) acts += `<button type="button" class="cs-ibtn cs-editonly ${x.prep ? "is-on" : ""}" data-ui="prepareButton" data-prep="${x.id}" aria-pressed="${!!x.prep}" aria-label="${x.prep ? "Убрать из подготовленных" : "Подготовить"}" title="${x.prep ? "Убрать из подготовленных" : "Подготовить"}">${icon("book")}</button>`;
+      if (castable(x)) { const ritualOnly = x.lvl && !x.prep && !x.always && !x.method; acts += `<button type="button" class="cs-ibtn cs-editonly" data-ui="castButton" data-cast="${x.id}" aria-label="${ritualOnly ? "Сотворить ритуалом" : "Сотворить"}" title="${ritualOnly ? "Сотворить ритуалом" : "Сотворить"}">${icon("spark")}</button>`; }
     } else {
       meta = x.tags.map((t) => `<span class="cs-tag">${t}</span>`).join("");
       if (x.uses) num = `<span class="cs-uses cs-editonly" data-ui="usesTrack">${Array.from({ length: x.uses[1] }, (_, i) => `<button type="button" class="${i >= x.uses[0] ? "is-spent" : ""}" data-use="${x.id}" data-i="${i}" aria-label="Использование ${i + 1}"></button>`).join("")}</span>`;
     }
     if (k === "item" && S.trade.status === "open" && (S.trade.mine[x.id] ?? 0) < x.qty) acts += `<button type="button" class="cs-ibtn cs-editonly" data-ui="offerButton" data-offer="${x.id}" aria-label="В обмен" title="В обмен">${icon("trade")}</button>`;
     acts += `<button type="button" class="cs-ibtn cs-editonly ${fav ? "is-on" : ""}" data-ui="favoriteButton" data-fav="${x.id}" aria-pressed="${fav}" aria-label="В избранное" title="В избранное">${icon("star")}</button>`;
-    acts += `<button type="button" class="cs-ibtn" data-ui="rowMenuButton" aria-label="Ещё" data-oos="Меню: просмотр, изменить, дублировать, удалить (item.deleteDialog), в чат (item.displayCard), идентифицировать — у неопознанных">${icon("dots")}</button>`;
+    acts += `<button type="button" class="cs-ibtn" data-ui="rowMenuButton" aria-label="Ещё" data-oos="${k === "spell" ? "Меню: просмотр, изменить, дублировать, удалить (item.deleteDialog), в чат (item.displayCard), создать свиток (Item5e.createScrollFromSpell)" : "Меню: просмотр, изменить, дублировать, удалить (item.deleteDialog), в чат (item.displayCard), идентифицировать — у неопознанных"}">${icon("dots")}</button>`;
     const lvl = k === "spell" && x.lvl ? `<span class="lvl">${x.lvl}</span>` : "";
     const draggable = k === "item" && canEdit() ? `draggable="true"` : "";
-    const unprepared = k === "spell" && x.lvl && !x.prep;
+    const unprepared = k === "spell" && x.lvl && !x.prep && !x.always && !x.method;
     return `<div class="cs-rowwrap" data-key="${sec}:${x.id}">
       <div class="cs-row ${S.selected === x.id ? "is-selected" : ""} ${eqSlot ? "is-equipped" : ""} ${unprepared ? "is-unprepared" : ""}" data-ui="${k}Row" data-row="${x.id}" ${draggable} title="${x.name}" tabindex="0">
         ${k === "item" ? `<button type="button" class="cs-tile-btn" data-ui="itemUseButton" data-use-item="${x.id}" aria-label="Использовать: ${x.name}" title="Использовать">${tile(x)}</button>` : tile(x)}${lvl}
@@ -1980,20 +2002,24 @@ button.cs-stat:active { transform: scale(0.95); }
     const noSlot = S.noSlot.size ? `<div class="cs-noslot" data-ui="slotlessStrip"><div class="cs-doll-sub">Без слота <b>${S.noSlot.size}</b></div><div class="cs-noslot-list">${[...S.noSlot].map((id) => `<button type="button" class="cs-noslot-item" data-noslot="${id}" title="${byId[id].name}">${tile(byId[id])}<span>${byId[id].name}</span><span class="cs-slot-x cs-editonly" data-unequip="${id}" role="button" aria-label="Снять: ${byId[id].name}">${icon("close")}</span></button>`).join("")}</div></div>` : "";
     $("[data-doll]").innerHTML = head + stage + extra + noSlot + (inGrid ? "" : attune);
   }
+  const PREP_FILTERS = { prepared: (x) => !x.lvl || x.prep || x.method, ritual: (x) => x.ritual, conc: (x) => x.conc, action: (x) => x.act === "action" || x.tags.includes("1 действие"), bonus: (x) => x.act === "bonus" || x.tags.includes("Бонусное"), reaction: (x) => x.act === "reaction" || x.tags.includes("Реакция") };
+  const spellShown = (x) => match(x, S.search.spells) && [...S.spellFilter].every((f) => PREP_FILTERS[f](x));
+  // A spell is castable when dnd5e can cast it now: cantrips, prepared, always prepared, innate, at will, pact, rituals.
+  const castable = (x) => !x.lvl || x.prep || x.always || x.method === "innate" || x.method === "atwill" || x.ritual;
   function renderSpells() {
-    const q = S.search.spells;
-    $("[data-slots]").innerHTML = Object.entries(S.slots).map(([lvl, [v, max]]) => `<div class="cs-slotlvl"><b>${lvl} КРУГ</b><div class="cs-slotpips">${Array.from({ length: max }, (_, i) => `<button type="button" class="cs-slotpip cs-editonly-dis ${i >= v ? "is-spent" : ""}" data-ui="slotPip" data-slot-lvl="${lvl}" data-i="${i}" aria-label="Ячейка ${lvl} круга ${i + 1}"></button>`).join("")}</div></div>`).join("");
-    const levels = [0, 1, 2, 3];
-    const prepared = spells.filter((s) => s.lvl && s.prep);
-    const shown = prepared.filter((s) => match(s, q)).sort((a, b) => a.lvl - b.lvl);
-    $("[data-spells]").innerHTML = section("prepared", "Подготовленные", shown, "spells", `<span class="cs-sec-meta ${prepared.length >= PREP_MAX ? "is-full" : ""}" data-ui="preparedCounter">${prepared.length} / ${PREP_MAX}</span>`)
+    const pips = (key, v, max) => Array.from({ length: max }, (_, i) => `<button type="button" class="cs-slotpip cs-editonly-dis ${i >= v ? "is-spent" : ""}" data-ui="slotPip" data-slot-lvl="${key}" data-i="${i}" aria-label="Ячейка ${key === "pact" ? "договора" : `${key} круга`} ${i + 1}"></button>`).join("");
+    $("[data-slots]").innerHTML = Object.entries(S.slots).map(([lvl, [v, max]]) => `<div class="cs-slotlvl"><b>${lvl} КРУГ</b><div class="cs-slotpips">${pips(lvl, v, max)}</div></div>`).join("")
+      + (S.pact ? `<div class="cs-slotlvl is-pact" data-ui="pactSlots"><b>ДОГОВОР · ${S.pact.lvl} КРУГ</b><div class="cs-slotpips">${pips("pact", S.pact.v, S.pact.max)}</div></div>` : "");
+    const book = spells.filter((s) => !s.method);
+    const prepared = book.filter((s) => s.lvl && s.prep);
+    const over = prepared.length > PREP_MAX;
+    $("[data-spells]").innerHTML = section("prepared", "Подготовленные", prepared.filter(spellShown).sort((a, b) => a.lvl - b.lvl), "spells", `<span class="cs-sec-meta ${over ? "is-over" : prepared.length === PREP_MAX ? "is-full" : ""}" data-ui="preparedCounter" title="${over ? "Подготовлено больше лимита класса: dnd5e предупреждает, но не запрещает" : "Лимит подготовки класса"}">${prepared.length} / ${PREP_MAX}</span>`)
       + `<div class="cs-divider" data-key="div-book">Книга заклинаний</div>`
-      + levels.map((l) => {
-      const list = spells.filter((s) => s.lvl === l && match(s, q));
-      const meta = l ? `<span class="cs-sec-meta">${S.slots[l][0]} / ${S.slots[l][1]}</span>` : `<span class="cs-sec-meta">без ячеек</span>`;
-      return section(`lvl${l}`, l ? `${l} круг` : "Заговоры", list, "spells", meta);
-    }).join("");
+      + [0, 1, 2, 3].map((l) => section(`lvl${l}`, l ? `${l} круг` : "Заговоры", book.filter((s) => s.lvl === l && spellShown(s)), "spells", l ? `<span class="cs-sec-meta">${S.slots[l][0]} / ${S.slots[l][1]}</span>` : `<span class="cs-sec-meta">без ячеек</span>`)).join("")
+      + [["innate", "Врождённые"], ["atwill", "По желанию"]].map(([m, title]) => { const list = spells.filter((s) => s.method === m); return list.length ? section(m, title, list.filter(spellShown), "spells", `<span class="cs-sec-meta">без ячеек</span>`) : ""; }).join("");
     $('[data-count="spells"]').textContent = spells.length;
+    $('[data-ui="preparationWarning"]').hidden = !over;
+    $('[data-ui="preparationWarning"] b').textContent = `${prepared.length} / ${PREP_MAX}`;
   }
   function renderFeatures() {
     const q = S.search.features;
@@ -2068,7 +2094,8 @@ button.cs-stat:active { transform: scale(0.95); }
     countTo($("[data-hd-val]"), S.hd);
     $("[data-rest-short]").textContent = S.hd ? `${S.hd} ${S.hd === 1 ? "кость" : S.hd < 5 ? "кости" : "костей"} хитов` : "Костей хитов нет";
     const sv = Object.values(S.slots).reduce((s, [v]) => s + v, 0);
-    $("[data-runes]").innerHTML = Object.values(S.slots).map(([v, max]) => `<span class="g">${Array.from({ length: max }, (_, i) => `<i class="cs-rune ${i >= v ? "is-spent" : ""}"></i>`).join("")}</span>`).join("");
+    $("[data-runes]").innerHTML = Object.values(S.slots).map(([v, max]) => `<span class="g">${Array.from({ length: max }, (_, i) => `<i class="cs-rune ${i >= v ? "is-spent" : ""}"></i>`).join("")}</span>`).join("")
+      + (S.pact ? `<span class="g is-pact" title="Магия договора">${Array.from({ length: S.pact.max }, (_, i) => `<i class="cs-rune ${i >= S.pact.v ? "is-spent" : ""}"></i>`).join("")}</span>` : "");
     countTo($("[data-sl-val]"), sv);
     const death = $('[data-ui="deathSaves"]');
     if (death.hidden !== (S.hp > 0)) flip($(".cs-rail"), "[data-flip]", () => { death.hidden = S.hp > 0; });
@@ -2304,43 +2331,50 @@ button.cs-stat:active { transform: scale(0.95); }
     if (!on) pulse($(`[data-fav-row="${id}"]`), "is-new");
     if (!on) $$(`[data-fav="${id}"]`).forEach((b) => burst(b, getComputedStyle(root).getPropertyValue("--warn").trim(), 8));
   }
+  // item.use(): dnd5e's usage dialog picks the slot, upcasting or a ritual; the mock imitates its default choice
+  // (the lowest free slot of the circle or higher, pact slots included) and reacts to what was spent.
   function cast(id) {
     if (!canEdit()) return;
     const sp = byId[id];
-    if (sp.lvl && !sp.prep && !sp.ritual) { pulse($(`[data-row="${id}"]`), "is-refused"); return; }
-    if (sp.lvl && sp.prep) {
-      const lvl = Object.keys(S.slots).map(Number).find((l) => l >= sp.lvl && S.slots[l][0] > 0);
-      if (!lvl) { pulse($(`[data-row="${id}"]`), "is-refused"); return; }
-      S.slots[lvl][0] -= 1;
+    if (!castable(sp)) { pulse($(`[data-row="${id}"]`), "is-refused"); return; }
+    const row = $(`[data-row="${id}"]`);
+    if (sp.method === "innate") {
+      if (!sp.uses[0]) { pulse(row, "is-refused"); chip(row, "Уже использовано: восстановится после продолжительного отдыха"); return; }
+      sp.uses[0] -= 1;
       renderSpells();
-      pulse($$(`[data-slot-lvl="${lvl}"]`)[S.slots[lvl][0]], "is-burst");
+    } else if (sp.lvl && !sp.always && !sp.prep && sp.ritual) {
+      chip(row, "Ритуал: +10 минут, без ячейки");
+    } else if (sp.lvl) {
+      const lvl = Object.keys(S.slots).map(Number).find((l) => l >= sp.lvl && S.slots[l][0] > 0);
+      const pact = S.pact && S.pact.lvl >= sp.lvl && S.pact.v > 0;
+      if (!lvl && !pact) { pulse(row, "is-refused"); chip(row, "dnd5e: нет свободных ячеек этого круга"); return; }
+      chip(row, "item.use(): диалог dnd5e — ячейка, повышение круга");
+      if (pact && (!lvl || lvl > S.pact.lvl)) { S.pact.v -= 1; renderSpells(); pulse($$('[data-slot-lvl="pact"]')[S.pact.v], "is-burst"); }
+      else { S.slots[lvl][0] -= 1; renderSpells(); pulse($$(`[data-slot-lvl="${lvl}"]`)[S.slots[lvl][0]], "is-burst"); }
     }
-    if (sp.conc) S.conc = id;
+    if (sp.conc) S.conc = sp.method ? spells.find((x) => x.name === sp.name && !x.method)?.id ?? id : id;
     renderVitals();
     applyRole();
-    pulse($(`[data-row="${id}"] .cs-tile`), "is-landed");
     const castTile = $(`[data-row="${id}"] .cs-tile`);
+    pulse(castTile, "is-landed");
     if (castTile) burst(castTile, toneOf(castTile), 12);
   }
   function togglePrepared(id) {
     if (!canEdit()) return;
     const sp = byId[id];
-    if (!sp.prep && spells.filter((s) => s.lvl && s.prep).length >= PREP_MAX) {
-      pulse($(`[data-ui="preparedCounter"]`), "is-refused");
-      $$(`[data-row="${id}"]`).forEach((r) => pulse(r, "is-refused"));
-      return;
-    }
     sp.prep = !sp.prep;
     rerender("spells", renderSpells);
     renderInspector(); applyRole();
     if (sp.prep) pulse($(`[data-section="prepared"] [data-row="${id}"] .cs-tile`), "is-landed");
+    if (spells.filter((s) => s.lvl && s.prep && !s.method).length > PREP_MAX) pulse($('[data-ui="preparedCounter"]'), "is-refused");
   }
   function longRest() {
     if (!canEdit()) return;
     S.hp = S.hpMax; S.temp = 0; S.hd = Math.min(6, S.hd + 3); S.conc = null; S.exh = Math.max(0, S.exh - 1); S.death = { ok: 0, bad: 0 };
     const refilled = [];
     for (const [l, v] of Object.entries(S.slots)) { for (let i = v[0]; i < v[1]; i++) refilled.push([l, i]); v[0] = v[1]; }
-    features.forEach((f) => { if (f.uses) f.uses[0] = f.uses[1]; });
+    [...features, ...spells].forEach((f) => { if (f.uses) f.uses[0] = f.uses[1]; });
+    if (S.pact) S.pact.v = S.pact.max;
     const apply = () => {
       renderSpells(); renderFeatures(); renderVitals(1); applyRole();
       refilled.forEach(([l, i], n) => { const pip = $$(`[data-slot-lvl="${l}"]`)[i]; if (pip) { pip.style.animationDelay = `${n * 70}ms`; pulse(pip, "is-refill"); } });
@@ -2476,8 +2510,18 @@ button.cs-stat:active { transform: scale(0.95); }
       if (T.confirmed[0]) setTimeout(() => { if (!T.confirmed[0] || T.status !== "open") return; T.confirmed[1] = true; renderTrade(); setTimeout(() => T.confirmed.every(Boolean) && T.status === "open" && settleTrade(), 700); }, motionOn() ? 900 : 0);
       return;
     }
-    if (t.matches("[data-slot-lvl]")) { if (!canEdit()) return; const l = t.dataset.slotLvl, i = Number(t.dataset.i); const v = S.slots[l]; v[0] = i < v[0] ? i : i + 1; renderSpells(); renderVitals(); applyRole(); pulse($$(`[data-slot-lvl="${l}"]`)[i], i < v[0] ? "is-refill" : "is-burst"); return; }
-    if (t.matches("[data-use]")) { if (!canEdit()) return; const f = byId[t.dataset.use], i = Number(t.dataset.i); f.uses[0] = i < f.uses[0] ? i : i + 1; renderFeatures(); applyRole(); return; }
+    if (t.matches("[data-slot-lvl]")) {
+      if (!canEdit()) return;
+      const l = t.dataset.slotLvl, i = Number(t.dataset.i);
+      if (l === "pact") S.pact.v = i < S.pact.v ? i : i + 1;
+      else { const v = S.slots[l]; v[0] = i < v[0] ? i : i + 1; }
+      renderSpells(); renderVitals(); applyRole();
+      const now = l === "pact" ? S.pact.v : S.slots[l][0];
+      pulse($$(`[data-slot-lvl="${l}"]`)[i], i < now ? "is-refill" : "is-burst");
+      return;
+    }
+    if (t.matches("[data-spell-filter]")) { const f = S.spellFilter, k = t.dataset.spellFilter; f.has(k) ? f.delete(k) : f.add(k); t.classList.toggle("is-on", f.has(k)); t.setAttribute("aria-pressed", f.has(k)); return rerender("spells", renderSpells); }
+    if (t.matches("[data-use]")) { if (!canEdit()) return; const f = byId[t.dataset.use], i = Number(t.dataset.i); f.uses[0] = i < f.uses[0] ? i : i + 1; renderFeatures(); renderSpells(); applyRole(); return; }
     if (t.matches(".cs-slot")) {
       const id = S.equipped[t.dataset.slot];
       if (id) return select(id);
@@ -2744,6 +2788,11 @@ button.cs-stat:active { transform: scale(0.95); }
     root.animate([{ opacity: 0, transform: "translateY(12px) scale(0.985)" }, { opacity: 1, transform: "none" }], { duration: 520, easing: SETTLE });
     cascade($$(".cs-rail > *").filter((e) => e.offsetParent));
   }
+  // mock-only: show a warlock's pact slots
+  document.querySelector("[data-mock-pact]").addEventListener("change", (e) => {
+    S.pact = e.target.checked ? { lvl: 2, v: 2, max: 2 } : null;
+    renderSpells(); renderVitals(); applyRole();
+  });
   document.querySelector("[data-mock-xp]").addEventListener("input", (e) => {
     S.xp.value = Math.round(S.xp.from + (S.xp.to - S.xp.from) * (Number(e.target.value) / 100));
     renderLevel();

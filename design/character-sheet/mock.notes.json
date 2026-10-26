@@ -1,0 +1,1231 @@
+{
+  "elements": {
+    "CharacterSheet": {
+      "behaviour": [
+        {
+          "text": "Replaces the dnd5e character sheet entirely: one window holds vitals, abilities, skills, equipment with the paperdoll, spells, features and notes.",
+          "source": "spec"
+        },
+        {
+          "text": "Opens instead of the dnd5e sheet for character actors; the dnd5e sheet stays reachable from the window menu.",
+          "source": "assumption"
+        },
+        {
+          "text": "Picks its layout from its own width, never the screen: under 420 px compact (rail only), 420–759 px narrow (rail becomes a sideways widget strip), 760–1319 px standard (rail + content), 1320 px and wider (rail + content + inspector).",
+          "source": "assumption"
+        },
+        {
+          "text": "When the layout changes, every block glides from its old place to its new one (FLIP, 420 ms settle curve) instead of jumping; blocks that appear fade and scale in from 92%.",
+          "source": "spec"
+        },
+        {
+          "text": "The window is resizable from its corner; the minimum is 300 × 520 px.",
+          "source": "assumption"
+        },
+        {
+          "text": "Observer sees the same window with every control that changes data hidden or disabled and a «Только просмотр» badge; Owner and GM can change everything.",
+          "source": "spec"
+        },
+        {
+          "text": "With motion off in settings or prefers-reduced-motion, every transition and animation is instant; nothing else changes.",
+          "source": "assumption"
+        },
+        {
+          "text": "Theme tokens live on this root element, never on :root.",
+          "source": "spec"
+        },
+        {
+          "text": "The GM gets no separate GM toolbar; GM-only controls live where they act (the HP bar and its steps, the doll preset).",
+          "source": "spec"
+        },
+        {
+          "text": "Controls answer the pointer: cards and buttons light up under the cursor, presses send a ripple from the pointer, buttons and slots lift on hover.",
+          "source": "spec"
+        },
+        {
+          "text": "Rows show an accent edge on hover; their tile lifts and a sheen sweeps across it.",
+          "source": "assumption"
+        },
+        {
+          "text": "Tabs preview their underline on hover.",
+          "source": "assumption"
+        },
+        {
+          "text": "Starring an entry and casting a spell throw sparks: amber for the star, the spell school colour for a cast.",
+          "source": "assumption"
+        },
+        {
+          "text": "All of these stop when motion is off or the system asks for reduced motion.",
+          "source": "assumption"
+        },
+        {
+          "text": "On open the window settles in from 12 px below and the rail blocks follow one after another.",
+          "source": "assumption"
+        },
+        {
+          "text": "Switching tabs and expanding a section bring their entries in as a short cascade, 18 ms apart, at most 24 entries.",
+          "source": "assumption"
+        },
+        {
+          "text": "A new accent flows through every colour over 600 ms; a theme change cross-fades the whole sheet.",
+          "source": "assumption"
+        },
+        {
+          "text": "Hovering an entry in the icons-only view, a filled doll slot or an attunement socket for 320 ms shows a card with its tile, name, rarity or circle and description.",
+          "source": "assumption"
+        },
+        {
+          "text": "Scrollbars are styled: slim rounded thumbs on a clear track, accent while hovered or dragged; the tab strip shows none.",
+          "source": "spec"
+        },
+        {
+          "text": "Once a panel is scrolled, the tab strip casts a soft shadow over it.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "sheetRail": {
+      "behaviour": [
+        {
+          "text": "Always shows HP, hit dice, spell slots, AC, initiative, speed, proficiency, inspiration, exhaustion, concentration and favorites; each block except HP can be hidden in settings.",
+          "source": "spec"
+        },
+        {
+          "text": "In the compact layout the rail is the whole window and also shows the portrait, name and an expand button.",
+          "source": "spec"
+        },
+        {
+          "text": "In the narrow layout the rail becomes one row of fixed-width widgets (HP, hit dice and slots, rest, stats, spellcasting, effects, chips) that scrolls sideways and snaps; favorites and the portrait hide.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "hpBar": {
+      "behaviour": [
+        {
+          "text": "The owner and the GM change HP; observers cannot. Click turns the number into a field: −7 deals damage, +5 heals, a bare number sets HP, в8 grants temporary HP; Enter applies, Esc or leaving the field cancels. Damage and healing go through actor.applyDamage, temporary HP through actor.applyTempHP (the higher value stays). The number counts to its new value over 420 ms.",
+          "source": "spec"
+        },
+        {
+          "text": "While typing, the result is drawn on the bar as a hatched band: red for damage, after temporary HP absorb their share, green for healing. An entry that cannot be read outlines the field red; a hint under the bar lists the entry forms.",
+          "source": "spec"
+        },
+        {
+          "text": "Right click opens the field already holding в, for temporary HP.",
+          "source": "spec"
+        },
+        {
+          "text": "On damage the red fill shrinks at once while a pale ghost of the old value stays for 380 ms, then drains to the new value over 700 ms; the bar shakes once.",
+          "source": "spec"
+        },
+        {
+          "text": "On a heal the fill grows over 420 ms and the bar gives off a green glow; the ghost follows at once.",
+          "source": "spec"
+        },
+        {
+          "text": "Damage takes temporary HP first; temporary HP shows as a striped blue band over the end of the fill and as +N beside the number.",
+          "source": "spec"
+        },
+        {
+          "text": "At 0 HP the death saves block appears under the bar; healing above 0 hides it and clears both counters.",
+          "source": "spec"
+        },
+        {
+          "text": "Under the bar a line shows max HP, temporary HP and the missing amount.",
+          "source": "spec"
+        },
+        {
+          "text": "Rests still restore HP through the dnd5e rest rules, whoever starts the rest.",
+          "source": "spec"
+        },
+        {
+          "text": "The HP bar is always alive: a highlight flows along the fill and the fill beats like a heart.",
+          "source": "spec"
+        },
+        {
+          "text": "The heartbeat quickens as HP falls: 2.8 s above half, 1.7 s at half or below, 0.85 s at a quarter or below.",
+          "source": "spec"
+        },
+        {
+          "text": "Each HP change floats a number over the value: red −N for damage, green +N for healing, blue −N врем. for temporary HP lost first.",
+          "source": "spec"
+        },
+        {
+          "text": "At minimum HP the sheet reacts: from a quarter of max HP the window edge glows red in time with the heartbeat and the number turns red.",
+          "source": "spec"
+        },
+        {
+          "text": "At 0 HP the red edge stays lit, the content desaturates and darkens, the label reads «Без сознания» and the death saves pulse; healing above 0 flashes the HP card green and restores colour.",
+          "source": "spec"
+        },
+        {
+          "text": "Temporary HP get their own effects, as HP do.",
+          "source": "spec"
+        },
+        {
+          "text": "Temporary HP read as an energy shield: the band's stripes keep running and the band glows blue; a shield icon sits beside the number.",
+          "source": "spec"
+        },
+        {
+          "text": "While temporary HP last, the HP card hums with a slow blue aura, on its own calm rhythm rather than the heartbeat.",
+          "source": "spec"
+        },
+        {
+          "text": "Gaining temporary HP sweeps a blue wave over the card, floats +N врем. and throws a few glints from the band.",
+          "source": "spec"
+        },
+        {
+          "text": "Damage absorbed by temporary HP flashes the band and throws blue shards; losing the last temporary HP breaks the shield: a larger burst of shards, a flash and the aura fades.",
+          "source": "spec"
+        },
+        {
+          "text": "Looping effects here (the flowing highlight, the heartbeat, the temporary HP aura) run only at the «Все» motion level and only in the front actor window; reactive effects (ghost, glow, shards, floating numbers) run at «Все» and «Сдержанно».",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "hitDiceTrack": {
+      "behaviour": [
+        {
+          "text": "Shows one die per hit die. Click rolls a die through dnd5e (actor.rollHitDie): the die spins, the roll shows beside it (к6: 3 + 2) and HP rise by the result. No die is given back by hand: rests restore them. With no dice left the track shakes.",
+          "source": "spec"
+        },
+        {
+          "text": "Rests return hit dice as dnd5e decides (actor.initiateRest); the track only shows the result, the returned dice popping back in.",
+          "source": "spec"
+        },
+        {
+          "text": "Shows the roll formula: hit die plus Constitution modifier.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "slotRunes": {
+      "behaviour": [
+        {
+          "text": "Shows one rune per spell slot, grouped by circle; spent runes are hollow.",
+          "source": "spec"
+        },
+        {
+          "text": "Click opens the Spells tab.",
+          "source": "spec"
+        },
+        {
+          "text": "Intact runes and slot gems glint one at a time, at random, about every 2 seconds.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "deathSaves": {
+      "behaviour": [
+        {
+          "text": "Visible only at 0 HP; click the n-th mark to set that many successes or failures, click the last set mark to remove it.",
+          "source": "spec"
+        },
+        {
+          "text": "A «Бросить спасбросок от смерти» button rolls through dnd5e (actor.rollDeathSave): 10 or more is a success, less a failure, 1 counts two failures, 20 brings the character back with 1 HP. The result shows beside the button; after three successes or three failures the button hides.",
+          "source": "spec"
+        },
+        {
+          "text": "Marking a success throws green sparks; marking a failure throws red sparks and shakes the block.",
+          "source": "spec"
+        },
+        {
+          "text": "Three successes turn the block green with «Стабилизирована»; three failures dim it with «Погибла».",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "vitalStat": {
+      "behaviour": [
+        {
+          "text": "Shows AC, initiative, speed and proficiency bonus as read-only values; initiative rolls on click.",
+          "source": "spec"
+        },
+        {
+          "text": "AC shows its breakdown (base, Dexterity, items, effects) on hover.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "inspirationToggle": {
+      "behaviour": [
+        {
+          "text": "Click toggles heroic inspiration; turning it on pops the chip once.",
+          "source": "spec"
+        },
+        {
+          "text": "While on, the chip glows gold, a sheen passes across it every few seconds and its star turns slowly; turning it on throws golden sparks.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "exhaustionTrack": {
+      "behaviour": [
+        {
+          "text": "Click adds one exhaustion level, right click removes one. The number of pips comes from dnd5e's exhaustion config (six by default); lit pips are the current level.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "concentrationBadge": {
+      "behaviour": [
+        {
+          "text": "Appears with a pop when a concentration spell is cast and names the spell. Click on the name rolls a concentration save through dnd5e (actor.rollConcentration) and shows the roll beside it; the cross ends concentration (actor.endConcentration) and the badge leaves.",
+          "source": "spec"
+        },
+        {
+          "text": "Casting another concentration spell replaces the named spell.",
+          "source": "spec"
+        },
+        {
+          "text": "While concentrating, the eye in the badge blinks now and then.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "favoritesList": {
+      "behaviour": [
+        {
+          "text": "Lists starred items, spells and features in the order they were starred; a new favorite slides in with a pop, a removed one leaves and the rest close the gap.",
+          "source": "assumption"
+        },
+        {
+          "text": "Click a favorite opens its tab and selects it.",
+          "source": "assumption"
+        },
+        {
+          "text": "When empty, shows a hint to star items and spells.",
+          "source": "assumption"
+        },
+        {
+          "text": "Groups favorites by action cost: Действие, Бонусное действие, Реакция, Прочее; empty groups hide.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "favoriteRow": {
+      "behaviour": [
+        {
+          "text": "Shows the tile, name and a short meta: quantity for items, circle for spells.",
+          "source": "assumption"
+        },
+        {
+          "text": "Shows the attack bonus or save DC and damage under the name, and on the right the slot circle as runes for spells or the quantity for items.",
+          "source": "assumption"
+        },
+        {
+          "text": "On hover a quick action slides in on the right: cast for a spell, use for an item.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "sheetHeader": {
+      "behaviour": [
+        {
+          "text": "Shows the level orb, name, class, subclass, species and background; the six abilities sit under it. There is no separate XP bar.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "abilityTile": {
+      "behaviour": [
+        {
+          "text": "Click rolls an ability check, Shift+click rolls the saving throw; a filled dot marks saving throw proficiency.",
+          "source": "assumption"
+        },
+        {
+          "text": "On hover the score slides away and the saving throw bonus («Спас +N») slides in.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "restButton": {
+      "behaviour": [
+        {
+          "text": "Short rest opens the dnd5e short rest dialog.",
+          "source": "spec"
+        },
+        {
+          "text": "Long rest goes through dnd5e (actor.initiateRest), which decides what returns; the sheet animates the result: restored runes and pips pop back in one after another, 70 ms apart.",
+          "source": "spec"
+        },
+        {
+          "text": "A long rest first lets night fall over the sheet, then a warm dawn, and only then do the resources refill.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "settingsButton": {
+      "behaviour": [
+        {
+          "text": "Opens the settings drawer from the right over a scrim; Escape or the scrim closes it.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "collapseButton": {
+      "behaviour": [
+        {
+          "text": "In the header it shrinks the window to 320 px, which switches to the compact layout; in the compact rail it expands back to the previous width, at least 1040 px.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "sheetTabs": {
+      "behaviour": [
+        {
+          "text": "Tabs: Обзор, Снаряжение, Заклинания, Умения, Заметки; Обзор, Умения and Заметки can be hidden in settings.",
+          "source": "assumption"
+        },
+        {
+          "text": "The underline slides to the chosen tab over 420 ms; the new panel fades in from 8 px below.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tabButton": {
+      "behaviour": [
+        {
+          "text": "Click shows its panel; counts show the number of items, spells or features.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "overviewTab": {
+      "behaviour": [
+        {
+          "text": "Shows skills, saving throws, passive senses and proficiencies as cards that wrap by width.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "skillsCard": {
+      "behaviour": [
+        {
+          "text": "Lists the 18 skills with ability, proficiency mark (hollow, filled, ringed for expertise) and total bonus.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "skillRow": {
+      "behaviour": [
+        {
+          "text": "Click rolls the skill check.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "savesCard": {
+      "behaviour": [
+        {
+          "text": "Lists the six saving throws with proficiency and total bonus.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "saveRow": {
+      "behaviour": [
+        {
+          "text": "Click rolls the saving throw.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "sensesCard": {
+      "behaviour": [
+        {
+          "text": "Read-only: passive scores, senses, proficiencies and languages.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "equipmentTab": {
+      "behaviour": [
+        {
+          "text": "Shows the purse, load, the paperdoll and the inventory grouped by type; the doll sits left of the inventory when the tab is at least 700 px wide, otherwise centred above it.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "inventoryToolbar": {
+      "behaviour": [
+        {
+          "text": "Holds search, the view switch and the doll toggle.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "searchField": {
+      "behaviour": [
+        {
+          "text": "Filters the tab's lists by name as you type; empty sections say nothing was found.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "viewModeSwitch": {
+      "behaviour": [
+        {
+          "text": "Switches the tab's lists between list, cards and icons only; each tab remembers its own choice.",
+          "source": "spec"
+        },
+        {
+          "text": "Entries glide from their old place to the new one when the view changes.",
+          "source": "spec"
+        },
+        {
+          "text": "Icons-only shows only tiles; the name shows on hover, a dot marks equipped items and a number marks a spell's circle.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "dollToggle": {
+      "behaviour": [
+        {
+          "text": "Shows or hides the paperdoll; the inventory glides to fill the space.",
+          "source": "assumption"
+        },
+        {
+          "text": "Uses a figure icon; the hand icon is reserved for equip.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "currencyBar": {
+      "behaviour": [
+        {
+          "text": "Shows each coin type with its amount; editing amounts comes later.",
+          "source": "assumption"
+        },
+        {
+          "text": "When a total changes it counts to the new value and its coin flips once.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "encumbranceMeter": {
+      "behaviour": [
+        {
+          "text": "Shows carried weight against capacity as text and a bar.",
+          "source": "assumption"
+        },
+        {
+          "text": "The bar is green up to 5 × Strength, amber above it and red above 10 × Strength; crossing a threshold shakes it once.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "paperdoll": {
+      "behaviour": [
+        {
+          "text": "Shows the equipment slots around a figure: head, neck, cloak, armor, main hand on the left; hands, waist, feet, ring, off hand on the right; attunement under it.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "dollSlot": {
+      "behaviour": [
+        {
+          "text": "A filled slot shows the item's tile; click it to unequip and the tile flies back to its row.",
+          "source": "assumption"
+        },
+        {
+          "text": "An empty slot equips the first unequipped item that fits; with none it shakes.",
+          "source": "assumption"
+        },
+        {
+          "text": "While an item is dragged, the slots it fits glow; dropping it on one equips it, dropping it on a slot it does not fit shakes the slot.",
+          "source": "assumption"
+        },
+        {
+          "text": "A landed item bounces the slot once.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "attunementTrack": {
+      "behaviour": [
+        {
+          "text": "Up to three sockets sit centred under the figure between the main hand and off hand slots, with «Настройка N / max» under them.",
+          "source": "spec"
+        },
+        {
+          "text": "The attunement limit can be raised (up to 10); with more than three sockets the track moves to its own full-width strip under the doll.",
+          "source": "spec"
+        },
+        {
+          "text": "In the strip, sockets form rows of at most five, centred.",
+          "source": "assumption"
+        },
+        {
+          "text": "A filled socket shows the attuned item; an empty one is a dashed ring; equipping past the limit is refused with a shake.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "listSection": {
+      "behaviour": [
+        {
+          "text": "Click the header to collapse or expand; the body animates its height.",
+          "source": "assumption"
+        },
+        {
+          "text": "Dropping an item on an inventory section moves it to that group; the section glows while it is the drop target.",
+          "source": "assumption"
+        },
+        {
+          "text": "In list view each row keeps its tags on one line and fades them out at the right edge, so rows keep one height.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "sectionHeader": {
+      "behaviour": [
+        {
+          "text": "Enter or Space toggles it from the keyboard.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "addItemButton": {
+      "behaviour": [
+        {
+          "text": "Creates a new item of the section's type.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "itemRow": {
+      "behaviour": [
+        {
+          "text": "Click selects the row: in the wide layout the inspector shows it, otherwise its description opens under the row; clicking again deselects.",
+          "source": "assumption"
+        },
+        {
+          "text": "Owner and GM can drag a row to a section or a doll slot.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "itemDetail": {
+      "behaviour": [
+        {
+          "text": "Opens and closes with a height animation; never shown in the wide layout.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "equipButton": {
+      "behaviour": [
+        {
+          "text": "Equips the item to its first free slot and the tile flies to the doll, or unequips it and the tile flies back.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "favoriteButton": {
+      "behaviour": [
+        {
+          "text": "Stars or unstars the entry; the rail list updates with a glide.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "rowMenuButton": {
+      "behaviour": [
+        {
+          "text": "Opens the entry's menu: edit, duplicate, delete, send to chat.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "spellsTab": {
+      "behaviour": [
+        {
+          "text": "Shows slot tracks per circle, then a Подготовленные section, then the spellbook (Книга заклинаний) grouped by circle with cantrips first.",
+          "source": "spec"
+        },
+        {
+          "text": "Подготовленные lists every prepared spell of circle 1 and higher, sorted by circle; cantrips are always ready and never listed there.",
+          "source": "assumption"
+        },
+        {
+          "text": "In the spellbook, unprepared spells are dimmed to 50%.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "slotTrack": {
+      "behaviour": [
+        {
+          "text": "One row of slot gems per circle.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "slotPip": {
+      "behaviour": [
+        {
+          "text": "Click a lit gem to spend slots down to it (it bursts), click a hollow one to restore up to it (it pops in).",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "spellRow": {
+      "behaviour": [
+        {
+          "text": "Shows school, casting time, range and marks for concentration (К) and ritual (Р).",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "castButton": {
+      "behaviour": [
+        {
+          "text": "Shown only for cantrips, prepared spells and ritual spells; an unprepared ritual is cast as a ritual without a slot.",
+          "source": "assumption"
+        },
+        {
+          "text": "Casts the spell through its dnd5e activity; a levelled spell spends the lowest free slot of its circle or higher and that gem bursts.",
+          "source": "assumption"
+        },
+        {
+          "text": "With no free slot the row shakes and nothing is cast.",
+          "source": "assumption"
+        },
+        {
+          "text": "A concentration spell sets the concentration badge.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "featuresTab": {
+      "behaviour": [
+        {
+          "text": "Groups features by source: class, species, background.",
+          "source": "assumption"
+        },
+        {
+          "text": "Rows do not repeat the source their section is named after; tiles are tinted by source: class, species, background.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "featureRow": {
+      "behaviour": [
+        {
+          "text": "Shows the source, tags and uses.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "usesTrack": {
+      "behaviour": [
+        {
+          "text": "Click a lit pip to spend uses down to it, a hollow one to restore up to it.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "notesTab": {
+      "behaviour": [
+        {
+          "text": "One free-text field for the player's notes.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "notesField": {
+      "behaviour": [
+        {
+          "text": "Saves on blur.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "inspectorPanel": {
+      "behaviour": [
+        {
+          "text": "Exists only in the wide layout; shows the selected entry's tile, name, rarity or circle, tags, description and its main action.",
+          "source": "assumption"
+        },
+        {
+          "text": "With nothing selected it shows a hint.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "settingsDrawer": {
+      "behaviour": [
+        {
+          "text": "Settings are per user and apply at once: theme, accent, density, motion, rail blocks, visible tabs.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "themeSwitch": {
+      "behaviour": [
+        {
+          "text": "Ночь (dark) or Пергамент (light).",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "accentSwatch": {
+      "behaviour": [
+        {
+          "text": "Six accents: латунь, угли, аркана, лес, иней, роза; the choice recolours every accent token.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "densitySwitch": {
+      "behaviour": [
+        {
+          "text": "Свободно: 44 px rows, 36 px tiles; Плотно: 34 px rows, 28 px tiles.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "motionSwitch": {
+      "behaviour": [
+        {
+          "text": "Все or Выключены.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "railWidgetToggle": {
+      "behaviour": [
+        {
+          "text": "Hides or shows each rail block; the rest glide to close the gap.",
+          "source": "assumption"
+        },
+        {
+          "text": "The rest buttons can be hidden too.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "tabVisibilityToggle": {
+      "behaviour": [
+        {
+          "text": "Hides or shows a tab; hiding the open tab switches to Снаряжение.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "mockRolePreview": {
+      "behaviour": [
+        {
+          "text": "Mock only: switches the preview between owner, observer and GM.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "hpStepper": {
+      "behaviour": [
+        {
+          "text": "Buttons −5, −1, +1, +5 apply that damage or healing with the same animations as the bar; only the GM sees them, players and observers never do.",
+          "source": "spec"
+        },
+        {
+          "text": "The GM's shield button sets temporary HP to 8 when that is higher; temporary HP never stack, the higher value stays. The real button lets the GM enter the amount.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "spellcastingStrip": {
+      "behaviour": [
+        {
+          "text": "Shows the spellcasting ability, spell save DC, spell attack bonus and passive Perception; hidden for actors without spellcasting.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "effectsList": {
+      "behaviour": [
+        {
+          "text": "Lists active effects and conditions with a short effect line and the time left; concentration appears first while it lasts.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "effectRow": {
+      "behaviour": [
+        {
+          "text": "Click opens the effect; right click ends or removes it.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "addEffectButton": {
+      "behaviour": [
+        {
+          "text": "Opens the dnd5e conditions list to add a condition.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "preparedCounter": {
+      "behaviour": [
+        {
+          "text": "Shows prepared spells against the class limit (wizard 6: 10) and turns amber at the limit.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "prepareButton": {
+      "behaviour": [
+        {
+          "text": "Toggles whether the spell is prepared; the row glides into or out of Подготовленные.",
+          "source": "assumption"
+        },
+        {
+          "text": "At the limit, preparing another spell is refused: the counter and the row shake and nothing changes.",
+          "source": "assumption"
+        },
+        {
+          "text": "Spells the class always has prepared show no toggle.",
+          "source": "assumption"
+        },
+        {
+          "text": "Toggles on a row show their on state by colour only, without a filled box.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "attunementSocket": {
+      "behaviour": [
+        {
+          "text": "Click a filled socket to select its item (inspector in the wide layout, inline details otherwise).",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "tradeButton": {
+      "behaviour": [
+        {
+          "text": "Opens the trade panel; the built-in trading between players stays.",
+          "source": "spec"
+        },
+        {
+          "text": "Shown to owners only; observers never see it, and the GM sees it only when a trade waits for GM recovery.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "tradePanel": {
+      "behaviour": [
+        {
+          "text": "Keeps the current trading rules: requests go through user flags, one active GM coordinates, rechecks ownership and confirmations and moves the assets; the snapshot lives in a private journal.",
+          "source": "spec"
+        },
+        {
+          "text": "Opens beside the inventory without a scrim, so items can be added while it is open.",
+          "source": "assumption"
+        },
+        {
+          "text": "One trade at a time per actor; the partner is another player's character whose owner is online.",
+          "source": "assumption"
+        },
+        {
+          "text": "In the standard and wide layouts the content steps aside while the panel is open, so the offer buttons on rows stay reachable.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "tradePartnerSelect": {
+      "behaviour": [
+        {
+          "text": "Lists other players' characters as «Персонаж · игрок».",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "tradeStartButton": {
+      "behaviour": [
+        {
+          "text": "Sends the trade request; the panel switches to the two offers.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "tradeStatus": {
+      "behaviour": [
+        {
+          "text": "Says what the trade waits for: the partner's offer, confirmations, or the GM carrying it out; a reset of confirmations shakes it.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "myOffer": {
+      "behaviour": [
+        {
+          "text": "Changing either offer clears both confirmations.",
+          "source": "spec"
+        },
+        {
+          "text": "Lists offered items with quantity steppers and four coin fields capped by the purse; partial stacks are allowed.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "partnerOffer": {
+      "behaviour": [
+        {
+          "text": "Read-only view of the partner's items and coins with their confirmation state.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "offerItem": {
+      "behaviour": [
+        {
+          "text": "− and + change the offered quantity between 0 and the stack; 0 removes it.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "offerButton": {
+      "behaviour": [
+        {
+          "text": "Shown on inventory rows while a trade is open; adds one of the item to the offer and the tile flies into the panel.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "tradeConfirmButton": {
+      "behaviour": [
+        {
+          "text": "Both participants must confirm, a gift included; then the GM carries out the transfer.",
+          "source": "spec"
+        },
+        {
+          "text": "Toggles your confirmation; an empty trade cannot be confirmed.",
+          "source": "assumption"
+        },
+        {
+          "text": "Received items arrive unequipped, unattuned and outside any container.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tradeCancelButton": {
+      "behaviour": [
+        {
+          "text": "Cancels the trade for both sides.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "dollHeader": {
+      "behaviour": [
+        {
+          "text": "Shows «Кукла» and the actor's preset name.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "dollPresetSelect": {
+      "behaviour": [
+        {
+          "text": "The GM picks a doll preset per actor; presets can have many more slots than the standard one.",
+          "source": "spec"
+        },
+        {
+          "text": "Visible to the GM only; players see the preset name. Switching presets drops equipment from slots the new preset lacks.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "dollPresetEdit": {
+      "behaviour": [
+        {
+          "text": "Opens the existing preset editor, where the GM builds custom presets.",
+          "source": "spec"
+        },
+        {
+          "text": "GM only.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "extraSlots": {
+      "behaviour": [
+        {
+          "text": "Slots that do not fit beside the figure overflow into this wrapping grid under it.",
+          "source": "spec"
+        },
+        {
+          "text": "Ten slots sit beside the figure; the rest go here at 52 px, as many per row as fit.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "levelOrb": {
+      "behaviour": [
+        {
+          "text": "Shows the character level; the XP progress to the next level fills the orb as a liquid whose surface keeps moving.",
+          "source": "spec"
+        },
+        {
+          "text": "The closer the next level, the stronger the orb glows.",
+          "source": "spec"
+        },
+        {
+          "text": "Progress is (XP − this level's threshold) / (next threshold − this level's threshold), from the dnd5e XP table.",
+          "source": "assumption"
+        },
+        {
+          "text": "Glow grows with the square of progress, so it stays faint early and builds near the level; from 90% the orb slowly pulses.",
+          "source": "assumption"
+        },
+        {
+          "text": "When XP changes the liquid rises or falls over 900 ms.",
+          "source": "assumption"
+        },
+        {
+          "text": "Hover shows level, current and next-level XP and the percentage; the same text is its accessible name.",
+          "source": "assumption"
+        },
+        {
+          "text": "With motion off the surface stands still and the orb does not pulse.",
+          "source": "assumption"
+        },
+        {
+          "text": "Characters using milestone levelling (XP hidden in dnd5e settings) get an orb with the level only, no liquid.",
+          "source": "assumption"
+        },
+        {
+          "text": "Small bubbles rise through the liquid; hover brightens the orb.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    },
+    "mockXpPreview": {
+      "behaviour": [
+        {
+          "text": "Mock only: sets the progress to the next level to preview the fill and glow.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "restBar": {
+      "behaviour": [
+        {
+          "text": "Short and long rest sit in the rail, labelled, right under HP, hit dice and spell slots, so players reach them without searching the header.",
+          "source": "spec"
+        },
+        {
+          "text": "No rest durations on the buttons: each GM sets how long rests take. The short rest button shows the hit dice left; the long rest button lists what it restores.",
+          "source": "spec"
+        },
+        {
+          "text": "Shown to the GM always and to owners only while dnd5e's allowRests setting is on; hidden for observers.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "favoriteCastButton": {
+      "behaviour": [
+        {
+          "text": "Casts the spell or uses the item straight from the rail, under the same rules as in its tab.",
+          "source": "assumption"
+        }
+      ],
+      "comments": []
+    }
+  },
+  "edits": {},
+  "renames": {}
+}

@@ -81,6 +81,14 @@
         {
           "text": "Once a panel is scrolled, the tab strip casts a soft shadow over it.",
           "source": "assumption"
+        },
+        {
+          "text": "One window for three actor types (#8): a character, an NPC with a player owner and a vehicle. The same rail, tabs, settings and effects; the type only decides which blocks and tabs show. A block whose notes have no «Виден» line shows for all three.",
+          "source": "spec"
+        },
+        {
+          "text": "Mock only: «Актор» in the preview bar switches the type; each actor keeps its own state while the mock runs.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -183,6 +191,10 @@
         {
           "text": "Looping effects here (the flowing highlight, the heartbeat, the temporary HP aura) run only at the «Все» motion level and only in the front actor window; reactive effects (ghost, glow, shards, floating numbers) run at «Все» and «Сдержанно».",
           "source": "spec"
+        },
+        {
+          "text": "A vehicle uses the same field; at 0 HP its label reads «Разрушен».",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -200,6 +212,10 @@
         {
           "text": "Shows the roll formula: hit die plus Constitution modifier.",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -216,6 +232,10 @@
         },
         {
           "text": "Intact runes and slot gems glint one at a time, at random, about every 2 seconds.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC (for an NPC only when it casts).",
           "source": "spec"
         }
       ],
@@ -238,6 +258,10 @@
         {
           "text": "Three successes turn the block green with «Стабилизирована»; three failures dim it with «Погибла».",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -255,6 +279,10 @@
         {
           "text": "Right click on AC, initiative or speed opens the dnd5e dialog for it (ArmorClassConfig, InitiativeConfig, MovementSensesConfig) for the owner and the GM.",
           "source": "spec"
+        },
+        {
+          "text": "An NPC shows AC, initiative, speed, challenge rating, passive Perception and proficiency; a vehicle shows AC, damage threshold, mishap threshold and speed (travel pace per hour, per day on hover).",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -268,6 +296,10 @@
         {
           "text": "While on, the chip glows gold, a sheen passes across it every few seconds and its star turns slowly; turning it on throws golden sparks.",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -276,6 +308,10 @@
       "behaviour": [
         {
           "text": "Click adds one exhaustion level, right click removes one. The number of pips comes from dnd5e's exhaustion config (six by default); lit pips are the current level.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
           "source": "spec"
         }
       ],
@@ -293,6 +329,10 @@
         },
         {
           "text": "While concentrating, the eye in the badge blinks now and then.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
           "source": "spec"
         }
       ],
@@ -315,6 +355,10 @@
         {
           "text": "When empty, shows a hint to star or drag entries in.",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж (dnd5e keeps system.favorites on characters only).",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -335,6 +379,10 @@
         },
         {
           "text": "On hover a quick action slides in on the right: cast for a spell, use for an item or active feature.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
           "source": "spec"
         }
       ],
@@ -358,6 +406,10 @@
         {
           "text": "On hover the score slides away and the saving throw bonus («Спас +N») slides in.",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -374,6 +426,10 @@
         },
         {
           "text": "A long rest first lets night fall over the sheet, then a warm dawn, and only then do the resources refill.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
           "source": "spec"
         }
       ],
@@ -424,6 +480,10 @@
         {
           "text": "Shows skills, saving throws, passive senses and proficiencies as cards that wrap by width.",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -432,6 +492,10 @@
       "behaviour": [
         {
           "text": "Lists the 18 skills with ability, proficiency mark (hollow, filled, ringed for expertise) and total bonus.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
           "source": "spec"
         }
       ],
@@ -442,6 +506,10 @@
         {
           "text": "Click rolls the skill check (actor.rollSkill).",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -451,6 +519,10 @@
         {
           "text": "Lists the six saving throws with proficiency and total bonus.",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -459,6 +531,10 @@
       "behaviour": [
         {
           "text": "Click rolls the saving throw (actor.rollSavingThrow).",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
           "source": "spec"
         }
       ],
@@ -472,6 +548,10 @@
         },
         {
           "text": "Also lists armor proficiencies; tools have their own card.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
           "source": "spec"
         }
       ],
@@ -556,6 +636,10 @@
         {
           "text": "Thresholds come from dnd5e's system.attributes.encumbrance (world rule, size, Powerful Build, effects; Weighty Containers' reductions through its integration); stops are marked on the bar, which is green, amber past encumbered and red past heavily encumbered; crossing a stop shakes it once. Hidden when the world uses no encumbrance.",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC (a vehicle shows its cargo in the rail instead).",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -568,6 +652,10 @@
         },
         {
           "text": "With the world setting showActorPortraitBackdrop on, the actor's portrait shows faintly behind the figure.",
+          "source": "spec"
+        },
+        {
+          "text": "A preset without slots (the default for a vehicle) shows its figure as a low banner over the hold with the preset name, size and cargo capacity, not an empty doll; a preset with slots shows the usual doll.",
           "source": "spec"
         }
       ],
@@ -706,6 +794,10 @@
         {
           "text": "Stars or unstars the entry; the rail list updates with a glide.",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -755,6 +847,10 @@
         },
         {
           "text": "Spell-school colours come from SC Rarity Colors when it is active (its spell-school-styles setting, including per-level variants), otherwise from the module's own school palette (--school-* tokens).",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC (for an NPC only when it has spells).",
           "source": "spec"
         }
       ],
@@ -829,6 +925,10 @@
         {
           "text": "Rows do not repeat the source their section is named after; tiles are tinted by origin: class, species, background, other.",
           "source": "spec"
+        },
+        {
+          "text": "For an NPC and a vehicle the tab is «Действия»: features and attacks grouped by action cost — Особенности, Действия, Бонусные действия, Реакции, Легендарные действия, Действия логова, Прочее; empty groups hide. Attacks are the weapon items themselves and stay in the inventory too. A vehicle shows the tab only when it has any (siege weapons, vehicle features).",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -845,6 +945,10 @@
         },
         {
           "text": "The row menu is Просмотр, Изменить, Дублировать, Удалить (item.deleteDialog), В чат (item.displayCard).",
+          "source": "spec"
+        },
+        {
+          "text": "In «Действия» an attack shows its to-hit and damage instead of weight and price; the activation tag is left out because the section already names it.",
           "source": "spec"
         }
       ],
@@ -962,6 +1066,10 @@
         {
           "text": "The rest buttons can be hidden too.",
           "source": "spec"
+        },
+        {
+          "text": "Lists only the blocks of the current actor type.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -978,6 +1086,10 @@
         },
         {
           "text": "Hiding the open tab switches to Снаряжение.",
+          "source": "spec"
+        },
+        {
+          "text": "Lists only the tabs of the current actor type.",
           "source": "spec"
         }
       ],
@@ -1013,6 +1125,10 @@
         },
         {
           "text": "With several casting classes it shows one line per class: ability, save DC and attack bonus.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC (for an NPC only when it casts).",
           "source": "spec"
         }
       ],
@@ -1120,6 +1236,10 @@
         },
         {
           "text": "When another player invites this character, a Foundry notification appears and the button carries a glowing dot until the panel is opened.",
+          "source": "spec"
+        },
+        {
+          "text": "Shown for all three types: a vehicle and an NPC with a player owner can be a side of a trade (#8).",
           "source": "spec"
         }
       ],
@@ -1293,6 +1413,10 @@
         {
           "text": "Standard presets: Стандарт 2024, Стандарт 2014, Зверь, Повозка, Корабль, Воздушное судно; the GM adds custom ones. A preset is a figure plus its slots; the default follows the actor type.",
           "source": "spec"
+        },
+        {
+          "text": "The default preset follows the actor type: humanoid for a character and an NPC; for a vehicle by details.type — land → Повозка, water → Корабль, air → Воздушное судно, space → Корабль (no figure of its own). Vehicle defaults have no slots; presets with slots are separate (Повозка · упряжь и орудие, Корабль · орудийные порты, Воздушное судно · оснастка).",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1384,6 +1508,10 @@
         {
           "text": "The pulse near the next level, the moving surface and the bubbles are ambient effects: «Все» motion level only, front window only.",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1410,6 +1538,10 @@
         {
           "text": "Shown to the GM always and to owners only while dnd5e's allowRests setting is on; hidden for observers.",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1418,6 +1550,10 @@
       "behaviour": [
         {
           "text": "Casts the spell or uses the item or feature straight from the rail, under the same rules as in its tab.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
           "source": "spec"
         }
       ],
@@ -1428,6 +1564,10 @@
         {
           "text": "XP card of the level orb: XP is written through actor.update on system.details.xp.value; the card has no level-up button, the ready orb is the button.",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1436,6 +1576,10 @@
       "behaviour": [
         {
           "text": "Class, subclass, species and background in the header subtitle are links: click opens that item's dnd5e sheet.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
           "source": "spec"
         }
       ],
@@ -1463,6 +1607,10 @@
         {
           "text": "Вернуть исходный облик shows only while the actor is transformed (actor.revertOriginalForm).",
           "source": "spec"
+        },
+        {
+          "text": "The first entry names the type: Открыть лист персонажа / NPC / транспорта. Особые черты and Бастион are for characters only.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1471,6 +1619,10 @@
       "behaviour": [
         {
           "text": "Overview card listing tool proficiencies with ability, proficiency mark and total bonus.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
           "source": "spec"
         }
       ],
@@ -1481,6 +1633,10 @@
         {
           "text": "Click rolls the tool check through dnd5e (actor.rollToolCheck).",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1489,6 +1645,10 @@
       "behaviour": [
         {
           "text": "Overview card: damage resistances, immunities, vulnerabilities, condition immunities and damage modification, read from system.traits; empty entries read «нет».",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
           "source": "spec"
         }
       ],
@@ -1636,6 +1796,10 @@
         {
           "text": "Pact slot pips work like circle pips: click a lit one to spend down to it, a hollow one to restore up to it; a long rest refills them (dnd5e decides, the mock imitates).",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC (for an NPC only when it casts).",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1644,6 +1808,10 @@
       "behaviour": [
         {
           "text": "Header chip shown while prepared spells exceed a class limit; it mirrors dnd5e's preparation warning.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
           "source": "spec"
         }
       ],
@@ -1727,6 +1895,10 @@
         {
           "text": "Observer sees it read-only.",
           "source": "spec"
+        },
+        {
+          "text": "For an NPC and a vehicle only the description: no characteristics or personality cards.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1736,6 +1908,10 @@
         {
           "text": "Nine fields from system.details: alignment, age, height, weight, eyes, hair, skin, gender, faith; saved on change.",
           "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1744,6 +1920,10 @@
       "behaviour": [
         {
           "text": "Personality traits, ideals, bonds, flaws and appearance (system.details.trait/ideal/bond/flaw/appearance); saved on change.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
           "source": "spec"
         }
       ],
@@ -1815,6 +1995,105 @@
       "behaviour": [
         {
           "text": "Mock only: simulates the reduced-motion and performance-low caps; «Без магии» next to it previews a character without spells.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "crBadge": {
+      "behaviour": [
+        {
+          "text": "Challenge rating in the level orb's place.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: NPC.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "kindSubtitle": {
+      "behaviour": [
+        {
+          "text": "Under the name: size, type and role for an NPC («Средний гуманоид (человек) · телохранитель»); type, size, keel and beam for a vehicle.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: NPC, транспорт.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "legendaryTrack": {
+      "behaviour": [
+        {
+          "text": "Legendary actions and legendary resistance as pips (system.resources.legact / legres); shown only when the NPC has them, otherwise «нет у NPC» in the settings list.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: NPC.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "cargoMeter": {
+      "behaviour": [
+        {
+          "text": "Cargo weight in tons against attributes.capacity.cargo; the bar turns red over capacity.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: транспорт.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "crewBlock": {
+      "behaviour": [
+        {
+          "text": "Crew, passengers and, for a land vehicle, draft animals (system.crew, passengers, draft) as read-only portraits with a count against the maximum and the free places; the composition is edited on the vehicle's own sheet.",
+          "source": "spec"
+        },
+        {
+          "text": "Click opens that actor's window, or its sheet when the window does not support it; an actor the viewer may not see shows as «Неизвестный» without a name.",
+          "source": "spec"
+        },
+        {
+          "text": "Legacy cargo.crew / cargo.passengers entries (name × quantity) show as text rows under «Без актора».",
+          "source": "spec"
+        },
+        {
+          "text": "Lives in the rail under the cargo (variant A); variants B (on the figure banner) and C (own tab) are on the prototype/vehicle-crew branch.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: транспорт.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "figureBanner": {
+      "behaviour": [
+        {
+          "text": "The figure of a preset without slots, as a low banner across the equipment tab over the hold.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: транспорт (and any actor whose preset has no slots).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "mockActorPreview": {
+      "behaviour": [
+        {
+          "text": "Mock only: switches between the character, the NPC and the vehicle; with the vehicle a «Тип» select (land, water, air, space) changes the figure.",
           "source": "spec"
         }
       ],

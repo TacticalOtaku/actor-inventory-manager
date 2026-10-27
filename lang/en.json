@@ -460,6 +460,102 @@
       "offHandBlocked": "Cannot equip '{item}' in the off hand: '{conflict}' requires both hands.",
       "shieldAlreadyEquipped": "Cannot equip '{item}': shield '{conflict}' is already equipped.",
       "singlePerActor": "Cannot equip '{item}': '{conflict}' of the same kind is already equipped."
+    },
+    "window": {
+      "expand": "Expand window",
+      "collapse": "Collapse to a column",
+      "readOnly": "View only",
+      "more": "More",
+      "close": "Close",
+      "cancel": "Cancel",
+      "save": "Save",
+      "abilityHint": "Check; Shift for a saving throw",
+      "panelPending": "This tab arrives in the next 2.0 implementation slices.",
+      "inspectorEmpty": "Select an entry to see its details.",
+      "editorPending": "The doll preset editor returns with the Equipment tab.",
+      "menu": {
+        "openSheet": "Open character sheet",
+        "traits": "Special traits",
+        "bastion": "Bastion",
+        "revert": "Revert original form"
+      },
+      "xp": {
+        "label": "XP",
+        "add": "Add experience",
+        "ready": "Ready for level {level}: click to level up",
+        "orb": "Experience: {value} of {max}",
+        "chooseClass": "Level up",
+        "chooseClassHint": "Which class gets the level?"
+      },
+      "tabs": {
+        "overview": "Overview",
+        "equipment": "Equipment",
+        "spells": "Spells",
+        "features": "Features",
+        "effects": "Effects",
+        "biography": "Biography"
+      },
+      "rail": {
+        "hp": "Hit points",
+        "hitDice": "Hit dice",
+        "spellSlots": "Spell slots",
+        "stats": "AC, initiative, speed",
+        "spellcasting": "Spell DC and attack",
+        "effects": "Effects",
+        "chips": "Inspiration and exhaustion",
+        "rest": "Rest buttons",
+        "favorites": "Favorites"
+      },
+      "settings": {
+        "title": "Window settings",
+        "theme": "Theme",
+        "accent": "Accent",
+        "density": "Density",
+        "motion": "Motion",
+        "fonts": "Fonts",
+        "webFonts": "Decorative fonts",
+        "reloadHint": "Takes effect after a reload.",
+        "reload": "Reload",
+        "storageHint": "Motion and fonts are stored on this device; everything else follows you.",
+        "rail": "Side column",
+        "tabs": "Tabs",
+        "always": "always",
+        "absent": "not on this character",
+        "reset": "Reset window settings",
+        "resetAsk": "Return theme, accent, density, motion, fonts, side column and tabs to their defaults?",
+        "resetYes": "Reset",
+        "themeNow": "Now: {theme}, from Foundry's colour scheme.",
+        "capReduced": "Limited: reduced motion is on in the system.",
+        "capPerformance": "Limited: Foundry runs in low performance mode.",
+        "capKeeps": "Your choice «{level}» comes back when the limit is lifted.",
+        "themes": {
+          "night": "Night",
+          "parchment": "Parchment",
+          "auto": "Auto"
+        },
+        "accents": {
+          "brass": "Brass",
+          "embers": "Embers",
+          "arcane": "Arcane",
+          "forest": "Forest",
+          "frost": "Frost",
+          "rose": "Rose"
+        },
+        "densities": {
+          "comfortable": "Comfortable",
+          "compact": "Compact"
+        },
+        "motions": {
+          "full": "All",
+          "reduced": "Restrained",
+          "off": "Off"
+        },
+        "motionAbout": {
+          "full": "Responses to actions and ambient effects.",
+          "reduced": "Responses to actions only, no ambient loops or particles.",
+          "off": "Short fades only."
+        }
+      }
     }
   }
 }

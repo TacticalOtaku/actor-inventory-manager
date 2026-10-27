@@ -5,13 +5,13 @@
 import { ENFORCEMENT_MODES, LOG_LEVELS, MODULE_ID, REFRESH_HOOK } from "../constants.js";
 import { LOG } from "./logger.js";
 import { canViewActor, isSupportedActor } from "../core/actor-scope.js";
-import { DEFAULT_ACCENT, PALETTE } from "../tactile/palette.js";
+import { DEFAULT_ACCENT, DENSITIES, MOTION_LEVELS, THEMES } from "../core/actor-window.js";
 
 /**
  * Interface fonts bundled with the module (Onest, JetBrains Mono, Unbounded). No leading slash: the `<link>`
  * resolves against the game page (`<route prefix>/game`), so it keeps working behind a route prefix.
  */
-const WEB_FONTS_URL = `modules/${MODULE_ID}/styles/tactile/fonts.css`;
+const WEB_FONTS_URL = `modules/${MODULE_ID}/styles/theme/fonts.css`;
 
 const refreshInventories = () => Hooks.callAll(REFRESH_HOOK);
 
@@ -42,40 +42,72 @@ export function registerModuleSettings() {
       default: ENFORCEMENT_MODES.BLOCK
     });
 
-    game.settings.register(MODULE_ID, "theme", {
-      name: "AIM.settings.theme.name",
-      hint: "AIM.settings.theme.hint",
-      scope: "client",
-      config: true,
+    // Window settings live in the actor window's own drawer (#17), not in Foundry's settings window.
+    // Theme, accent, density, rail blocks and tabs follow the user to any device; motion and fonts stay on it.
+    game.settings.register(MODULE_ID, "windowTheme", {
+      scope: "user",
+      config: false,
       type: String,
-      choices: {
-        dark: "AIM.settings.theme.dark",
-        light: "AIM.settings.theme.light",
-        auto: "AIM.settings.theme.auto"
-      },
-      default: "dark",
+      choices: Object.fromEntries(THEMES.map(t => [t, t])),
+      default: "night",
       onChange: refreshInventories
     });
-
-    game.settings.register(MODULE_ID, "accent", {
-      name: "AIM.settings.accent.name",
-      hint: "AIM.settings.accent.hint",
-      scope: "client",
-      config: true,
+    game.settings.register(MODULE_ID, "windowAccent", {
+      scope: "user",
+      config: false,
       type: String,
-      choices: Object.fromEntries(PALETTE.map(p => [p.id, `AIM.settings.accent.${p.id}`])),
       default: DEFAULT_ACCENT,
       onChange: refreshInventories
     });
-
-    game.settings.register(MODULE_ID, "useWebFonts", {
-      name: "AIM.settings.useWebFonts.name",
-      hint: "AIM.settings.useWebFonts.hint",
+    game.settings.register(MODULE_ID, "windowDensity", {
+      scope: "user",
+      config: false,
+      type: String,
+      choices: Object.fromEntries(DENSITIES.map(d => [d, d])),
+      default: "comfortable",
+      onChange: refreshInventories
+    });
+    game.settings.register(MODULE_ID, "hiddenRailBlocks", {
+      scope: "user",
+      config: false,
+      type: Array,
+      default: [],
+      onChange: refreshInventories
+    });
+    game.settings.register(MODULE_ID, "hiddenTabs", {
+      scope: "user",
+      config: false,
+      type: Array,
+      default: [],
+      onChange: refreshInventories
+    });
+    game.settings.register(MODULE_ID, "motionLevel", {
       scope: "client",
-      config: true,
+      config: false,
+      type: String,
+      choices: Object.fromEntries(MOTION_LEVELS.map(m => [m, m])),
+      default: "full",
+      onChange: refreshInventories
+    });
+    game.settings.register(MODULE_ID, "useWebFonts", {
+      scope: "client",
+      config: false,
       type: Boolean,
-      default: true,
-      requiresReload: true
+      default: true
+    });
+
+    // 1.x values, read once by the 2.0 migration (ADR 0005) and removed in 2.1.
+    game.settings.register(MODULE_ID, "theme", {
+      scope: "client",
+      config: false,
+      type: String,
+      default: "dark"
+    });
+    game.settings.register(MODULE_ID, "accent", {
+      scope: "client",
+      config: false,
+      type: String,
+      default: "peach"
     });
 
     game.settings.register(MODULE_ID, "showSheetButton", {

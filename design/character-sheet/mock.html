@@ -1117,6 +1117,70 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-root[data-motion="reduced"][data-vital="down"] .cs-death { animation: cs-pop var(--d-slow) var(--ease-snap) !important; }
 .cs-root[data-motion="reduced"] .cs-bubble { display: none; }
 
+/* ═══════════ Actor types (#8, #20): one window, the type decides which blocks show ═══════════ */
+.cs-root[data-actor="character"] [data-types]:not([data-types~="character"]),
+.cs-root[data-actor="npc"] [data-types]:not([data-types~="npc"]),
+.cs-root[data-actor="vehicle"] [data-types]:not([data-types~="vehicle"]) { display: none !important; }
+.cs-root:not([data-actor="character"]) [data-ui="favoriteButton"] { display: none; }
+.cs-stats[data-kind-stats="npc"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cs-stat small { font-size: 10px; color: var(--text-3); font-weight: 500; }
+.cs-tag.is-roll { color: var(--text); background: var(--accent-soft); }
+/* the challenge rating takes the level orb's place */
+.cs-cr { flex: none; display: grid; place-content: center; justify-items: center; width: 48px; height: 48px; border-radius: 12px; border: 1px solid var(--accent-line); background: radial-gradient(circle at 50% 30%, var(--accent-soft), transparent 70%), var(--surface-2); }
+.cs-cr b { font: 600 18px/1 var(--font-num); color: var(--accent); }
+.cs-cr span { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); }
+.cs-legendary:empty { display: none; }
+.cs-legendary .cs-pipset { display: inline-flex; gap: 4px; }
+.cs-legendary .cs-pipset i { width: 10px; height: 10px; border-radius: 3px; transform: rotate(45deg); background: var(--warn); }
+.cs-legendary .cs-pipset i.is-spent { background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); }
+/* vehicle cargo against capacity */
+.cs-cargo { display: grid; gap: 6px; padding: 8px 10px; background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-md); }
+.cs-cargo .cs-rail-title { margin: 0; }
+.cs-cargo [data-cargo-text] { letter-spacing: 0; text-transform: none; font: 500 11.5px var(--font-ui); color: var(--text-2); }
+.cs-cargo [data-cargo-text] b { color: var(--text); font-weight: 600; }
+.cs-cargo .bar { height: 6px; border-radius: 4px; background: var(--line-strong); overflow: hidden; }
+.cs-cargo .bar i { display: block; height: 100%; background: var(--heal); transition: width var(--d-slow) var(--ease-settle); }
+.cs-cargo .bar i.is-over { background: var(--hp); }
+/* crew, passengers and draft animals: read-only portraits */
+.cs-crew { display: grid; gap: var(--s3); }
+.cs-crew:empty { display: none; }
+.cs-crew-group { display: grid; gap: 6px; }
+.cs-crew-group h4 { display: flex; justify-content: space-between; margin: 0; font: 600 10.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
+.cs-crew-group h4 b { letter-spacing: 0; color: var(--text-2); }
+.cs-crew-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.cs-crew-p { text-align: left; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 3px 9px 3px 3px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface-1); color: var(--text); font-size: 12px; cursor: pointer; transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-snap); }
+.cs-crew-p:hover { border-color: var(--accent-line); transform: translateY(-1px); }
+.cs-crew-p .av { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, var(--surface-3), var(--surface-0)); border: 1px solid var(--line-strong); font: 600 10px var(--font-display); color: var(--accent); }
+.cs-crew-p.is-hidden { color: var(--text-3); cursor: default; }
+.cs-crew-p.is-hidden .av { color: var(--text-3); }
+.cs-crew-p.is-hidden:hover { transform: none; border-color: var(--line); }
+.cs-crew-p.is-free { border-style: dashed; color: var(--text-3); cursor: default; }
+.cs-crew-p.is-free:hover { transform: none; border-color: var(--line); }
+.cs-crew-legacy { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-2); }
+.cs-crew.is-rail { padding: 8px 10px; background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-md); }
+.cs-crew.is-rail .cs-crew-p span:last-child { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cs-crew.is-tab { padding: var(--s4); grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); align-items: start; }
+.cs-crew.is-tab .cs-crew-group { padding: var(--s3); background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-md); }
+.cs-crew-note { margin: 0; font-size: 11.5px; color: var(--text-3); }
+/* a preset without slots: the figure as a low banner over the hold */
+.cs-doll-banner { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--s3); min-height: 120px; padding: var(--s3) var(--s4); border: 1px solid var(--line); border-radius: var(--r-lg, 14px); background: radial-gradient(ellipse at 70% 60%, var(--accent-soft), transparent 65%), var(--surface-1); overflow: hidden; }
+/* grid-area: auto, or the absolute figure would size against its grid column instead of the banner */
+.cs-doll-banner .cs-figure { position: absolute; grid-area: auto; inset: 6% 3% 0 auto; width: min(46%, 340px); pointer-events: none; }
+.cs-doll-banner .cs-figure svg { width: 100%; height: 100%; color: var(--text-3); opacity: 0.75; }
+.cs-doll-banner-text { position: relative; display: grid; gap: 2px; }
+.cs-doll-banner-text b { font: 600 17px var(--font-display); }
+.cs-doll-banner-text span { font-size: 11.5px; color: var(--text-2); }
+.cs-doll-banner .cs-crew { position: relative; grid-column: 1 / -1; margin-top: var(--s2); grid-auto-flow: column; justify-content: start; align-items: start; gap: var(--s4); }
+.cs-doll-banner .cs-crew-p { background: color-mix(in oklab, var(--surface-1) 80%, transparent); backdrop-filter: blur(4px); }
+@container (min-width: 700px) { .cs-equip.has-doll.has-banner { grid-template-columns: minmax(0, 1fr); } }
+.cs-equip.has-banner .cs-doll { max-width: none; }
+.mock-variants { position: fixed; top: 14px; right: 14px; z-index: 6; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px; border-radius: 99px; background: #1a1d26; border: 1px solid rgb(255 255 255 / 0.12); font: 12px "Segoe UI", system-ui; color: #aaa499; }
+.mock-variants .cs-seg { background: #12141b; border-color: rgb(255 255 255 / 0.1); }
+.mock-variants .cs-seg button { color: #6e6a63; font: inherit; min-width: 28px; }
+.mock-variants .cs-seg button[aria-pressed="true"] { background: #2a2f3c; color: #ece6da; }
+.mock-preview .cs-seg { display: inline-flex; }
+.cs-tab[hidden], .mock-variants[hidden], .mock-xp[hidden] { display: none; }
+
 /* trade: the content steps aside so the offer buttons on rows stay reachable */
 .cs-root { transition: width var(--d-slow) var(--ease-settle), --accent 600ms var(--ease-settle), grid-template-columns var(--d-slow) var(--ease-settle); }
 .cs-root.is-trading:is([data-layout="standard"], [data-layout="wide"]) { --inspector-w: 344px; }
@@ -1399,6 +1463,8 @@ button.cs-stat:active { transform: scale(0.95); }
     <button type="button" data-role-set="observer" aria-pressed="false">Наблюдатель</button>
     <button type="button" data-role-set="gm" aria-pressed="false">Мастер</button>
   </div>
+  <span class="mock-xp" data-ui="mockActorPreview">Актор <span class="cs-seg is-text" role="group" aria-label="Тип актора"><button type="button" data-actor-set="character" aria-pressed="true">Персонаж</button><button type="button" data-actor-set="npc" aria-pressed="false">NPC</button><button type="button" data-actor-set="vehicle" aria-pressed="false">Транспорт</button></span></span>
+  <label class="mock-xp" data-mock-vtype-wrap hidden>Тип <select data-mock-vtype aria-label="Тип транспорта"><option value="land">наземный</option><option value="water" selected>водный</option><option value="air">воздушный</option><option value="space">космический</option></select></label>
   <label class="mock-xp" data-ui="mockPactPreview"><input type="checkbox" data-mock-pact> Пакт</label>
   <label class="mock-xp" data-ui="mockTradePreview">Обмен <select data-mock-trade aria-label="Сценарий обмена"><option value="">обычный</option><option value="invite">вас пригласили</option><option value="cancel">партнёр отменил</option><option value="recovery">сбой у мастера</option><option value="preparing">прервана подготовка</option></select></label>
   <label class="mock-xp"><input type="checkbox" data-mock-piles> Item Piles</label>
@@ -1407,6 +1473,8 @@ button.cs-stat:active { transform: scale(0.95); }
   <label class="mock-xp"><input type="checkbox" data-mock-nomagic> Без магии</label>
   <label class="mock-xp" data-ui="mockXpPreview">Опыт <input type="range" min="0" max="100" value="72" data-mock-xp aria-label="Прогресс к следующему уровню"></label>
 </div>
+
+<div class="mock-variants" data-ui="mockVariantSwitch" hidden><span>Транспорт: экипаж</span><div class="cs-seg is-text" role="group" aria-label="Вариант"><button type="button" data-vehicle-set="A" aria-pressed="true" title="Экипаж в рейле">A</button><button type="button" data-vehicle-set="B" aria-pressed="false" title="Полоса с фигурой и экипажем над трюмом">B</button><button type="button" data-vehicle-set="C" aria-pressed="false" title="Отдельная вкладка «Экипаж»">C</button></div></div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></symbol>
@@ -1460,7 +1528,7 @@ button.cs-stat:active { transform: scale(0.95); }
   <symbol id="i-figure" viewBox="0 0 120 260"><path d="M60 8c11 0 19 9 19 21s-8 22-19 22-19-10-19-22S49 8 60 8zM38 58h44c12 0 20 8 22 20l8 62c1 6-8 8-10 2l-12-50v64l6 84c1 8-12 9-14 1L68 172h-16l-14 69c-2 8-15 7-14-1l6-84V92l-12 50c-2 6-11 4-10-2l8-62c2-12 10-20 22-20z" fill="currentColor" stroke="none" opacity=".35"/></symbol>
 </svg>
 
-<section class="cs-root" data-ui="CharacterSheet" data-layout="standard" data-theme="night" data-density="comfortable" data-motion="full" data-role="player" aria-label="Лист персонажа">
+<section class="cs-root" data-ui="CharacterSheet" data-layout="standard" data-theme="night" data-density="comfortable" data-motion="full" data-role="player" data-actor="character" data-vehicle="A" aria-label="Лист персонажа">
 
   <!-- ═══════════ Rail ═══════════ -->
   <aside class="cs-rail" data-ui="sheetRail" data-flip>
@@ -1486,7 +1554,7 @@ button.cs-stat:active { transform: scale(0.95); }
           </span>
         </div>
       </div>
-      <div class="cs-vrow" data-ui="hitDiceTrack" data-flip>
+      <div class="cs-vrow" data-ui="hitDiceTrack" data-types="character" data-flip>
         <span class="cs-vlabel">Кости хитов <b data-hd-val>4</b>/6 <span class="cs-formula">к6 + 2</span></span>
         <span class="cs-dice" data-hd aria-label="Кости хитов: клик — бросить кость и вылечиться"></span>
       </div>
@@ -1496,14 +1564,14 @@ button.cs-stat:active { transform: scale(0.95); }
       </button>
     </div>
 
-    <div class="cs-death" data-ui="deathSaves" data-flip hidden>
+    <div class="cs-death" data-ui="deathSaves" data-types="character" data-flip hidden>
       <span>Успехи</span><div class="row" data-death="ok"><button type="button" class="ok" aria-label="Успех 1"></button><button type="button" class="ok" aria-label="Успех 2"></button><button type="button" class="ok" aria-label="Успех 3"></button></div>
       <span>Провалы</span><div class="row" data-death="bad"><button type="button" class="bad" aria-label="Провал 1"></button><button type="button" class="bad" aria-label="Провал 2"></button><button type="button" class="bad" aria-label="Провал 3"></button></div>
       <div class="cs-death-state" data-death-state aria-live="polite"></div>
       <button type="button" class="cs-death-roll" data-death-roll><svg class="cs-ico"><use href="#i-dice"/></svg>Бросить спасбросок от смерти</button>
     </div>
 
-    <div class="cs-rest cs-editonly" data-ui="restBar" data-flip>
+    <div class="cs-rest cs-editonly" data-ui="restBar" data-types="character" data-flip>
       <button type="button" class="cs-rest-btn is-short fx-spot" data-ui="restButton" data-rest="short" data-oos="Открывает диалог короткого отдыха dnd5e: трата костей хитов, восстановление умений">
         <span class="ic"><svg class="cs-ico"><use href="#i-fire"/></svg></span><span class="tx">Короткий отдых<small data-rest-short>4 кости хитов</small></span>
       </button>
@@ -1512,12 +1580,18 @@ button.cs-stat:active { transform: scale(0.95); }
       </button>
     </div>
 
-    <div class="cs-stats" data-flip>
+    <div class="cs-stats" data-types="character" data-flip>
       <div class="cs-stat is-ac fx-spot" data-ui="vitalStat" title="Доспехи мага 13 + Лов 3 + Плащ защиты 1 + Кольцо защиты 1"><svg class="cs-ico cs-stat-bg"><use href="#i-shield"/></svg><b>18</b><span>КД</span></div>
       <button type="button" class="cs-stat fx-spot" data-ui="vitalStat" data-oos="Бросает инициативу и добавляет в бой"><b>+3</b><span>Иниц.</span></button>
       <div class="cs-stat" data-ui="vitalStat" title="Ходьба 30 фт"><b>30</b><span>Скор.</span></div>
       <div class="cs-stat" data-ui="vitalStat"><b>+3</b><span>Маст.</span></div>
     </div>
+
+    <div class="cs-stats" data-types="npc" data-kind-stats="npc" data-flip></div>
+    <div class="cs-stats" data-types="vehicle" data-kind-stats="vehicle" data-flip></div>
+    <div class="cs-vrow cs-legendary" data-ui="legendaryTrack" data-types="npc" data-legendary data-flip></div>
+    <div class="cs-cargo" data-ui="cargoMeter" data-types="vehicle" data-flip><div class="cs-rail-title"><span>Груз</span><span data-cargo-text></span></div><div class="bar"><i data-cargo-bar></i></div></div>
+    <div class="cs-crew is-rail" data-ui="crewBlock" data-types="vehicle" data-crew-host="A" data-flip></div>
 
     <div class="cs-magic" data-ui="spellcastingStrip" data-flip>
       <span class="cs-magic-k">Интеллект</span>
@@ -1531,13 +1605,13 @@ button.cs-stat:active { transform: scale(0.95); }
       <div class="cs-effect-list" data-effects></div>
     </div>
 
-    <div class="cs-chips" data-flip>
-      <button type="button" class="cs-chip" data-ui="inspirationToggle" aria-pressed="false"><svg class="cs-ico"><use href="#i-spark"/></svg>Вдохновение</button>
+    <div class="cs-chips" data-types="character npc" data-flip>
+      <button type="button" class="cs-chip" data-ui="inspirationToggle" data-types="character" aria-pressed="false"><svg class="cs-ico"><use href="#i-spark"/></svg>Вдохновение</button>
       <button type="button" class="cs-chip" data-ui="exhaustionTrack" aria-label="Истощение: клик +1, правый клик −1">Истощение <span class="cs-pips" data-exh></span></button>
       <span class="cs-chip is-conc cs-conc" data-ui="concentrationBadge" hidden><button type="button" data-conc-roll aria-label="Спасбросок концентрации"><svg class="cs-ico"><use href="#i-eye"/></svg><span data-conc-name></span></button><button type="button" data-conc-end aria-label="Прервать концентрацию" title="Прервать концентрацию"><svg class="cs-ico"><use href="#i-close"/></svg></button></span>
     </div>
 
-    <div class="cs-rail-fav" data-ui="favoritesList" data-flip>
+    <div class="cs-rail-fav" data-ui="favoritesList" data-types="character" data-flip>
       <div class="cs-rail-title"><span>Избранное</span><span data-fav-count></span></div>
       <ul class="cs-fav-list" data-fav-list></ul>
     </div>
@@ -1547,13 +1621,15 @@ button.cs-stat:active { transform: scale(0.95); }
   <div class="cs-main" data-flip>
     <header class="cs-header" data-ui="sheetHeader">
       <div class="cs-title">
-        <div class="cs-level" data-ui="levelOrb" role="img" data-level-orb>
+        <div class="cs-cr" data-ui="crBadge" data-types="npc" title="Класс опасности"><b data-cr></b><span>КО</span></div>
+        <div class="cs-level" data-ui="levelOrb" data-types="character" role="img" data-level-orb>
           <div class="cs-liquid"><svg class="cs-wave is-back" viewBox="0 0 120 14" preserveAspectRatio="none"><path d="M0 6 Q15 0 30 6 T60 6 T90 6 T120 6 V14 H0z"/></svg><svg class="cs-wave" viewBox="0 0 120 14" preserveAspectRatio="none"><path d="M0 6 Q15 0 30 6 T60 6 T90 6 T120 6 V14 H0z"/></svg><i class="cs-bubble" style="left:28%;animation-delay:0s"></i><i class="cs-bubble" style="left:58%;animation-delay:1.1s"></i><i class="cs-bubble" style="left:44%;animation-delay:1.9s"></i></div>
           <span class="cs-level-n">6</span>
         </div>
         <div class="cs-title-text" data-title-text>
           <h2 class="cs-name">Ирэн Вальмор</h2>
-          <div class="cs-sub" data-ui="headerLinks"><button type="button" class="cs-sub-link" data-oos="Открывает лист класса «Волшебница» (item.sheet)"><span data-class-label>Волшебница 6</span></button> · <button type="button" class="cs-sub-link" data-oos="Открывает лист подкласса «Школа Воплощения»">Школа Воплощения</button> · <button type="button" class="cs-sub-link" data-oos="Открывает лист вида «Высший эльф»">Высший эльф</button> · <button type="button" class="cs-sub-link" data-oos="Открывает лист предыстории «Мудрец»">Мудрец</button></div>
+          <div class="cs-sub" data-types="npc vehicle" data-ui="kindSubtitle" data-kind-sub></div>
+          <div class="cs-sub" data-ui="headerLinks" data-types="character"><button type="button" class="cs-sub-link" data-oos="Открывает лист класса «Волшебница» (item.sheet)"><span data-class-label>Волшебница 6</span></button> · <button type="button" class="cs-sub-link" data-oos="Открывает лист подкласса «Школа Воплощения»">Школа Воплощения</button> · <button type="button" class="cs-sub-link" data-oos="Открывает лист вида «Высший эльф»">Высший эльф</button> · <button type="button" class="cs-sub-link" data-oos="Открывает лист предыстории «Мудрец»">Мудрец</button></div>
         </div>
       </div>
       <div class="cs-tools">
@@ -1562,23 +1638,24 @@ button.cs-stat:active { transform: scale(0.95); }
         <div class="cs-menu-wrap">
           <button type="button" class="cs-ibtn" data-ui="sheetMenuButton" aria-haspopup="menu" aria-expanded="false" aria-label="Ещё" title="Ещё"><svg class="cs-ico"><use href="#i-dots"/></svg></button>
           <div class="cs-menu" role="menu" data-ui="sheetMenu" hidden>
-            <button type="button" role="menuitem" data-oos="actor.sheet.render(true): открывает собственный лист актора — dnd5e, Tidy или другой, со всеми модулями">Открыть лист персонажа</button>
-            <button type="button" role="menuitem" data-oos="Открывает ванильный лист на вкладке «Особые черты»: своего окна у dnd5e 5.3.3 нет">Особые черты</button>
-            <button type="button" role="menuitem" data-oos="Открывает ванильный лист на вкладке «Бастион»; пункт виден, только если бастионы включены в мире">Бастион</button>
+            <button type="button" role="menuitem" data-sheet-open data-oos="actor.sheet.render(true): открывает собственный лист актора — dnd5e, Tidy или другой, со всеми модулями">Открыть лист персонажа</button>
+            <button type="button" role="menuitem" data-types="character" data-oos="Открывает ванильный лист на вкладке «Особые черты»: своего окна у dnd5e 5.3.3 нет">Особые черты</button>
+            <button type="button" role="menuitem" data-types="character" data-oos="Открывает ванильный лист на вкладке «Бастион»; пункт виден, только если бастионы включены в мире">Бастион</button>
             <button type="button" role="menuitem" class="is-cond" data-oos="actor.revertOriginalForm(); пункт виден только во время превращения">Вернуть исходный облик <small>при превращении</small></button>
           </div>
         </div>
         <button type="button" class="cs-ibtn" data-ui="settingsButton" aria-label="Настройки листа" title="Настройки листа"><svg class="cs-ico"><use href="#i-gear"/></svg></button>
         <button type="button" class="cs-ibtn" data-ui="collapseButton" data-act="collapse" aria-label="Свернуть в колонку" title="Свернуть в колонку"><svg class="cs-ico"><use href="#i-collapse"/></svg></button>
       </div>
-      <div class="cs-abilities" data-abilities></div>
+      <div class="cs-abilities" data-types="character npc" data-abilities></div>
     </header>
 
     <nav class="cs-tabs" role="tablist" data-ui="sheetTabs">
       <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="overview" aria-selected="false">Обзор</button>
       <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="equipment" aria-selected="true">Снаряжение <span class="n" data-count="items"></span></button>
+      <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="crew" data-types="vehicle" aria-selected="false">Экипаж <span class="n" data-count="crew"></span></button>
       <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="spells" aria-selected="false">Заклинания <span class="n" data-count="spells"></span></button>
-      <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="features" aria-selected="false">Умения <span class="n" data-count="features"></span></button>
+      <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="features" aria-selected="false"><span data-features-label>Умения</span> <span class="n" data-count="features"></span></button>
       <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="effects" aria-selected="false">Эффекты</button>
       <button type="button" class="cs-tab" role="tab" data-ui="tabButton" data-tab="biography" aria-selected="false">Биография</button>
       <span class="cs-tab-ink" aria-hidden="true"></span>
@@ -1590,7 +1667,7 @@ button.cs-stat:active { transform: scale(0.95); }
         <div class="cs-overview">
           <div class="cs-card fx-spot" data-ui="skillsCard"><h3>Навыки<button type="button" class="cs-ibtn cs-mini cs-editonly cs-card-cfg" data-ui="cardConfigButton" aria-label="Настроить навыки" title="Настроить навыки" data-oos="Открывает SkillsConfig dnd5e"><svg class="cs-ico"><use href="#i-gear"/></svg></button></h3><div data-skills></div></div>
           <div class="cs-card fx-spot" data-ui="savesCard"><h3>Спасброски<button type="button" class="cs-ibtn cs-mini cs-editonly cs-card-cfg" data-ui="cardConfigButton" aria-label="Настроить спасброски" title="Настроить спасброски" data-oos="Открывает AbilityConfig dnd5e"><svg class="cs-ico"><use href="#i-gear"/></svg></button></h3><div data-saves></div></div>
-          <div class="cs-card fx-spot" data-ui="toolsCard"><h3>Инструменты<button type="button" class="cs-ibtn cs-mini cs-editonly cs-card-cfg" data-ui="cardConfigButton" aria-label="Настроить инструменты" title="Настроить инструменты" data-oos="Открывает ToolsConfig dnd5e"><svg class="cs-ico"><use href="#i-gear"/></svg></button></h3><div data-tools></div></div>
+          <div class="cs-card fx-spot" data-ui="toolsCard" data-types="character"><h3>Инструменты<button type="button" class="cs-ibtn cs-mini cs-editonly cs-card-cfg" data-ui="cardConfigButton" aria-label="Настроить инструменты" title="Настроить инструменты" data-oos="Открывает ToolsConfig dnd5e"><svg class="cs-ico"><use href="#i-gear"/></svg></button></h3><div data-tools></div></div>
           <div class="cs-card fx-spot" data-ui="defensesCard"><h3>Защиты<button type="button" class="cs-ibtn cs-mini cs-editonly cs-card-cfg" data-ui="cardConfigButton" aria-label="Настроить защиты" title="Настроить защиты" data-oos="Открывает DamagesConfig / TraitsConfig dnd5e"><svg class="cs-ico"><use href="#i-gear"/></svg></button></h3>
             <div class="cs-kv"><span>Сопротивления</span><b><span class="cs-dmg" data-dmg="fire">Огонь</span></b></div>
             <div class="cs-kv"><span>Иммунитеты</span><b class="is-none">нет</b></div>
@@ -1627,7 +1704,7 @@ button.cs-stat:active { transform: scale(0.95); }
         </div>
         <div class="cs-purse" data-ui="currencyBar">
           <span data-coins style="display:contents"></span>
-          <div class="cs-load" data-ui="encumbranceMeter"><span data-load-text></span><div class="bar"><i data-load-bar></i></div></div>
+          <div class="cs-load" data-ui="encumbranceMeter" data-types="character npc"><span data-load-text></span><div class="bar"><i data-load-bar></i></div></div>
         </div>
         <div class="cs-equip has-doll">
           <div class="cs-doll" data-ui="paperdoll" data-doll></div>
@@ -1636,6 +1713,8 @@ button.cs-stat:active { transform: scale(0.95); }
       </div>
 
       <!-- Spells -->
+      <div class="cs-panel" data-panel="crew" data-ui="crewTab" hidden><div class="cs-crew is-tab" data-crew-host="C"></div></div>
+
       <div class="cs-panel" data-panel="spells" data-ui="spellsTab" hidden>
         <div class="cs-toolbar">
           <label class="cs-search" data-ui="searchField"><svg class="cs-ico"><use href="#i-search"/></svg><input type="search" placeholder="Найти заклинание" data-search="spells"></label>
@@ -1669,8 +1748,8 @@ button.cs-stat:active { transform: scale(0.95); }
 
       <!-- Biography -->
       <div class="cs-panel cs-bio" data-panel="biography" data-ui="biographyTab" hidden>
-        <div class="cs-card cs-bio-chars" data-ui="characteristicsCard"><label class="cs-bio-field"><span>Мировоззрение</span><input type="text" value="Нейтрально-добрый" data-bio></label><label class="cs-bio-field"><span>Возраст</span><input type="text" value="142" data-bio></label><label class="cs-bio-field"><span>Рост</span><input type="text" value="5 фт 9 дюймов" data-bio></label><label class="cs-bio-field"><span>Вес</span><input type="text" value="130 фнт" data-bio></label><label class="cs-bio-field"><span>Глаза</span><input type="text" value="Серые" data-bio></label><label class="cs-bio-field"><span>Волосы</span><input type="text" value="Пепельные" data-bio></label><label class="cs-bio-field"><span>Кожа</span><input type="text" value="Бледная" data-bio></label><label class="cs-bio-field"><span>Пол</span><input type="text" value="Женский" data-bio></label><label class="cs-bio-field"><span>Вера</span><input type="text" value="Корелон Ларетиан" data-bio></label></div>
-        <div class="cs-bio-traits" data-ui="personalityCard"><label class="cs-card cs-bio-trait"><span>Черты характера</span><textarea rows="2" data-bio>Цитирует трактаты к месту и не к месту; не выносит небрежных почерков.</textarea></label><label class="cs-card cs-bio-trait"><span>Идеалы</span><textarea rows="2" data-bio>Знание. Любая тайна должна быть записана, прежде чем её забудут.</textarea></label><label class="cs-card cs-bio-trait"><span>Привязанности</span><textarea rows="2" data-bio>Гильдия свитков Невервинтера, где меня научили читать руны.</textarea></label><label class="cs-card cs-bio-trait"><span>Слабости</span><textarea rows="2" data-bio>Не могу пройти мимо запертой библиотеки.</textarea></label><label class="cs-card cs-bio-trait is-wide"><span>Внешность</span><textarea rows="2" data-bio>Высокая эльфийка в выцветшей мантии, пальцы в чернилах, на поясе футляр для свитков.</textarea></label></div>
+        <div class="cs-card cs-bio-chars" data-ui="characteristicsCard" data-types="character"><label class="cs-bio-field"><span>Мировоззрение</span><input type="text" value="Нейтрально-добрый" data-bio></label><label class="cs-bio-field"><span>Возраст</span><input type="text" value="142" data-bio></label><label class="cs-bio-field"><span>Рост</span><input type="text" value="5 фт 9 дюймов" data-bio></label><label class="cs-bio-field"><span>Вес</span><input type="text" value="130 фнт" data-bio></label><label class="cs-bio-field"><span>Глаза</span><input type="text" value="Серые" data-bio></label><label class="cs-bio-field"><span>Волосы</span><input type="text" value="Пепельные" data-bio></label><label class="cs-bio-field"><span>Кожа</span><input type="text" value="Бледная" data-bio></label><label class="cs-bio-field"><span>Пол</span><input type="text" value="Женский" data-bio></label><label class="cs-bio-field"><span>Вера</span><input type="text" value="Корелон Ларетиан" data-bio></label></div>
+        <div class="cs-bio-traits" data-ui="personalityCard" data-types="character"><label class="cs-card cs-bio-trait"><span>Черты характера</span><textarea rows="2" data-bio>Цитирует трактаты к месту и не к месту; не выносит небрежных почерков.</textarea></label><label class="cs-card cs-bio-trait"><span>Идеалы</span><textarea rows="2" data-bio>Знание. Любая тайна должна быть записана, прежде чем её забудут.</textarea></label><label class="cs-card cs-bio-trait"><span>Привязанности</span><textarea rows="2" data-bio>Гильдия свитков Невервинтера, где меня научили читать руны.</textarea></label><label class="cs-card cs-bio-trait"><span>Слабости</span><textarea rows="2" data-bio>Не могу пройти мимо запертой библиотеки.</textarea></label><label class="cs-card cs-bio-trait is-wide"><span>Внешность</span><textarea rows="2" data-bio>Высокая эльфийка в выцветшей мантии, пальцы в чернилах, на поясе футляр для свитков.</textarea></label></div>
         <div class="cs-card cs-bio-text" data-ui="biographyEditor">
           <div class="cs-bio-head"><h3>Биография</h3><div class="cs-bio-tools cs-editonly" data-oos="Панель ProseMirror Foundry: заголовки, жирный, курсив, списки, ссылки на документы"><button type="button" class="cs-ibtn cs-mini" aria-label="Жирный"><b>Ж</b></button><button type="button" class="cs-ibtn cs-mini" aria-label="Курсив"><i>К</i></button><button type="button" class="cs-ibtn cs-mini" aria-label="Список">•</button><button type="button" class="cs-ibtn cs-mini" aria-label="Ссылка">@</button></div></div>
           <div class="cs-prose" contenteditable="true" data-bio-prose aria-label="Биография" role="textbox" aria-multiline="true">
@@ -1761,7 +1840,7 @@ button.cs-stat:active { transform: scale(0.95); }
     { key: "wis", label: "Мдр", value: 12, save: true },
     { key: "cha", label: "Хар", value: 10, save: false }
   ];
-  const PROF = 3;
+  let PROF = 3, SAVE_BONUS = 2; // SAVE_BONUS: the cloak and the ring add +1 each to every save
   const PREP_MAX = 10; // Wizard 6 (2024): prepared spells from the class table
   const SKILLS = [
     ["Акробатика", "dex", 0], ["Анализ", "int", 1], ["Атлетика", "str", 0], ["Внимательность", "wis", 1],
@@ -1788,9 +1867,12 @@ button.cs-stat:active { transform: scale(0.95); }
     std2014: { name: "Стандарт 2014", figure: "human", attune: 3, slots: STD },
     extended: { name: "Расширенный · 19 слотов", figure: "human", attune: 8, slots: ["head", "neck", "cloak", "armor", "ring1", "mainHand", "eyes", "hands", "waist", "feet", "ring2", "offHand", "ears", "shoulders", "wrists", "ring3", "ring4", "quiver", "beltPouch"] },
     beast: { name: "Зверь", figure: "beast", attune: 0, slots: ["collar", "saddle", "barding"] },
-    wagon: { name: "Повозка", figure: "wagon", attune: 0, slots: ["harness", "mount", "lantern", "banner"] },
-    ship: { name: "Корабль", figure: "ship", attune: 0, slots: ["figurehead", "cannon", "sail"] },
-    airship: { name: "Воздушное судно", figure: "airship", attune: 0, slots: ["envelope", "gondola"] }
+    wagon: { name: "Повозка", figure: "wagon", attune: 0, slots: [] },
+    wagonTack: { name: "Повозка · упряжь и орудие", figure: "wagon", attune: 0, slots: ["harness", "mount", "lantern", "banner"] },
+    ship: { name: "Корабль", figure: "ship", attune: 0, slots: [] },
+    shipPorts: { name: "Корабль · орудийные порты", figure: "ship", attune: 0, slots: ["figurehead", "cannon", "sail"] },
+    airship: { name: "Воздушное судно", figure: "airship", attune: 0, slots: [] },
+    airshipRig: { name: "Воздушное судно · оснастка", figure: "airship", attune: 0, slots: ["envelope", "gondola"] }
   };
   const presetSlots = () => PRESETS[S.preset].slots;
   const fitsHere = (it) => (it.slots ?? []).filter((slot) => presetSlots().includes(slot));
@@ -1900,6 +1982,7 @@ button.cs-stat:active { transform: scale(0.95); }
     conds: new Set(),
     // Window settings (#17): theme, accent, density, rail and tabs follow the user; motion and fonts stay on this device.
     theme: "night", motion: "full", fonts: true, fontsApplied: true, hiddenBlocks: new Set(), hiddenTabs: new Set(), askReset: false,
+    actor: "character", vtype: "water", // mock-only: which actor the window shows (#20)
     motionCapMock: "", noMagic: false, // mock-only: a simulated motion cap and a character without spells
     effOpen: null,
     conc: null,
@@ -1909,6 +1992,173 @@ button.cs-stat:active { transform: scale(0.95); }
   };
   const byId = Object.fromEntries([...items, ...spells, ...features].map((x) => [x.id, x]));
   const kind = (x) => (spells.includes(x) ? "spell" : features.includes(x) ? "feature" : "item");
+
+  /* ═══════════ Actor types (#8, #20): a character, an NPC with a player owner, a vehicle ═══════════ */
+  // One window for all three; the type only decides which blocks and tabs show ([data-types] in the markup).
+  const ACT_GROUPS = [["passive", "Особенности"], ["action", "Действия"], ["bonus", "Бонусные действия"], ["reaction", "Реакции"], ["legendary", "Легендарные действия"], ["lair", "Действия логова"], ["other", "Прочее"]];
+  const actGroup = (x) => (x.passive ? "passive" : ACT_GROUPS.some(([g]) => g === x.act) ? x.act : "other");
+  // Attacks are the weapon items themselves, as on dnd5e's NPC sheet; they also stay in the inventory.
+  const actionEntries = () => [...features, ...items.filter((x) => x.group === "weapon" && x.act)];
+  const VTYPE = { land: ["Наземный", "wagon"], water: ["Водный", "ship"], air: ["Воздушный", "airship"], space: ["Космический", "ship"] };
+  const KIND_WORD = { character: "у персонажа", npc: "у NPC", vehicle: "у транспорта" };
+  const KIND_META = {
+    character: { name: "Ирэн Вальмор", short: "ИВ", railSub: "Волшебница 6 · Высший эльф", sheet: "Открыть лист персонажа", featSearch: "Найти умение" },
+    npc: { name: "Бран Холт", short: "БХ", railSub: "КО 2 · телохранитель", sheet: "Открыть лист NPC", featSearch: "Найти действие", cr: "2",
+      sub: "Средний гуманоид (человек) · телохранитель Ирэн",
+      stats: [["КД", "16", "Кольчуга 16"], ["Иниц.", "+1", "", "Бросает инициативу и добавляет в бой"], ["Скор.", "30", "Ходьба 30 фт"], ["КО", "2", "450 опыта"], ["Пасс.", "13", "Пассивная внимательность"], ["Маст.", "+2", ""]],
+      legendary: null }, // { act: [left, max], res: [left, max] } shows the legendary row
+    vehicle: { name: "Морская ведьма", short: "МВ", sheet: "Открыть лист транспорта", featSearch: "Найти действие", cargo: 1,
+      stats: [["КД", "15", ""], ["Порог", "10", "Порог урона: меньший урон не проходит"], ["Авария", "20", "Порог аварии: урон от 20 — бросок по таблице аварий"], ["Скор.", "1", "1 миля в час, 24 мили в день", "миля/ч"]],
+      crew: { max: 4, list: [{ name: "Капитан Оса Мерроу", short: "ОМ" }, { name: "Ирэн Вальмор", short: "ИВ", open: "character" }, { hidden: true }] },
+      passengers: { max: 6, list: [{ name: "Бран Холт", short: "БХ", open: "npc" }, { name: "Лорд Кассиан", short: "ЛК" }] },
+      draft: { list: [{ name: "Тягловая лошадь", short: "ТЛ" }, { name: "Тягловая лошадь", short: "ТЛ" }] },
+      legacy: [["Гребцы", 6]] }
+  };
+  KIND_META.vehicle.railSub = () => `${VTYPE[S.vtype][0]} транспорт · Огромный`;
+  KIND_META.vehicle.sub = () => `${VTYPE[S.vtype][0]} транспорт · Огромный · киль 60 фт, бимс 20 фт`;
+  KIND_META.vehicle.bannerSub = () => `<b>${PRESETS[S.preset].name}</b><span>Киль 60 фт · бимс 20 фт · груз до ${KIND_META.vehicle.cargo} т</span>`;
+  const metaText = (v) => (typeof v === "function" ? v() : v ?? "");
+  // Snapshots of everything that differs per actor; the character's is taken on the first switch.
+  const KIND_KEYS = ["hp", "hpMax", "temp", "preset", "equipped", "attuned", "noSlot", "coins", "selected", "conds", "conc", "exh", "collapsed"];
+  const KIND_HTML = ['[data-ui="defensesCard"]', '[data-ui="sensesCard"]', "[data-bio-prose]"];
+  const kv = (k, v) => `<div class="cs-kv"><span>${k}</span>${v ? `<b>${v}</b>` : `<b class="is-none">нет</b>`}</div>`;
+  const cardHead = (sel) => $(sel).querySelector("h3").outerHTML;
+  const KINDS = {
+    npc: () => ({
+      prof: 2, saveBonus: 0, enc: { max: 240, encumbered: 80, heavy: 160, mode: "variant" },
+      abilities: [16, 12, 14, 10, 13, 9].map((value, i) => ({ ...ABILITIES[i], value, save: i === 0 || i === 2 })),
+      skills: SKILLS.map(([n, ab]) => [n, ab, ["Атлетика", "Внимательность", "Запугивание"].includes(n) ? 1 : 0]),
+      tools: [],
+      items: [
+        { id: "bran-mace", name: "Булава", group: "weapon", icon: "sword", rarity: "common", act: "action", roll: "+5 · 1к6 + 3 дроб.", qty: 1, wt: 4, price: 5, slots: ["mainHand"], tags: ["Простое"], desc: "Дробящий урон 1к6 + 3." },
+        { id: "bran-xbow", name: "Ручной арбалет", group: "weapon", icon: "staff", rarity: "common", act: "action", roll: "+3 · 1к6 + 1 кол.", qty: 1, wt: 3, price: 75, slots: ["mainHand", "offHand"], tags: ["Лёгкое", "Боеприпасы"], desc: "Колющий урон 1к6 + 1. Дистанция 30/120 фт." },
+        { id: "bran-shield", name: "Щит стражи", group: "equipment", icon: "shield", rarity: "common", qty: 1, wt: 6, price: 10, slots: ["offHand"], shield: true, tags: ["+2 КД"], desc: "Окованный щит с гербом дома Вальмор." },
+        { id: "bran-mail", name: "Кольчуга", group: "equipment", icon: "armor", rarity: "common", qty: 1, wt: 55, price: 75, slots: ["armor"], tags: ["Тяжёлый доспех", "КД 16"], desc: "Помеха на Скрытность." },
+        { id: "bran-bolts", name: "Арбалетные болты", group: "consumable", icon: "staff", rarity: "common", qty: 18, wt: 0.075, price: 0.05, tags: ["Боеприпасы"], desc: "Обычные болты." },
+        { id: "bran-potion", name: "Зелье лечения", group: "consumable", icon: "potion", rarity: "common", act: "bonus", qty: 1, wt: 0.5, price: 50, tags: ["2к4+2"], desc: "Восстанавливает 2к4 + 2 хита." },
+        { id: "bran-pack", name: "Заплечный мешок", group: "container", icon: "bag", rarity: "common", qty: 1, wt: 5, price: 2, cap: 30, tags: [], desc: "Вмещает 30 фнт снаряжения." },
+        { id: "bran-ration", name: "Рацион", group: "consumable", icon: "food", rarity: "common", qty: 3, wt: 2, price: 0.5, in: "bran-pack", tags: [], desc: "Сухари и вяленое мясо." }
+      ],
+      features: [
+        { id: "bran-multi", name: "Мультиатака", icon: "sword", act: "action", tags: [], desc: "Бран совершает две атаки булавой." },
+        { id: "bran-smash", name: "Сокрушительный удар", icon: "bolt", act: "action", roll: "Сл 13 Тел", uses: [1, 1], recharge: "5–6", tags: [], desc: "Цель в 5 фт — спасбросок Телосложения Сл 13 или сбита с ног и теряет реакцию." },
+        { id: "bran-wind", name: "Второе дыхание", icon: "heart", act: "bonus", uses: [1, 1], rec: "Короткий отдых", tags: ["1к10 + 2"], desc: "Бран восстанавливает 1к10 + 2 хита." },
+        { id: "bran-guard", name: "Защитник", icon: "shield", act: "reaction", tags: [], desc: "Когда существо атакует союзника в 5 фт от Брана, тот накладывает помеху на бросок атаки." },
+        { id: "bran-loyal", name: "Верный страж", icon: "eye", passive: true, tags: [], desc: "Пока Ирэн в 30 фт и Бран её видит, его нельзя очаровать или испугать." }
+      ],
+      effects: [],
+      state: { hp: 32, hpMax: 45, temp: 0, preset: "standard", equipped: { mainHand: "bran-mace", offHand: "bran-shield", armor: "bran-mail" }, attuned: new Set(), noSlot: new Set(), coins: { pp: 0, gp: 12, ep: 0, sp: 30, cp: 8 }, selected: null, conds: new Set(), conc: null, exh: 0, collapsed: new Set() },
+      html: [
+        cardHead('[data-ui="defensesCard"]') + kv("Сопротивления") + kv("Иммунитеты") + kv("Уязвимости") + kv("Иммунитет к состояниям") + kv("Изменение урона"),
+        cardHead('[data-ui="sensesCard"]') + kv("Пассивная внимательность", "13") + kv("Чувства") + kv("Доспехи", "Все, щиты") + kv("Оружие", "Простое и воинское") + kv("Языки", "Общий"),
+        "<p>Бывший сержант городской стражи Аскалона. Нанят домом Вальмор, когда Ирэн отправилась в первое путешествие, и с тех пор ни разу не отошёл от неё дальше вытянутого клинка.</p>"
+      ]
+    }),
+    vehicle: () => ({
+      prof: 0, saveBonus: 0, enc: { max: 2000, encumbered: 2000, heavy: 2000, mode: "off" },
+      abilities: [18, 8, 16, 0, 0, 0].map((value, i) => ({ ...ABILITIES[i], value, save: false })),
+      skills: [], tools: [],
+      items: [
+        { id: "veh-ballista", name: "Баллиста", group: "weapon", icon: "staff", rarity: "common", act: "action", roll: "+6 · 3к10 кол.", qty: 1, wt: 0, price: 0, tags: ["Осадное", "120/480 фт"], desc: "Нужен один член экипажа, чтобы зарядить, и ещё действие, чтобы выстрелить." },
+        { id: "veh-sail", name: "Запасной парус", group: "equipment", icon: "cloak", rarity: "common", qty: 1, wt: 60, price: 20, tags: [], desc: "Свёрнутый парусиновый парус." },
+        { id: "veh-anchor", name: "Якорь", group: "equipment", icon: "tool", rarity: "common", qty: 1, wt: 150, price: 10, tags: [], desc: "Двурогий железный якорь." },
+        { id: "veh-water", name: "Бочка пресной воды", group: "consumable", icon: "potion", rarity: "common", qty: 4, wt: 70, price: 2, tags: [], desc: "Хватит команде на неделю." },
+        { id: "veh-salt", name: "Ящик солонины", group: "consumable", icon: "food", rarity: "common", qty: 2, wt: 50, price: 5, tags: [], desc: "Солёное мясо в бочонках." },
+        { id: "veh-silk", name: "Тюк шёлка", group: "loot", icon: "cloak", rarity: "common", qty: 3, wt: 100, price: 300, tags: ["Товар"], desc: "Ткань с юга, на продажу в порту." },
+        { id: "veh-chest", name: "Сундук капитана", group: "container", icon: "bag", rarity: "common", qty: 1, wt: 25, price: 5, cap: 100, tags: [], desc: "Заперт, ключ у капитана." },
+        { id: "veh-map", name: "Морские карты", group: "loot", icon: "scroll", rarity: "uncommon", qty: 1, wt: 1, price: 150, in: "veh-chest", tags: [], desc: "Карты прибрежных течений." }
+      ],
+      features: [],
+      effects: [{ id: "wind", name: "Попутный ветер", sub: "Скорость +1 миля/ч", time: "6 ч", school: "trs", icon: "cloak", temporary: true, from: "Порыв ветра", changes: ["Скорость: +1 миля/ч"], desc: "Магический ветер наполняет паруса." }],
+      state: { hp: 82, hpMax: 100, temp: 0, preset: VTYPE[S.vtype][1], equipped: {}, attuned: new Set(), noSlot: new Set(), coins: { pp: 0, gp: 40, ep: 0, sp: 0, cp: 0 }, selected: null, conds: new Set(), conc: null, exh: 0, collapsed: new Set() },
+      html: [$(KIND_HTML[0]).innerHTML, $(KIND_HTML[1]).innerHTML, "<p>Килевая лодка с одной мачтой и баллистой на носу. Ходит вдоль побережья от Аскалона до Соляных островов; капитан Оса Мерроу знает каждую мель.</p>"]
+    })
+  };
+  const SAVED = {};
+  const copy = (v) => (v instanceof Set ? new Set(v) : structuredClone(v));
+  function takeSnapshot() {
+    return { prof: PROF, saveBonus: SAVE_BONUS, enc: { ...ENC }, abilities: copy(ABILITIES), skills: copy(SKILLS), tools: copy(TOOLS), items: copy(items), features: copy(features), effects: copy(EFFECTS),
+      state: Object.fromEntries(KIND_KEYS.map((k) => [k, copy(S[k])])), html: KIND_HTML.map((sel) => $(sel).innerHTML), tab: S.tab };
+  }
+  function loadSnapshot(sn) {
+    PROF = sn.prof; SAVE_BONUS = sn.saveBonus; Object.assign(ENC, sn.enc);
+    for (const [arr, src] of [[ABILITIES, sn.abilities], [SKILLS, sn.skills], [TOOLS, sn.tools], [items, sn.items], [features, sn.features], [EFFECTS, sn.effects]]) arr.splice(0, arr.length, ...copy(src));
+    for (const k of KIND_KEYS) S[k] = copy(sn.state[k]);
+    KIND_HTML.forEach((sel, i) => { $(sel).innerHTML = sn.html[i]; });
+    for (const k of Object.keys(byId)) delete byId[k];
+    for (const x of [...items, ...spells, ...features]) byId[x.id] = x;
+  }
+  // Mock: switches the window to another actor; each keeps its own state while the mock runs.
+  function setActor(next) {
+    if (next === S.actor) return;
+    SAVED[S.actor] = takeSnapshot();
+    if (S.trade.status !== "idle") Object.assign(S.trade, { status: "idle", mine: {}, myCoins: {}, theirs: [], theirCoins: {}, confirmed: [false, false] });
+    root.classList.remove("is-trading");
+    S.actor = next;
+    loadSnapshot(SAVED[next] ?? KINDS[next]());
+    document.querySelectorAll("[data-actor-set]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.actorSet === next));
+    document.querySelector("[data-mock-vtype-wrap]").hidden = next !== "vehicle";
+    document.querySelector('[data-ui="mockVariantSwitch"]').hidden = next !== "vehicle";
+    renderKind();
+    renderAbilities(); renderOverview(); renderVitals(); renderLists(); renderDoll(); renderInventory(); renderInspector(); renderTrade();
+    renderSettingsLists(); applyVisibility(); applyRole();
+    const tab = SAVED[next]?.tab ?? "equipment";
+    setTab($(`.cs-tab[data-tab="${tab}"]`)?.hidden ? "equipment" : tab);
+    requestAnimationFrame(moveInk);
+  }
+  function renderKind() {
+    const k = S.actor, m = KIND_META[k];
+    root.dataset.actor = k;
+    root.setAttribute("aria-label", k === "character" ? "Лист персонажа" : k === "npc" ? "Окно NPC" : "Окно транспорта");
+    $(".cs-name").textContent = m.name; $(".cs-rail-name").textContent = m.name;
+    $(".cs-rail-sub").textContent = metaText(m.railSub); $(".cs-avatar").textContent = m.short;
+    $("[data-hp-max]").textContent = S.hpMax;
+    $("[data-features-label]").textContent = k === "character" ? "Умения" : "Действия";
+    $('[data-search="features"]').placeholder = m.featSearch;
+    $("[data-sheet-open]").textContent = m.sheet;
+    $("[data-kind-sub]").textContent = metaText(m.sub);
+    if (m.cr) $("[data-cr]").textContent = m.cr;
+    if (m.stats) $(`[data-kind-stats="${k}"]`).innerHTML = m.stats.map(([label, v, title, extra]) => label === "Иниц."
+      ? `<button type="button" class="cs-stat fx-spot" data-ui="vitalStat" data-oos="${extra}"><b>${v}</b><span>${label}</span></button>`
+      : `<div class="cs-stat" data-ui="vitalStat"${title ? ` title="${title}"` : ""}><b>${v}${extra ? ` <small>${extra}</small>` : ""}</b><span>${label}</span></div>`).join("");
+    const lg = m.legendary;
+    $("[data-legendary]").innerHTML = k === "npc" && lg ? [["Легендарные действия", lg.act], ["Легендарное сопротивление", lg.res]].filter(([, v]) => v).map(([label, [left, max]]) => `<span class="cs-vlabel">${label} <b>${left}</b>/${max}</span><span class="cs-pipset">${Array.from({ length: max }, (_, i) => `<i class="${i >= left ? "is-spent" : ""}"></i>`).join("")}</span>`).join("") : "";
+    if (k === "vehicle") renderCrew();
+  }
+  function renderCargo() {
+    const t = carried() / 2000, cap = KIND_META.vehicle.cargo;
+    $("[data-cargo-text]").innerHTML = `<b>${t.toFixed(2).replace(".", ",")}</b> / ${cap} т`;
+    const bar = $("[data-cargo-bar]");
+    bar.style.width = `${Math.min(100, (t / cap) * 100)}%`;
+    bar.classList.toggle("is-over", t > cap);
+  }
+  // Crew, passengers and draft animals are read-only here; the composition is edited on the vehicle's own sheet.
+  function crewHTML(mode) {
+    const m = KIND_META.vehicle;
+    const person = (p) => p.hidden
+      ? `<span class="cs-crew-p is-hidden" title="Вам не видно этого актора"><span class="av">?</span><span>Неизвестный</span></span>`
+      : `<button type="button" class="cs-crew-p" data-crew-open="${p.open ?? ""}" title="${p.name}"><span class="av">${p.short}</span><span>${p.name}</span></button>`;
+    const group = (title, g, always) => {
+      if (!g || (!g.list.length && !always)) return "";
+      const free = g.max ? Math.max(0, g.max - g.list.length) : 0;
+      return `<div class="cs-crew-group"><h4><span>${title}</span><b>${g.max ? `${g.list.length}/${g.max}` : g.list.length}</b></h4><div class="cs-crew-list">${g.list.map(person).join("")}${free && mode !== "band" ? `<span class="cs-crew-p is-free"><span class="av">+</span><span>${free} ${free === 1 ? "место" : free < 5 ? "места" : "мест"}</span></span>` : ""}</div></div>`;
+    };
+    const legacy = mode === "band" || !m.legacy.length ? "" : `<div class="cs-crew-group"><h4><span>Без актора</span></h4>${m.legacy.map(([n, q]) => `<div class="cs-crew-legacy"><span>${n}</span><b>× ${q}</b></div>`).join("")}</div>`;
+    const note = mode === "tab" ? `<p class="cs-crew-note">Состав меняется в листе транспорта. Клик по портрету открывает окно этого актора или его лист.</p>` : "";
+    return group("Экипаж", m.crew, true) + group("Пассажиры", m.passengers, true) + (S.vtype === "land" ? group("Тягловые", m.draft, true) : "") + legacy + note;
+  }
+  function renderCrew() {
+    const v = root.dataset.vehicle;
+    $('[data-crew-host="A"]').innerHTML = v === "A" ? `<div class="cs-rail-title"><span>Экипаж и пассажиры</span></div>${crewHTML("rail")}` : "";
+    $('[data-crew-host="C"]').innerHTML = v === "C" ? crewHTML("tab") : "";
+    const m = KIND_META.vehicle;
+    $('[data-count="crew"]').textContent = m.crew.list.length + m.passengers.list.length;
+  }
+  function setVehicleVariant(v) {
+    root.dataset.vehicle = v;
+    document.querySelectorAll("[data-vehicle-set]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.vehicleSet === v));
+    renderCrew(); renderDoll(); renderSettingsLists(); applyVisibility();
+  }
   const mod = (v) => Math.floor((v - 10) / 2);
   const sign = (n) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
   const canEdit = () => root.dataset.role !== "observer";
@@ -2042,7 +2292,9 @@ button.cs-stat:active { transform: scale(0.95); }
     let meta = "", num = "", acts = "";
     if (k === "item") {
       const att = x.attune ? `<span class="cs-tag is-att">${S.attuned.has(x.id) ? "Настроено" : "Требует настройки"}</span>` : "";
-      meta = [`${+(x.wt * x.qty).toFixed(2)} фнт`, x.price ? `${fmtPrice(x.price * x.qty)}` : "", att, ...x.tags.map((t) => `<span class="cs-tag">${t}</span>`)].join("");
+      // In «Действия» an attack shows its roll instead of weight and price.
+      const inActs = sec.startsWith("act-");
+      meta = [inActs && x.roll ? `<span class="cs-tag is-roll">${x.roll}</span>` : "", inActs ? "" : `${+(x.wt * x.qty).toFixed(2)} фнт`, x.price && !inActs ? `${fmtPrice(x.price * x.qty)}` : "", att, ...x.tags.map((t) => `<span class="cs-tag">${t}</span>`)].join("");
       num = x.uses
         ? `<span class="cs-uses cs-charges" data-ui="chargesTrack" title="Заряды ${x.uses[0]} / ${x.uses[1]}: клик — потратить, правый клик — вернуть">${Array.from({ length: x.uses[1] }, (_, i) => `<button type="button" class="${i >= x.uses[0] ? "is-spent" : ""}" data-charge="${x.id}" data-i="${i}" aria-label="Заряд ${i + 1}"></button>`).join("")}</span>`
         : `<span class="cs-qty" data-ui="quantityStepper"><button type="button" class="cs-editonly" data-qty="${x.id}" data-d="-1" aria-label="Меньше">−</button><b class="cs-num">${x.qty}</b><button type="button" class="cs-editonly" data-qty="${x.id}" data-d="1" aria-label="Больше">+</button></span>`;
@@ -2055,7 +2307,7 @@ button.cs-stat:active { transform: scale(0.95); }
       if (x.lvl && !x.method && !x.always) acts += `<button type="button" class="cs-ibtn cs-editonly ${x.prep ? "is-on" : ""}" data-ui="prepareButton" data-prep="${x.id}" aria-pressed="${!!x.prep}" aria-label="${x.prep ? "Убрать из подготовленных" : "Подготовить"}" title="${x.prep ? "Убрать из подготовленных" : "Подготовить"}">${icon("book")}</button>`;
       if (castable(x)) { const ritualOnly = x.lvl && !x.prep && !x.always && !x.method; acts += `<button type="button" class="cs-ibtn cs-editonly" data-ui="castButton" data-cast="${x.id}" aria-label="${ritualOnly ? "Сотворить ритуалом" : "Сотворить"}" title="${ritualOnly ? "Сотворить ритуалом" : "Сотворить"}">${icon("spark")}</button>`; }
     } else {
-      meta = [x.passive ? `<span class="cs-tag is-passive">Пассивное</span>` : x.act ? `<span class="cs-tag">${ACT_LABEL[x.act]}</span>` : "", recTag(x), ...x.tags.map((t) => `<span class="cs-tag">${t}</span>`)].join("");
+      meta = [x.roll ? `<span class="cs-tag is-roll">${x.roll}</span>` : "", x.passive ? `<span class="cs-tag is-passive">Пассивное</span>` : x.act && S.actor === "character" ? `<span class="cs-tag">${ACT_LABEL[x.act]}</span>` : "", recTag(x), ...x.tags.map((t) => `<span class="cs-tag">${t}</span>`)].join("");
       num = usesHTML(x);
     }
     if (k === "item" && S.trade.status === "open" && x.group === "container" && bagContents(x.id).length) acts += `<button type="button" class="cs-ibtn cs-editonly" data-ui="offerButton" disabled aria-label="В обмен" title="Сначала выньте содержимое">${icon("trade")}</button>`;
@@ -2108,7 +2360,7 @@ button.cs-stat:active { transform: scale(0.95); }
 
   function renderAbilities() {
     $("[data-abilities]").innerHTML = ABILITIES.map((a) => `<button type="button" class="cs-ability fx-spot" data-ui="abilityTile" data-oos="Бросает проверку ${a.label}; Shift+клик — спасбросок" title="Проверка; Shift — спасбросок">
-      <span class="sv ${a.save ? "is-prof" : ""}"></span><span class="k">${a.label}</span><span class="m">${sign(mod(a.value))}</span><span class="v">${a.value}</span><span class="svt">Спас ${sign(mod(a.value) + (a.save ? PROF : 0) + 2)}</span></button>`).join("");
+      <span class="sv ${a.save ? "is-prof" : ""}"></span><span class="k">${a.label}</span><span class="m">${sign(mod(a.value))}</span><span class="v">${a.value}</span><span class="svt">Спас ${sign(mod(a.value) + (a.save ? PROF : 0) + SAVE_BONUS)}</span></button>`).join("");
   }
   const TOOLS = [["Принадлежности каллиграфа", "dex", 1], ["Набор алхимика", "int", 1]];
   function renderOverview() {
@@ -2120,9 +2372,10 @@ button.cs-stat:active { transform: scale(0.95); }
       const b = mod(ABILITIES.find((a) => a.key === ab).value) + PROF * p;
       return `<div class="cs-skill" data-ui="skillRow" data-fav-src="skill:${n}" draggable="${canEdit()}" data-oos="Бросает проверку навыка «${n}»; перетащите в «Избранное», чтобы держать под рукой"><span class="p ${p === 1 ? "is-prof" : p === 2 ? "is-exp" : ""}"></span><span class="ab">${ABILITIES.find((a) => a.key === ab).label}</span><span class="nm">${n}</span><span class="bn">${sign(b)}</span></div>`;
     }).join("");
-    $("[data-saves]").innerHTML = ABILITIES.map((a) => `<div class="cs-skill" data-ui="saveRow" data-oos="Бросает спасбросок ${a.label}"><span class="p ${a.save ? "is-prof" : ""}"></span><span class="nm">${({ str: "Сила", dex: "Ловкость", con: "Телосложение", int: "Интеллект", wis: "Мудрость", cha: "Харизма" })[a.key]}</span><span class="bn">${sign(mod(a.value) + (a.save ? PROF : 0) + 2)}</span></div>`).join("");
+    $("[data-saves]").innerHTML = ABILITIES.map((a) => `<div class="cs-skill" data-ui="saveRow" data-oos="Бросает спасбросок ${a.label}"><span class="p ${a.save ? "is-prof" : ""}"></span><span class="nm">${({ str: "Сила", dex: "Ловкость", con: "Телосложение", int: "Интеллект", wis: "Мудрость", cha: "Харизма" })[a.key]}</span><span class="bn">${sign(mod(a.value) + (a.save ? PROF : 0) + SAVE_BONUS)}</span></div>`).join("");
   }
   function renderInventory() {
+    if (S.actor === "vehicle") renderCargo();
     const top = items.filter((x) => !x.in);
     $("[data-inventory]").innerHTML = renderBags() + GROUPS.map(([g, title]) => section(g, title, visibleItems(top.filter((x) => x.group === g)), "items")).join("");
     const load = +carried().toFixed(1);
@@ -2186,13 +2439,22 @@ button.cs-stat:active { transform: scale(0.95); }
       <select class="cs-doll-select" data-ui="dollPresetSelect" aria-label="Пресет куклы">${Object.entries(PRESETS).map(([k, p]) => `<option value="${k}" ${k === S.preset ? "selected" : ""}>${p.name}</option>`).join("")}</select>
       <button type="button" class="cs-ibtn cs-mini cs-gmonly" data-ui="dollPresetEdit" aria-label="Редактор пресетов" title="Редактор пресетов" data-oos="Открывает редактор пресетов кукол: фигура, слоты, их места, допустимые типы предметов, лимит настройки">${icon("edit")}</button></div>`;
     const fig = preset.figure;
+    // A preset without slots (a vehicle by default) shows its figure as a low banner over the hold, not an empty doll.
+    const banner = !preset.slots.length && !max && !att;
+    $(".cs-equip").classList.toggle("has-banner", banner);
+    if (banner) {
+      const m = KIND_META[S.actor];
+      const band = S.actor === "vehicle" && root.dataset.vehicle === "B" ? `<div class="cs-crew is-band" data-ui="crewBlock">${crewHTML("band")}</div>` : "";
+      $("[data-doll]").innerHTML = head.replace(">Кукла<", ">Фигура<") + `<div class="cs-doll-banner" data-ui="figureBanner"><div class="cs-figure is-${fig}">${figureSVG(fig)}</div><div class="cs-doll-banner-text">${m.bannerSub?.() ?? ""}</div>${band}</div>`;
+      return;
+    }
     // Up to twelve slots beside the figure, split into a left and a right column; the rest overflow into a grid.
     const placed = preset.slots.slice(0, 12);
     const rest = preset.slots.slice(12);
     const half = Math.ceil(placed.length / 2), rows = Math.max(half, 3), right = placed.length - half;
     // Up to three sockets sit under the figure between the bottom slots; more move to their own strip.
     const inGrid = attune && !wide && att <= 3;
-    const stage = `<div class="cs-doll-grid" style="grid-template-rows: repeat(${rows}, 62px)"><div class="cs-doll-portrait" aria-hidden="true">ИВ</div><div class="cs-figure is-${fig}" style="grid-row: 1 / ${inGrid ? rows : rows + 1}">${figureSVG(fig)}</div>`
+    const stage = `<div class="cs-doll-grid" style="grid-template-rows: repeat(${rows}, 62px)"><div class="cs-doll-portrait" aria-hidden="true">${KIND_META[S.actor].short}</div><div class="cs-figure is-${fig}" style="grid-row: 1 / ${inGrid ? rows : rows + 1}">${figureSVG(fig)}</div>`
       + placed.map((slot, i) => slotButton(slot, `style="grid-column:${i < half ? 1 : 3};grid-row:${i < half ? i + 1 : rows - right + (i - half) + 1}"`)).join("")
       + (inGrid ? attune.replace('class="cs-attune', `style="grid-column:2;grid-row:${rows}" class="cs-attune`) : "") + `</div>`;
     const extra = rest.length ? `<div class="cs-doll-extra" data-ui="extraSlots"><div class="cs-doll-sub">Дополнительные слоты <b>${rest.length}</b></div><div class="cs-extra-grid">${rest.map((slot) => slotButton(slot)).join("")}</div></div>` : "";
@@ -2221,6 +2483,13 @@ button.cs-stat:active { transform: scale(0.95); }
   const FEAT_FILTERS = { action: (x) => x.act === "action", bonus: (x) => x.act === "bonus", reaction: (x) => x.act === "reaction", passive: (x) => !!x.passive };
   const featShown = (x) => match(x, S.search.features) && [...S.featFilter].every((f) => FEAT_FILTERS[f](x));
   function renderFeatures() {
+    if (S.actor !== "character") {
+      // NPC and vehicle: «Действия» group features and attacks by action cost, as dnd5e's NPC sheet does.
+      const all = actionEntries();
+      $("[data-features]").innerHTML = ACT_GROUPS.map(([g, title]) => { const list = all.filter((x) => actGroup(x) === g); return list.length ? section(`act-${g}`, title, list.filter(featShown), "features") : ""; }).join("");
+      $('[data-count="features"]').textContent = all.length;
+      return;
+    }
     $("[data-features]").innerHTML = ORIGINS.map(([src, title, sub], i) => {
       const all = features.filter((f) => f.src === src);
       return all.length ? section(`src${i}`, title, all.filter(featShown), "features", `<span class="cs-sec-meta">${sub}</span>`) : "";
@@ -2252,6 +2521,7 @@ button.cs-stat:active { transform: scale(0.95); }
   }
   const FAV_ACTS = [["action", "Действие"], ["bonus", "Бонусное действие"], ["reaction", "Реакция"], ["other", "Прочее"]];
   function renderFavorites() {
+    if (S.actor !== "character") return; // dnd5e keeps system.favorites on characters only
     const list = S.favorites.map(favEntry).filter(Boolean);
     $("[data-fav-count]").textContent = list.length || "";
     const quick = (f) => f.type === "spell" ? `<button type="button" class="cs-fav-use cs-editonly" data-ui="favoriteCastButton" data-cast="${f.id}" aria-label="Сотворить: ${f.name}" title="Сотворить">${icon("spark")}</button>`
@@ -2412,7 +2682,7 @@ button.cs-stat:active { transform: scale(0.95); }
     const ratio = S.hp / S.hpMax;
     const prevVital = root.dataset.vital;
     root.dataset.vital = S.hp === 0 ? "down" : ratio <= 0.25 ? "critical" : ratio <= 0.5 ? "hurt" : "ok";
-    $(".cs-hp-label").textContent = S.hp === 0 ? "Без сознания" : "Хиты";
+    $(".cs-hp-label").textContent = S.hp === 0 ? (S.actor === "vehicle" ? "Разрушен" : "Без сознания") : "Хиты";
     if (prevVital === "down" && S.hp > 0) pulse($(".cs-hpcard"), "is-revive");
     if (change) pulse($(".cs-hp-val"), "is-pop");
     const fill = $("[data-hp-fill]"), ghost = $("[data-hp-ghost]"), tempBar = $("[data-hp-tempbar]");
@@ -2867,9 +3137,16 @@ button.cs-stat:active { transform: scale(0.95); }
   /* ═══════════ Window settings (#17) ═══════════ */
   const MOTION = ["off", "reduced", "full"];
   const MOTION_ABOUT = { full: "Отклик на действия и фоновые эффекты.", reduced: "Только отклик на действия, без фоновых циклов и частиц.", off: "Только короткие затухания." };
-  const RAIL_BLOCKS = [["hitDiceTrack", "Кости хитов"], ["slotRunes", "Ячейки заклинаний", "magic"], ["vitalStat", "КД, инициатива, скорость"], ["spellcastingStrip", "Сл и атака заклинаний", "magic"], ["effectsList", "Эффекты"], ["chips", "Вдохновение и истощение"], ["restBar", "Кнопки отдыха"], ["favoritesList", "Избранное"]];
-  const SHEET_TABS = [["overview", "Обзор"], ["equipment", "Снаряжение", "always"], ["spells", "Заклинания", "magic"], ["features", "Умения"], ["effects", "Эффекты"], ["biography", "Биография"]];
-  const hasPart = (need) => need !== "magic" || !S.noMagic;
+  // [key, label, need, actor types]; the drawer lists only what the current actor type can show (#20).
+  const C = "character", N = "npc", V = "vehicle";
+  const RAIL_BLOCKS = [["hitDiceTrack", "Кости хитов", "", [C]], ["slotRunes", "Ячейки заклинаний", "magic", [C, N]], ["vitalStat", () => S.actor === V ? "КД, пороги, скорость" : S.actor === N ? "КД, инициатива, скорость, КО" : "КД, инициатива, скорость", "", [C, N, V]], ["legendaryTrack", "Легендарные действия", "legendary", [N]], ["cargoMeter", "Груз", "", [V]], ["crewBlock", "Экипаж и пассажиры", "crewRail", [V]], ["spellcastingStrip", "Сл и атака заклинаний", "magic", [C, N]], ["effectsList", "Эффекты", "", [C, N, V]], ["chips", () => S.actor === N ? "Истощение и концентрация" : "Вдохновение и истощение", "", [C, N]], ["restBar", "Кнопки отдыха", "", [C]], ["favoritesList", "Избранное", "", [C]]];
+  const SHEET_TABS = [["overview", "Обзор", "", [C, N]], ["equipment", "Снаряжение", "always", [C, N, V]], ["crew", "Экипаж", "crewTab", [V]], ["spells", "Заклинания", "magic", [C, N]], ["features", () => S.actor === C ? "Умения" : "Действия", "actions", [C, N, V]], ["effects", "Эффекты", "", [C, N, V]], ["biography", "Биография", "", [C, N, V]]];
+  const hasPart = (need) => need === "magic" ? S.actor === C && !S.noMagic
+    : need === "legendary" ? !!KIND_META[S.actor].legendary
+    : need === "actions" ? actionEntries().length > 0
+    : true;
+  // A crew block lives in the rail only in variant A and as a tab only in variant C; elsewhere it is not listed at all.
+  const listed = ([, , need, types]) => types.includes(S.actor) && (need !== "crewRail" || root.dataset.vehicle === "A") && (need !== "crewTab" || root.dataset.vehicle === "C");
   const schemeLight = matchMedia("(prefers-color-scheme: light)");
   const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
   // The level is capped from above: reduced motion in the OS allows «Выключены» only, Foundry's performance-low «Сдержанно».
@@ -2907,18 +3184,18 @@ button.cs-stat:active { transform: scale(0.95); }
   }
   function toggleRow(label, attr, key, hidden, need) {
     const always = need === "always", absent = !hasPart(need);
-    const note = always ? "всегда" : absent ? "нет у персонажа" : "";
+    const note = always ? "всегда" : absent ? `нет ${KIND_WORD[S.actor]}` : "";
     return `<label class="cs-toggle${always || absent ? " is-off" : ""}"><span>${label}${note ? `<small>${note}</small>` : ""}</span><input type="checkbox" ${attr}="${key}"${!hidden && !absent ? " checked" : ""}${always || absent ? " disabled" : ""}></label>`;
   }
   function renderSettingsLists() {
-    $("[data-rail-toggles]").innerHTML = toggleRow("Хиты", "data-widget", "hp", false, "always") + RAIL_BLOCKS.map(([k, l, need]) => toggleRow(l, "data-widget", k, S.hiddenBlocks.has(k), need)).join("");
-    $("[data-tab-toggles]").innerHTML = SHEET_TABS.map(([k, l, need]) => toggleRow(l, "data-tab-toggle", k, S.hiddenTabs.has(k), need)).join("");
+    $("[data-rail-toggles]").innerHTML = toggleRow("Хиты", "data-widget", "hp", false, "always") + RAIL_BLOCKS.filter(listed).map(([k, l, need]) => toggleRow(metaText(l), "data-widget", k, S.hiddenBlocks.has(k), need)).join("");
+    $("[data-tab-toggles]").innerHTML = SHEET_TABS.filter(listed).map(([k, l, need]) => toggleRow(metaText(l), "data-tab-toggle", k, S.hiddenTabs.has(k), need)).join("");
   }
   // A rail block or tab shows when the user keeps it and the character has it; a hidden open tab falls back to Снаряжение.
   function applyVisibility() {
-    const blockOf = (k) => k === "chips" ? $(".cs-chips") : k === "vitalStat" ? $(".cs-stats") : $(`.cs-rail [data-ui="${k}"]`);
-    flip($(".cs-rail"), "[data-flip], .cs-stat", () => RAIL_BLOCKS.forEach(([k, , need]) => { blockOf(k).style.display = S.hiddenBlocks.has(k) || !hasPart(need) ? "none" : ""; }));
-    flip($(".cs-tabs"), ".cs-tab", () => SHEET_TABS.forEach(([k, , need]) => { $(`.cs-tab[data-tab="${k}"]`).hidden = S.hiddenTabs.has(k) || !hasPart(need); }));
+    const blocksOf = (k) => k === "chips" ? [$(".cs-chips")] : k === "vitalStat" ? $$(".cs-rail .cs-stats") : [$(`.cs-rail [data-ui="${k}"]`)];
+    flip($(".cs-rail"), "[data-flip], .cs-stat", () => RAIL_BLOCKS.forEach((b) => { const [k, , need, types] = b; blocksOf(k).forEach((el) => { el.style.display = !types.includes(S.actor) || S.hiddenBlocks.has(k) || !hasPart(need) ? "none" : ""; }); }));
+    flip($(".cs-tabs"), ".cs-tab", () => SHEET_TABS.forEach((t) => { const [k, , need] = t; $(`.cs-tab[data-tab="${k}"]`).hidden = !listed(t) || S.hiddenTabs.has(k) || !hasPart(need); }));
     if ($(`.cs-tab[data-tab="${S.tab}"]`).hidden) setTab("equipment");
     requestAnimationFrame(moveInk);
   }
@@ -3068,6 +3345,7 @@ button.cs-stat:active { transform: scale(0.95); }
     if (t.closest('[data-set="theme"]') && t.dataset.value) { S.theme = t.dataset.value; return applyTheme(); }
     if (t.closest("[data-set]") && t.dataset.value) { root.dataset[t.closest("[data-set]").dataset.set] = t.dataset.value; t.parentElement.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b === t)); return; }
     if (t.closest("[data-accent]")) { root.style.setProperty("--accent", t.dataset.value); $$("[data-accent] button").forEach((b) => b.setAttribute("aria-pressed", b === t)); return; }
+    if (t.matches("[data-crew-open]")) { if (t.dataset.crewOpen) return setActor(t.dataset.crewOpen); return chip(t, "Открывает окно этого актора, а без поддержки — его лист"); }
     if (t.matches("[data-fonts-reload]")) { S.fontsApplied = S.fonts; applyFonts(); return chip(t, "Мок: окно перезагружено"); }
     if (t.matches("[data-settings-reset]")) { S.askReset = true; return renderReset(); }
     if (t.matches("[data-settings-reset-no]")) { S.askReset = false; return renderReset(); }
@@ -3326,6 +3604,12 @@ button.cs-stat:active { transform: scale(0.95); }
 
   /* shell hook: show the state where an element is visible */
   window.mockReveal = (id) => {
+    // Blocks of other actor types switch the mock to that type first.
+    const typeOf = { crBadge: "npc", legendaryTrack: "npc", cargoMeter: "vehicle", crewBlock: "vehicle", crewTab: "vehicle", figureBanner: "vehicle", mockVariantSwitch: "vehicle" };
+    if (typeOf[id]) setActor(typeOf[id]);
+    else if (S.actor !== "character" && !["kindSubtitle", "mockActorPreview"].includes(id) && $(`[data-ui="${id}"]`)?.closest('[data-types]:not([data-types~="' + S.actor + '"])')) setActor("character");
+    if (id === "crewTab" && root.dataset.vehicle !== "C") setVehicleVariant("C");
+    if (id === "crewTab") setTab("crew");
     const tabOf = { overviewTab: "overview", skillsCard: "overview", savesCard: "overview", sensesCard: "overview", skillRow: "overview", saveRow: "overview",
       spellsTab: "spells", prepareButton: "spells", preparedCounter: "spells", slotTrack: "spells", slotPip: "spells", spellRow: "spells", castButton: "spells",
       featuresTab: "features", featureRow: "features", usesTrack: "features", biographyTab: "biography", characteristicsCard: "biography", personalityCard: "biography", biographyEditor: "biography", featureUseButton: "features", featureFilterChips: "features", effectsTab: "effects", conditionGrid: "effects", addEffectButton: "effects",
@@ -3407,6 +3691,13 @@ button.cs-stat:active { transform: scale(0.95); }
   });
   document.querySelector("[data-mock-piles]").addEventListener("change", (e) => { S.piles = e.target.checked; renderTrade(); });
   document.querySelector("[data-mock-nogm]").addEventListener("change", (e) => { S.gmOnline = !e.target.checked; renderTrade(); });
+  document.querySelector('[data-ui="mockActorPreview"]').addEventListener("click", (e) => { const b = e.target.closest("[data-actor-set]"); if (b) setActor(b.dataset.actorSet); });
+  document.querySelector('[data-ui="mockVariantSwitch"]').addEventListener("click", (e) => { const b = e.target.closest("[data-vehicle-set]"); if (b) setVehicleVariant(b.dataset.vehicleSet); });
+  document.querySelector("[data-mock-vtype]").addEventListener("change", (e) => {
+    // dnd5e's details.type picks the default preset, and so the figure; space has no figure of its own and uses the ship.
+    S.vtype = e.target.value; S.preset = VTYPE[S.vtype][1];
+    renderKind(); renderDoll(); renderInventory(); renderSettingsLists(); applyVisibility();
+  });
   document.querySelector("[data-mock-cap]").addEventListener("change", (e) => { S.motionCapMock = e.target.value; applyMotion(); });
   document.querySelector("[data-mock-nomagic]").addEventListener("change", (e) => { S.noMagic = e.target.checked; renderSettingsLists(); applyVisibility(); });
   // mock-only: show a warlock's pact slots
@@ -3714,6 +4005,9 @@ button.cs-stat:active { transform: scale(0.95); }
   renderInventory();
 
   applySettings();
+  const qs = new URLSearchParams(location.search);
+  if (/^[ABC]$/.test(qs.get("vehicle") ?? "")) setVehicleVariant(qs.get("vehicle"));
+  if (["npc", "vehicle"].includes(qs.get("actor"))) setActor(qs.get("actor"));
   applyLayout(layoutFor(root.offsetWidth));
   requestAnimationFrame(moveInk);
 })();

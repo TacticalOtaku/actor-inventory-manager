@@ -109,4 +109,30 @@
     {{/each}}
   </div>
   {{/if}}
+
+  {{#if blocks.favorites}}{{#if favorites.show}}
+  <div class="aim-favorites" data-block="favorites" data-favorites data-flip>
+    <div class="aim-rail-title"><span>{{localize "AIM.window.rail.favorites"}}</span></div>
+    {{#each favorites.groups}}
+    <div class="aim-fav-group">
+      <div class="aim-fav-k">{{label}}</div>
+      {{#each entries}}
+      <div class="aim-fav {{#if suppressed}}is-off{{/if}} {{#if (eq toggle false)}}is-off{{/if}}" data-key="{{key}}" data-fav-id="{{id}}" data-action="favOpen" role="button" tabindex="0" {{#if ../../favorites.canEdit}}draggable="true"{{/if}}>
+        <button type="button" class="aim-fav-tile" data-action="favUse" aria-label="{{tileLabel}}" {{#unless ../../favorites.canEdit}}disabled{{/unless}}><img src="{{img}}" alt=""></button>
+        <div class="aim-fav-main"><div class="aim-fav-name">{{title}}</div>{{#if line}}<div class="aim-fav-line">{{line}}</div>{{/if}}</div>
+        <span class="aim-fav-right">
+          {{#if runes}}<span class="aim-fav-runes">{{#each runes}}<i></i>{{/each}}</span>{{/if}}
+          {{#if quantity}}<span class="aim-fav-qty">×{{quantity}}</span>{{/if}}
+          {{#if usePips}}<span class="aim-fav-pips">{{#each usePips}}<i class="{{#if lit}}is-lit{{/if}}"></i>{{/each}}</span>{{/if}}
+          {{#if usesText}}<span class="aim-fav-qty">{{usesText}}</span>{{/if}}
+        </span>
+        {{#if quick}}<button type="button" class="aim-fav-quick" data-action="favUse" aria-label="{{quick.label}}" data-tooltip="{{quick.label}}"><i class="fa-light {{#if (eq quick.kind "cast")}}fa-wand-sparkles{{else}}fa-hand-sparkles{{/if}}"></i></button>{{/if}}
+      </div>
+      {{/each}}
+    </div>
+    {{else}}
+    <p class="aim-hint">{{localize "AIM.window.favorites.empty"}}</p>
+    {{/each}}
+  </div>
+  {{/if}}{{/if}}
 </aside>

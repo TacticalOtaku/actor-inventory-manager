@@ -21,6 +21,7 @@
     <div class="aim-row-act">
       {{#if showPrepare}}<button type="button" class="aim-ibtn aim-mini {{#if prepared}}is-on{{/if}}" data-action="prepareSpell" aria-pressed="{{#if prepared}}true{{else}}false{{/if}}" aria-label="{{prepareLabel}}" data-tooltip="{{prepareLabel}}"><i class="fa-light fa-book-bookmark"></i></button>{{/if}}
       {{#if @root.canEdit}}{{#if castable}}<button type="button" class="aim-ibtn aim-mini aim-cast {{#if ritualOnly}}is-ritual{{/if}}" data-action="castSpell" aria-label="{{castLabel}}" data-tooltip="{{castLabel}}"><i class="fa-light fa-wand-sparkles"></i></button>{{/if}}{{/if}}
+      {{#if @root.canFavorite}}<button type="button" class="aim-ibtn aim-mini aim-star {{#if favorite}}is-on{{/if}}" data-action="toggleFavorite" aria-pressed="{{#if favorite}}true{{else}}false{{/if}}" aria-label="{{localize "AIM.window.favorites.star"}}" data-tooltip="{{localize "AIM.window.favorites.star"}}"><i class="fa-{{#if favorite}}solid{{else}}light{{/if}} fa-star"></i></button>{{/if}}
       <button type="button" class="aim-ibtn aim-mini" data-action="itemMenu" aria-haspopup="menu" aria-label="{{localize "AIM.window.inv.more"}}" data-tooltip="{{localize "AIM.window.inv.more"}}"><i class="fa-light fa-ellipsis"></i></button>
     </div>
   </div>

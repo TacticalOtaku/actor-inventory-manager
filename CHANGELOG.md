@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- The window header's ⋮ and × show their icons again (2.0.2 gave the header buttons the window's text font).
+- Headings set Cyrillic in the interface font; Palatino is used for Latin only, so Russian headings match the rest
+  of the window.
+
 ## 2.0.2
 
 ### Fixed

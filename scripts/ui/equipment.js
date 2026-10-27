@@ -11,6 +11,7 @@ import { usableActivities } from "../integrations/midi-qol.js";
 import { computeActorCurrency, readPilesCurrencies } from "../integrations/item-piles.js";
 import { getContainerLoad, getContainerWeightReductionPct, isWeightyContainersActive } from "../integrations/weighty-containers.js";
 import { escapeHTML } from "./html.js";
+import { playBurst } from "./bursts.js";
 
 const PARTIALS = `modules/${MODULE_ID}/templates/window`;
 export const EQUIPMENT_TEMPLATES = ["equipment", "doll", "tray", "item-row", "item-detail"].map((name) => `${PARTIALS}/${name}.hbs`);
@@ -320,7 +321,10 @@ export function playEquipmentChanges(element, prev, motion) {
   if (!prev || motion === "off") return;
   const next = equipmentSnapshot(element);
   for (const [key, value] of Object.entries(next.coins)) {
-    if (key in prev.coins && prev.coins[key] !== value) pulse(element.querySelector(`[data-coin="${key}"]`), "is-flip");
+    if (!(key in prev.coins) || prev.coins[key] === value) continue;
+    const coin = element.querySelector(`[data-coin="${key}"]`);
+    pulse(coin, "is-flip");
+    playBurst(element, coin?.querySelector("i, img") ?? coin, "coin");
   }
   const total = element.querySelector("[data-coin-total]");
   if (total && Number.isFinite(prev.total) && prev.total !== next.total) countTo(total, prev.total, next.total);

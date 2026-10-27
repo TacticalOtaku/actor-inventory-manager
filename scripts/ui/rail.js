@@ -3,8 +3,9 @@
 // ─────────────────────────────────────────────────────────
 
 import { RAIL_BLOCKS } from "../core/actor-window.js";
-import { heartbeatFor } from "../core/vitals.js";
+import { heartbeatFor, railEvents } from "../core/vitals.js";
 import { readRail } from "../integrations/dnd5e.js";
+import { playBurst } from "./bursts.js";
 import { SETTLE } from "./motion.js";
 
 const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
@@ -82,7 +83,7 @@ export function railSnapshot(actor) {
   };
 }
 
-/* ─── Particles and floating numbers (reactive effects: «Все» and «Сдержанно») ─── */
+/* ─── Bursts and floating numbers (reactive effects: «Все» and «Сдержанно») ─── */
 
 function floatText(root, anchor, text, tone) {
   const box = root.getBoundingClientRect();
@@ -94,21 +95,6 @@ function floatText(root, anchor, text, tone) {
   el.style.top = `${at.top - box.top}px`;
   root.append(el);
   el.animate([{ opacity: 0, transform: "translate(-50%, 4px)" }, { opacity: 1, transform: "translate(-50%, -10px)", offset: 0.2 }, { opacity: 0, transform: "translate(-50%, -34px)" }], { duration: 1100, easing: "ease-out" }).finished.then(() => el.remove());
-}
-
-function burst(root, anchor, tone, count = 10, reach = 30) {
-  const box = root.getBoundingClientRect();
-  const at = anchor.getBoundingClientRect();
-  for (let i = 0; i < count; i++) {
-    const el = document.createElement("i");
-    el.className = `aim-spark is-${tone}`;
-    el.style.left = `${at.left - box.left + at.width / 2}px`;
-    el.style.top = `${at.top - box.top + at.height / 2}px`;
-    root.append(el);
-    const angle = (Math.PI * 2 * i) / count + Math.random() * 0.6;
-    const dist = reach * (0.6 + Math.random() * 0.6);
-    el.animate([{ transform: "translate(0, 0) scale(1)", opacity: 1 }, { transform: `translate(${Math.cos(angle) * dist}px, ${Math.sin(angle) * dist}px) scale(0.3)`, opacity: 0 }], { duration: 600 + Math.random() * 300, easing: "cubic-bezier(0.2, 0.7, 0.3, 1)" }).finished.then(() => el.remove());
-  }
 }
 
 function pulse(el, className) {
@@ -131,45 +117,53 @@ export function playRailChanges(root, prev, next) {
   const bar = root.querySelector("[data-hp-bar]");
   const value = root.querySelector("[data-hp-value]") ?? root.querySelector(".aim-hp-top");
   const card = root.querySelector("[data-hpcard]");
-  if (bar && prev.max === next.max && prev.hp !== next.hp) {
-    const fill = bar.querySelector("[data-hp-fill]");
-    const ghost = bar.querySelector("[data-hp-ghost]");
-    const from = share(prev.hp, prev.max);
-    if (next.hp < prev.hp) {
+  const band = root.querySelector("[data-hp-tempband]");
+  const death = root.querySelector(".aim-death");
+  const events = railEvents(prev, next);
+  for (const event of events) {
+    if (event === "hit" && bar) {
       // the fill drops at once; a pale ghost of the old value lingers, then drains
-      ghost.animate([{ width: `${from * 100}%` }, { width: `${from * 100}%`, offset: 0.35 }, { width: `${share(next.hp, next.max) * 100}%` }], { duration: 1080, easing: SETTLE });
+      const from = share(prev.hp, prev.max);
+      bar.querySelector("[data-hp-ghost]").animate([{ width: `${from * 100}%` }, { width: `${from * 100}%`, offset: 0.35 }, { width: `${share(next.hp, next.max) * 100}%` }], { duration: 1080, easing: SETTLE });
       pulse(bar, "is-hit");
       floatText(root, value, `−${prev.hp - next.hp}`, "damage");
-    } else {
-      fill.animate([{ width: `${from * 100}%` }, { width: `${share(next.hp, next.max) * 100}%` }], { duration: 420, easing: SETTLE });
+      playBurst(root, bar, "hit", { at: Number(share(next.hp, next.max)) });
+    } else if (event === "heal" && bar) {
+      bar.querySelector("[data-hp-fill]").animate([{ width: `${share(prev.hp, prev.max) * 100}%` }, { width: `${share(next.hp, next.max) * 100}%` }], { duration: 420, easing: SETTLE });
       pulse(bar, "is-heal");
       floatText(root, value, `+${next.hp - prev.hp}`, "heal");
-      if (prev.hp <= 0) pulse(card, "is-revive");
-    }
-    if (value?.matches?.("[data-hp-value]")) countTo(value, prev.hp, next.hp);
-  }
-  if (card && next.temp !== prev.temp) {
-    const band = root.querySelector("[data-hp-tempband]");
-    if (next.temp > prev.temp) {
+      playBurst(root, bar, "heal");
+    } else if (event === "revive" && card) {
+      pulse(card, "is-revive");
+      playBurst(root, card, "revive");
+    } else if (event === "shieldUp" && card) {
       pulse(card, "is-shield-up");
       floatText(root, value, t("AIM.window.hp.tempGain", { n: next.temp - prev.temp }), "temp");
-      if (band) burst(root, band, "temp", 6, 22);
-    } else {
+      playBurst(root, card, "shieldUp");
+    } else if (event === "absorb") {
       floatText(root, value, t("AIM.window.hp.tempLoss", { n: prev.temp - next.temp }), "temp");
-      if (next.temp > 0) { pulse(band, "is-absorb"); if (band) burst(root, band, "temp", 6, 26); }
-      else { pulse(card, "is-shield-break"); burst(root, bar ?? card, "temp", 16, 46); }
-    }
+      pulse(band, "is-absorb");
+      playBurst(root, band, "absorb");
+    } else if (event === "shieldBreak") {
+      floatText(root, value, t("AIM.window.hp.tempLoss", { n: prev.temp - next.temp }), "temp");
+      pulse(card, "is-shield-break");
+      playBurst(root, bar ?? card, "shieldBreak");
+    } else if (event === "diceSpent") {
+      const dice = root.querySelector('[data-block="hitDice"]');
+      pulse(dice, "is-spin");
+      playBurst(root, dice?.querySelector(".aim-die:not(.is-spent):last-of-type") ?? dice?.querySelector(".aim-die"), "die");
+    } else if (event === "restored") popIn(root);
+    else if (event === "deathSuccess") playBurst(root, death, "deathSuccess");
+    else if (event === "deathFail") { playBurst(root, death, "deathFail"); pulse(death, "is-refused"); }
+    else if (event === "inspired") {
+      const chip = root.querySelector('[data-action="toggleInspiration"]');
+      pulse(chip, "is-pop");
+      playBurst(root, chip, "inspired");
+    } else if (event === "concentration") pulse(root.querySelector(".aim-chip.is-conc"), "is-pop");
   }
-  if (next.dice < prev.dice) pulse(root.querySelector('[data-block="hitDice"]'), "is-spin");
-  if (next.dice > prev.dice || next.slots > prev.slots) popIn(root);
-  if (next.success > prev.success) burst(root, root.querySelector(".aim-death"), "heal", 10, 34);
-  if (next.failure > prev.failure) { burst(root, root.querySelector(".aim-death"), "damage", 10, 34); pulse(root.querySelector(".aim-death"), "is-refused"); }
-  if (next.inspiration && !prev.inspiration) {
-    const chip = root.querySelector('[data-action="toggleInspiration"]');
-    pulse(chip, "is-pop");
-    burst(root, chip, "gold", 10, 30);
+  if (events.includes("hit") || events.includes("heal")) {
+    if (value?.matches?.("[data-hp-value]")) countTo(value, prev.hp, next.hp);
   }
-  if (next.concentration && next.concentration !== prev.concentration) pulse(root.querySelector(".aim-chip.is-conc"), "is-pop");
 }
 
 /** Restored dice, runes and pips pop back in one after another, 70 ms apart. */
@@ -194,6 +188,8 @@ export async function playLongRest(root) {
   const night = document.createElement("div");
   night.className = "aim-night";
   root.querySelector(".window-content")?.append(night);
+  // The stars come out as night falls; the burst's own dawn rises as the night lifts.
+  playBurst(root, root.querySelector(".window-content") ?? root, "night");
   await night.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 500, fill: "forwards" }).finished;
   night.classList.add("is-dawn");
   await night.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 700, delay: 250, fill: "forwards" }).finished;

@@ -7,6 +7,7 @@ import { VIEWS, listPrefsFor } from "../core/inventory.js";
 import { SPELL_FILTERS, castable, groupSpellbook, preparationState, ready as isReady } from "../core/spellbook.js";
 import { extractSpellSlots, readSpellPreparation, readSpellbook } from "../integrations/dnd5e.js";
 import { getSpellSchoolColor, isScRarityColorsActive } from "../integrations/sc-rarity-colors.js";
+import { playBurst } from "./bursts.js";
 
 const PARTIALS = `modules/${MODULE_ID}/templates/window`;
 export const SPELL_TEMPLATES = ["spells", "spell-row"].map((name) => `${PARTIALS}/${name}.hbs`);
@@ -126,7 +127,7 @@ export function playSlotChanges(element, before, school, motion) {
     const lit = pip.classList.contains("is-lit");
     if (was === undefined || was === lit) continue;
     const cls = lit ? "is-pop" : "is-burst";
-    if (school) pip.style.setProperty("--spark", `var(--school-${school})`);
+    if (!lit) playBurst(element, pip, "gem", { token: school ? `--school-${school}` : undefined });
     pip.classList.add(cls);
     pip.addEventListener("animationend", () => pip.classList.remove(cls), { once: true });
   }

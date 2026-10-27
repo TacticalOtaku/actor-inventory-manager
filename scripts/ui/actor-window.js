@@ -60,6 +60,7 @@ import { WEIGHTY_CONTAINERS_MODULE_ID, openWeightyContainersDialog } from "../in
 import { SETTLE, glide, glideFrom, measure } from "./motion.js";
 import { readMotionCaps, schemeIsLight, stampTheme } from "./theme-root.js";
 import { REST_HOOK, buildRailContext, openStatConfig, playLongRest, playRailChanges, railSnapshot, startRuneGlints } from "./rail.js";
+import { preloadBursts } from "./bursts.js";
 
 const TEMPLATES = `modules/${MODULE_ID}/templates/window`;
 
@@ -424,6 +425,7 @@ export class ActorWindow extends WindowBase {
     this.element.addEventListener("pointerdown", () => this.#bringFront(), { capture: true });
     this.#bringFront();
     this._glints = startRuneGlints(this);
+    if (this.element.dataset.motion !== "off") preloadBursts();
     // The window follows Foundry's colour scheme for «Авто» and its performance mode for the motion cap.
     this._bodyObserver = new MutationObserver(() => {
       this.#applyRootState();

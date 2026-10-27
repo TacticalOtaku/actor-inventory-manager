@@ -20,14 +20,8 @@
 .aim-gem:disabled { cursor: default; }
 .aim-gem:not(:disabled):hover { transform: rotate(45deg) scale(1.15); }
 .aim-gem.is-burst { animation: aim-gem-burst 520ms var(--ease-settle); }
-.aim-gem.is-burst::after {
-  content: ""; position: absolute; inset: -9px; border-radius: 50%; pointer-events: none;
-  background: radial-gradient(circle, var(--spark, var(--accent)) 0 2px, transparent 3px) 0 0 / 8px 8px;
-  animation: aim-gem-sparks 520ms var(--ease-settle) forwards;
-}
 .aim-gem.is-pop { animation: aim-gem-pop 360ms var(--ease-snap); }
 @keyframes aim-gem-burst { 30% { transform: rotate(45deg) scale(1.5); filter: brightness(1.8); } }
-@keyframes aim-gem-sparks { from { opacity: 1; transform: scale(0.4); } to { opacity: 0; transform: scale(1.6) rotate(45deg); } }
 @keyframes aim-gem-pop { from { transform: rotate(45deg) scale(0.3); } 60% { transform: rotate(45deg) scale(1.2); } }
 
 /* sections */
@@ -67,4 +61,4 @@
 .aim-prep-warn { display: inline-flex; align-items: center; gap: 5px; height: 24px; margin: 2px 0; padding: 0 10px; border-radius: 99px; background: color-mix(in oklab, var(--hp) 16%, var(--surface-2)); color: var(--hp); font-size: 11.5px; }
 
 .aim-window[data-motion="off"] .aim-gem { transition: none; }
-.aim-window[data-motion="off"] .aim-gem.is-burst, .aim-window[data-motion="off"] .aim-gem.is-pop, .aim-window[data-motion="off"] .aim-gem.is-burst::after { animation: none; }
+.aim-window[data-motion="off"] .aim-gem.is-burst, .aim-window[data-motion="off"] .aim-gem.is-pop { animation: none; }

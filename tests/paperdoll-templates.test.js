@@ -34,6 +34,11 @@ describe("template validation", () => {
     assert.equal(template.attunementMax, 9);
   });
 
+  it("keeps a slot's zone and drops an unknown one", () => {
+    const template = normalizeTemplateData({ id: "t", slots: [{ id: "a", zone: "under" }, { id: "b", zone: "middle" }, { id: "c" }] });
+    assert.deepEqual(template.slots.map((s) => s.zone), ["under", undefined, undefined]);
+  });
+
   it("plans an apply from the editor without touching an unchanged cap", () => {
     // Opened on an actor whose cap (6) differs from the template's (3), only a slot moved.
     assert.deepEqual(planTemplateApply({ isCustomWorking: false, templateCap: 3, initialCap: 6, cap: 6 }), { custom: false, writeCap: false });

@@ -34,6 +34,9 @@
         <button type="button" class="aim-ibtn aim-mini" data-action="removeSlot" aria-label="{{localize "AIM.window.editor.remove"}}" data-tooltip="{{localize "AIM.window.editor.remove"}}"><i class="fa-light fa-trash"></i></button>
       </div>
       <div class="aim-editor-slot-body">
+        <label class="aim-editor-row"><span class="aim-editor-k">{{localize "AIM.window.editor.zone"}}</span>
+          <select data-field="zone">{{#each zones}}<option value="{{zone}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+        </label>
         <div class="aim-editor-row"><span class="aim-editor-k">{{localize "AIM.editor.slot.itemTypes"}}</span>
           <span class="aim-editor-chips">{{#each types}}<label class="aim-chip {{#if on}}is-on{{/if}}"><input type="checkbox" data-field="type" value="{{type}}" {{#if on}}checked{{/if}}>{{label}}</label>{{/each}}</span>
         </div>

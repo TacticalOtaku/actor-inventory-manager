@@ -840,7 +840,14 @@
         "icon": "Icon",
         "own": "Own doll: {actor}",
         "changed": "Changed: «Apply» makes this doll the actor's own, «Save as new» makes it a world preset.",
-        "importHint": "Pick a JSON file with a preset: it is saved to the world and opens in the editor."
+        "importHint": "Pick a JSON file with a preset: it is saved to the world and opens in the editor.",
+        "zone": "Place",
+        "zones": {
+          "order": "By order",
+          "left": "Left",
+          "right": "Right",
+          "under": "Under the doll"
+        }
       },
       "spells": {
         "search": "Find a spell",

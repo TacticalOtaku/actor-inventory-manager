@@ -45,6 +45,7 @@ import {
 import { buildDollContext, firstItemFor } from "./doll.js";
 import { FEATURE_TEMPLATES, buildFeaturesContext, featureMode, hasFeatures } from "./features.js";
 import { EFFECT_TEMPLATES, buildEffectsContext, createActorEffect, effectMenuEntries } from "./effects.js";
+import { OVERVIEW_TEMPLATES, buildBiographyContext, buildOverviewContext, cardDialogs, hasOverview } from "./overview.js";
 import { buildFavoritesContext, favoriteIdFor, favoriteItemIds, hasFavorites } from "./favorites.js";
 import { SPELL_TEMPLATES, buildSpellsContext, playSlotChanges, preparationWarning, slotSnapshot } from "./spells.js";
 import { openPresetEditor } from "./preset-editor.js";
@@ -123,6 +124,10 @@ export class ActorWindow extends WindowBase {
       removeCondition: ActorWindow.#onRemoveCondition,
       toggleCondition: ActorWindow.#onToggleCondition,
       createEffect: ActorWindow.#onCreateEffect,
+      rollSkill: ActorWindow.#onRollSkill,
+      rollSave: ActorWindow.#onRollSave,
+      rollTool: ActorWindow.#onRollTool,
+      cardConfig: ActorWindow.#onCardConfig,
       toggleInspiration: ActorWindow.#onToggleInspiration,
       exhaustion: ActorWindow.#onExhaustion,
       rollConcentration: ActorWindow.#onRollConcentration,
@@ -166,7 +171,7 @@ export class ActorWindow extends WindowBase {
 
   static PARTS = {
     rail: { template: `${TEMPLATES}/rail.hbs`, templates: EFFECT_TEMPLATES },
-    main: { template: `${TEMPLATES}/main.hbs`, templates: [...EQUIPMENT_TEMPLATES, ...SPELL_TEMPLATES, ...FEATURE_TEMPLATES, ...EFFECT_TEMPLATES], scrollable: [".aim-panel"] },
+    main: { template: `${TEMPLATES}/main.hbs`, templates: [...EQUIPMENT_TEMPLATES, ...SPELL_TEMPLATES, ...FEATURE_TEMPLATES, ...EFFECT_TEMPLATES, ...OVERVIEW_TEMPLATES], scrollable: [".aim-panel"] },
     inspector: { template: `${TEMPLATES}/inspector.hbs`, templates: EQUIPMENT_TEMPLATES, scrollable: [""] },
     drawer: { template: `${TEMPLATES}/drawer.hbs`, scrollable: [".aim-drawer-body"] }
   };
@@ -279,6 +284,8 @@ export class ActorWindow extends WindowBase {
         usesDraft: this.usesDraft
       }),
       effects: await buildEffectsContext(actor, { open: this.effectOpen, canFavorite: hasFavorites(actor) && this.canEdit }),
+      overview: hasOverview(actor) ? buildOverviewContext(actor, { canFavorite: hasFavorites(actor) && this.canEdit }) : null,
+      bio: await buildBiographyContext(actor),
       doll: buildDollContext(actor, { canEdit: this.canEdit, selected: this.selected, hidden: Boolean(getSetting("dollHidden")) }),
       ...buildRailContext(actor, { canEdit: this.canEdit, hasSpells: this.#hasSpells(), hiddenBlocks: getSetting("hiddenRailBlocks") ?? [] })
     };
@@ -311,6 +318,7 @@ export class ActorWindow extends WindowBase {
     const missing = this.#hasSpells() ? [] : ["spells"];
     // A vehicle shows «Действия» only when it has any (siege weapons, vehicle features).
     if (this.actor.type === "vehicle" && !hasFeatures(this.actor)) missing.push("features");
+    if (!hasOverview(this.actor)) missing.push("overview");
     const shown = visibleTabs({ hidden, missing });
     const label = (id) => t(id === "features" && featureMode(this.actor) === "action" ? "AIM.window.tabs.actions" : `AIM.window.tabs.${id}`);
     return SHEET_TABS.map((id) => ({ id, label: label(id), hidden: !shown.includes(id) }));
@@ -537,7 +545,27 @@ export class ActorWindow extends WindowBase {
 
   #queueRender() {
     clearTimeout(this._renderTimer);
-    this._renderTimer = setTimeout(() => this.rendered && this.render(), RENDER_COALESCE_MS);
+    this._renderTimer = setTimeout(() => {
+      if (!this.rendered) return;
+      // A biography field being typed in, or the open editor, would be redrawn away: the main part waits for it.
+      if (!this.#editingBio()) return this.render();
+      this._mainStale = true;
+      this.render({ parts: ["rail", "inspector", "drawer"] });
+    }, RENDER_COALESCE_MS);
+  }
+
+  #editingBio() {
+    const el = this.element;
+    return Boolean(el?.querySelector("[data-bio-editor][open]") || document.activeElement?.closest?.("[data-bio-field]") && el.contains(document.activeElement));
+  }
+
+  /** After a biography edit ends, the main part catches up with what changed meanwhile. */
+  #catchUpBio() {
+    setTimeout(() => {
+      if (!this._mainStale || this.#editingBio()) return;
+      this._mainStale = false;
+      this.render({ parts: ["main"] });
+    });
   }
 
   /** Theme, accent, density, motion and role sit on the window root as data attributes. */
@@ -599,6 +627,11 @@ export class ActorWindow extends WindowBase {
     if (input.dataset.tabToggle) return this.#toggleListed("hiddenTabs", input.dataset.tabToggle, !input.checked);
     if (input.name === "dollPreset" && input.value && game.user.isGM) return setActorPaperdollTemplate(this.actor, input.value);
     if (input.name === "inventorySort") return this.#savePrefs({ sort: input.value }).then(() => this.render({ parts: ["main"] }));
+    // dnd5e's own fields, so the vanilla sheet shows the same; the editor saves its HTML on «Save».
+    if (input.matches?.("[data-bio-field], [data-bio-editor]")) {
+      if (this.canEdit) await this.actor.update({ [input.name]: input.value });
+      return;
+    }
     if (input.dataset.effectToggle) {
       const item = this.#itemFrom(input);
       if (this.canEdit) return item?.effects.get(input.dataset.effectToggle)?.update({ disabled: !input.checked });
@@ -824,6 +857,28 @@ export class ActorWindow extends WindowBase {
     return this.actor.endConcentration(effect ?? undefined);
   }
 
+  /* ─── Overview ─── */
+
+  static #onRollSkill(event, target) {
+    if (this.canEdit) return this.actor.rollSkill({ skill: target.dataset.key, event });
+  }
+
+  static #onRollSave(event, target) {
+    if (this.canEdit) return this.actor.rollSavingThrow({ ability: target.dataset.key, event });
+  }
+
+  static #onRollTool(event, target) {
+    if (this.canEdit) return this.actor.rollToolCheck({ tool: target.dataset.key, event });
+  }
+
+  /** The card's gear: its one dnd5e dialog, or a menu when the card has several. */
+  static #onCardConfig(event, target) {
+    if (!this.canEdit) return;
+    const dialogs = cardDialogs(this.actor, target.dataset.card);
+    if (dialogs.length === 1) return dialogs[0].open();
+    openItemMenu(this.element, target, dialogs.map((d) => ({ name: d.label, icon: '<i class="fa-light fa-gear"></i>', callback: d.open })), target);
+  }
+
   /* ─── Effects ─── */
 
   async #effectFrom(node) {
@@ -881,13 +936,16 @@ export class ActorWindow extends WindowBase {
     openItemMenu(this.element, { getBoundingClientRect: () => new DOMRect(event.clientX, event.clientY, 0, 0) }, entries, wrap);
   }
 
-  /** A favorite effect opens the tab and highlights its row. */
-  #revealEffect(relativeId) {
-    this.#switchTo("effects");
-    const wrap = [...this.element.querySelectorAll('[data-panel="effects"] [data-effect-rel]')].find((el) => el.dataset.effectRel === relativeId);
-    if (!wrap) return;
-    wrap.scrollIntoView({ block: "nearest", behavior: this.motionOn ? "smooth" : "auto" });
-    const row = wrap.querySelector("[data-effect-row]");
+  /** A favorite effect, skill or tool opens its tab and highlights its row. */
+  #revealFavorite({ type, id }) {
+    const tab = type === "effect" ? "effects" : "overview";
+    this.#switchTo(tab);
+    const panel = this.element.querySelector(`[data-panel="${tab}"]`);
+    const row = type === "effect"
+      ? [...panel.querySelectorAll("[data-effect-rel]")].find((el) => el.dataset.effectRel === id)?.querySelector("[data-effect-row]")
+      : panel.querySelector(`.aim-check[data-action="${type === "skill" ? "rollSkill" : "rollTool"}"][data-key="${CSS.escape(id)}"]`);
+    if (!row) return;
+    row.scrollIntoView({ block: "nearest", behavior: this.motionOn ? "smooth" : "auto" });
     row.classList.remove("is-found");
     void row.offsetWidth;
     row.classList.add("is-found");
@@ -934,7 +992,9 @@ export class ActorWindow extends WindowBase {
       if (event.target.dataset?.coinInput && this.coinEditing) this.#cancelCoin();
       if (event.target.matches?.("[data-uses-input]") && this.usesEditing) this.#cancelUses();
       if (event.target.name === this._searching && event.relatedTarget) this._searching = null;
+      if (event.target.matches?.("[data-bio-field]")) this.#catchUpBio();
     });
+    el.addEventListener("close", (event) => event.target.matches?.("[data-bio-editor]") && this.#catchUpBio(), { capture: true });
     bindInventoryDrag(this);
   }
 
@@ -1435,7 +1495,7 @@ export class ActorWindow extends WindowBase {
   static async #onFavOpen(event, target) {
     const favorite = this.#favoriteFrom(target);
     if (!favorite) return;
-    if (favorite.type === "effect") return this.#revealEffect(favorite.id);
+    if (["effect", "skill", "tool"].includes(favorite.type)) return this.#revealFavorite(favorite);
     const doc = ["item", "activity"].includes(favorite.type) ? await fromUuid(favorite.id, { relative: this.actor }) : null;
     const item = favorite.type === "activity" ? doc?.item : doc;
     const tab = tabForFavorite({ type: favorite.type, itemType: item?.type });

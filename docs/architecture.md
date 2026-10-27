@@ -66,7 +66,11 @@ one place to update when it moves again. Never inline these reads at a call site
 | Favorites (`system.favorites`: relative UUIDs, slot keys, skill and tool keys) | `readFavorites` | `integrations/dnd5e.js` |
 | Effects as dnd5e's sheet lists them (`allApplicableEffects`, `isSuppressed` and why, time left, source) | `readEffects` | `integrations/dnd5e.js` |
 | Effect changes (Foundry 14 `system.changes` with `type`) and their field labels | `readEffectChanges` | `integrations/dnd5e.js` |
-| Statuses for the conditions grid (`CONFIG.statusEffects`, non-pseudo `conditionTypes`) | `readStatusEffects` | `integrations/dnd5e.js` |
+| Statuses for the conditions grid (`CONFIG.statusEffects`, non-pseudo `conditionTypes`, immunities from `traits.ci`) | `readStatusEffects` | `integrations/dnd5e.js` |
+| Skills and tools (`prof.multiplier` in effect, total, passive) | `readSkills`, `readTools` | `integrations/dnd5e.js` |
+| Defenses (`traits.dr/di/dv/ci` with custom entries, `traits.dm.amount`) | `readDefenses` | `integrations/dnd5e.js` |
+| Passive scores, senses (`attributes.senses.ranges`, moved in 5.3), armor, weapons, languages (`labels`, telepathy) | `readSenses` | `integrations/dnd5e.js` |
+| Characteristics, personality and biography as stored (`_source.system.details`) | `readBiography` | `integrations/dnd5e.js` |
 
 Shapes handled (dnd5e 5.3.3):
 
@@ -262,6 +266,8 @@ slice from the map #28.
 | Pure favorite rules: action-cost groups, manual order, the tab of an entry | `scripts/core/favorites.js` |
 | Effects: the rail's temporary ones, the effects tab with the conditions grid, switches, the effect menu | `scripts/ui/effects.js`, `templates/window/effects.hbs`, `templates/window/effect-row.hbs` |
 | Pure effect rules: dnd5e's categories, row kinds (concentration, condition, switch), change text, the grid | `scripts/core/effects.js` |
+| Overview (skills, saves, tools, defenses, senses, dnd5e's config dialogs) and biography (dnd5e's own fields, ProseMirror) | `scripts/ui/overview.js`, `templates/window/overview.hbs`, `templates/window/biography.hbs` |
+| Pure overview rules: proficiency marks, the dialogs behind each card, the biography fields | `scripts/core/overview.js` |
 
 ### Theme, accent, density, motion
 

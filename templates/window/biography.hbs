@@ -1,0 +1,18 @@
+<div class="aim-bio">
+  {{#if bio.characteristics}}
+  <div class="aim-card aim-bio-chars">
+    {{#each bio.characteristics}}<label class="aim-bio-field"><span>{{label}}</span><input type="text" name="{{name}}" value="{{value}}" data-bio-field autocomplete="off" {{#unless @root.canEdit}}disabled{{/unless}}></label>{{/each}}
+  </div>
+  <div class="aim-bio-traits">
+    {{#each bio.personality}}<label class="aim-card aim-bio-trait {{#if wide}}is-wide{{/if}}"><span>{{label}}</span><textarea name="{{name}}" rows="2" data-bio-field {{#unless @root.canEdit}}disabled{{/unless}}>{{value}}</textarea></label>{{/each}}
+  </div>
+  {{/if}}
+  <div class="aim-card aim-bio-text">
+    <h3>{{localize "AIM.window.bio.biography"}}</h3>
+    {{#if canEdit}}
+    <prose-mirror name="system.details.biography.value" value="{{bio.biography}}" data-document-uuid="{{actor.uuid}}" data-bio-editor toggled>{{{bio.enriched}}}</prose-mirror>
+    {{else}}
+    <div class="aim-prose">{{#if bio.enriched}}{{{bio.enriched}}}{{else}}<p class="aim-hint">{{localize "AIM.window.bio.empty"}}</p>{{/if}}</div>
+    {{/if}}
+  </div>
+</div>

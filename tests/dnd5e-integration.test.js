@@ -510,3 +510,22 @@ describe("container capacity without Weighty Containers (dnd5e 5.3.3)", () => {
     assert.equal(await readContainerCapacity({ system: {} }), null);
   });
 });
+
+describe("vehicle reads for the doll (dnd5e 5.3.3)", () => {
+  afterEach(() => { delete globalThis.CONFIG; });
+
+  it("reads the vehicle type from details.type, falling back to the old vehicleType", async () => {
+    const { readVehicleType } = await import("../scripts/integrations/dnd5e.js");
+    assert.equal(readVehicleType({ type: "vehicle", system: { details: { type: "air" } } }), "air");
+    assert.equal(readVehicleType({ type: "vehicle", system: { vehicleType: "land" } }), "land");
+    assert.equal(readVehicleType({ type: "character", system: { details: { type: "air" } } }), null);
+  });
+
+  it("reads the size label and the cargo capacity for the hold banner", async () => {
+    const { readVehicleHold } = await import("../scripts/integrations/dnd5e.js");
+    globalThis.CONFIG = { DND5E: { actorSizes: { grg: { label: "Громадный" } }, weightUnits: { tn: { abbreviation: "т" } } } };
+    assert.deepEqual(readVehicleHold({ system: { traits: { size: "grg" }, attributes: { capacity: { cargo: { value: 2, units: "tn" } } } } }),
+      { size: "Громадный", cargo: 2, unit: "т" });
+    assert.equal(readVehicleHold({ system: { traits: { size: "lg" }, attributes: { capacity: { cargo: { value: null, units: "lb" } } } } }).cargo, null);
+  });
+});

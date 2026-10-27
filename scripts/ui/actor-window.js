@@ -39,8 +39,10 @@ import {
   openItemMenu,
   playEquipmentChanges
 } from "./equipment.js";
+import { buildDollContext, firstItemFor } from "./doll.js";
 import { bindInventoryDrag } from "./inventory-drag.js";
-import { toggleAttunement, toggleItemEquipped, useItem } from "./item-actions.js";
+import { equipItemToSlot, toggleAttunement, toggleItemEquipped, unequipItem, useItem } from "./item-actions.js";
+import { setActorPaperdollTemplate } from "../core/paperdoll-templates.js";
 import { WEIGHTY_CONTAINERS_MODULE_ID, openWeightyContainersDialog } from "../integrations/weighty-containers.js";
 import { SETTLE, glide } from "./motion.js";
 import { REST_HOOK, buildRailContext, openStatConfig, playLongRest, playRailChanges, railSnapshot, startRuneGlints } from "./rail.js";
@@ -133,7 +135,12 @@ export class ActorWindow extends WindowBase {
       editCoin: ActorWindow.#onEditCoin,
       toggleTray: ActorWindow.#onToggleTray,
       foldAllTrays: ActorWindow.#onFoldAllTrays,
-      containerRules: ActorWindow.#onContainerRules
+      containerRules: ActorWindow.#onContainerRules,
+      toggleDoll: ActorWindow.#onToggleDoll,
+      slotClick: ActorWindow.#onSlotClick,
+      unequipSlot: ActorWindow.#onUnequipSlot,
+      socketClick: ActorWindow.#onSocketClick,
+      endAttunement: ActorWindow.#onEndAttunement
     }
   };
 
@@ -219,6 +226,7 @@ export class ActorWindow extends WindowBase {
         folds: getSetting("trayFolds") ?? {}
       }),
       inspector: selected ? buildInspector(selected, detail) : null,
+      doll: buildDollContext(actor, { canEdit: this.canEdit, selected: this.selected, hidden: Boolean(getSetting("dollHidden")) }),
       ...buildRailContext(actor, { canEdit: this.canEdit, hasSpells: this.#hasSpells(), hiddenBlocks: getSetting("hiddenRailBlocks") ?? [] })
     };
   }
@@ -530,6 +538,7 @@ export class ActorWindow extends WindowBase {
     if (input.dataset.settingToggle) return this.#setAndRefresh(input.dataset.settingToggle, input.checked);
     if (input.dataset.railToggle) return this.#toggleListed("hiddenRailBlocks", input.dataset.railToggle, !input.checked);
     if (input.dataset.tabToggle) return this.#toggleListed("hiddenTabs", input.dataset.tabToggle, !input.checked);
+    if (input.name === "dollPreset" && input.value && game.user.isGM) return setActorPaperdollTemplate(this.actor, input.value);
     if (input.name === "inventorySort") return this.#savePrefs({ sort: input.value }).then(() => this.render({ parts: ["main"] }));
     if (input.dataset.effectToggle) {
       const item = this.#itemFrom(input);
@@ -810,6 +819,7 @@ export class ActorWindow extends WindowBase {
 
   #afterEquipmentRender() {
     const el = this.element;
+    this.#fly();
     playEquipmentChanges(el, this._equipmentPrev, el.dataset.motion);
     const coin = el.querySelector("[data-coin-input]");
     if (coin) {
@@ -926,26 +936,17 @@ export class ActorWindow extends WindowBase {
     return this.#itemFrom(target)?.system.activities?.get(target.dataset.activityId)?.use({ event });
   }
 
-  static #onEquipItem(event, target) {
+  static async #onEquipItem(event, target) {
     const item = this.#itemFrom(target);
-    if (item) return toggleItemEquipped(this.actor, item);
+    if (!item) return;
+    this.#prepareFlight(item, target.closest("[data-item-id]")?.querySelector(".aim-tile"));
+    await toggleItemEquipped(this.actor, item);
   }
 
   /** Past the attunement limit a new attunement is refused with a shake of the row. */
   static #onAttuneItem(event, target) {
     const item = this.#itemFrom(target);
-    if (!item || !this.canEdit) return;
-    const max = getActorAttunementMax(this.actor);
-    if (!isItemAttuned(item) && countAttunedItems(this.actor) >= max) {
-      const row = target.closest("[data-item-id]")?.querySelector("[data-row]");
-      row?.classList.remove("is-refused");
-      void row?.offsetWidth;
-      row?.classList.add("is-refused");
-      row?.addEventListener("animationend", () => row.classList.remove("is-refused"), { once: true });
-      ui.notifications.warn(t("AIM.notifications.maxAttunementReached", { max }));
-      return;
-    }
-    return toggleAttunement(item);
+    if (item && this.canEdit) return this.attuneWithLimit(item, target.closest("[data-item-id]")?.querySelector("[data-row]"));
   }
 
   static #onStepQty(event, target) {
@@ -993,6 +994,117 @@ export class ActorWindow extends WindowBase {
 
   static #onContainerRules(event, target) {
     if (game.user.isGM) return openWeightyContainersDialog(this.#itemFrom(target));
+  }
+
+  /* ─── Paperdoll ─── */
+
+  /** The tile flies to the doll on equip and back to its row on unequip; it is measured before the change. */
+  #prepareFlight(item, from) {
+    if (!from || !this.motionOn) return;
+    this._flight = { id: item.id, from: from.getBoundingClientRect(), img: item.img, toDoll: !item.system.equipped };
+  }
+
+  #fly() {
+    const flight = this._flight;
+    this._flight = null;
+    if (!flight) return;
+    const item = this.actor.items.get(flight.id);
+    if (!item || Boolean(item.system.equipped) !== flight.toDoll) return;
+    const el = this.element;
+    const target = flight.toDoll
+      ? el.querySelector(`.aim-slot[data-item-id="${flight.id}"] .aim-tile, .aim-slotless-item[data-item-id="${flight.id}"] .aim-tile`)
+      : el.querySelector(`.aim-rowwrap[data-item-id="${flight.id}"] .aim-tile-btn .aim-tile`);
+    if (!target?.offsetWidth) return;
+    const to = target.getBoundingClientRect();
+    const ghost = document.createElement("img");
+    ghost.src = flight.img;
+    ghost.className = "aim-flight";
+    Object.assign(ghost.style, { left: `${flight.from.left}px`, top: `${flight.from.top}px`, width: `${flight.from.width}px`, height: `${flight.from.height}px` });
+    document.body.append(ghost);
+    target.style.visibility = "hidden";
+    const dx = to.left - flight.from.left;
+    const dy = to.top - flight.from.top;
+    const scale = to.width / flight.from.width;
+    ghost.animate([
+      { transform: "translate(0, 0) scale(1)" },
+      { transform: `translate(${dx / 2}px, ${dy / 2 - 40}px) scale(${(1 + scale) / 2 * 1.15})`, offset: 0.5 },
+      { transform: `translate(${dx}px, ${dy}px) scale(${scale})` }
+    ], { duration: 520, easing: SETTLE }).finished.finally(() => {
+      ghost.remove();
+      target.style.visibility = "";
+      const slot = target.closest(".aim-slot");
+      slot?.animate([{ transform: "scale(1)" }, { transform: "scale(1.12)" }, { transform: "scale(1)" }], { duration: 320, easing: SETTLE });
+    });
+  }
+
+  static async #onToggleDoll() {
+    const hidden = !getSetting("dollHidden");
+    await game.settings.set(MODULE_ID, "dollHidden", hidden);
+    const panel = this.element.querySelector('[data-panel="equipment"]');
+    const before = new Map([...panel.querySelectorAll("[data-row]")].map((row) => [row.closest("[data-item-id]")?.dataset.itemId, row.getBoundingClientRect()]));
+    await this.render({ parts: ["main"] });
+    // The inventory glides to fill the space the doll left, or makes room for it.
+    if (!this.motionOn) return;
+    for (const row of this.element.querySelectorAll('[data-panel="equipment"] [data-row]')) {
+      const from = before.get(row.closest("[data-item-id]")?.dataset.itemId);
+      const to = row.getBoundingClientRect();
+      if (!from || !to.width) continue;
+      row.animate([{ transform: `translate(${from.left - to.left}px, ${from.top - to.top}px)` }, { transform: "none" }], { duration: 420, easing: SETTLE });
+    }
+  }
+
+  /** A filled slot selects its item; an empty one equips the first unequipped item that fits, or shakes. */
+  static async #onSlotClick(event, target) {
+    const id = target.dataset.itemId;
+    if (id) return this.#toggleSelect(id);
+    if (!this.canEdit) return;
+    const slotId = target.dataset.slot;
+    const item = firstItemFor(this.actor, slotId);
+    if (!item) {
+      this.#shake(target);
+      return ui.notifications.warn(t("AIM.window.doll.nothingFits", { slot: target.querySelector(".aim-slot-label")?.textContent ?? slotId }));
+    }
+    this.#prepareFlight(item, this.element.querySelector(`.aim-rowwrap[data-item-id="${item.id}"] .aim-tile-btn .aim-tile`));
+    if (!await equipItemToSlot(this.actor, item, slotId)) this.#shake(target);
+  }
+
+  static async #onUnequipSlot(event, target) {
+    event.stopPropagation();
+    const holder = target.closest("[data-item-id]");
+    const item = this.actor.items.get(holder?.dataset.itemId);
+    if (!item || !this.canEdit) return;
+    this.#prepareFlight(item, holder.querySelector(".aim-tile"));
+    await unequipItem(this.actor, item);
+  }
+
+  static #onSocketClick(event, target) {
+    return this.#toggleSelect(target.dataset.itemId);
+  }
+
+  static #onEndAttunement(event, target) {
+    event.stopPropagation();
+    const item = this.actor.items.get(target.closest("[data-item-id]")?.dataset.itemId);
+    if (item && this.canEdit) return toggleAttunement(item);
+  }
+
+  #shake(node) {
+    if (!node) return;
+    node.classList.remove("is-refused");
+    void node.offsetWidth;
+    node.classList.add("is-refused");
+    node.addEventListener("animationend", () => node.classList.remove("is-refused"), { once: true });
+  }
+
+  /** Past the attunement limit a new attunement is refused with a shake of the row and of the attunement track. */
+  attuneWithLimit(item, rowNode) {
+    const max = getActorAttunementMax(this.actor);
+    if (!isItemAttuned(item) && countAttunedItems(this.actor) >= max) {
+      this.#shake(rowNode);
+      this.#shake(this.element.querySelector("[data-attune]"));
+      ui.notifications.warn(t("AIM.notifications.maxAttunementReached", { max }));
+      return false;
+    }
+    return toggleAttunement(item);
   }
 
   static #onEditCoin(event, target) {

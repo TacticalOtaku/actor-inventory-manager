@@ -95,6 +95,12 @@ export function registerModuleSettings() {
       type: Object,
       default: {}
     });
+    game.settings.register(MODULE_ID, "dollHidden", {
+      scope: "user",
+      config: false,
+      type: Boolean,
+      default: false
+    });
     game.settings.register(MODULE_ID, "motionLevel", {
       scope: "client",
       config: false,

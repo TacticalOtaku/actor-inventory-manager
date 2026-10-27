@@ -22,7 +22,8 @@ const DEFAULT_RUNTIME = Object.freeze({
   notifyWarning: () => {},
   logInfo: () => {},
   logWarn: () => {},
-  autoReconcileSlots: () => true
+  autoReconcileSlots: () => true,
+  vehicleType: () => null
 });
 
 let runtime = { ...DEFAULT_RUNTIME };

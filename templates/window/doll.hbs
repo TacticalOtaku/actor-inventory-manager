@@ -1,0 +1,52 @@
+{{#*inline "aimSlot"}}
+<button type="button" class="aim-slot {{#if item}}is-filled{{/if}} {{#if locked}}is-locked{{/if}} {{#if selected}}is-selected{{/if}}" data-slot="{{id}}" data-action="slotClick" {{#if item}}data-item-id="{{item.id}}" {{#if @root.canEdit}}draggable="true"{{/if}}{{/if}} {{#if style}}style="{{style}}"{{/if}} aria-label="{{label}}{{#if item}}: {{item.name}}{{/if}}" data-tooltip="{{tip}}">
+  {{#if item}}<span class="aim-tile" data-rarity="{{item.rarity}}"><img src="{{item.img}}" alt=""></span>{{#if @root.canEdit}}<span class="aim-slot-x" data-action="unequipSlot" role="button" aria-label="{{unequipLabel}}"><i class="fa-light fa-xmark"></i></span>{{/if}}
+  {{else if locked}}<span class="aim-slot-ghost"><span class="aim-tile"><img src="{{locked.img}}" alt=""></span></span><i class="fa-light fa-lock aim-slot-lock"></i>
+  {{else}}<i class="{{icon}} aim-slot-ico"></i>{{/if}}
+  <span class="aim-slot-label">{{label}}</span>
+</button>
+{{/inline}}
+{{#*inline "aimSockets"}}
+<div class="aim-attune {{#if doll.attune.over}}is-over{{/if}} {{#if doll.socketStrip}}is-strip{{/if}}" data-attune {{#if style}}style="{{style}}"{{/if}}>
+  <div class="aim-sockets" style="--cols: {{doll.socketColumns}}">
+    {{#each doll.sockets}}
+    {{#if item}}<button type="button" class="aim-socket is-on {{#if over}}is-over{{/if}} {{#if selected}}is-selected{{/if}}" data-action="socketClick" data-item-id="{{item.id}}" {{#if @root.canEdit}}draggable="true"{{/if}} aria-label="{{tip}}" data-tooltip="{{tip}}"><span class="aim-tile" data-rarity="{{item.rarity}}"><img src="{{item.img}}" alt=""></span>{{#if @root.canEdit}}<span class="aim-slot-x" data-action="endAttunement" role="button" aria-label="{{endLabel}}"><i class="fa-light fa-xmark"></i></span>{{/if}}</button>
+    {{else}}<span class="aim-socket" data-tooltip="{{tip}}"></span>{{/if}}
+    {{/each}}
+  </div>
+  <span class="aim-attune-label"><span>{{localize "AIM.window.doll.attune"}}</span> <b>{{doll.attune.count}}</b> / {{doll.attune.max}}</span>
+</div>
+{{/inline}}
+<div class="aim-doll {{#if doll.banner}}is-banner{{/if}} is-{{doll.figure}}" data-doll>
+  <div class="aim-doll-head">
+    <span class="aim-doll-title">{{doll.title}}</span>
+    {{#if doll.presets}}
+    <select class="aim-doll-select" name="dollPreset" aria-label="{{localize "AIM.window.doll.preset"}}">
+      {{#if doll.actorPreset}}<option value="" selected>{{doll.actorPreset}}</option>{{/if}}
+      {{#each doll.presets}}<option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{/each}}
+    </select>
+    {{else}}<span class="aim-doll-preset">{{doll.presetName}}</span>{{/if}}
+  </div>
+  {{#if doll.banner}}
+  <div class="aim-doll-banner">
+    <svg class="aim-figure" viewBox="{{doll.figureView}}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="{{doll.figureHref}}"/></svg>
+    <div class="aim-doll-banner-text"><b>{{doll.presetName}}</b>{{#if doll.hold}}<span>{{doll.hold.size}}</span><span>{{doll.hold.cargo}}</span>{{/if}}</div>
+  </div>
+  {{else}}
+  <div class="aim-doll-grid" style="--rows: {{doll.rows}}">
+    {{#if doll.backdrop}}<img class="aim-doll-backdrop" src="{{doll.backdrop}}" alt="" aria-hidden="true">{{/if}}
+    <svg class="aim-figure" style="grid-row: 1 / {{doll.figureEnd}}" viewBox="{{doll.figureView}}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="{{doll.figureHref}}"/></svg>
+    {{#each doll.slots}}{{> aimSlot}}{{/each}}
+    {{#if doll.socketsInGrid}}{{> aimSockets style=doll.socketGridStyle}}{{/if}}
+  </div>
+  {{#if doll.extra.length}}
+  <div class="aim-doll-extra"><div class="aim-doll-sub">{{localize "AIM.window.doll.extra"}} <b>{{doll.extra.length}}</b></div><div class="aim-extra-grid">{{#each doll.extra}}{{> aimSlot}}{{/each}}</div></div>
+  {{/if}}
+  {{/if}}
+  {{#if doll.slotless.length}}
+  <div class="aim-slotless"><div class="aim-doll-sub">{{localize "AIM.window.doll.slotless"}} <b>{{doll.slotless.length}}</b></div>
+    <div class="aim-slotless-list">{{#each doll.slotless}}<button type="button" class="aim-slotless-item {{#if selected}}is-selected{{/if}}" data-action="slotClick" data-item-id="{{id}}" {{#if @root.canEdit}}draggable="true"{{/if}} data-tooltip="{{name}}"><span class="aim-tile" data-rarity="{{rarity}}"><img src="{{img}}" alt=""></span><span class="aim-slotless-name">{{name}}</span>{{#if @root.canEdit}}<span class="aim-slot-x" data-action="unequipSlot" role="button" aria-label="{{unequipLabel}}"><i class="fa-light fa-xmark"></i></span>{{/if}}</button>{{/each}}</div>
+  </div>
+  {{/if}}
+  {{#if doll.socketStrip}}{{> aimSockets}}{{/if}}
+</div>

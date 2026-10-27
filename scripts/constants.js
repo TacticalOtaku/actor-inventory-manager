@@ -25,8 +25,18 @@ export const REFRESH_HOOK = `${MODULE_ID}.refresh`;
 
 export const TEMPLATE_PRESETS = {
   DND_2024: "dnd2024",
-  DND_2014: "dnd2014"
+  DND_2014: "dnd2014",
+  BEAST: "beast",
+  WAGON: "wagon",
+  WAGON_TACK: "wagonTack",
+  SHIP: "ship",
+  SHIP_PORTS: "shipPorts",
+  AIRSHIP: "airship",
+  AIRSHIP_RIG: "airshipRig"
 };
+
+/** The illustrations a doll preset can stand on. */
+export const FIGURES = ["human", "beast", "wagon", "ship", "airship"];
 
 export const SLOTS = {
   HEAD: "head",

@@ -57,6 +57,8 @@ one place to update when it moves again. Never inline these reads at a call site
 | Inventory rows (price per unit in gold, charges from `uses.spent`, holding container) | `readInventory` | `integrations/dnd5e.js` |
 | Coins in the system's order | `readCoins` | `integrations/dnd5e.js` |
 | Container capacity without Weighty Containers (`computeCapacity`) | `readContainerCapacity` | `integrations/dnd5e.js` |
+| Vehicle type (`details.type`, formerly `vehicleType`) | `readVehicleType` | `integrations/dnd5e.js` |
+| Vehicle size and cargo capacity for the hold banner | `readVehicleHold` | `integrations/dnd5e.js` |
 
 Shapes handled (dnd5e 5.3.3):
 
@@ -237,7 +239,10 @@ slice from the map #28.
 | FLIP glide (Web Animations) | `scripts/ui/motion.js` |
 | Equipment tab: lists, purse, load, details, inspector, item menu | `scripts/ui/equipment.js`, `templates/window/{equipment,tray,item-row,item-detail}.hbs` |
 | Pure inventory rules: sections, sort, filters, list preferences, charges, coin entry, tray folding, drop refusals | `scripts/core/inventory.js` |
-| Dragging rows: into and out of containers (Weighty Containers checks first), manual order, out of the window | `scripts/ui/inventory-drag.js` |
+| Dragging rows and doll tiles: into slots and sockets, into and out of containers (Weighty Containers checks first), manual order, out of the window | `scripts/ui/inventory-drag.js` |
+| Paperdoll: figure, slots, two-handed lock, attunement sockets, slotless strip, hold banner | `scripts/ui/doll.js`, `templates/window/doll.hbs`, `assets/figures.svg` |
+| Pure doll layout: slot columns, overflow grid, socket strip, banner | `scripts/core/paperdoll-layout.js` |
+| Built-in presets (figure plus slots) and the default per actor type | `scripts/core/paperdoll-templates.js` |
 
 ### Theme, accent, density, motion
 

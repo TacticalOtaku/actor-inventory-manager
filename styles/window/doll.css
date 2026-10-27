@@ -1,0 +1,95 @@
+/* AIM: Actor Window - the paperdoll: figure, slots, attunement sockets, slotless strip, hold banner */
+
+/* the doll sits left of the inventory from 700 px of tab width, otherwise centred above it */
+.aim-equipment { container: equip / inline-size; }
+.aim-equip { display: grid; gap: var(--s4); align-items: start; }
+.aim-equip.has-doll > .aim-doll { justify-self: center; }
+@container equip (min-width: 700px) {
+  .aim-equip.has-doll { grid-template-columns: max-content minmax(0, 1fr); }
+  .aim-equip.has-doll > .aim-doll { position: sticky; top: 0; justify-self: start; }
+}
+.aim-doll-toggle.is-on { color: var(--accent); border-color: var(--accent-line); }
+
+.aim-doll { display: grid; gap: var(--s3); width: max-content; max-width: 100%; padding: var(--s3); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface-1); }
+.aim-doll button { min-height: 0; }
+.aim-doll-head { display: flex; align-items: center; gap: var(--s2); }
+.aim-doll-title { color: var(--text); font: 600 13px var(--font-display); letter-spacing: 0.03em; }
+.aim-doll-preset { color: var(--text-3); font-size: 12px; }
+.aim-doll-select { flex: 1; min-width: 0; height: 26px; padding: 0 var(--s1); border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface-2); color: var(--text); font: 12px var(--font-ui); }
+.aim-doll-select option { background: var(--surface-1); color: var(--text); }
+
+.aim-doll-grid {
+  position: relative; display: grid; gap: 8px var(--s3);
+  grid-template-columns: 56px 120px 56px; grid-template-rows: repeat(var(--rows), 62px);
+  justify-content: center;
+}
+.aim-figure { grid-column: 2; align-self: center; justify-self: center; width: 100%; height: 100%; max-height: calc(var(--rows) * 70px); color: var(--text-3); opacity: 0.35; pointer-events: none; }
+.aim-doll-backdrop { grid-column: 2; grid-row: 1 / -1; align-self: center; justify-self: center; width: 120px; height: 100%; object-fit: cover; border: 0; border-radius: var(--r-lg); opacity: 0.12; filter: grayscale(0.4); mask-image: radial-gradient(closest-side, #000 55%, transparent); pointer-events: none; }
+
+.aim-slot {
+  position: relative; display: grid; place-items: center; align-content: center; gap: 2px;
+  width: 56px; height: 62px; padding: 4px 2px; border: 1px dashed var(--line-strong); border-radius: var(--r-md);
+  background: var(--surface-2); color: var(--text-3); cursor: pointer;
+  transition: border-color var(--d-fast), box-shadow var(--d-fast), color var(--d-fast);
+}
+.aim-slot:hover { border-color: var(--accent-line); color: var(--text-2); }
+.aim-slot:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.aim-slot.is-filled { border-style: solid; border-color: var(--line); }
+.aim-slot.is-selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.aim-slot .aim-tile { --tile: 38px; }
+.aim-slot-ico { font-size: 18px; }
+.aim-slot-label { max-width: 100%; overflow: hidden; color: var(--text-3); font-size: 9.5px; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
+.aim-slot-x {
+  position: absolute; top: -6px; right: -6px; display: grid; place-items: center; width: 18px; height: 18px;
+  border: 1px solid var(--line-strong); border-radius: 50%; background: var(--surface-0); color: var(--text-2);
+  font-size: 10px; opacity: 0; transition: opacity var(--d-fast);
+}
+.aim-slot:hover .aim-slot-x, .aim-slot:focus-visible .aim-slot-x,
+.aim-socket:hover .aim-slot-x, .aim-slotless-item:hover .aim-slot-x { opacity: 1; }
+.aim-slot-x:hover { color: var(--hp); border-color: var(--hp); }
+.aim-slot.is-locked { border-style: solid; cursor: default; }
+.aim-slot-ghost { opacity: 0.3; filter: grayscale(1); }
+.aim-slot-lock { position: absolute; top: 18px; color: var(--text-2); font-size: 14px; }
+.aim-slot.is-fit { border-style: solid; border-color: var(--accent); box-shadow: 0 0 12px color-mix(in oklab, var(--accent) 40%, transparent); color: var(--accent); }
+.aim-slot.is-drop { box-shadow: 0 0 0 2px var(--accent), 0 0 16px color-mix(in oklab, var(--accent) 50%, transparent); }
+.aim-slot.is-refused, .aim-attune.is-refused { animation: aim-shake 360ms var(--ease-settle); border-color: var(--hp); }
+.aim-slot.is-dragging, .aim-socket.is-dragging, .aim-slotless-item.is-dragging { opacity: 0.4; }
+
+.aim-doll-sub { margin-bottom: 6px; color: var(--text-3); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+.aim-doll-sub b { color: var(--text-2); font-family: var(--font-num); }
+.aim-extra-grid { display: grid; grid-template-columns: repeat(auto-fill, 52px); gap: 6px; max-width: 256px; }
+.aim-extra-grid .aim-slot { width: 52px; height: 58px; }
+
+/* attunement: up to three sockets under the figure, more in a strip of rows of five */
+.aim-attune { display: grid; justify-items: center; align-content: center; gap: 4px; }
+.aim-attune.is-strip { padding-top: var(--s2); border-top: 1px solid var(--line); }
+.aim-sockets { display: grid; grid-template-columns: repeat(var(--cols), 30px); gap: 6px; justify-content: center; }
+.aim-socket { position: relative; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 1.5px dashed var(--line-strong); border-radius: 50%; background: transparent; }
+.aim-socket.is-on { border: 1.5px solid var(--warn); background: color-mix(in oklab, var(--warn) 12%, transparent); cursor: pointer; }
+.aim-socket.is-on .aim-tile { --tile: 22px; border-radius: 50%; box-shadow: none; }
+.aim-socket.is-over { border-color: var(--hp); }
+.aim-socket.is-selected { box-shadow: 0 0 0 2px var(--accent-soft); }
+.aim-socket .aim-slot-x { top: -7px; right: -7px; width: 16px; height: 16px; }
+.aim-attune.is-drop .aim-sockets { filter: drop-shadow(0 0 6px var(--accent)); }
+.aim-attune-label { color: var(--text-3); font-size: 10.5px; white-space: nowrap; }
+.aim-attune-label b { color: var(--text); font-family: var(--font-num); }
+.aim-attune.is-over .aim-attune-label b, .aim-attune.is-over .aim-attune-label { color: var(--hp); }
+
+/* equipped without a slot */
+.aim-slotless-list { display: flex; flex-wrap: wrap; gap: 6px; max-width: 256px; }
+.aim-slotless-item { position: relative; display: inline-flex; align-items: center; gap: 6px; max-width: 100%; height: 30px; padding: 0 10px 0 4px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface-2); color: var(--text); font: 12px var(--font-ui); cursor: pointer; }
+.aim-slotless-item .aim-tile { --tile: 22px; border-radius: 50%; }
+.aim-slotless-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aim-slotless-item.is-selected { border-color: var(--accent); }
+
+/* a preset without slots is a low banner over the hold */
+.aim-doll.is-banner { width: 100%; }
+.aim-doll-banner { display: flex; align-items: center; gap: var(--s4); }
+.aim-doll-banner .aim-figure { flex: none; width: 160px; height: 100px; }
+.aim-doll-banner-text { display: grid; gap: 2px; color: var(--text-2); font-size: 12px; }
+.aim-doll-banner-text b { color: var(--text); font: 600 15px var(--font-display); }
+
+/* the tile flying between a row and the doll */
+.aim-flight { position: fixed; z-index: 1000; border: 0; border-radius: var(--r-sm, 6px); box-shadow: 0 8px 24px rgb(0 0 0 / 0.45); pointer-events: none; }
+
+.aim-window[data-motion="off"] .aim-slot { transition: none; }

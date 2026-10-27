@@ -21,7 +21,7 @@ body {
 }
 
 /* ═══════════ Tokens: live on the window root, never on :root ═══════════ */
-.cs-root {
+.cs-root, .cs-layer {
   /* surfaces */
   --surface-0: #11131a;
   --surface-1: #161922;
@@ -89,7 +89,7 @@ body {
   --shadow-1: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 8px 24px rgb(0 0 0 / 0.35);
   --shadow-lift: 0 18px 40px rgb(0 0 0 / 0.5);
 }
-.cs-root[data-theme="parchment"] {
+.cs-root[data-theme="parchment"], .cs-layer[data-theme="parchment"] {
   --surface-0: #f3eee3;
   --surface-1: #ebe4d6;
   --surface-2: #e2d9c7;
@@ -106,7 +106,7 @@ body {
   --shadow-lift: 0 18px 40px rgb(60 40 10 / 0.25);
 }
 .cs-root[data-density="compact"] { --row-h: 34px; --tile: 28px; }
-.cs-root[data-motion="off"] *, .cs-root[data-motion="off"] *::before, .cs-root[data-motion="off"] *::after {
+.cs-root[data-motion="off"] *, .cs-root[data-motion="off"] *::before, .cs-root[data-motion="off"] *::after, .cs-layer[data-motion="off"] *, .cs-layer[data-motion="off"] *::after {
   transition-duration: 0ms !important;
   animation-duration: 0ms !important;
 }
@@ -558,22 +558,6 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-bubble { position: absolute; bottom: 0; width: 3px; height: 3px; border-radius: 50%; background: rgb(255 255 255 / 0.65); animation: cs-bubble 2.6s ease-in infinite; }
 @keyframes cs-bubble { 0% { bottom: 0; opacity: 0; transform: translateX(0); } 20% { opacity: 0.9; } 100% { bottom: 92%; opacity: 0; transform: translateX(3px); } }
 .cs-level:hover { filter: brightness(1.15); }
-
-/* hover card for icon-only entries, doll slots and attunement sockets */
-.cs-hovercard {
-  position: absolute; z-index: 45; width: 230px; pointer-events: none;
-  display: grid; gap: 6px; padding: 10px 12px;
-  background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: var(--r-md);
-  box-shadow: var(--shadow-lift);
-  opacity: 0; transform: translateY(4px) scale(0.98); transform-origin: top left;
-  transition: opacity var(--d-fast), transform var(--d-base) var(--ease-snap);
-}
-.cs-hovercard.is-on { opacity: 1; transform: none; }
-.cs-hovercard .hc-top { display: flex; align-items: center; gap: 8px; }
-.cs-hovercard .cs-tile { --tile: 30px; }
-.cs-hovercard b { display: block; font: 600 13px/1.2 var(--font-display); }
-.cs-hovercard small { color: var(--tone, var(--text-3)); font-size: 11px; }
-.cs-hovercard p { margin: 0; font-size: 11.5px; line-height: 1.45; color: var(--text-2); }
 
 /* ability tile: hover swaps the score for the saving throw */
 .cs-ability .v, .cs-ability .svt { transition: transform var(--d-base) var(--ease-snap), opacity var(--d-fast); }
@@ -1441,6 +1425,144 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-trade-lock .cs-ico { width: 14px; height: 14px; }
 .cs-tag.is-new { color: var(--accent-ink); background: var(--accent); font-weight: 600; }
 .cs-row.is-fresh { box-shadow: inset 2px 0 0 var(--accent); background: color-mix(in oklab, var(--accent) 7%, transparent); }
+/* ═══════════ Nested cards (#22): our own layer on body, outside the window ═══════════ */
+.cs-layer { position: fixed; inset: 0; z-index: 60; pointer-events: none; font-family: var(--font-ui); color: var(--text); }
+.tip {
+  --tone: var(--accent);
+  position: fixed; width: 272px; max-height: min(70vh, 520px); pointer-events: auto;
+  display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; overflow: hidden;
+  background: var(--surface-1); border: 1px solid color-mix(in oklab, var(--tone) 45%, var(--line-strong)); border-radius: 12px;
+  box-shadow: var(--shadow-lift);
+  animation: tip-in 160ms var(--ease-settle);
+}
+@keyframes tip-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } }
+.tip.is-leaving { opacity: 0; transition: opacity 150ms; }
+.tip-head { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 10px 8px 12px; cursor: default; }
+.tip.is-pinned .tip-head { cursor: grab; }
+.tip.is-dragging .tip-head { cursor: grabbing; }
+.tip-head .cs-tile { --tile: 34px; flex: none; }
+.tip-title { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.tip-title b { font: 600 14px/1.2 var(--font-display); color: color-mix(in oklab, var(--tone) 55%, var(--text)); }
+.tip-title small { font-size: 11px; color: var(--text-3); }
+.tip-btn { flex: none; width: 24px; height: 24px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text-3); cursor: pointer; }
+.tip-btn:hover { background: var(--surface-3); color: var(--text); }
+.tip-btn .cs-ico { width: 14px; height: 14px; }
+.tip.is-pinned [data-tip-pin] { color: var(--tone); }
+.tip-stats { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0; padding: 0 12px 6px; font-size: 11.5px; }
+.tip-stats div { display: flex; gap: 4px; }
+.tip-stats dt { color: var(--text-3); }
+.tip-stats dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tip-body { padding: 2px 12px 10px; overflow: auto; font-size: 12px; line-height: 1.5; color: var(--text-2); }
+.tip-body p { margin: 0 0 6px; }
+.tip-body ul { margin: 4px 0 0; padding-left: 16px; }
+.tip-pills { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 12px 10px; }
+.tip-pills span { padding: 1px 7px; border-radius: 99px; background: var(--surface-3); color: var(--text-2); font-size: 10.5px; }
+.tip-foot { display: flex; justify-content: flex-end; padding: 0 10px 10px; }
+.tip-foot button { padding: 3px 10px; border: 1px solid var(--line-strong); border-radius: 99px; background: transparent; color: var(--text-2); font: 500 11px var(--font-ui); cursor: pointer; }
+.tip-foot button:hover { color: var(--text); border-color: var(--accent-line); }
+.tip-hint { padding: 0 12px 8px; font-size: 10.5px; color: var(--text-3); }
+.tip.is-pinned .tip-hint { display: none; }
+/* long hover to pin: a ring runs round the edge, then the card stays */
+.tip::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; padding: 2px;
+  background: conic-gradient(var(--tone) calc(var(--pin, 0) * 1turn), transparent 0); -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); opacity: 0; }
+.tip.is-pinning::after { opacity: 1; animation: tip-pin 1200ms linear forwards; }
+@property --pin { syntax: "<number>"; inherits: false; initial-value: 0; }
+@keyframes tip-pin { to { --pin: 1; } }
+.tip.is-pinned { border-color: color-mix(in oklab, var(--tone) 70%, transparent); }
+/* links inside cards open their own card */
+.cs-ref { color: color-mix(in oklab, var(--accent) 80%, var(--text)); text-decoration: underline dotted color-mix(in oklab, var(--accent) 55%, transparent); text-underline-offset: 2px; cursor: help; }
+.tip[data-depth="4"] .cs-ref, .tip[data-depth="4"] .cs-dmg-chip { cursor: text; }
+.cs-dmg-chip { display: inline-flex; align-items: center; gap: 4px; padding: 0 6px 0 5px; border-radius: 99px; background: color-mix(in oklab, var(--c) 16%, transparent); color: color-mix(in oklab, var(--c) 75%, var(--text)); font-size: 0.95em; white-space: nowrap; cursor: help; }
+.cs-dmg-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--c); box-shadow: 0 0 6px var(--c); }
+.cs-dmg[data-dmg] { cursor: help; }
+/* damage type card: a small scene in the type's colour */
+.tip.is-dmg { width: 208px; }
+.dmg-anim { position: relative; height: 64px; margin: 0 12px 8px; border-radius: 8px; overflow: hidden; background: radial-gradient(ellipse at 50% 80%, color-mix(in oklab, var(--c) 22%, transparent), transparent 70%), var(--surface-0); }
+.dmg-anim i { position: absolute; display: block; animation-iteration-count: infinite; animation-timing-function: ease-in-out; }
+.cs-layer[data-motion="reduced"] .dmg-anim i { animation-iteration-count: 1 !important; }
+.cs-layer[data-motion="off"] .dmg-anim i { animation: none !important; }
+.cs-layer[data-motion="off"] .tip { animation: none; }
+.cs-layer[data-motion="off"] .tip::after { animation-duration: 1200ms !important; }
+/* fire: tongues of flame */
+[data-anim="fire"] i { bottom: -6px; width: 18px; height: 34px; border-radius: 50% 50% 40% 40% / 70% 70% 30% 30%; background: linear-gradient(to top, var(--c), color-mix(in oklab, var(--c) 40%, #fff3b0)); filter: blur(1px); transform-origin: bottom; animation: dmg-flame 900ms; }
+[data-anim="fire"] i:nth-child(1) { left: 34%; } [data-anim="fire"] i:nth-child(2) { left: 46%; height: 44px; animation-delay: -300ms; } [data-anim="fire"] i:nth-child(3) { left: 58%; animation-delay: -600ms; }
+@keyframes dmg-flame { 0%, 100% { transform: scaleY(0.8) skewX(-4deg); opacity: 0.8; } 50% { transform: scaleY(1.15) skewX(5deg); opacity: 1; } }
+/* cold: frost crystals grow and fade */
+[data-anim="cold"] i { top: 50%; left: 50%; width: 2px; height: 26px; margin: -13px 0 0 -1px; background: linear-gradient(var(--c), transparent); border-radius: 2px; animation: dmg-frost 1800ms; }
+[data-anim="cold"] i:nth-child(2) { rotate: 60deg; } [data-anim="cold"] i:nth-child(3) { rotate: 120deg; }
+@keyframes dmg-frost { 0% { transform: scaleY(0); opacity: 0; } 40%, 70% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(1.1); opacity: 0; } }
+/* lightning: a bolt flashes */
+[data-anim="lightning"] i { left: 46%; top: 6px; width: 16px; height: 50px; background: var(--c); clip-path: polygon(60% 0, 20% 55%, 50% 55%, 30% 100%, 85% 40%, 55% 40%, 75% 0); filter: drop-shadow(0 0 6px var(--c)); animation: dmg-bolt 1400ms steps(1); }
+[data-anim="lightning"] i:nth-child(2) { left: 30%; scale: 0.6; animation-delay: -500ms; } [data-anim="lightning"] i:nth-child(3) { left: 62%; scale: 0.7; animation-delay: -900ms; }
+@keyframes dmg-bolt { 0%, 18%, 30% { opacity: 1; } 12%, 24%, 40%, 100% { opacity: 0; } }
+/* acid: drops fall and splash */
+[data-anim="acid"] i { top: -10px; width: 8px; height: 10px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: var(--c); animation: dmg-drop 1300ms ease-in; }
+[data-anim="acid"] i:nth-child(1) { left: 35%; } [data-anim="acid"] i:nth-child(2) { left: 52%; animation-delay: -450ms; } [data-anim="acid"] i:nth-child(3) { left: 66%; animation-delay: -850ms; }
+@keyframes dmg-drop { 0% { transform: translateY(0); opacity: 1; } 80% { transform: translateY(62px) scale(1, 1.2); opacity: 1; } 100% { transform: translateY(66px) scale(2.4, 0.3); opacity: 0; } }
+/* thunder: rings of sound */
+[data-anim="thunder"] i, [data-anim="psychic"] i, [data-anim="force"] i, [data-anim="generic"] i { top: 50%; left: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; border: 2px solid var(--c); animation: dmg-ring 1500ms ease-out; }
+[data-anim="thunder"] i:nth-child(2) { animation-delay: -500ms; } [data-anim="thunder"] i:nth-child(3) { animation-delay: -1000ms; }
+@keyframes dmg-ring { from { transform: scale(0.2); opacity: 1; } to { transform: scale(2.2); opacity: 0; } }
+/* psychic: circles close in */
+[data-anim="psychic"] i { animation-name: dmg-inward; animation-duration: 1800ms; }
+[data-anim="psychic"] i:nth-child(2) { animation-delay: -600ms; } [data-anim="psychic"] i:nth-child(3) { animation-delay: -1200ms; }
+@keyframes dmg-inward { from { transform: scale(2.2); opacity: 0; } 50% { opacity: 1; } to { transform: scale(0.1); opacity: 0; } }
+/* force: one pulse of a sphere */
+[data-anim="force"] i:nth-child(1) { background: radial-gradient(circle, color-mix(in oklab, var(--c) 60%, transparent), transparent 70%); border: 0; animation-name: dmg-pulse; animation-duration: 1400ms; }
+[data-anim="force"] i:nth-child(2) { animation-duration: 1400ms; } [data-anim="force"] i:nth-child(3) { display: none; }
+@keyframes dmg-pulse { 0%, 100% { transform: scale(0.7); } 50% { transform: scale(1.15); } }
+/* necrotic: dark wisps drift up */
+[data-anim="necrotic"] i, [data-anim="poison"] i { bottom: -12px; width: 16px; height: 16px; border-radius: 50%; background: var(--c); filter: blur(4px); animation: dmg-rise 2200ms ease-out; }
+[data-anim="necrotic"] i:nth-child(1), [data-anim="poison"] i:nth-child(1) { left: 34%; } [data-anim="necrotic"] i:nth-child(2), [data-anim="poison"] i:nth-child(2) { left: 50%; animation-delay: -700ms; } [data-anim="necrotic"] i:nth-child(3), [data-anim="poison"] i:nth-child(3) { left: 62%; animation-delay: -1400ms; }
+@keyframes dmg-rise { from { transform: translateY(0) scale(0.6); opacity: 0.9; } to { transform: translateY(-70px) scale(1.6); opacity: 0; } }
+/* poison: bubbles */
+[data-anim="poison"] i { width: 9px; height: 9px; filter: none; background: transparent; border: 2px solid var(--c); animation-duration: 1700ms; }
+/* radiant: turning rays */
+[data-anim="radiant"] i:nth-child(1) { top: 50%; left: 50%; width: 120px; height: 120px; margin: -60px 0 0 -60px; background: repeating-conic-gradient(color-mix(in oklab, var(--c) 45%, transparent) 0 8deg, transparent 8deg 30deg); -webkit-mask: radial-gradient(circle, #000 20%, transparent 62%); mask: radial-gradient(circle, #000 20%, transparent 62%); animation: dmg-turn 6s linear; }
+[data-anim="radiant"] i:nth-child(2) { top: 50%; left: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: #fff; box-shadow: 0 0 18px 6px var(--c); animation: dmg-pulse 1600ms; }
+[data-anim="radiant"] i:nth-child(3) { display: none; }
+@keyframes dmg-turn { to { rotate: 1turn; } }
+/* slashing, piercing, bludgeoning: a strike of their own shape */
+[data-anim="slashing"] i { top: 50%; left: 15%; width: 70%; height: 3px; border-radius: 3px; background: linear-gradient(90deg, transparent, var(--c), #fff); rotate: -24deg; transform-origin: left; animation: dmg-slash 1200ms ease-out; }
+[data-anim="slashing"] i:nth-child(2) { top: 62%; animation-delay: -150ms; } [data-anim="slashing"] i:nth-child(3) { display: none; }
+@keyframes dmg-slash { 0% { transform: scaleX(0); opacity: 1; } 35% { transform: scaleX(1); opacity: 1; } 100% { transform: scaleX(1); opacity: 0; } }
+[data-anim="piercing"] i:nth-child(1) { top: 50%; left: 8%; width: 46%; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, var(--c)); animation: dmg-thrust 1100ms ease-in; }
+[data-anim="piercing"] i:nth-child(2) { top: 50%; left: 54%; width: 0; height: 0; margin-top: -6px; border: 6px solid transparent; border-left: 12px solid var(--c); animation: dmg-thrust 1100ms ease-in; }
+[data-anim="piercing"] i:nth-child(3) { display: none; }
+@keyframes dmg-thrust { 0% { transform: translateX(-40px); opacity: 0; } 60% { transform: translateX(18px); opacity: 1; } 100% { transform: translateX(18px); opacity: 0; } }
+[data-anim="bludgeoning"] i:nth-child(1) { top: 50%; left: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 6px; background: var(--c); animation: dmg-smash 1300ms; }
+[data-anim="bludgeoning"] i:nth-child(2) { top: 50%; left: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; border: 2px solid var(--c); animation: dmg-ring 1300ms ease-out; animation-delay: 260ms; }
+[data-anim="bludgeoning"] i:nth-child(3) { display: none; }
+@keyframes dmg-smash { 0% { transform: translateY(-40px); } 20% { transform: translateY(0) scale(1.3, 0.7); } 40%, 100% { transform: none; } }
+[data-anim="generic"] i:nth-child(2) { animation-delay: -750ms; } [data-anim="generic"] i:nth-child(3) { display: none; }
+
+/* ─── variant A, «строка»: compact card, rarity as an edge on the left ─── */
+.cs-layer[data-card="A"] .tip { border-left: 3px solid var(--tone); }
+/* ─── variant B, «карта»: a wide head on the rarity gradient, then titled sections ─── */
+.cs-layer[data-card="B"] .tip { width: 288px; }
+.cs-layer[data-card="B"] .tip-head { flex-wrap: wrap; padding: 14px 10px 12px 14px; background: linear-gradient(160deg, color-mix(in oklab, var(--tone) 34%, var(--surface-2)), var(--surface-1) 75%); border-bottom: 1px solid color-mix(in oklab, var(--tone) 30%, transparent); }
+.cs-layer[data-card="B"] .tip-head .cs-tile { --tile: 46px; }
+.cs-layer[data-card="B"] .tip-title b { font-size: 16px; }
+.cs-layer[data-card="B"] .tip-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 10px 14px 8px; }
+.cs-layer[data-card="B"] .tip-stats div { flex-direction: column; gap: 0; padding: 5px 8px; border-radius: 6px; background: var(--surface-2); }
+.cs-layer[data-card="B"] .tip-stats dt { font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; }
+.cs-layer[data-card="B"] .tip-body { padding: 4px 14px 10px; }
+.cs-layer[data-card="B"] .tip-body::before { content: "Описание"; display: block; margin-bottom: 4px; font: 600 9.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
+.cs-layer[data-card="B"] .tip.is-dmg .tip-body::before { content: none; }
+/* ─── variant C, «справочник»: numbers on the left, text on the right, rarity as a glow ─── */
+.cs-layer[data-card="C"] .tip { width: 380px; grid-template-columns: 112px minmax(0, 1fr); box-shadow: 0 0 0 1px color-mix(in oklab, var(--tone) 35%, transparent), 0 0 26px color-mix(in oklab, var(--tone) 22%, transparent), var(--shadow-lift); }
+.cs-layer[data-card="C"] .tip > :not(.tip-stats, .tip-body, .tip-pills) { grid-column: 1 / -1; }
+.cs-layer[data-card="C"] .tip-stats { grid-row: span 2; flex-direction: column; flex-wrap: nowrap; gap: 8px; margin: 0 0 10px 10px; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); align-self: start; }
+.cs-layer[data-card="C"] .tip-stats div { flex-direction: column; gap: 0; }
+.cs-layer[data-card="C"] .tip-stats dt { font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; }
+.cs-layer[data-card="C"] .tip-stats dd { font-size: 13px; }
+.cs-layer[data-card="C"] .tip-stats:empty { display: none; }
+.cs-layer[data-card="C"] .tip:has(.tip-stats:empty) .tip-body, .cs-layer[data-card="C"] .tip:has(.tip-stats:empty) .tip-pills { grid-column: 1 / -1; }
+.cs-layer[data-card="C"] .tip.is-dmg { width: 208px; grid-template-columns: minmax(0, 1fr); }
+.mock-variants { position: fixed; top: 14px; right: 14px; z-index: 70; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px; border-radius: 99px; background: #1a1d26; border: 1px solid rgb(255 255 255 / 0.12); font: 12px "Segoe UI", system-ui; color: #aaa499; }
+.mock-variants .cs-seg { background: #12141b; border-color: rgb(255 255 255 / 0.1); }
+.mock-variants .cs-seg button { color: #6e6a63; font: inherit; min-width: 28px; }
+.mock-variants .cs-seg button[aria-pressed="true"] { background: #2a2f3c; color: #ece6da; }
 </style>
 </head>
 <body>
@@ -1513,6 +1635,7 @@ button.cs-stat:active { transform: scale(0.95); }
   <symbol id="fig-wagon" viewBox="0 0 240 160"><path d="M50 40h150l8 62H42zM30 100h190v10H30zM2 104l40-4v8L2 112z" fill="currentColor" opacity=".35"/><circle cx="72" cy="128" r="22" fill="none" stroke="currentColor" stroke-width="7" opacity=".35"/><circle cx="182" cy="128" r="22" fill="none" stroke="currentColor" stroke-width="7" opacity=".35"/><path d="M60 40c20-36 110-36 130 0" fill="none" stroke="currentColor" stroke-width="6" opacity=".35"/></symbol>
   <symbol id="fig-ship" viewBox="0 0 240 160"><path d="M14 104h212l-24 42H44zM118 8v94M122 14l70 70h-70zM114 22l-60 64h60z" fill="currentColor" opacity=".35"/></symbol>
   <symbol id="fig-airship" viewBox="0 0 240 160"><ellipse cx="120" cy="56" rx="100" ry="40" fill="currentColor" opacity=".35"/><path d="M84 104h72l-10 26H94zM96 94l-6 10M144 94l6 10M214 44l20-14v52l-20-14z" fill="currentColor" stroke="currentColor" stroke-width="3" opacity=".35"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 3h6l-1 6 4 4v2h-5v6l-1 1-1-1v-6H6v-2l4-4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
   <symbol id="i-figure" viewBox="0 0 120 260"><path d="M60 8c11 0 19 9 19 21s-8 22-19 22-19-10-19-22S49 8 60 8zM38 58h44c12 0 20 8 22 20l8 62c1 6-8 8-10 2l-12-50v64l6 84c1 8-12 9-14 1L68 172h-16l-14 69c-2 8-15 7-14-1l6-84V92l-12 50c-2 6-11 4-10-2l8-62c2-12 10-20 22-20z" fill="currentColor" stroke="none" opacity=".35"/></symbol>
 </svg>
 
@@ -1806,6 +1929,8 @@ button.cs-stat:active { transform: scale(0.95); }
 </section>
 
 </main>
+<div class="cs-layer" data-ui="tooltipLayer" data-card="A"></div>
+<div class="mock-variants" data-ui="mockCardSwitch"><span>Карточка</span><div class="cs-seg is-text" role="group" aria-label="Вид карточки"><button type="button" data-card-set="A" aria-pressed="true" title="Строка: компактная, редкость полосой слева">A</button><button type="button" data-card-set="B" aria-pressed="false" title="Карта: шапка на градиенте редкости, разделы">B</button><button type="button" data-card-set="C" aria-pressed="false" title="Справочник: числа слева, текст справа, свечение редкости">C</button></div></div>
 <script>
 (() => {
   const root = document.querySelector(".cs-root");
@@ -1977,6 +2102,40 @@ button.cs-stat:active { transform: scale(0.95); }
   };
   const byId = Object.fromEntries([...items, ...spells, ...features].map((x) => [x.id, x]));
   const kind = (x) => (spells.includes(x) ? "spell" : features.includes(x) ? "feature" : "item");
+
+  /* Links in descriptions (#22): the mock writes {dmg:fire}, {cond:blinded}, {rule:key:text}, {doc:id:text}; the module gets real enriched HTML. */
+  const RARITY = { common: "Обычный", uncommon: "Необычный", rare: "Редкий", veryRare: "Очень редкий", legendary: "Легендарный", artifact: "Артефакт" };
+  const GROUP_LABEL = { weapon: "Оружие", equipment: "Снаряжение", consumable: "Расходуемое", tool: "Инструмент", loot: "Добыча", container: "Контейнер" };
+  // Mock stand-in for the rule pages &Reference points at (Compendium.dnd5e.rules).
+  const RULES = {
+    advantage: ["Преимущество", "Бросьте два к20 и возьмите больший результат. Преимущество и помеха на одном броске отменяют друг друга."],
+    disadvantage: ["Помеха", "Бросьте два к20 и возьмите меньший результат."],
+    concentration: ["Концентрация", `Одно заклинание за раз. При получении урона — спасбросок Телосложения, Сл 10 или половина урона. Потеря сознания (${"{cond:unconscious}"}) прерывает концентрацию.`],
+    attunement: ["Настройка", "Короткий отдых рядом с предметом. Одновременно — не больше трёх предметов."],
+    save: ["Спасбросок", "к20 + модификатор характеристики + бонус мастерства, если вы им владеете, против Сл эффекта."]
+  };
+  const COND_TEXT = { blinded: `Существо не видит и проваливает проверки, требующие зрения. Атаки по нему с ${"{rule:advantage:преимуществом}"}, его атаки — с ${"{rule:disadvantage:помехой}"}.`, unconscious: `Существо ${"{cond:incapacitated}"}, роняет то, что держит, и падает. Атаки по нему с преимуществом; попадание вблизи — критическое.`, incapacitated: "Существо не может совершать действия, бонусные действия и реакции; концентрация прерывается." };
+  // Mock colours; the module reads CONFIG.DND5E.damageTypes[k].color and .label.
+  const DMG = { acid: ["Кислота", "#9fd04a"], bludgeoning: ["Дробящий", "#cfc6b6"], cold: ["Холод", "#8fd6ff"], fire: ["Огонь", "#ff6a2b"], force: ["Силовое поле", "#c47cff"], lightning: ["Молния", "#6fb2ff"], necrotic: ["Некротический", "#9a7ab8"], piercing: ["Колющий", "#cfc6b6"], poison: ["Яд", "#7fcf6a"], psychic: ["Психический", "#ff73c8"], radiant: ["Излучение", "#ffd65a"], slashing: ["Рубящий", "#cfc6b6"], thunder: ["Звук", "#b3a4ff"] };
+  const DMG_TEXT = { fire: "Поджигает горючее. Многие существа огня к нему невосприимчивы.", cold: "Ледяной холод: дыхание белого дракона, «Луч холода».", lightning: "Разряд молнии; металл не спасает.", acid: "Разъедающая жидкость.", thunder: "Оглушающий удар звука; слышно за 300 фт.", necrotic: "Иссушает плоть и душу.", radiant: "Опаляющий свет; нежить страдает особенно.", poison: "Ядовитые клыки и газы. Невосприимчивость встречается часто.", psychic: "Удар по разуму.", force: "Чистая магическая энергия; сопротивление к ней — редкость.", slashing: "Мечи, топоры, когти.", piercing: "Копья, стрелы, укусы.", bludgeoning: "Булавы, падения, сжатие." };
+  // Mock enrichment: {dmg:fire|cold}, {cond:blinded}, {rule:key:text}, {doc:id:text} become links that open their own card.
+  const enrich = (s) => String(s ?? "").replace(/\{(dmg|cond|rule|doc):([^}:]+)(?::([^}]+))?\}/g, (_, t, k, text) => {
+    if (t === "dmg") return k.split("|").map((d) => `<span class="cs-dmg-chip" data-card="dmg:${d}" style="--c:${(DMG[d] ?? ["", "var(--accent)"])[1]}">${(DMG[d] ?? [d])[0]}</span>`).join(" ");
+    const name = text ?? (t === "cond" ? [...CONDITIONS, ...STATUSES].find(([c]) => c === k)?.[1] : t === "rule" ? RULES[k]?.[0] : byId[k]?.name) ?? k;
+    return `<a class="cs-ref" data-card="${t}:${k}">${name}</a>`;
+  });
+  const fx = (x) => `<p>${enrich(x)}</p>`;
+  const RICH_DESC = {
+    staff: "Магическое оружие +1: {dmg:bludgeoning} урон 1к6 + 1. Пока посох у вас в руках, +1 к броскам атаки заклинаниями. Требует {rule:attunement:настройки}.",
+    dagger: "{dmg:piercing} урон 1к4. Дистанция броска 20/60 фт.",
+    bow: "{dmg:piercing} урон 1к8. Дистанция 150/600 фт. Двуручное.",
+    firebolt: "Дальнобойная атака заклинанием: 2к10 урона, {dmg:fire}. Горючие предметы загораются.",
+    missile: "Три дротика по 1к4 + 1 урона, {dmg:force}; каждый попадает без броска.",
+    fireball: "Сфера радиусом 20 фт: 8к6 урона, {dmg:fire}. {rule:save:Спасбросок} Ловкости — половина урона.",
+    flare: "Существа в 10 фт от вас — спасбросок Телосложения Сл 15 или {cond:blinded:ослеплены} до конца вашего следующего хода.",
+    wand: "7 зарядов. Действием потратьте 1–3 заряда, чтобы сотворить {doc:missile}. Восстанавливает 1к6 + 1 заряд на рассвете."
+  };
+  for (const [id, d] of Object.entries(RICH_DESC)) { const x = [...items, ...spells, ...features].find((v) => v.id === id); if (x) x.desc = d; }
 
   /* ═══════════ Actor types (#8, #20): a character, an NPC with a player owner, a vehicle ═══════════ */
   // One window for all three; the type only decides which blocks and tabs show ([data-types] in the markup).
@@ -2573,7 +2732,7 @@ button.cs-stat:active { transform: scale(0.95); }
       <div class="cs-effect ${e.conc ? "is-conc" : ""} ${e.cond ? "is-cond" : ""} ${e.disabled ? "is-off" : ""} ${e.why ? "is-supp" : ""} ${open ? "is-open" : ""}" data-ui="effectRow" data-effect="${e.id}" data-eff-where="${where}" ${e.cond || e.conc ? "" : `data-fav-src="effect:${e.id}" draggable="${canEdit()}"`} tabindex="0" aria-expanded="${open}">
         <span class="cs-effect-ic" data-school="${e.school}">${e.cond ? `<b>${e.name[0]}</b>` : icon(e.icon)}</span><span class="cs-effect-n">${e.name}<small>${sub}</small></span>${e.time ? `<span class="cs-effect-t">${e.time}</span>` : ""}${ctl}
       </div>
-      <div class="cs-detail cs-eff-detail ${open ? "is-open" : ""}"><div><p>${e.desc}</p>${e.changes.length ? `<ul class="cs-eff-changes">${e.changes.map((c) => `<li>${c}</li>`).join("")}</ul>` : ""}</div></div>
+      <div class="cs-detail cs-eff-detail ${open ? "is-open" : ""}"><div><p>${enrich(e.desc)}</p>${e.changes.length ? `<ul class="cs-eff-changes">${e.changes.map((c) => `<li>${c}</li>`).join("")}</ul>` : ""}</div></div>
     </div>`;
   }
   // dnd5e has no conditions dialog: the grid is ours and calls actor.toggleStatusEffect(id).
@@ -2697,7 +2856,7 @@ button.cs-stat:active { transform: scale(0.95); }
       + (x.lvl && !x.method && !x.always ? btn(`data-prep="${x.id}"`, "book", x.prep ? "Убрать из подготовленных" : "Подготовить") : "");
     else main = multi || (x.passive ? "" : btn(`data-use-feat="${x.id}"`, x.acts?.[0]?.[1] ?? "hand", x.acts?.[0]?.[0] ?? "Использовать", true));
     const effs = allEffects().filter((e) => e.item === x.id);
-    return `<p>${x.desc}</p>
+    return `<p>${enrich(x.desc)}</p>
       ${effs.length ? `<div class="cs-insp-effs"><div class="cs-eff-cat-h">Эффекты</div>${effs.map((e) => effRow(e, `in-${x.id}`)).join("")}</div>` : ""}
       <div class="acts">${main}<span class="grow"></span><button type="button" class="cs-btn" data-oos="Показывает карточку в чате (item.displayCard)">В чат</button><button type="button" class="cs-ibtn" aria-label="Ещё" data-oos="${MENU_OOS[k]}">${icon("dots")}</button></div>`;
   }
@@ -3609,36 +3768,197 @@ button.cs-stat:active { transform: scale(0.95); }
     const lit = $$(".cs-rune:not(.is-spent), .cs-slotpip:not(.is-spent)").filter((e) => e.offsetParent);
     if (lit.length) pulse(lit[Math.floor(Math.random() * lit.length)], "is-twinkle");
   }, 1800);
-  /* hover card for icon-only entries, doll slots and sockets */
-  const hc = document.createElement("div");
-  hc.className = "cs-hovercard"; hc.setAttribute("role", "tooltip");
-  root.append(hc);
-  let hcTimer = null, hcFor = null;
-  const hcTarget = (el) => el?.closest('.cs-items[data-view="icons"] .cs-row, .cs-slot.is-filled, .cs-socket.is-on');
-  root.addEventListener("pointerover", (e) => {
-    const el = hcTarget(e.target);
-    if (!el || el === hcFor) return;
-    hcFor = el; clearTimeout(hcTimer); hc.classList.remove("is-on");
-    hcTimer = setTimeout(() => {
-      const id = el.dataset.row ?? el.dataset.socket ?? S.equipped[el.dataset.slot];
-      const x = byId[id]; if (!x) return;
-      const k = kind(x);
-      const RAR = { common: "Обычный", uncommon: "Необычный", rare: "Редкий", veryRare: "Очень редкий", legendary: "Легендарный" };
-      const sub = k === "spell" ? `${x.lvl ? `${x.lvl} круг` : "Заговор"} · ${SCHOOLS[x.school]}${x.prep === false || (x.lvl && !x.prep) ? " · не подготовлено" : ""}` : k === "item" ? RAR[x.rarity] : x.src;
-      hc.innerHTML = `<div class="hc-top">${tile(x)}<div><b>${x.name}</b><small ${k === "spell" ? `data-school="${x.school}"` : `data-rarity="${x.rarity ?? "common"}"`}>${sub}</small></div></div><p>${x.desc}</p>`;
-      const a = el.getBoundingClientRect(), box = root.getBoundingClientRect();
-      let left = a.right - box.left + 8, top = a.top - box.top;
-      if (left + 230 > box.width - 8) left = a.left - box.left - 238;
-      top = Math.max(8, Math.min(top, box.height - hc.offsetHeight - 8));
-      hc.style.left = `${Math.max(8, left)}px`; hc.style.top = `${top}px`;
-      hc.classList.add("is-on");
-    }, 320);
+  /* ═══════════ Nested cards (#22) ═══════════ */
+  // Our own layer on body, not game.tooltip: cards nest four deep, pin by a long hover, drag, and outlive the window.
+  // The layer carries the window's theme tokens (it is a module root of its own) and follows the window's settings.
+  const layer = document.querySelector('[data-ui="tooltipLayer"]');
+  const syncLayer = () => {
+    layer.dataset.theme = root.dataset.theme; layer.dataset.motion = root.dataset.motion;
+    const acc = root.style.getPropertyValue("--accent");
+    if (acc) layer.style.setProperty("--accent", acc); else layer.style.removeProperty("--accent");
+  };
+  new MutationObserver(syncLayer).observe(root, { attributes: true, attributeFilter: ["data-theme", "data-motion", "style"] });
+  syncLayer();
+  const TIP = { open: [], timer: null, sweep: null, x: -1, y: -1, seq: 0 };
+  const TIP_MAX_DEPTH = 4, TIP_MAX_PINNED = 6;
+  const TRIGGERS = ".cs-row, .cs-slot.is-filled, .cs-socket.is-on, .cs-fav, .cs-effect, .cs-cond, .cs-crew-p:not(.is-free), .cs-dmg[data-dmg], [data-card]";
+  function tipKey(a) {
+    if (a.dataset.card) return a.dataset.card;
+    if (a.matches(".cs-dmg[data-dmg]")) return `dmg:${a.dataset.dmg}`;
+    if (a.matches(".cs-row")) return `doc:${a.dataset.row}`;
+    if (a.matches(".cs-slot")) return S.equipped[a.dataset.slot] ? `doc:${S.equipped[a.dataset.slot]}` : null;
+    if (a.matches(".cs-socket")) return `doc:${a.dataset.socket}`;
+    if (a.matches(".cs-fav")) { const id = a.dataset.favRow; return id.startsWith("effect:") ? `eff:${id.slice(7)}` : id.includes(":") ? null : `doc:${id}`; }
+    if (a.matches(".cs-effect")) { const id = a.dataset.effect; return id.startsWith("cond-") ? `cond:${id.slice(5)}` : `eff:${id}`; }
+    if (a.matches(".cs-cond")) return `cond:${a.dataset.cond}`;
+    if (a.matches(".cs-crew-p")) return a.classList.contains("is-hidden") ? null : `actor:${a.title}`;
+    return null;
+  }
+  // What a card shows; the module takes it from item.system.getCardData() / effect.richTooltip() / page.system.richTooltip().
+  function tipContent(key) {
+    const [t, k] = key.split(/:(.*)/s);
+    if (t === "doc") {
+      const x = byId[k]; if (!x) return null;
+      const kd = kind(x);
+      if (kd === "spell") return { tone: `var(--school-${x.school})`, tile: tile(x), name: x.name, sub: `${x.lvl ? `${x.lvl} круг` : "Заговор"} · ${SCHOOLS[x.school]}`, stats: [x.roll && ["Эффект", x.roll], ["Компоненты", x.comp], ...x.tags.slice(0, 2).map((v, i) => [i ? "Дистанция" : "Время", v])].filter(Boolean), body: fx(x.desc) + (x.mat ? `<p>Материал: ${x.mat}</p>` : ""), pills: [x.conc && "Концентрация", x.ritual && "Ритуал"].filter(Boolean) };
+      if (kd === "feature") return { tone: "var(--accent)", tile: tile(x), name: x.name, sub: x.passive ? "Пассивное умение" : x.src ?? "Умение", stats: [x.roll && ["Эффект", x.roll], x.uses && ["Заряды", `${x.uses[0]} / ${x.uses[1]}`], x.recharge && ["Перезарядка", x.recharge], x.rec && ["Восстановление", x.rec]].filter(Boolean), body: fx(x.desc), pills: x.tags };
+      return { tone: `var(--rarity-${x.rarity ?? "common"})`, tile: tile(x), name: x.name, sub: `${GROUP_LABEL[x.group] ?? "Предмет"} · ${RARITY[x.rarity] ?? "Обычный"}`, stats: [x.roll && ["Атака", x.roll], x.uses && ["Заряды", `${x.uses[0]} / ${x.uses[1]}`], ["Вес", `${+(x.wt * x.qty).toFixed(2)} фнт`], x.price && ["Цена", fmtPrice(x.price)], x.attune && ["Настройка", S.attuned.has(x.id) ? "есть" : "нужна"]].filter(Boolean), body: fx(x.desc), pills: x.tags };
+    }
+    if (t === "eff") {
+      const e = allEffects().find((v) => v.id === k); if (!e) return null;
+      return { tone: `var(--school-${e.school ?? "abj"})`, tile: `<span class="cs-tile" data-school="${e.school}">${icon(e.icon)}</span>`, name: e.name, sub: e.why ? "Недоступен" : e.disabled ? "Выключен" : e.temporary ? "Временный эффект" : "Пассивный эффект", stats: [e.time && ["Длительность", e.time], e.from && ["Источник", e.from]].filter(Boolean), body: fx(e.desc) + (e.changes?.length ? `<ul>${e.changes.map((c) => `<li>${c}</li>`).join("")}</ul>` : ""), pills: [] };
+    }
+    if (t === "cond") {
+      const c = [...CONDITIONS, ...STATUSES].find(([id]) => id === k); if (!c) return null;
+      return { tone: "var(--warn)", tile: `<span class="cs-tile">${icon("eye")}</span>`, name: c[1], sub: "Состояние", stats: [], body: fx(COND_TEXT[k] ?? `${c[2][0].toUpperCase()}${c[2].slice(1)}.`), pills: [] };
+    }
+    if (t === "rule") {
+      const r = RULES[k]; if (!r) return null;
+      return { tone: "var(--accent)", tile: `<span class="cs-tile">${icon("book")}</span>`, name: r[0], sub: "Правило", stats: [], body: fx(r[1]), pills: [] };
+    }
+    if (t === "dmg") {
+      const [label, c] = DMG[k] ?? [k, "var(--accent)"];
+      const anim = DMG[k] ? k : "generic";
+      return { dmg: true, tone: c, c, tile: "", name: label, sub: DMG[k] ? "Тип урона" : "Тип урона мира или модуля", stats: [], pre: `<div class="dmg-anim" data-anim="${anim}" style="--c:${c}"><i></i><i></i><i></i></div>`, body: `<p>${DMG_TEXT[k] ?? "Своей анимации нет — общий импульс в цвете типа."}</p>`, pills: [] };
+    }
+    if (t === "actor") return { tone: "var(--accent)", tile: `<span class="cs-tile">${icon("head")}</span>`, name: k, sub: "Актор", stats: [], body: "<p>Клик открывает окно этого актора, а без поддержки — его лист.</p>", pills: [] };
+    return null;
+  }
+  const recOf = (el) => TIP.open.find((r) => r.el === el);
+  function tipHTML(c, depth) {
+    const stats = c.stats.map(([l, v]) => `<div><dt>${l}</dt><dd>${v}</dd></div>`).join("");
+    const body = depth >= TIP_MAX_DEPTH ? c.body.replace(/data-card="[^"]*"/g, "") : c.body;
+    return `<div class="tip-head" data-tip-drag>${c.tile}<div class="tip-title"><b>${c.name}</b><small>${c.sub}</small></div>`
+      + `<button type="button" class="tip-btn" data-tip-pin aria-label="Закрепить" title="Закрепить">${icon("pin")}</button><button type="button" class="tip-btn" data-tip-close aria-label="Закрыть" title="Закрыть">${icon("close")}</button></div>`
+      + (c.pre ?? "") + `<dl class="tip-stats">${stats}</dl><div class="tip-body">${body}</div>`
+      + (c.pills?.length ? `<div class="tip-pills">${c.pills.map((p) => `<span>${p}</span>`).join("")}</div>` : "")
+      + `<div class="tip-hint">Задержите курсор, чтобы закрепить</div>`;
+  }
+  function placeTip(el, anchor) {
+    const a = anchor.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight;
+    let left = a.right + 8;
+    if (left + w > innerWidth - 8) left = a.left - w - 8;
+    left = Math.max(8, left);
+    const top = Math.max(8, Math.min(a.top, innerHeight - h - 8));
+    el.style.left = `${left}px`; el.style.top = `${top}px`;
+  }
+  function openTip(anchor) {
+    const key = tipKey(anchor);
+    const parent = recOf(anchor.closest(".tip")) ?? null;
+    const depth = parent ? parent.depth + 1 : 1;
+    if (depth > TIP_MAX_DEPTH || !anchor.isConnected) return;
+    if (TIP.open.some((r) => r.anchor === anchor)) return;
+    const c = key && tipContent(key);
+    if (!c) return;
+    // One live card per level: a new one replaces the unpinned card that hangs from the same parent.
+    TIP.open.filter((r) => !r.pinned && r.parent === parent).forEach(closeTip);
+    const el = document.createElement("div");
+    el.className = `tip${c.dmg ? " is-dmg" : ""}`; el.dataset.ui = "tooltipCard"; el.dataset.depth = depth; el.setAttribute("role", "tooltip");
+    el.style.setProperty("--tone", c.tone);
+    el.innerHTML = tipHTML(c, depth);
+    layer.append(el);
+    placeTip(el, anchor);
+    const rec = { el, key, anchor, parent, depth, pinned: false, at: 0 };
+    TIP.open.push(rec);
+    el.addEventListener("pointerenter", () => {
+      if (rec.pinned) return;
+      el.classList.add("is-pinning");
+      rec.pinTimer = setTimeout(() => pinTip(rec), 1200);
+    });
+    el.addEventListener("pointerleave", () => { clearTimeout(rec.pinTimer); el.classList.remove("is-pinning"); });
+  }
+  function closeTip(rec) {
+    if (!TIP.open.includes(rec)) return;
+    clearTimeout(rec.pinTimer);
+    TIP.open = TIP.open.filter((r) => r !== rec);
+    TIP.open.filter((r) => r.parent === rec).forEach((r) => (r.pinned ? (r.parent = null) : closeTip(r)));
+    rec.el.classList.add("is-leaving");
+    setTimeout(() => rec.el.remove(), motionOn() ? 150 : 0);
+    updateCloseAll();
+  }
+  function pinTip(rec) {
+    if (rec.pinned) return;
+    clearTimeout(rec.pinTimer);
+    rec.pinned = true; rec.parent = null; rec.at = ++TIP.seq;
+    rec.el.classList.remove("is-pinning"); rec.el.classList.add("is-pinned");
+    rec.el.querySelector("[data-tip-pin]").setAttribute("aria-label", "Закреплено");
+    // At most six pinned cards: the seventh closes the oldest.
+    const pinned = TIP.open.filter((r) => r.pinned).sort((a, b) => a.at - b.at);
+    while (pinned.length > TIP_MAX_PINNED) closeTip(pinned.shift());
+    updateCloseAll();
+  }
+  function updateCloseAll() {
+    layer.querySelectorAll(".tip-foot").forEach((f) => f.remove());
+    const pinned = TIP.open.filter((r) => r.pinned).sort((a, b) => b.at - a.at);
+    if (pinned.length >= 2) pinned[0].el.insertAdjacentHTML("beforeend", `<div class="tip-foot"><button type="button" data-tip-closeall>Закрыть все (${pinned.length})</button></div>`);
+  }
+  // Unpinned cards close 200 ms after the pointer leaves both the card chain and its anchor.
+  function sweepTips() {
+    const under = TIP.x < 0 ? null : document.elementFromPoint(TIP.x, TIP.y);
+    const keep = new Set();
+    const chain = (r) => { while (r) { keep.add(r); r = r.parent; } };
+    chain(recOf(under?.closest(".tip")));
+    TIP.open.forEach((r) => { if (under && r.anchor.contains(under)) chain(r); if (document.activeElement === r.anchor) chain(r); });
+    TIP.open.filter((r) => !r.pinned && !keep.has(r)).forEach(closeTip);
+  }
+  const queueSweep = () => { clearTimeout(TIP.sweep); TIP.sweep = setTimeout(sweepTips, 200); };
+  function stripTitle(a) {
+    // Our card replaces the native tooltip; the text stays for screen readers.
+    if (!a.title) return;
+    if (!a.getAttribute("aria-label")) a.setAttribute("aria-label", a.title);
+    a.removeAttribute("title");
+  }
+  function hoverTrigger(a, delay) {
+    if (!tipKey(a)) return;
+    stripTitle(a);
+    clearTimeout(TIP.timer);
+    TIP.timer = setTimeout(() => openTip(a), delay);
+  }
+  document.addEventListener("pointermove", (e) => { TIP.x = e.clientX; TIP.y = e.clientY; }, { passive: true });
+  document.addEventListener("pointerover", (e) => {
+    const a = e.target.closest?.(TRIGGERS);
+    if (!a || !(root.contains(a) || layer.contains(a)) || a.closest(".cs-drawer")) return;
+    if (a.contains(e.relatedTarget)) return;
+    const inCard = !!a.closest(".tip");
+    const live = TIP.open.some((r) => !r.pinned && r.depth === 1);
+    hoverTrigger(a, inCard ? 300 : live ? 0 : 400);
   });
-  root.addEventListener("pointerout", (e) => {
-    const el = hcTarget(e.target);
-    if (!el || el.contains(e.relatedTarget)) return;
-    clearTimeout(hcTimer); hcFor = null; hc.classList.remove("is-on");
+  document.addEventListener("pointerout", (e) => {
+    const a = e.target.closest?.(TRIGGERS);
+    if (a && !a.contains(e.relatedTarget)) clearTimeout(TIP.timer);
+    queueSweep();
   });
+  root.addEventListener("focusin", (e) => { const a = e.target.closest(TRIGGERS); if (a && !a.closest(".cs-drawer")) hoverTrigger(a, 400); });
+  root.addEventListener("focusout", queueSweep);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") TIP.open.filter((r) => !r.pinned).forEach(closeTip); });
+  layer.addEventListener("click", (e) => {
+    const rec = recOf(e.target.closest(".tip"));
+    if (!rec) return;
+    if (e.target.closest("[data-tip-close]")) return closeTip(rec);
+    if (e.target.closest("[data-tip-pin]")) return rec.pinned ? undefined : pinTip(rec);
+    if (e.target.closest("[data-tip-closeall]")) return TIP.open.filter((r) => r.pinned).forEach(closeTip);
+    const ref = e.target.closest('[data-card^="doc:"]');
+    if (ref && byId[ref.dataset.card.slice(4)]) select(ref.dataset.card.slice(4));
+  });
+  // Middle click pins, as core does; right click closes one card.
+  layer.addEventListener("pointerdown", (e) => { if (e.button === 1 && e.target.closest(".tip")) e.preventDefault(); });
+  layer.addEventListener("auxclick", (e) => { const rec = recOf(e.target.closest(".tip")); if (rec && e.button === 1) pinTip(rec); });
+  layer.addEventListener("contextmenu", (e) => { const rec = recOf(e.target.closest(".tip")); if (!rec) return; e.preventDefault(); closeTip(rec); });
+  // Dragging by the head pins the card first, then moves it.
+  layer.addEventListener("pointerdown", (e) => {
+    const head = e.target.closest("[data-tip-drag]");
+    if (!head || e.button !== 0 || e.target.closest("button, a, [data-card]")) return;
+    const rec = recOf(head.closest(".tip")); if (!rec) return;
+    pinTip(rec);
+    const el = rec.el, r = el.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+    el.classList.add("is-dragging"); head.setPointerCapture(e.pointerId);
+    const move = (ev) => { el.style.left = `${Math.max(0, Math.min(innerWidth - 40, ev.clientX - dx))}px`; el.style.top = `${Math.max(0, Math.min(innerHeight - 30, ev.clientY - dy))}px`; };
+    const up = () => { el.classList.remove("is-dragging"); head.removeEventListener("pointermove", move); head.removeEventListener("pointerup", up); };
+    head.addEventListener("pointermove", move); head.addEventListener("pointerup", up);
+  });
+  const setCardVariant = (v) => { layer.dataset.card = v; document.querySelectorAll("[data-card-set]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.cardSet === v)); };
+  document.querySelector('[data-ui="mockCardSwitch"]').addEventListener("click", (e) => { const b = e.target.closest("[data-card-set]"); if (b) setCardVariant(b.dataset.cardSet); });
+  if (/^[ABC]$/.test(new URLSearchParams(location.search).get("card") ?? "")) setCardVariant(new URLSearchParams(location.search).get("card"));
   /* window entrance: the sheet settles in, rail blocks follow one by one */
   if (motionOn()) {
     root.animate([{ opacity: 0, transform: "translateY(12px) scale(0.985)" }, { opacity: 1, transform: "none" }], { duration: 520, easing: SETTLE });

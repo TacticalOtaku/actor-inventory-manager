@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 
-import { computeActorCurrency } from "../scripts/integrations/item-piles.js";
+import { computeActorCurrency, readPilesCurrencies } from "../scripts/integrations/item-piles.js";
 
 /** Currencies as Item Piles 3.3.4 returns them for dnd5e (systems/dnd5e-4.0.0.js), quantities filled in. */
 const coin = (key, rate, quantity, primary = false) => ({
@@ -34,5 +34,24 @@ describe("Item Piles purse total", () => {
     const purse = computeActorCurrency({ system: { currency: {} } });
     assert.equal(purse.totalGold, "10.00");
     assert.equal(purse.customCurrencies.length, 2);
+  });
+});
+
+describe("Item Piles purse coins", () => {
+  it("asks for every currency, zero amounts included, so each coin can be edited", () => {
+    let asked;
+    globalThis.game = {
+      modules: new Map([["item-piles", { active: true }]]),
+      itempiles: { API: { getActorCurrencies: (actor, options) => { asked = options; return [coin("gp", 1, 0, true)]; } } }
+    };
+    assert.equal(readPilesCurrencies({}).length, 1);
+    assert.deepEqual(asked, { getAll: true });
+  });
+
+  it("is empty when Item Piles is off or its API throws", () => {
+    globalThis.game = { modules: new Map() };
+    assert.deepEqual(readPilesCurrencies({}), []);
+    globalThis.game = { modules: new Map([["item-piles", { active: true }]]), itempiles: { API: { getActorCurrencies: () => { throw new Error("boom"); } } } };
+    assert.deepEqual(readPilesCurrencies({}), []);
   });
 });

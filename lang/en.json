@@ -112,8 +112,8 @@
       "occupied": "Occupied slots"
     },
     "sheetButton": {
-      "label": "RPG Inventory",
-      "tooltip": "Open RPG Equipment Paperdoll & Inventory Manager"
+      "label": "AIM",
+      "tooltip": "Open the actor window"
     },
     "slots": {
       "head": "Head",
@@ -499,8 +499,8 @@
         "warn": "Warn Only (Show warning but permit invalid equipment)"
       },
       "showSheetButton": {
-        "name": "Show RPG Inventory Button in Character Sheet",
-        "hint": "Adds a quick access button to the top of actor sheets to open the Paperdoll inventory."
+        "name": "AIM button in the sheet header",
+        "hint": "Adds the AIM button to actor sheet headers; it opens the actor window."
       },
       "showActorPortraitBackdrop": {
         "name": "Show Actor Portrait Backdrop in Paperdoll",
@@ -531,8 +531,8 @@
     },
     "keybindings": {
       "openInventory": {
-        "name": "Toggle RPG Inventory Window",
-        "hint": "Open or close the RPG Inventory & Paperdoll for the selected token or assigned character (Default: I)."
+        "name": "Open the actor window",
+        "hint": "Open or close the actor window of the controlled token, or of your assigned character when no token is controlled."
       },
       "noActorSelected": "Please select a token on the canvas or assign a character to open the inventory.",
       "unsupportedActor": "The inventory is not available for this actor."

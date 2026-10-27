@@ -1,7 +1,7 @@
 {
   "id": "actor-inventory-manager",
-  "title": "Actor Inventory Manager & Paperdoll",
-  "description": "RPG-style Actor Inventory Window with Paperdoll equipment slots, bidirectional rules enforcement with character sheets, and seamless Weighty Containers integration.",
+  "title": "AIM: Actor Window",
+  "description": "A full actor window for D&D 5e: paperdoll, equipment rules, spells, features, effects and player trading, beside whatever sheet the actor uses.",
   "version": "1.9.1",
   "compatibility": {
     "minimum": "14",

@@ -88,3 +88,7 @@
 .aim-window[data-layout="narrow"] .aim-abilities { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .aim-window[data-layout="narrow"] .aim-title { padding-right: 0; }
 .aim-window[data-layout="narrow"] .aim-tools { position: static; justify-self: end; grid-row: 1; }
+
+/* the AIM button in another sheet's header: Foundry's header control with a short label; no theme tokens here */
+.aim-window-header-btn { display: inline-flex; align-items: center; gap: 4px; width: auto; padding-inline: 6px; }
+.aim-window-header-btn span { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; }

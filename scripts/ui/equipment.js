@@ -11,7 +11,7 @@ import { getContainerLoad, getContainerWeightReductionPct, isWeightyContainersAc
 import { escapeHTML } from "./html.js";
 
 const PARTIALS = `modules/${MODULE_ID}/templates/window`;
-export const EQUIPMENT_TEMPLATES = ["equipment", "tray", "item-row", "item-detail"].map((name) => `${PARTIALS}/${name}.hbs`);
+export const EQUIPMENT_TEMPLATES = ["equipment", "doll", "tray", "item-row", "item-detail"].map((name) => `${PARTIALS}/${name}.hbs`);
 
 /** More charges than this show as a number instead of pips. */
 const MAX_PIPS = 10;

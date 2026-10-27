@@ -2,9 +2,11 @@
 // AIM: Actor Window - dragging inventory rows: into and out of containers, manual order, out of the window
 // ─────────────────────────────────────────────────────────
 
+import { isItemAttuned } from "../core/attunement.js";
 import { containerDropRefusal, listPrefsFor } from "../core/inventory.js";
 import { validateContainerDrop } from "../integrations/weighty-containers.js";
-import { setItemContainer } from "./item-actions.js";
+import { isItemCompatibleWithSlot } from "../core/item-classifier.js";
+import { equipItemToSlot, setItemContainer, unequipItem } from "./item-actions.js";
 import { MODULE_ID } from "../constants.js";
 
 /** Hovering a folded tray this long while dragging unfolds it. */
@@ -24,7 +26,12 @@ function sameList(a, b) {
  * Where a drop lands. With the manual order a row of the same list takes the item before or after itself;
  * otherwise a tray puts it in that container and a section takes it out of its container.
  */
-function dropTarget(node, event, manual, dragged) {
+function dropTarget(node, event, manual, dragged, fromDoll) {
+  const slot = node.closest?.(".aim-slot[data-slot]");
+  if (slot) return { kind: "slot", node: slot, id: slot.dataset.slot };
+  const attune = node.closest?.("[data-attune]");
+  if (attune) return { kind: "attune", node: attune };
+  if (node.closest?.("[data-doll]")) return null;
   const row = node.closest?.("[data-row]");
   const wrap = row?.closest("[data-item-id]");
   if (manual && wrap && wrap.dataset.itemId !== dragged.id) {
@@ -37,9 +44,13 @@ function dropTarget(node, event, manual, dragged) {
   const tray = node.closest?.("[data-tray]");
   if (tray) return { kind: "container", node: tray, id: tray.dataset.tray };
   const section = node.closest?.(".aim-section");
-  if (section) return { kind: "root", node: section, id: null };
+  // A tile dragged out of the doll onto the list is taken off.
+  if (section) return fromDoll ? { kind: "unequip", node: section } : { kind: "root", node: section, id: null };
   return null;
 }
+
+/** Rows, doll tiles, slotless chips and attunement sockets can all be dragged. */
+const DRAGGABLE = "[data-row], .aim-slot.is-filled, .aim-slotless-item, .aim-socket.is-on";
 
 function shake(node) {
   if (!node) return;
@@ -57,6 +68,7 @@ function shake(node) {
 export function bindInventoryDrag(app) {
   const el = app.element;
   let dragged = null;
+  let fromDoll = false;
   let lit = null;
   let spring = { tray: null, timer: null };
 
@@ -75,25 +87,32 @@ export function bindInventoryDrag(app) {
   const reset = () => {
     light(null);
     stopSpring();
-    el.querySelector(".aim-row.is-dragging")?.classList.remove("is-dragging");
+    el.querySelector(".is-dragging")?.classList.remove("is-dragging");
+    for (const slot of el.querySelectorAll(".aim-slot.is-fit")) slot.classList.remove("is-fit");
     dragged = null;
+    fromDoll = false;
   };
 
   // A row dragged out of the window carries the item's own drag data, so sheets, the canvas and Item Piles take it.
   el.addEventListener("dragstart", (event) => {
-    const row = event.target.closest?.("[data-row]");
-    const item = row && app.actor.items.get(row.closest("[data-item-id]")?.dataset.itemId);
+    const source = event.target.closest?.(DRAGGABLE);
+    const item = source && app.actor.items.get(source.closest("[data-item-id]")?.dataset.itemId);
     if (!item || !app.canEdit) return;
     event.dataTransfer.setData("text/plain", JSON.stringify({ ...item.toDragData(), aimActorUuid: app.actorKey, aimItemId: item.id }));
     event.dataTransfer.effectAllowed = "copyMove";
-    row.classList.add("is-dragging");
+    source.classList.add("is-dragging");
     dragged = item;
+    fromDoll = !source.matches("[data-row]");
+    // The slots the item fits glow while it is dragged.
+    for (const slot of el.querySelectorAll(".aim-slot[data-slot]")) {
+      slot.classList.toggle("is-fit", isItemCompatibleWithSlot(item, slot.dataset.slot, app.actor));
+    }
   });
 
   el.addEventListener("dragover", (event) => {
     if (!dragged) return;
     const manual = listPrefsFor(game.settings.get(MODULE_ID, "listPrefs"), "equipment").sort === "manual";
-    const target = dropTarget(event.target, event, manual, dragged);
+    const target = dropTarget(event.target, event, manual, dragged, fromDoll);
     light(target);
     if (!target) return;
     event.preventDefault();
@@ -113,7 +132,7 @@ export function bindInventoryDrag(app) {
   el.addEventListener("drop", (event) => {
     if (!dragged) return;
     const manual = listPrefsFor(game.settings.get(MODULE_ID, "listPrefs"), "equipment").sort === "manual";
-    const target = dropTarget(event.target, event, manual, dragged);
+    const target = dropTarget(event.target, event, manual, dragged, fromDoll);
     const item = dragged;
     reset();
     if (!target) return;
@@ -131,6 +150,14 @@ export function bindInventoryDrag(app) {
  */
 export async function moveInventoryItem(app, item, target) {
   if (!app.canEdit) return;
+  // A slot equips through the equipment rules; a refusal shakes it with the reason the rules give.
+  if (target.kind === "slot") {
+    if (item.system.equipped && app.element.querySelector(`.aim-slot[data-slot="${target.id}"][data-item-id="${item.id}"]`)) return;
+    if (!await equipItemToSlot(item.actor, item, target.id)) shake(app.element.querySelector(`.aim-slot[data-slot="${target.id}"]`));
+    return;
+  }
+  if (target.kind === "attune") return isItemAttuned(item) ? undefined : app.attuneWithLimit(item, null);
+  if (target.kind === "unequip") return item.system.equipped ? unequipItem(item.actor, item) : undefined;
   if (target.kind === "sort") {
     // Siblings go in the order the list shows (sort, then name), so equal sort values keep their visible order.
     const siblings = item.actor.items.filter((i) => i.id !== item.id && sameList(i, item))

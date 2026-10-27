@@ -2,15 +2,18 @@
 // Actor Inventory Manager - Paperdoll Templates System
 // ─────────────────────────────────────────────────────────
 
-import { FLAGS, MODULE_ID, SLOTS, TEMPLATE_PRESETS } from "../constants.js";
+import { FIGURES, FLAGS, MODULE_ID, SLOTS, TEMPLATE_PRESETS } from "../constants.js";
 import { getPaperdollRuntime } from "./paperdoll-runtime.js";
 import { isSupportedActor } from "./actor-scope.js";
 
 /**
  * Built-in Preset: D&D 2024 Rules (Default)
  */
+// Doll order: the first half of the slots fills the left column top-down, the rest the right column, so the
+// main hand ends the left column and the off hand the right one.
 export const DND_2024_TEMPLATE = {
   id: TEMPLATE_PRESETS.DND_2024,
+  figure: "human",
   nameKey: "AIM.templates.dnd2024.name",
   descKey: "AIM.templates.dnd2024.desc",
   isPreset: true,
@@ -61,7 +64,7 @@ export const DND_2024_TEMPLATE = {
       category: "hand",
       accepts: ["weapon", "mainHand", "shield", "staff", "wand", "rod", "focus", "torch", "tool"],
       itemTypes: ["weapon", "equipment", "tool", "consumable"],
-      order: 40,
+      order: 60,
       rules: { singlePerActor: false, locksOffHandOn2H: true, isArmor: false, isShield: false }
     },
     {
@@ -73,7 +76,7 @@ export const DND_2024_TEMPLATE = {
       category: "equipment",
       accepts: ["armor", "light", "medium", "heavy", "clothing", "robe", "vestment", "bodyArmor"],
       itemTypes: ["equipment"],
-      order: 10,
+      order: 40,
       rules: { singlePerActor: true, locksOffHandOn2H: false, isArmor: true, isShield: false }
     },
     {
@@ -85,7 +88,7 @@ export const DND_2024_TEMPLATE = {
       category: "equipment",
       accepts: ["waist", "belt", "girdle", "sash", "cinch"],
       itemTypes: ["equipment"],
-      order: 20,
+      order: 80,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false }
     },
     {
@@ -97,7 +100,7 @@ export const DND_2024_TEMPLATE = {
       category: "equipment",
       accepts: ["feet", "boots", "shoes", "greaves", "slippers", "sandals", "sabatons"],
       itemTypes: ["equipment"],
-      order: 30,
+      order: 90,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false }
     },
     {
@@ -109,7 +112,7 @@ export const DND_2024_TEMPLATE = {
       category: "equipment",
       accepts: ["hands", "gloves", "gauntlets", "bracers", "handwraps"],
       itemTypes: ["equipment"],
-      order: 10,
+      order: 70,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false }
     },
     {
@@ -121,7 +124,7 @@ export const DND_2024_TEMPLATE = {
       category: "ring",
       accepts: ["ring", "band", "signet"],
       itemTypes: ["equipment", "loot"],
-      order: 20,
+      order: 50,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false }
     },
     {
@@ -133,7 +136,7 @@ export const DND_2024_TEMPLATE = {
       category: "ring",
       accepts: ["ring", "band", "signet"],
       itemTypes: ["equipment", "loot"],
-      order: 30,
+      order: 100,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false }
     },
     {
@@ -145,7 +148,7 @@ export const DND_2024_TEMPLATE = {
       category: "hand",
       accepts: ["shield", "offHand", "weapon", "focus", "torch", "lantern", "quiver", "instrument"],
       itemTypes: ["weapon", "equipment", "tool", "consumable"],
-      order: 40,
+      order: 110,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: true }
     }
   ]
@@ -156,6 +159,7 @@ export const DND_2024_TEMPLATE = {
  */
 export const DND_2014_TEMPLATE = {
   id: TEMPLATE_PRESETS.DND_2014,
+  figure: "human",
   nameKey: "AIM.templates.dnd2014.name",
   descKey: "AIM.templates.dnd2014.desc",
   isPreset: true,
@@ -206,7 +210,7 @@ export const DND_2014_TEMPLATE = {
       category: "hand",
       accepts: ["weapon", "mainHand", "shield", "staff", "wand", "rod", "focus"],
       itemTypes: ["weapon", "equipment", "tool", "consumable"],
-      order: 40,
+      order: 60,
       rules: { singlePerActor: false, locksOffHandOn2H: true, isArmor: false, isShield: false }
     },
     {
@@ -218,7 +222,7 @@ export const DND_2014_TEMPLATE = {
       category: "equipment",
       accepts: ["armor", "light", "medium", "heavy", "clothing"],
       itemTypes: ["equipment"],
-      order: 10,
+      order: 40,
       rules: { singlePerActor: true, locksOffHandOn2H: false, isArmor: true, isShield: false }
     },
     {
@@ -230,7 +234,7 @@ export const DND_2014_TEMPLATE = {
       category: "equipment",
       accepts: ["waist", "belt", "girdle"],
       itemTypes: ["equipment"],
-      order: 20,
+      order: 80,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false }
     },
     {
@@ -242,7 +246,7 @@ export const DND_2014_TEMPLATE = {
       category: "equipment",
       accepts: ["feet", "boots", "shoes", "slippers"],
       itemTypes: ["equipment"],
-      order: 30,
+      order: 90,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false }
     },
     {
@@ -254,7 +258,7 @@ export const DND_2014_TEMPLATE = {
       category: "equipment",
       accepts: ["hands", "gloves", "gauntlets", "bracers"],
       itemTypes: ["equipment"],
-      order: 10,
+      order: 70,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false }
     },
     {
@@ -266,7 +270,7 @@ export const DND_2014_TEMPLATE = {
       category: "ring",
       accepts: ["ring", "band"],
       itemTypes: ["equipment", "loot"],
-      order: 20,
+      order: 50,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false }
     },
     {
@@ -278,7 +282,7 @@ export const DND_2014_TEMPLATE = {
       category: "ring",
       accepts: ["ring", "band"],
       itemTypes: ["equipment", "loot"],
-      order: 30,
+      order: 100,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false }
     },
     {
@@ -290,18 +294,77 @@ export const DND_2014_TEMPLATE = {
       category: "hand",
       accepts: ["shield", "offHand", "weapon", "focus", "torch"],
       itemTypes: ["weapon", "equipment", "tool", "consumable"],
-      order: 40,
+      order: 110,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: true }
     }
   ]
 };
 
+/** A slot of the creature and vehicle presets. */
+function gearSlot(id, icon, accepts, itemTypes, order, rules = {}) {
+  return {
+    id, labelKey: `AIM.slots.${id}`, label: id, icon, column: order % 2 ? "left" : "right", category: "equipment",
+    accepts, itemTypes, order,
+    rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false, ...rules }
+  };
+}
+
+/** A built-in preset: a figure plus its slots; creatures and vehicles have no attunement. */
+function preset(id, figure, slots) {
+  return { id, figure, nameKey: `AIM.templates.${id}.name`, descKey: `AIM.templates.${id}.desc`, isPreset: true, attunementMax: 0, slots };
+}
+
+export const BEAST_TEMPLATE = preset(TEMPLATE_PRESETS.BEAST, "beast", [
+  gearSlot("collar", "fa-light fa-circle-dot", ["collar", "ошейник"], ["equipment", "loot"], 10),
+  gearSlot("saddle", "fa-light fa-horse-saddle", ["saddle", "седл"], ["equipment", "loot"], 20),
+  gearSlot("barding", "fa-light fa-shield-halved", ["barding", "armor", "попон"], ["equipment"], 30, { isArmor: true })
+]);
+export const WAGON_TEMPLATE = preset(TEMPLATE_PRESETS.WAGON, "wagon", []);
+export const WAGON_TACK_TEMPLATE = preset(TEMPLATE_PRESETS.WAGON_TACK, "wagon", [
+  gearSlot("harness", "fa-light fa-link", ["harness", "yoke", "упряж", "хомут"], ["equipment", "loot"], 10),
+  gearSlot("mount", "fa-light fa-crosshairs", ["siege", "ballista", "catapult", "weapon", "орудие", "баллист"], ["weapon", "equipment"], 20),
+  gearSlot("lantern", "fa-light fa-lantern", ["lantern", "lamp", "фонар", "лампа"], ["equipment", "loot", "consumable"], 30),
+  gearSlot("banner", "fa-light fa-flag", ["banner", "flag", "standard", "знам", "флаг"], ["equipment", "loot"], 40)
+]);
+export const SHIP_TEMPLATE = preset(TEMPLATE_PRESETS.SHIP, "ship", []);
+export const SHIP_PORTS_TEMPLATE = preset(TEMPLATE_PRESETS.SHIP_PORTS, "ship", [
+  gearSlot("figurehead", "fa-light fa-chess-knight", ["figurehead", "носов"], ["equipment", "loot"], 10),
+  gearSlot("cannon", "fa-light fa-bomb", ["cannon", "ballista", "catapult", "siege", "weapon", "пушк", "баллист"], ["weapon", "equipment"], 20),
+  gearSlot("sail", "fa-light fa-sailboat", ["sail", "парус"], ["equipment", "loot"], 30)
+]);
+export const AIRSHIP_TEMPLATE = preset(TEMPLATE_PRESETS.AIRSHIP, "airship", []);
+export const AIRSHIP_RIG_TEMPLATE = preset(TEMPLATE_PRESETS.AIRSHIP_RIG, "airship", [
+  gearSlot("envelope", "fa-light fa-cloud", ["envelope", "balloon", "оболочк", "баллон"], ["equipment", "loot"], 10),
+  gearSlot("gondola", "fa-light fa-basket-shopping", ["gondola", "basket", "гондол", "корзин"], ["equipment", "loot", "container"], 20)
+]);
+
 const COLUMNS = ["left", "center", "right"];
 
 export const PRESET_TEMPLATES = {
   [TEMPLATE_PRESETS.DND_2024]: DND_2024_TEMPLATE,
-  [TEMPLATE_PRESETS.DND_2014]: DND_2014_TEMPLATE
+  [TEMPLATE_PRESETS.DND_2014]: DND_2014_TEMPLATE,
+  [TEMPLATE_PRESETS.BEAST]: BEAST_TEMPLATE,
+  [TEMPLATE_PRESETS.WAGON]: WAGON_TEMPLATE,
+  [TEMPLATE_PRESETS.WAGON_TACK]: WAGON_TACK_TEMPLATE,
+  [TEMPLATE_PRESETS.SHIP]: SHIP_TEMPLATE,
+  [TEMPLATE_PRESETS.SHIP_PORTS]: SHIP_PORTS_TEMPLATE,
+  [TEMPLATE_PRESETS.AIRSHIP]: AIRSHIP_TEMPLATE,
+  [TEMPLATE_PRESETS.AIRSHIP_RIG]: AIRSHIP_RIG_TEMPLATE
 };
+
+/** The vehicle preset each dnd5e vehicle type starts on; space has no figure of its own. */
+const VEHICLE_PRESETS = { land: TEMPLATE_PRESETS.WAGON, water: TEMPLATE_PRESETS.SHIP, air: TEMPLATE_PRESETS.AIRSHIP, space: TEMPLATE_PRESETS.SHIP };
+
+/**
+ * The preset an actor starts on: the humanoid standard for characters and NPCs, by vehicle type for vehicles.
+ * @param {string} actorType
+ * @param {string|null} vehicleType
+ * @returns {string}
+ */
+export function defaultPresetFor(actorType, vehicleType) {
+  if (actorType !== "vehicle") return TEMPLATE_PRESETS.DND_2024;
+  return VEHICLE_PRESETS[vehicleType] ?? TEMPLATE_PRESETS.WAGON;
+}
 
 /**
  * Get all world custom templates saved in game settings
@@ -373,9 +436,9 @@ export function getActorPaperdollTemplate(actor) {
     return { ...formatTemplateContext({ ...customTemplateData, id: "custom" }), isActorCustom: true };
   }
 
-  // 2. A preset or world template linked by id
-  const templateId = flags[FLAGS.TEMPLATE_ID];
-  return formatTemplateContext(getTemplateById(templateId || TEMPLATE_PRESETS.DND_2024));
+  // 2. A preset or world template linked by id, else the actor type's default
+  const templateId = flags[FLAGS.TEMPLATE_ID] || defaultPresetFor(actor.type, getPaperdollRuntime().vehicleType(actor));
+  return formatTemplateContext(getTemplateById(templateId));
 }
 
 /**
@@ -410,6 +473,7 @@ function formatTemplateContext(template) {
       : (template.name || template.id),
     isPreset: Boolean(template.isPreset),
     isActorCustom: false,
+    figure: FIGURES.includes(template.figure) ? template.figure : "human",
     attunementMax: template.attunementMax ?? 3,
     slots,
     leftSlots,
@@ -549,6 +613,7 @@ export function normalizeTemplateData(data) {
     name: typeof data.name === "string" && data.name.trim() ? data.name.trim() : id,
     ...(typeof data.description === "string" ? { description: data.description } : {}),
     attunementMax: Number.isFinite(attunementMax) ? Math.max(0, Math.min(9, Math.round(attunementMax))) : 3,
+    figure: FIGURES.includes(data.figure) ? data.figure : "human",
     slots
   };
 }

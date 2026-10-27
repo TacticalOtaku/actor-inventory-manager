@@ -90,7 +90,19 @@
       "quick3": "Quick 3",
       "quick4": "Quick 4",
       "lockedBy2H": "Occupied by Two-Handed Weapon",
-      "twoHandedShort": "2H"
+      "twoHandedShort": "2H",
+      "collar": "Collar",
+      "saddle": "Saddle",
+      "barding": "Barding",
+      "harness": "Harness",
+      "mount": "Mounted weapon",
+      "lantern": "Lantern",
+      "banner": "Banner",
+      "figurehead": "Figurehead",
+      "cannon": "Cannon",
+      "sail": "Sail",
+      "envelope": "Envelope",
+      "gondola": "Gondola"
     },
     "vitals": {
       "level": "Level",
@@ -153,12 +165,40 @@
     },
     "templates": {
       "dnd2024": {
-        "name": "D&D 2024 Rules (Default)",
-        "desc": "Standard 2024 equipment slots, 3 attunement sockets, 2-handed lock, single armor and shield."
+        "name": "Standard 2024",
+        "desc": "Humanoid: 11 slots, 3 attunement sockets, two-handed lock, one body armour and one shield."
       },
       "dnd2014": {
-        "name": "D&D 2014 Rules",
-        "desc": "Classic 2014 5e equipment paperdoll layout."
+        "name": "Standard 2014",
+        "desc": "Humanoid by the 2014 rules: 11 slots, 3 attunement sockets."
+      },
+      "beast": {
+        "name": "Beast",
+        "desc": "A four-legged beast: collar, saddle, barding."
+      },
+      "wagon": {
+        "name": "Wagon",
+        "desc": "A land vehicle without slots: a figure over the hold."
+      },
+      "wagonTack": {
+        "name": "Wagon · tack and weapon",
+        "desc": "A wagon with harness, mounted weapon, lantern and banner slots."
+      },
+      "ship": {
+        "name": "Ship",
+        "desc": "A water vehicle without slots: a figure over the hold."
+      },
+      "shipPorts": {
+        "name": "Ship · gun ports",
+        "desc": "A ship with figurehead, cannon and sail slots."
+      },
+      "airship": {
+        "name": "Airship",
+        "desc": "An air vehicle without slots: a figure over the hold."
+      },
+      "airshipRig": {
+        "name": "Airship · rigging",
+        "desc": "An airship with envelope and gondola slots."
       }
     },
     "editor": {
@@ -676,6 +716,26 @@
         "trayEmpty": "Empty — drag an item here",
         "dropSelf": "“{item}” cannot go inside itself.",
         "dropInside": "“{container}” is inside “{item}”: a container cannot go into its own contents."
+      },
+      "doll": {
+        "title": "Paperdoll",
+        "figureTitle": "Figure",
+        "preset": "Doll preset",
+        "toggle": "Paperdoll",
+        "show": "Show the paperdoll",
+        "hide": "Hide the paperdoll",
+        "unequip": "Unequip: {item}",
+        "lockedBy": "Held two-handed: {item}",
+        "attune": "Attunement",
+        "attuneCount": "{count} / {max}",
+        "attuneEnd": "End attunement: {item}",
+        "attunedSocket": "Attuned: {item}",
+        "freeSocket": "Free attunement: drag an item here",
+        "slotless": "Without a slot",
+        "extra": "Extra slots",
+        "nothingFits": "Nothing fits the “{slot}” slot.",
+        "cargo": "Cargo: {value} {unit}",
+        "noCargo": "No cargo capacity set"
       }
     }
   }

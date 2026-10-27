@@ -316,6 +316,34 @@ export async function readContainerCapacity(container) {
   return { value: num(value, 0), max: Number(max), kind: capacity.count ? "count" : "weight", unit: capacity.weight?.units ?? "lb" };
 }
 
+/**
+ * A vehicle's type (land, water, air, space). dnd5e 5.3.3 keeps it in `details.type`; older data had `vehicleType`.
+ * @param {Object} actor
+ * @returns {string|null}
+ */
+export function readVehicleType(actor) {
+  if (actor?.type !== "vehicle") return null;
+  return actor.system?.details?.type ?? actor.system?.vehicleType ?? null;
+}
+
+/**
+ * What the banner over a vehicle's hold shows. dnd5e 5.3.3: size in `traits.size` (CONFIG.DND5E.actorSizes),
+ * cargo capacity in `attributes.capacity.cargo` {value, units}.
+ * @param {Object} actor
+ * @returns {{size: string, cargo: number|null, unit: string}}
+ */
+export function readVehicleHold(actor) {
+  const config = getDnd5eConfig();
+  const size = actor?.system?.traits?.size;
+  const cargo = actor?.system?.attributes?.capacity?.cargo ?? {};
+  const label = config.actorSizes?.[size]?.label;
+  return {
+    size: label ? localizeOr(label, label) : (size ?? ""),
+    cargo: Number.isFinite(Number(cargo.value)) && cargo.value !== null ? Number(cargo.value) : null,
+    unit: cargo.units ? unitAbbreviation("weightUnits", cargo.units) : ""
+  };
+}
+
 /** The actor's dnd5e coins in CONFIG.DND5E.currencies order (pp, gp, ep, sp, cp in 5.3.3). */
 export function readCoins(actor) {
   const currencies = getDnd5eConfig().currencies ?? {};

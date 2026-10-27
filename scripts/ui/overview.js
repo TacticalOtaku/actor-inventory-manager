@@ -5,6 +5,7 @@
 import { MODULE_ID } from "../constants.js";
 import { CARD_CONFIGS, CHARACTERISTICS, DEFENSES, PERSONALITY, profMark, signed } from "../core/overview.js";
 import { readAbilities, readBiography, readDefenses, readSenses, readSkills, readTools } from "../integrations/dnd5e.js";
+import { damageChip } from "./tooltips.js";
 
 const PARTIALS = `modules/${MODULE_ID}/templates/window`;
 export const OVERVIEW_TEMPLATES = ["overview", "biography"].map((name) => `${PARTIALS}/${name}.hbs`);
@@ -32,7 +33,12 @@ export function buildOverviewContext(actor, { canFavorite }) {
     skills: readSkills(actor).map(check("skill")),
     saves: readAbilities(actor).map((a) => ({ ...a, mark: a.proficient ? "prof" : "none", totalText: signed(a.save) })),
     tools: actor.type === "character" ? readTools(actor).map(check("tool")) : null,
-    defenses: DEFENSES.map((id) => ({ id, label: t(`AIM.window.overview.defenses.${id}`), ...list(defenses[id]) })),
+    defenses: DEFENSES.map((id) => {
+      // Damage types are chips in their colour; custom entries and the modification amounts stay text.
+      const chips = id === "dm" ? [] : (defenses.types[id] ?? []).map(damageChip).filter(Boolean);
+      const rest = defenses[id].slice(chips.length);
+      return { id, label: t(`AIM.window.overview.defenses.${id}`), chips, ...(chips.length && !rest.length ? { text: "" } : list(rest)) };
+    }),
     senses: [
       ...["prc", "inv", "ins"].map((id) => ({ id, label: t(`AIM.window.overview.passive.${id}`), text: String(senses.passive[id]) })),
       ...["senses", "armor", "weapon", "languages"].map((id) => ({ id, label: t(`AIM.window.overview.senses.${id}`), ...list(senses[id]) }))

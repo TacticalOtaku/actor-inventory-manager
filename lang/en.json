@@ -1009,7 +1009,9 @@
       "attunement": {
         "required": "required",
         "optional": "optional"
-      }
+      },
+      "damageType": "Damage type",
+      "damageTypeAdded": "Damage type of the world or a module"
     }
   }
 }

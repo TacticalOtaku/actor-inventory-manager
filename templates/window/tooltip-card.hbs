@@ -1,3 +1,4 @@
+{{#*inline "aimDamageChip"}}<span class="aim-dmg" data-dmg="{{key}}" tabindex="0" style="--dmg: {{color}}">{{label}}</span>{{/inline}}
 <div class="aim-tip aim-fade is-{{kind}}" role="tooltip" data-depth="{{depth}}">
   <div class="aim-tip-head" data-tip-drag>
     {{#if img}}<span class="aim-tip-tile"><img src="{{img}}" alt=""></span>{{/if}}
@@ -5,8 +6,9 @@
     <button type="button" class="aim-tip-btn" data-tip-pin aria-pressed="false" aria-label="{{pinLabel}}"><i class="fa-light fa-thumbtack"></i></button>
     <button type="button" class="aim-tip-btn" data-tip-close aria-label="{{closeLabel}}"><i class="fa-light fa-xmark"></i></button>
   </div>
+  {{#if scene}}<div class="aim-tip-scene" style="--dmg: {{color}}"><canvas data-scene="{{scene}}" aria-hidden="true"></canvas></div>{{/if}}
   <div class="aim-tip-main">
-    {{#if stats.length}}<dl class="aim-tip-stats">{{#each stats}}<div><dt>{{label}}</dt><dd>{{value}}</dd></div>{{/each}}</dl>{{/if}}
+    {{#if stats.length}}<dl class="aim-tip-stats">{{#each stats}}<div><dt>{{label}}</dt><dd>{{#if parts}}{{#each parts}}<span class="aim-dmg-part">{{formula}} {{#each chips}}{{> aimDamageChip}}{{/each}}</span>{{/each}}{{else}}{{value}}{{/if}}</dd></div>{{/each}}</dl>{{/if}}
     <div class="aim-tip-body">{{#if html}}{{{html}}}{{else}}{{{description}}}{{/if}}</div>
   </div>
   {{#if properties.length}}<div class="aim-tip-pills">{{#each properties}}<span>{{this}}</span>{{/each}}</div>{{/if}}

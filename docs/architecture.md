@@ -68,6 +68,7 @@ one place to update when it moves again. Never inline these reads at a call site
 | Effect changes (Foundry 14 `system.changes` with `type`) and their field labels | `readEffectChanges` | `integrations/dnd5e.js` |
 | Statuses for the conditions grid (`CONFIG.statusEffects`, non-pseudo `conditionTypes`, immunities from `traits.ci`) | `readStatusEffects` | `integrations/dnd5e.js` |
 | Tooltip cards (`system.getCardData()` read into numbers, text and pills; `richTooltip()` of effects and rule pages) | `readCardData` | `integrations/dnd5e.js` |
+| Damage types (`CONFIG.DND5E.damageTypes[key]`: label, `color` as a Foundry `Color`, `reference` page) | `readDamageType` | `integrations/dnd5e.js` |
 | Skills and tools (`prof.multiplier` in effect, total, passive) | `readSkills`, `readTools` | `integrations/dnd5e.js` |
 | Defenses (`traits.dr/di/dv/ci` with custom entries, `traits.dm.amount`) | `readDefenses` | `integrations/dnd5e.js` |
 | Passive scores, senses (`attributes.senses.ranges`, moved in 5.3), armor, weapons, languages (`labels`, telepathy) | `readSenses` | `integrations/dnd5e.js` |
@@ -273,6 +274,8 @@ slice from the map #28.
 | Pure trade-panel rules: what the trade waits for, offer edits, unchanged offers, partners, recovery action, Item Piles totals | `scripts/core/trade-panel.js` |
 | Tooltip cards on our own layer (`document.body` of the window's document): triggers, timing, nesting, pinning, dragging | `scripts/ui/tooltips.js`, `templates/window/tooltip-card.hbs`, `styles/window/tooltips.css` |
 | Pure card rules: delays, one live card per level, four levels, pin limit and order, closing and sweeping | `scripts/core/tooltips.js` |
+| Damage chips and the damage type card's scene: sprite particles and pixi-filters on one shared PIXI renderer (Foundry's PIXI 7), copied into each card's 2D canvas; loops, holds or stills by motion level | `scripts/ui/damage-scenes.js`, `assets/vfx/`, `scripts/vendor/pixi-filters.js` |
+| Pure scene rules: which type has a scene, multi-type parts, how a motion level plays it | `scripts/core/damage-scenes.js` |
 
 ### Theme, accent, density, motion
 
@@ -311,6 +314,11 @@ new place (`glide`, 420 ms) unless motion is off. The collapse button shrinks th
 and writes the matching `@font-face` rules into `styles/theme/fonts.css`. `fonts.css` is not listed in
 `module.json`: the client setting `useWebFonts` adds it as a `<link>`; with it off the windows use system fonts.
 Nothing is fetched from a CDN.
+
+The damage scenes use sprites from Kenney's Particle Pack 1.1 (CC0, `assets/vfx/LICENSE-kenney-particle-pack.txt`),
+resized to 256 or 128 px, and pixi-filters 5.3.0 (MIT, `scripts/vendor/LICENSE-pixi-filters.txt`), its browser build
+with one change: it keeps to the global `AIMPixiFilters` instead of merging into `PIXI.filters`, so a module that
+brings another version keeps its own. The script loads on the first damage card.
 
 ### Colour constraints
 

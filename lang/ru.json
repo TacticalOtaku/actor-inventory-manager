@@ -1009,7 +1009,9 @@
       "attunement": {
         "required": "нужна",
         "optional": "можно"
-      }
+      },
+      "damageType": "Тип урона",
+      "damageTypeAdded": "Тип урона мира или модуля"
     }
   }
 }

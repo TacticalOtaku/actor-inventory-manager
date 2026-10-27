@@ -59,6 +59,7 @@ import { buildFavoritesContext, favoriteIdFor, favoriteItemIds, hasFavorites } f
 import { SPELL_TEMPLATES, buildSpellsContext, playSlotChanges, preparationWarning, slotSnapshot } from "./spells.js";
 import { openPresetEditor } from "./preset-editor.js";
 import { bindInventoryDrag } from "./inventory-drag.js";
+import { morph } from "./morph.js";
 import { equipItemToSlot, toggleAttunement, toggleItemEquipped, unequipItem, useItem } from "./item-actions.js";
 import { setActorPaperdollTemplate } from "../core/paperdoll-templates.js";
 import { WEIGHTY_CONTAINERS_MODULE_ID, openWeightyContainersDialog } from "../integrations/weighty-containers.js";
@@ -477,18 +478,26 @@ export class ActorWindow extends WindowBase {
     this._prepOver = Boolean(this.element?.querySelector("[data-prep-counter].is-over"));
   }
 
+  /** The main part is patched in place, not replaced: only what changed is restyled and laid out again (#9). */
+  _replaceHTML(result, content, options) {
+    const prior = result.main && content.querySelector('[data-application-part="main"]');
+    if (prior) {
+      const state = {};
+      this._preSyncPartState("main", result.main, prior, state);
+      morph(prior, result.main);
+      this._syncPartState("main", prior, prior, state);
+      delete result.main;
+    }
+    super._replaceHTML(result, content, options);
+  }
+
   _onRender(context, options) {
     super._onRender(context, options);
-    // Right click on the ready orb still opens the experience card.
-    this.element.querySelector(".aim-level")?.addEventListener("contextmenu", (event) => {
-      event.preventDefault();
-      this.xpOpen = !this.xpOpen;
-      this.render({ parts: ["main"] });
-    });
     this.#applyRootState();
     this.#applyLayout({ animate: false });
     this.#moveInk();
-    this.#bindRail();
+    // The rail's own listeners go on its fresh elements only; a redraw of another part keeps them.
+    if (options.parts.includes("rail")) this.#bindRail();
     const next = railSnapshot(this.actor);
     playRailChanges(this.element, this._railPrev, next);
     this._railPrev = next;
@@ -1225,6 +1234,12 @@ export class ActorWindow extends WindowBase {
       this._searchTimer = setTimeout(() => this.render({ parts: ["main"] }), 120);
     });
     el.addEventListener("contextmenu", (event) => {
+      // Right click on the ready orb still opens the experience card.
+      if (event.target.closest(".aim-level")) {
+        event.preventDefault();
+        this.xpOpen = !this.xpOpen;
+        return this.render({ parts: ["main"] });
+      }
       const effectRow = event.target.closest("[data-effect-row]");
       if (effectRow) {
         event.preventDefault();

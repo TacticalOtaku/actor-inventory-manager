@@ -88,13 +88,13 @@ Foundry does not provide a database transaction spanning both actors. Keep other
 
 ### Foundry acceptance checks
 
-Use two player accounts and one GM in a test world before relying on the feature in a campaign:
+The full live check, with the module sets to run it on, is in [docs/live-check.md](docs/live-check.md). The trade
+checks below are part of it. Use two player accounts and one GM in a test world:
 
-1. Verify a GM-only NPC has no AIM button and is unaffected by equipment changes or the inventory hotkey. Check a player character still opens normally.
-2. Trade part of a stack for coins; confirm one side only and verify nothing moves. Edit the other offer and verify confirmations reset. Confirm both and verify quantities and balances.
-3. Repeat without Item Piles using standard coins, then with the campaign's configured attribute and item currencies. Check exact receipt amounts and Item Piles change.
-4. Cancel a trade, exhaust an offered item, disconnect a participant, and change currency settings. Verify no invalid transfer completes.
-5. Inspect both themes and a narrow window. If deliberately testing interrupted execution, use disposable actors and verify the GM recovery path before resuming normal play.
+1. Trade part of a stack for coins; confirm one side only and verify nothing moves. Edit the other offer and verify confirmations reset. Confirm both and verify quantities and balances.
+2. Repeat without Item Piles using standard coins, then with the campaign's configured attribute and item currencies. Check exact receipt amounts and Item Piles change.
+3. Cancel a trade, exhaust an offered item, disconnect a participant, and change currency settings. Verify no invalid transfer completes.
+4. If deliberately testing interrupted execution, use disposable actors and verify the GM recovery path before resuming normal play.
 
 Automated tests use in-memory Foundry document doubles.
 

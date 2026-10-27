@@ -7,8 +7,8 @@
           "source": "spec"
         },
         {
-          "text": "Opens instead of the dnd5e sheet for character actors; the dnd5e sheet stays reachable from the window menu.",
-          "source": "assumption"
+          "text": "Opens beside the actor's own sheet, from the header button of any ActorSheetV2 and the I key; it never replaces how a sheet opens (ADR 0002). «Открыть лист персонажа» in the «⋯» menu reaches the actor's own sheet with everything other modules add to it (ADR 0003).",
+          "source": "spec"
         },
         {
           "text": "Picks its layout from its own width, never the screen: under 420 px compact (rail only), 420–759 px narrow (rail becomes a sideways widget strip), 760–1319 px standard (rail + content), 1320 px and wider (rail + content + inspector).",
@@ -723,6 +723,14 @@
         {
           "text": "For features the menu is Просмотр, Изменить, Дублировать, Удалить, В чат.",
           "source": "spec"
+        },
+        {
+          "text": "The menu is the window's own component. Entries carry dnd5e's keys (name «DND5E.Identify», «DND5E.ContextMenuActionAttune», id «delete» and the rest); before it shows, the window fires dnd5e.getItemContextOptions(item, menuItems) with Hooks.callAll, so other modules' entries (Item Piles «Give to character») appear. It renders both entry shapes: name/condition/callback and label/visible/onClick.",
+          "source": "spec"
+        },
+        {
+          "text": "Удалить calls item.deleteDialog() without a sheet, so dnd5e asks about advancement and container contents.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -799,6 +807,10 @@
         },
         {
           "text": "A concentration spell sets the concentration badge.",
+          "source": "spec"
+        },
+        {
+          "text": "While its template is being placed the window minimises and comes back once the template is placed or cancelled (dnd5e.preCreateActivityTemplate / dnd5e.createActivityTemplate).",
           "source": "spec"
         }
       ],
@@ -1035,6 +1047,10 @@
         },
         {
           "text": "Click on the row opens its description and changes under it; right click opens dnd5e's effect menu: Изменить, Дублировать, Удалить, Включить / Выключить.",
+          "source": "spec"
+        },
+        {
+          "text": "The effect menu fires dnd5e.getActiveEffectContextOptions(effect, menuItems) with Hooks.call before it shows; Удалить calls effect.deleteDialog() without a sheet.",
           "source": "spec"
         }
       ],
@@ -1437,7 +1453,7 @@
     "sheetMenu": {
       "behaviour": [
         {
-          "text": "Открыть лист dnd5e — opens the vanilla sheet (actor.sheet.render).",
+          "text": "Открыть лист персонажа — opens the actor's own sheet (actor.sheet.render): dnd5e's, Tidy's or any other, with what other modules add there.",
           "source": "spec"
         },
         {
@@ -1660,6 +1676,10 @@
         {
           "text": "One per activity of an item or feature that has several; click calls activity.use() for that activity and spends what it consumes.",
           "source": "spec"
+        },
+        {
+          "text": "Lists activities with activity.canUse; with midi-qol active it also leaves out activities marked midiProperties.automationOnly. Its menu is activity.getContextMenuOptions() plus dnd5e.getItemActivityContext.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1676,6 +1696,10 @@
         },
         {
           "text": "«Новый эффект» creates an effect on the actor (ActiveEffect.implementation.create) and opens its sheet.",
+          "source": "spec"
+        },
+        {
+          "text": "actor.toggleStatusEffect also turns off other conditions of the same exclusiveGroup, unlike the vanilla Effects tab; accepted (ADR 0003).",
           "source": "spec"
         }
       ],

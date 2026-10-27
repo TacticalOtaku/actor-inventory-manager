@@ -1,9 +1,14 @@
-# Actor Inventory Manager
+# AIM: Actor Window
 
 A Foundry VTT module for dnd5e that gives players one window for their actor's gear, paperdoll and trades, and is
 growing into a replacement for the dnd5e character sheet.
 
 ## Language
+
+**AIM**:
+The module's name from 2.0: «AIM: Actor Window», in Russian text «AIM: окно актора». A name, not an abbreviation;
+the package ID stays `actor-inventory-manager`.
+_Avoid_: Actor Inventory Manager & Paperdoll, RPG inventory
 
 **Supported actor**:
 An actor the module opens its window for: a character, a vehicle or an NPC with a player owner; never a group.
@@ -12,7 +17,7 @@ _Avoid_: managed actor, AIM actor
 **Actor window**:
 The module's own window for a supported actor, opened beside whatever sheet the actor uses; a full character sheet
 for a character, a simplified shell for a vehicle or NPC.
-_Avoid_: sheet, inventory window, AIM window
+_Avoid_: sheet, inventory window, AIM window, AIM inventory
 
 **Vanilla sheet**:
 The actor sheet the dnd5e system ships, which the module aims to make unnecessary for everyday play.

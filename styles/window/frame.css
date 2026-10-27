@@ -13,8 +13,10 @@
 
 /* Foundry's core `button` rule fixes every button at --button-size (28px) high and sets its own font (Signika, with
    no Cyrillic). Our buttons size to their content in the window's font; :where() keeps this below every class rule
-   here, while still above Foundry's layered rule. */
-:where(.aim-root) button { height: auto; min-height: 0; line-height: inherit; font-family: inherit; }
+   here, while still above Foundry's layered rule. Foundry's header controls draw their icon with the button's own
+   Font Awesome class, so they keep their font. */
+:where(.aim-root) button { height: auto; min-height: 0; line-height: inherit; }
+:where(.aim-root button:not([class*="fa-"])) { font-family: inherit; }
 .aim-window > .window-header {
   background: var(--surface-1);
   border-bottom: 1px solid var(--line);

@@ -1,6 +1,18 @@
 /* Theme tokens of AIM: Actor Window. They live on .aim-root, the root of each module window and of the tooltip
    layer, never on :root. «Ночь» is the default; «Пергамент» overrides every colour token (#26). Text, meaning,
    rarity, school and accent colours reach 4.5:1 on all four surfaces in both themes (tests/theme-contrast.test.js). */
+/* Headings: Palatino for Latin only. Its Cyrillic (and Georgia's) stands apart from the interface font, so Cyrillic
+   and any glyph Palatino lacks fall through to --font-ui. local() faces: nothing is downloaded. */
+@font-face {
+  font-family: "AIM Display"; font-weight: 400;
+  src: local("Palatino Linotype"), local("PalatinoLinotype-Roman"), local("Book Antiqua"), local("Palatino"), local("Palatino-Roman");
+  unicode-range: U+0000-024F, U+1E00-1EFF, U+2000-206F, U+20A0-20CF, U+2100-214F;
+}
+@font-face {
+  font-family: "AIM Display"; font-weight: 700;
+  src: local("Palatino Linotype Bold"), local("PalatinoLinotype-Bold"), local("Book Antiqua Bold"), local("Palatino Bold"), local("Palatino-Bold");
+  unicode-range: U+0000-024F, U+1E00-1EFF, U+2000-206F, U+20A0-20CF, U+2100-214F;
+}
 .aim-root {
   /* surfaces */
   --surface-0: #11131a;
@@ -62,7 +74,7 @@
   --row-h: 44px;
   --tile: 36px;
   /* type */
-  --font-display: "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  --font-display: "AIM Display", var(--font-ui);
   --font-ui: system-ui, "Segoe UI", sans-serif;
   --font-num: system-ui, "Segoe UI", sans-serif;
   /* motion */

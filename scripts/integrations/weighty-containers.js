@@ -32,25 +32,6 @@ export function getWeightyContainersApi() {
 }
 
 /**
- * Total weight the actor carries with every container reduction applied,
- * in the unit dnd5e displays. Used only when the system encumbrance block is
- * unavailable - that block already includes Weighty Containers' reductions.
- * @param {Object} actor
- * @returns {number|null} pounds, or null without the module
- */
-export function getActorCarriedLbs(actor) {
-  const api = getWeightyContainersApi();
-  if (typeof api?.computeActorCarriedLbs !== "function") return null;
-  try {
-    const lbs = Number(api.computeActorCarriedLbs(actor));
-    return Number.isFinite(lbs) ? lbs : null;
-  } catch (err) {
-    LOG.debug("Weighty Containers computeActorCarriedLbs failed", err);
-    return null;
-  }
-}
-
-/**
  * Load and capacity for a container, straight from Weighty Containers.
  *
  * Only that module knows the adjusted load: it applies each container's weight

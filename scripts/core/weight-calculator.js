@@ -268,9 +268,7 @@ export function computeActorEncumbrance(actor, options = {}) {
   const systemEnc = getSystemEncumbrance(actor);
   let totalValueDisplay;
 
-  if (typeof options.overrideCarriedLbs === "number") {
-    totalValueDisplay = formatWeight(options.overrideCarriedLbs, unit);
-  } else if (systemEnc && !options.recalculateRaw) {
+  if (systemEnc) {
     totalValueDisplay = Number(num(systemEnc.value, 0).toFixed(1));
   } else {
     // Recalculate raw item weights from actor.items

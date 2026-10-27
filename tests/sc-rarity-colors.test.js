@@ -1,11 +1,10 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 
-import { ITEM_RARITY_COLORS, SPELL_SCHOOL_COLORS } from "../scripts/constants.js";
+import { ITEM_RARITY_COLORS } from "../scripts/constants.js";
 import {
   SC_MODULE_ID,
   getRarityColor,
-  getSpellSchoolColor,
   hasRarityGlow,
   invalidateRarityColorCache,
   scRarityColor,
@@ -54,26 +53,6 @@ describe("SC rarity colours", () => {
     stubSc({ "uncommon-glow-option": true });
     assert.equal(hasRarityGlow("uncommon"), true);
     assert.equal(hasRarityGlow("rare"), false);
-  });
-});
-
-describe("SC spell school colours", () => {
-  const profile = (color) => ({ "enable-item-color": true, "item-color": color });
-
-  it("reads the school profile of spell-school-styles", () => {
-    stubSc({ "spell-school-styles": { useLevelVariants: false, profiles: { school_evo: profile("#ff4400") } } });
-    assert.equal(getSpellSchoolColor("evo", 3), "#ff4400");
-  });
-
-  it("prefers the level profile with level variants and falls back to the school profile", () => {
-    stubSc({ "spell-school-styles": { useLevelVariants: true, profiles: { school_evo: profile("#ff4400"), school_evo_lvl_3: profile("#ffaa00") } } });
-    assert.equal(getSpellSchoolColor("evo", 3), "#ffaa00");
-    assert.equal(getSpellSchoolColor("evo", 2), "#ff4400");
-  });
-
-  it("falls back to the module's school colours when the profile has no colour on", () => {
-    stubSc({ "spell-school-styles": { useLevelVariants: false, profiles: { school_abj: { "enable-item-color": false } } } });
-    assert.equal(getSpellSchoolColor("abj", 1), SPELL_SCHOOL_COLORS.abj);
   });
 });
 

@@ -9,22 +9,3 @@ const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "
 export function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, character => HTML_ESCAPES[character]);
 }
-
-/**
- * Quote a path for a CSS `url("...")` value.
- * @param {string} path
- * @returns {string}
- */
-export function cssUrl(path) {
-  return `url("${String(path ?? "").replace(/["\\\n\r]/g, character => `\\${character === "\n" ? "a " : character === "\r" ? "d " : character}`)}")`;
-}
-
-/**
- * Is a slot icon an image path rather than Font Awesome classes?
- * @param {string} icon
- * @returns {boolean}
- */
-export function isImagePath(icon) {
-  const value = String(icon ?? "").trim();
-  return Boolean(value) && (value.includes("/") || /\.(png|webp|svg|jpe?g|gif|avif)$/i.test(value));
-}

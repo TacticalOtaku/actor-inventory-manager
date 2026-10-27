@@ -3,15 +3,14 @@
 // ─────────────────────────────────────────────────────────
 
 // (rarity + school colours are resolved through the sc-rarity-colors adapter)
-import { SPELL_SCHOOL_COLORS } from "../constants.js";
 import { countAttunedItems, getActorAttunementMax, getAttunementStatus } from "../core/attunement.js";
 import { PHYSICAL_ITEM_TYPES, canItemBeEquipped } from "../core/item-classifier.js";
 import { convertWeight } from "../core/vehicle.js";
 import { getItemWeightInUnit, getSystemWeightUnit, num } from "../core/weight-calculator.js";
 import { computeActorCurrency } from "./item-piles.js";
-import { getItemRarityVisuals, getSpellSchoolVisuals } from "./sc-rarity-colors.js";
+import { getItemRarityVisuals } from "./sc-rarity-colors.js";
 
-export { getSystemWeightUnit, SPELL_SCHOOL_COLORS };
+export { getSystemWeightUnit };
 
 /**
  * Localize a key, falling back to English when there is no translation (or no Foundry).
@@ -506,6 +505,17 @@ export function readSpellbook(actor) {
       sort: num(item.sort, 0)
     };
   });
+}
+
+/**
+ * Whether a spell has a prepare/unprepare toggle, the same rule the spells tab uses: a levelled spell of a method
+ * that prepares (dnd5e 5.3.3 `CONFIG.DND5E.spellcasting[method].prepares`), not always prepared (`prepared` 2), and
+ * of a class with a preparation limit.
+ * @param {Object} item
+ */
+export function hasPreparationToggle(item) {
+  const preparation = resolveSpellPreparation(item);
+  return preparation.canPrepare && !preparation.isAlways && !knownByClass(item?.actor, item?.system?.classIdentifier);
 }
 
 /** Whether the spell's class has no preparation limit, so its spells are known rather than prepared. */
@@ -1071,253 +1081,6 @@ export function resolveItemUses(item) {
     // A recharging item is "spent" when it has no uses left.
     isCharged: value > 0
   };
-}
-
-/**
- * Is the spell prepared for the day? Cantrips are always known, not prepared,
- * so only leveled spells marked prepared or always prepared count.
- * @param {Object} spellItem
- * @returns {boolean}
- */
-export function isSpellPreparedForDay(spellItem) {
-  return num(spellItem?.system?.level, 0) > 0 && resolveSpellPreparation(spellItem).prepared >= 1;
-}
-
-/**
- * Extract spells from an actor, grouped by circle/level.
- * Prepared spells leave their level group and lead the list in a group of
- * their own (`isPreparedGroup`), ordered by level and then name.
- * @param {Object} actor
- * @param {string} searchFilter
- * @returns {Array<Object>}
- */
-export function extractActorSpells(actor, searchFilter = "") {
-  if (!actor) return [];
-
-  const config = getDnd5eConfig();
-  const spellSchools = config.spellSchools ?? {};
-  const query = (searchFilter || "").trim().toLowerCase();
-
-  const spellItems = Array.from(actor.items.values()).filter(i => {
-    if (i.type !== "spell") return false;
-    if (!query) return true;
-    return (i.name || "").toLowerCase().includes(query) || (i.system?.school || "").toLowerCase().includes(query);
-  });
-
-  // Group by spell level (0 = cantrip, 1..9 = circle)
-  const preparedSpells = [];
-  const grouped = new Map();
-  for (let lvl = 0; lvl <= 9; lvl++) {
-    grouped.set(lvl, []);
-  }
-
-  for (const spell of spellItems) {
-    const system = spell.system ?? {};
-    const lvl = num(system.level, 0);
-    const schoolKey = system.school || "";
-    const schoolLabel = spellSchools[schoolKey]?.label ?? schoolKey.toUpperCase();
-    const schoolVisuals = getSpellSchoolVisuals(schoolKey, lvl, SPELL_SCHOOL_COLORS);
-    const schoolColor = schoolVisuals.color;
-
-    // Preparation status
-    const prep = resolveSpellPreparation(spell);
-    const mode = prep.method;
-    const isPrepared = prep.isPrepared;
-    const isAlwaysPrepared = prep.isAlways;
-    const canTogglePrep = prep.canPrepare;
-
-    // Activation info
-    const activation = resolveItemActivation(spell);
-    const activationLabel = formatActivationLabel(activation);
-
-    // Components & Properties
-    const hasProp = k => Boolean(system.properties?.has?.(k));
-
-    // Range display
-    const range = system.range ?? {};
-    let rangeDisplay = "";
-    if (range.units === "self") rangeDisplay = localizeOr("AIM.spells.range.self", "Self");
-    else if (range.units === "touch") rangeDisplay = localizeOr("AIM.spells.range.touch", "Touch");
-    else if (range.value) rangeDisplay = `${range.value} ${unitAbbreviation("movementUnits", range.units || "ft")}`;
-
-    const formattedSpell = {
-      id: spell.id,
-      uuid: spell.uuid,
-      name: spell.name,
-      img: spell.img || "icons/svg/daze.svg",
-      level: lvl,
-      levelLabel: globalThis.game?.i18n?.format("AIM.spells.levelSlot", { level: lvl }) || `Lvl ${lvl}`,
-      school: schoolKey,
-      schoolLabel,
-      schoolColor,
-      cssVars: schoolVisuals.cssVars,
-      isPrepared,
-      isAlwaysPrepared,
-      canTogglePrep,
-      mode,
-      activationLabel,
-      activationType: activation.type || "special",
-      rangeDisplay,
-      components: {
-        v: hasProp("vocal"),
-        s: hasProp("somatic"),
-        m: hasProp("material"),
-        ritual: hasProp("ritual"),
-        concentration: hasProp("concentration")
-      }
-    };
-
-    if (isSpellPreparedForDay(spell)) {
-      preparedSpells.push(formattedSpell);
-    } else if (grouped.has(lvl)) {
-      grouped.get(lvl).push(formattedSpell);
-    } else {
-      grouped.set(lvl, [formattedSpell]);
-    }
-  }
-
-  // Format into level groups array, prepared spells first
-  const result = [];
-  if (preparedSpells.length > 0) {
-    preparedSpells.sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
-    result.push({
-      level: "prepared",
-      isPreparedGroup: true,
-      title: localizeOr("AIM.spells.preparedGroup", "Prepared Spells"),
-      count: preparedSpells.length,
-      spells: preparedSpells
-    });
-  }
-  for (const [lvl, spells] of grouped.entries()) {
-    if (spells.length > 0) {
-      spells.sort((a, b) => a.name.localeCompare(b.name));
-      const groupTitle = lvl === 0
-        ? (globalThis.game?.i18n?.localize("AIM.spells.cantrips") || "Cantrips")
-        : (globalThis.game?.i18n?.format("AIM.spells.levelGroup", { level: lvl }) || `Level ${lvl}`);
-
-      result.push({
-        level: lvl,
-        title: groupTitle,
-        count: spells.length,
-        spells
-      });
-    }
-  }
-
-  return result;
-}
-
-/**
- * Build a human-readable activation label.
- * @param {{ type: string, value: number|null, config: Object }} activation
- * @returns {string}
- */
-export function formatActivationLabel(activation) {
-  if (!activation?.type) return "";
-  const i18n = globalThis.game?.i18n;
-  const localize = key => i18n?.localize?.(key);
-  // dnd5e localizes its labels up front, so a world without a dnd5e translation
-  // shows them in English. The module carries its own for the common types.
-  const ownKey = `AIM.spells.activation.${activation.type}`;
-  let base;
-  if (i18n?.has?.(ownKey, false)) {
-    base = localize(ownKey);
-  } else {
-    const label = activation.config?.label ? localize(activation.config.label) : null;
-    base = label && !label.startsWith("DND5E.") ? label : activation.type;
-  }
-  const count = num(activation.value, 0);
-  return count > 1 ? `${count} ${base}` : base;
-}
-
-/**
- * Extract active and passive features/actions from an actor
- * @param {Object} actor
- * @param {string} searchFilter
- * @returns {Object} { actions, bonus, reactions, passives }
- */
-export function extractActorActions(actor, searchFilter = "") {
-  if (!actor) return { actions: [], bonus: [], reactions: [], passives: [] };
-
-  const query = (searchFilter || "").trim().toLowerCase();
-  const featItems = Array.from(actor.items.values()).filter(i => {
-    if (i.type !== "feat") return false;
-    if (!query) return true;
-    return (i.name || "").toLowerCase().includes(query) || (i.system?.type?.label || "").toLowerCase().includes(query);
-  });
-
-  const actions = [];
-  const bonus = [];
-  const reactions = [];
-  const passives = [];
-
-  for (const feat of featItems) {
-    const system = feat.system ?? {};
-    const activation = resolveItemActivation(feat);
-    const uses = resolveItemUses(feat);
-
-    const featureLabel = localizeOr("AIM.spells.feature", "Feature");
-    const sourceLabel = system.type?.label || system.source?.custom || featureLabel;
-
-    // Mirrors the dnd5e sheet: "trait" property or a passive activation type.
-    const isTrait = system.properties?.has?.("trait") ?? false;
-    const isPassiveActivation = Boolean(activation.config?.passive) || !activation.type;
-
-    const formattedFeat = {
-      id: feat.id,
-      uuid: feat.uuid,
-      name: feat.name,
-      img: feat.img || "icons/svg/aura.svg",
-      type: system.type?.value || "feat",
-      sourceLabel,
-      activationType: activation.type || "none",
-      activationLabel: formatActivationLabel(activation),
-      ...uses
-    };
-
-    if (isTrait || isPassiveActivation) {
-      passives.push(formattedFeat);
-    } else if (activation.type === "action") {
-      actions.push(formattedFeat);
-    } else if (activation.type === "bonus") {
-      bonus.push(formattedFeat);
-    } else if (activation.type === "reaction") {
-      reactions.push(formattedFeat);
-    } else {
-      // legendary / lair / minute / hour / ... still belong to the active list.
-      actions.push(formattedFeat);
-    }
-  }
-
-  // Sort each category alphabetically
-  const sortByName = (a, b) => a.name.localeCompare(b.name);
-  actions.sort(sortByName);
-  bonus.sort(sortByName);
-  reactions.sort(sortByName);
-  passives.sort(sortByName);
-
-  return { actions, bonus, reactions, passives };
-}
-
-/**
- * Increment or decrement an actor's spell slot count
- * @param {Object} actor
- * @param {string} slotKey
- * @param {number} delta
- */
-export async function updateSpellSlot(actor, slotKey, delta) {
-  if (!actor || !slotKey) return;
-  const spells = actor.system?.spells ?? {};
-  const currentSlot = spells[slotKey];
-  if (!currentSlot) return;
-
-  const max = resolveSpellSlotMax(currentSlot);
-  const currentVal = num(currentSlot.value, 0);
-  const newVal = Math.max(0, Math.min(max, currentVal + delta));
-
-  if (newVal !== currentVal) {
-    await actor.update({ [`system.spells.${slotKey}.value`]: newVal });
-  }
 }
 
 /**

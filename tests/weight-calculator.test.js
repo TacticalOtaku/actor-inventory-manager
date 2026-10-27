@@ -134,11 +134,6 @@ describe("computeActorEncumbrance", () => {
     assert.equal(enc.stops.heavilyEncumbered, 67);
   });
 
-  it("honours a carried-weight override", () => {
-    const enc = computeActorEncumbrance(makeActor(999, 150), { unit: "lb", overrideCarriedLbs: 30 });
-    assert.equal(enc.value, 30);
-    assert.equal(enc.tier, "normal");
-  });
 });
 
 describe("encumbrance rules", () => {

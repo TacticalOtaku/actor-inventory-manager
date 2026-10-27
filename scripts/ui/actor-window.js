@@ -301,6 +301,8 @@ export class ActorWindow extends WindowBase {
     if (!el) return;
     const next = layoutForWidth(el.offsetWidth);
     if (el.dataset.layout === next) return;
+    // A tooltip over a block that the new layout hides would otherwise stay on screen.
+    game.tooltip?.deactivate?.();
     const change = () => { el.dataset.layout = next; };
     if (!animate || !el.dataset.layout || !this.motionOn) change();
     else glide(el, "[data-flip]", change);

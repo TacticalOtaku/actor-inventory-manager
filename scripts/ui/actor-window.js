@@ -23,9 +23,11 @@ import {
   sheetMenuEntries,
   visibleTabs
 } from "../core/actor-window.js";
-import { readAbilities, readIdentity } from "../integrations/dnd5e.js";
+import { parseHpEntry, previewHp, vitalState } from "../core/vitals.js";
+import { readAbilities, readIdentity, readRail } from "../integrations/dnd5e.js";
 import { LOG } from "../foundry/logger.js";
 import { glide } from "./motion.js";
+import { REST_HOOK, buildRailContext, openStatConfig, playLongRest, playRailChanges, railSnapshot, startRuneGlints } from "./rail.js";
 
 const TEMPLATES = `modules/${MODULE_ID}/templates/window`;
 
@@ -84,7 +86,21 @@ export class ActorWindow extends WindowBase {
       revertForm: ActorWindow.#onRevertForm,
       openDocument: ActorWindow.#onOpenDocument,
       rollAbility: ActorWindow.#onRollAbility,
-      levelOrb: ActorWindow.#onLevelOrb
+      levelOrb: ActorWindow.#onLevelOrb,
+      editHp: ActorWindow.#onEditHp,
+      stepHp: ActorWindow.#onStepHp,
+      tempHp: ActorWindow.#onTempHp,
+      rollHitDie: ActorWindow.#onRollHitDie,
+      markDeath: ActorWindow.#onMarkDeath,
+      rollDeathSave: ActorWindow.#onRollDeathSave,
+      shortRest: ActorWindow.#onShortRest,
+      longRest: ActorWindow.#onLongRest,
+      rollInitiative: ActorWindow.#onRollInitiative,
+      openEffect: ActorWindow.#onOpenEffect,
+      toggleInspiration: ActorWindow.#onToggleInspiration,
+      exhaustion: ActorWindow.#onExhaustion,
+      rollConcentration: ActorWindow.#onRollConcentration,
+      endConcentration: ActorWindow.#onEndConcentration
     }
   };
 
@@ -107,6 +123,9 @@ export class ActorWindow extends WindowBase {
     // useWebFonts takes effect after a reload; the toggle only marks the change.
     this.fontsAtLoad = Boolean(getSetting("useWebFonts"));
     this.expandedWidth = null;
+    this.hpEditing = false;
+    this.hpDraft = "";
+    this._railPrev = null;
     this._hooks = [];
     this._renderTimer = null;
   }
@@ -143,7 +162,10 @@ export class ActorWindow extends WindowBase {
         polymorphed: Boolean(actor.isPolymorphed)
       }).map((entry) => [entry, true])),
       askReset: this.askReset,
-      settings: this.#settingsContext()
+      settings: this.#settingsContext(),
+      hpEditing: this.hpEditing,
+      hpDraft: this.hpDraft,
+      ...buildRailContext(actor, { canEdit: this.canEdit, hasSpells: this.#hasSpells(), hiddenBlocks: getSetting("hiddenRailBlocks") ?? [] })
     };
   }
 
@@ -236,6 +258,11 @@ export class ActorWindow extends WindowBase {
       this.#hook(name, (doc) => mine(doc) && rerender());
     }
     this.#hook(REFRESH_HOOK, rerender);
+    this.#hook(REST_HOOK, (actor, result, config) => actor?.uuid === this.actorKey && config?.type === "long" && playLongRest(this.element));
+    // Looping effects run only in the actor window in front.
+    this.element.addEventListener("pointerdown", () => this.#bringFront(), { capture: true });
+    this.#bringFront();
+    this._glints = startRuneGlints(this);
     // The window follows Foundry's colour scheme for «Авто» and its performance mode for the motion cap.
     this._bodyObserver = new MutationObserver(() => {
       this.#applyRootState();
@@ -262,6 +289,99 @@ export class ActorWindow extends WindowBase {
     this.#applyRootState();
     this.#applyLayout({ animate: false });
     this.#moveInk();
+    this.#bindRail();
+    const next = railSnapshot(this.actor);
+    playRailChanges(this.element, this._railPrev, next);
+    this._railPrev = next;
+  }
+
+  #bringFront() {
+    for (const app of OPEN_WINDOWS.values()) app.element?.classList.toggle("is-front", app === this);
+  }
+
+  /** Listeners the rail needs beyond click actions: the HP field, right clicks. */
+  #bindRail() {
+    const el = this.element;
+    const input = el.querySelector("[data-hp-input]");
+    if (input) {
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+      this.#previewHp(input);
+      input.addEventListener("input", () => this.#previewHp(input));
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") { event.preventDefault(); this.#applyHp(input.value); }
+        else if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); this.#cancelHp(); }
+      });
+      input.addEventListener("blur", () => this.hpEditing && this.#cancelHp());
+    }
+    el.querySelector('[data-action="editHp"]')?.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      if (this.canEdit) this.#openHpField("в");
+    });
+    el.querySelector("[data-exhaustion]")?.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      if (this.canEdit) this.#setExhaustion(-1);
+    });
+    for (const stat of el.querySelectorAll("[data-config]")) {
+      stat.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+        if (this.canEdit) openStatConfig(this.actor, stat.dataset.config);
+      });
+    }
+  }
+
+  #openHpField(draft = "") {
+    this.hpEditing = true;
+    this.hpDraft = draft;
+    this.render({ parts: ["rail"] });
+  }
+
+  #cancelHp() {
+    this.hpEditing = false;
+    this.hpDraft = "";
+    this.render({ parts: ["rail"] });
+  }
+
+  /** While typing, the result is drawn on the bar: red for damage (after temporary HP), green for healing. */
+  #previewHp(input) {
+    this.hpDraft = input.value;
+    const band = this.element.querySelector("[data-hp-preview]");
+    const entry = parseHpEntry(input.value);
+    input.classList.toggle("is-invalid", Boolean(input.value.trim()) && !entry);
+    if (!band) return;
+    const hp = readRail(this.actor).hp;
+    if (!entry || !hp.max) { band.hidden = true; return; }
+    const after = previewHp(hp, entry);
+    const from = Math.min(hp.value, after.value) / hp.max;
+    const to = Math.max(hp.value, after.value) / hp.max;
+    band.hidden = from === to;
+    band.classList.toggle("is-heal", after.value > hp.value);
+    band.style.left = `${from * 100}%`;
+    band.style.width = `${(to - from) * 100}%`;
+  }
+
+  async #applyHp(text) {
+    const entry = parseHpEntry(text);
+    if (!entry) return this.element.querySelector("[data-hp-input]")?.classList.add("is-invalid");
+    this.hpEditing = false;
+    this.hpDraft = "";
+    await this.#changeHp(entry);
+    this.render({ parts: ["rail"] });
+  }
+
+  /** Damage and healing go through applyDamage (so preApplyDamage listeners run), temporary HP through applyTempHP. */
+  async #changeHp({ kind, amount }) {
+    if (!this.canEdit) return;
+    if (kind === "damage") return this.actor.applyDamage(amount);
+    if (kind === "heal") return this.actor.applyDamage(-amount);
+    if (kind === "temp") return this.actor.applyTempHP(amount);
+    return this.actor.update({ "system.attributes.hp.value": Math.max(0, Math.min(readRail(this.actor).hp.max, amount)) });
+  }
+
+  async #setExhaustion(delta) {
+    const { value, max } = readRail(this.actor).exhaustion;
+    const next = Math.max(0, Math.min(max, value + delta));
+    if (next !== value) await this.actor.update({ "system.attributes.exhaustion": next });
   }
 
   _onClose(options) {
@@ -271,6 +391,7 @@ export class ActorWindow extends WindowBase {
     this._resizeObserver?.disconnect();
     this._reducedMotion?.removeEventListener("change", this._onReducedMotion);
     clearTimeout(this._renderTimer);
+    clearInterval(this._glints);
     OPEN_WINDOWS.delete(this.actorKey);
     super._onClose(options);
   }
@@ -295,6 +416,8 @@ export class ActorWindow extends WindowBase {
     el.dataset.fonts = this.fontsAtLoad ? "web" : "system";
     el.dataset.role = this.canEdit ? (game.user.isGM ? "gm" : "owner") : "observer";
     el.dataset.actorType = this.actor.type;
+    const { hp } = readRail(this.actor);
+    el.dataset.vital = vitalState(hp.value, hp.max);
   }
 
   get motionOn() {
@@ -484,6 +607,77 @@ export class ActorWindow extends WindowBase {
     } catch (error) {
       LOG.error("Level up failed", error);
     }
+  }
+
+  /* ─── Rail actions ─── */
+
+  static #onEditHp() {
+    if (this.canEdit) this.#openHpField("");
+  }
+
+  static #onStepHp(event, target) {
+    const step = Number(target.dataset.step);
+    if (!game.user.isGM || !step) return;
+    return this.#changeHp(step < 0 ? { kind: "damage", amount: -step } : { kind: "heal", amount: step });
+  }
+
+  // The GM enters the amount; temporary HP never stack, the higher value stays.
+  static #onTempHp() {
+    if (game.user.isGM) this.#openHpField("в");
+  }
+
+  static async #onRollHitDie(event, target) {
+    if (!this.canEdit) return;
+    if (!readRail(this.actor).hitDice.value) {
+      target.closest("[data-block]")?.animate([{ transform: "translateX(0)" }, { transform: "translateX(-4px)" }, { transform: "translateX(4px)" }, { transform: "translateX(0)" }], { duration: 300 });
+      return;
+    }
+    await this.actor.rollHitDie();
+  }
+
+  /** Click the n-th mark to set that many; click the last set mark to remove it. */
+  static async #onMarkDeath(event, target) {
+    if (!this.canEdit) return;
+    const kind = target.dataset.kind;
+    const current = readRail(this.actor).death[kind];
+    const index = Number(target.dataset.index) + 1;
+    await this.actor.update({ [`system.attributes.death.${kind}`]: index === current ? index - 1 : index });
+  }
+
+  static #onRollDeathSave(event) {
+    if (this.canEdit) return this.actor.rollDeathSave({ event });
+  }
+
+  static #onShortRest() {
+    if (this.canEdit) return this.actor.shortRest();
+  }
+
+  static #onLongRest() {
+    if (this.canEdit) return this.actor.longRest();
+  }
+
+  static #onRollInitiative() {
+    if (this.canEdit) return this.actor.rollInitiativeDialog();
+  }
+
+  static async #onOpenEffect(event, target) {
+    (await fromUuid(target.dataset.effectUuid))?.sheet?.render({ force: true });
+  }
+
+  static #onToggleInspiration() {
+    if (this.canEdit) return this.actor.update({ "system.attributes.inspiration": !readRail(this.actor).inspiration });
+  }
+
+  static #onExhaustion() {
+    if (this.canEdit) return this.#setExhaustion(1);
+  }
+
+  static #onRollConcentration(event) {
+    if (this.canEdit) return this.actor.rollConcentration({ event });
+  }
+
+  static #onEndConcentration() {
+    if (this.canEdit) return this.actor.endConcentration();
   }
 }
 

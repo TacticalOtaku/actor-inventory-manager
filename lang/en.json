@@ -504,7 +504,10 @@
         "effects": "Effects",
         "chips": "Inspiration and exhaustion",
         "rest": "Rest buttons",
-        "favorites": "Favorites"
+        "favorites": "Favorites",
+        "rollHitDie": "Roll a hit die",
+        "slots": "Slots",
+        "slotsLink": "Spell slots: open spells"
       },
       "settings": {
         "title": "Window settings",
@@ -555,6 +558,56 @@
           "reduced": "Responses to actions only, no ambient loops or particles.",
           "off": "Short fades only."
         }
+      },
+      "hp": {
+        "edit": "Hit points: change",
+        "forms": "−7 damage · +5 healing · 20 set · t8 temporary",
+        "max": "max {max}",
+        "tempInfo": "temp {temp}",
+        "down": "Unconscious",
+        "destroyed": "Destroyed",
+        "temp": "Temporary hit points",
+        "tempGain": "+{n} temp",
+        "tempLoss": "−{n} temp"
+      },
+      "death": {
+        "successes": "Successes",
+        "failures": "Failures",
+        "success": "Success",
+        "failure": "Failure",
+        "roll": "Roll a death saving throw",
+        "stable": "Stable",
+        "dead": "Dead"
+      },
+      "rest": {
+        "short": "Short rest",
+        "long": "Long rest",
+        "longHint": "Hit points, slots and features",
+        "shortHint": "Hit dice: {n}",
+        "noDice": "No hit dice left"
+      },
+      "stats": {
+        "ac": "AC",
+        "acHint": "Right click for dnd5e's armor class settings",
+        "init": "Init",
+        "initHint": "Roll initiative; right click for settings",
+        "prof": "Prof"
+      },
+      "casting": {
+        "dc": "DC",
+        "attack": "Attack",
+        "passive": "Passive Perception"
+      },
+      "effects": {
+        "all": "Conditions and all effects",
+        "none": "No temporary effects"
+      },
+      "chips": {
+        "inspiration": "Inspiration",
+        "exhaustion": "Exhaustion",
+        "exhaustionHint": "Click +1, right click −1",
+        "concentrationRoll": "Concentration saving throw",
+        "concentrationEnd": "End concentration"
       }
     }
   }

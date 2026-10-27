@@ -7,5 +7,106 @@
     </div>
     <button type="button" class="aim-ibtn" data-action="expandWindow" aria-label="{{localize "AIM.window.expand"}}" data-tooltip="{{localize "AIM.window.expand"}}"><i class="fa-light fa-up-right-and-down-left-from-center"></i></button>
   </div>
-  {{!-- Rail blocks arrive with the «Рейл окна актора» slice (#30). --}}
+
+  <div class="aim-vitals" data-flip>
+    <div class="aim-hpcard {{#if rail.hp.temp}}has-shield{{/if}}" data-hpcard>
+      <div class="aim-hp-top">
+        <span class="aim-hp-label">{{rail.hpLabel}}</span>
+        {{#if hpEditing}}
+        <input class="aim-hp-input" type="text" inputmode="text" autocomplete="off" spellcheck="false" value="{{hpDraft}}" data-hp-input aria-label="{{localize "AIM.window.hp.edit"}}">
+        {{else}}
+        <button type="button" class="aim-hp-value" data-action="editHp" {{#unless canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.hp.edit"}}">
+          <span data-hp-value>{{rail.hp.value}}</span><small>/{{rail.hp.max}}</small>{{#if rail.hp.temp}}<em class="aim-hp-temp"><i class="fa-light fa-shield"></i>{{rail.hp.temp}}</em>{{/if}}
+        </button>
+        {{/if}}
+      </div>
+      <div class="aim-hp-bar" data-hp-bar style="--hp-share: {{rail.hpShare}}; --temp-from: {{rail.tempFrom}}; --temp-share: {{rail.tempShare}}; --beat: {{rail.beat}}">
+        <i class="aim-hp-ghost" data-hp-ghost></i>
+        <i class="aim-hp-fill aim-ambient" data-hp-fill></i>
+        <i class="aim-hp-tempband aim-ambient" data-hp-tempband></i>
+        <i class="aim-hp-preview" data-hp-preview hidden></i>
+      </div>
+      <div class="aim-hp-foot">
+        {{#if hpEditing}}<span class="aim-hint" data-hp-hint>{{localize "AIM.window.hp.forms"}}</span>
+        {{else}}<span class="aim-hp-info">{{rail.hpInfo}}</span>{{/if}}
+        {{#if isGM}}
+        <span class="aim-hp-steps">
+          {{#each hpSteps}}<button type="button" data-action="stepHp" data-step="{{step}}">{{label}}</button>{{/each}}
+          <button type="button" class="is-temp" data-action="tempHp" aria-label="{{localize "AIM.window.hp.temp"}}" data-tooltip="{{localize "AIM.window.hp.temp"}}"><i class="fa-light fa-shield"></i></button>
+        </span>
+        {{/if}}
+      </div>
+    </div>
+
+    {{#if blocks.hitDice}}
+    <div class="aim-vrow" data-block="hitDice" data-flip>
+      <span class="aim-vlabel">{{localize "AIM.window.rail.hitDice"}} <b>{{rail.hitDice.value}}</b>/{{rail.hitDice.max}} {{#if rail.hitDice.formula}}<span class="aim-formula">{{rail.hitDice.formula}}</span>{{/if}}</span>
+      <span class="aim-dice">{{#each rail.dice}}<button type="button" class="aim-die {{#unless this}}is-spent{{/unless}}" data-action="rollHitDie" {{#unless ../canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.rail.rollHitDie"}}"></button>{{/each}}</span>
+    </div>
+    {{/if}}
+
+    {{#if blocks.spellSlots}}
+    <button type="button" class="aim-vrow is-link" data-block="spellSlots" data-action="switchTab" data-tab="spells" data-flip aria-label="{{localize "AIM.window.rail.slotsLink"}}">
+      <span class="aim-vlabel">{{localize "AIM.window.rail.slots"}} <b>{{rail.slotTotals.value}}</b>/{{rail.slotTotals.max}}</span>
+      <span class="aim-runes">{{#each rail.slots}}<span class="aim-rune-group" data-tooltip="{{label}}">{{#each pips}}<i class="aim-rune {{#unless filled}}is-spent{{/unless}}" data-rune></i>{{/each}}</span>{{/each}}</span>
+    </button>
+    {{/if}}
+  </div>
+
+  {{#if rail.down}}
+  <div class="aim-death {{rail.deathState}}" data-flip>
+    <span>{{localize "AIM.window.death.successes"}}</span>
+    <div class="aim-death-row">{{#each rail.deathMarks.success}}<button type="button" class="is-ok {{#if this}}is-on{{/if}}" data-action="markDeath" data-kind="success" data-index="{{@index}}" {{#unless ../canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.death.success"}}"></button>{{/each}}</div>
+    <span>{{localize "AIM.window.death.failures"}}</span>
+    <div class="aim-death-row">{{#each rail.deathMarks.failure}}<button type="button" class="is-bad {{#if this}}is-on{{/if}}" data-action="markDeath" data-kind="failure" data-index="{{@index}}" {{#unless ../canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.death.failure"}}"></button>{{/each}}</div>
+    {{#if rail.deathText}}<div class="aim-death-state">{{rail.deathText}}</div>{{/if}}
+    {{#if rail.deathOpen}}{{#if canEdit}}<button type="button" class="aim-btn aim-death-roll" data-action="rollDeathSave"><i class="fa-light fa-dice-d20"></i>{{localize "AIM.window.death.roll"}}</button>{{/if}}{{/if}}
+  </div>
+  {{/if}}
+
+  {{#if blocks.rest}}
+  <div class="aim-rest" data-block="rest" data-flip>
+    <button type="button" class="aim-rest-btn is-short" data-action="shortRest"><i class="fa-light fa-campfire"></i><span>{{localize "AIM.window.rest.short"}}<small>{{rail.shortRestHint}}</small></span></button>
+    <button type="button" class="aim-rest-btn is-long" data-action="longRest"><i class="fa-light fa-moon"></i><span>{{localize "AIM.window.rest.long"}}<small>{{localize "AIM.window.rest.longHint"}}</small></span></button>
+  </div>
+  {{/if}}
+
+  {{#if blocks.stats}}
+  <div class="aim-stats" data-block="stats" data-flip>
+    <div class="aim-stat is-ac" data-config="ac" data-tooltip="{{localize "AIM.window.stats.acHint"}}"><b>{{rail.ac}}</b><span>{{localize "AIM.window.stats.ac"}}</span></div>
+    <button type="button" class="aim-stat" data-action="rollInitiative" data-config="init" {{#unless canEdit}}disabled{{/unless}} data-tooltip="{{localize "AIM.window.stats.initHint"}}"><b>{{rail.initText}}</b><span>{{localize "AIM.window.stats.init"}}</span></button>
+    <div class="aim-stat" data-config="movement"><b>{{rail.speed}}</b><span>{{rail.speedUnit}}</span></div>
+    <div class="aim-stat"><b>{{rail.profText}}</b><span>{{localize "AIM.window.stats.prof"}}</span></div>
+  </div>
+  {{/if}}
+
+  {{#if blocks.spellcasting}}
+  <div class="aim-casting" data-block="spellcasting" data-flip>
+    {{#each rail.casting}}
+    <div class="aim-casting-row"><span class="aim-casting-k">{{ability}}</span><span class="aim-casting-v"><b>{{dc}}</b><small>{{localize "AIM.window.casting.dc"}}</small></span><span class="aim-casting-v"><b>{{attackText}}</b><small>{{localize "AIM.window.casting.attack"}}</small></span></div>
+    {{/each}}
+    <div class="aim-casting-row is-passive"><span class="aim-casting-k">{{localize "AIM.window.casting.passive"}}</span><span class="aim-casting-v"><b>{{rail.passivePerception}}</b></span></div>
+  </div>
+  {{/if}}
+
+  {{#if blocks.effects}}
+  <div class="aim-effects" data-block="effects" data-flip>
+    <div class="aim-rail-title"><span>{{localize "AIM.window.rail.effects"}}</span><button type="button" class="aim-ibtn aim-mini" data-action="switchTab" data-tab="effects" aria-label="{{localize "AIM.window.effects.all"}}" data-tooltip="{{localize "AIM.window.effects.all"}}"><i class="fa-light fa-plus"></i></button></div>
+    {{#each rail.effects}}
+    <button type="button" class="aim-effect {{#if isCondition}}is-condition{{/if}}" data-action="openEffect" data-effect-uuid="{{uuid}}"><img src="{{img}}" alt=""><span class="aim-effect-name">{{name}}</span>{{#if time}}<span class="aim-effect-time">{{time}}</span>{{/if}}</button>
+    {{else}}
+    <p class="aim-hint">{{localize "AIM.window.effects.none"}}</p>
+    {{/each}}
+  </div>
+  {{/if}}
+
+  {{#if blocks.chips}}
+  <div class="aim-chips" data-block="chips" data-flip>
+    <button type="button" class="aim-chip {{#if rail.inspiration}}is-on{{/if}}" data-action="toggleInspiration" aria-pressed="{{rail.inspiration}}" {{#unless canEdit}}disabled{{/unless}}><i class="fa-light fa-sparkles aim-chip-ico"></i>{{localize "AIM.window.chips.inspiration"}}</button>
+    <button type="button" class="aim-chip {{#if rail.exhaustion.value}}is-on{{/if}}" data-action="exhaustion" data-exhaustion {{#unless canEdit}}disabled{{/unless}} data-tooltip="{{localize "AIM.window.chips.exhaustionHint"}}">{{localize "AIM.window.chips.exhaustion"}} <span class="aim-pips">{{#each rail.exhaustionPips}}<i class="{{#if this}}is-on{{/if}}"></i>{{/each}}</span></button>
+    {{#each rail.concentration}}
+    <span class="aim-chip is-conc"><button type="button" data-action="rollConcentration" {{#unless ../canEdit}}disabled{{/unless}} data-tooltip="{{localize "AIM.window.chips.concentrationRoll"}}"><i class="fa-light fa-eye aim-blink aim-ambient"></i>{{this}}</button><button type="button" data-action="endConcentration" {{#unless ../canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.chips.concentrationEnd"}}" data-tooltip="{{localize "AIM.window.chips.concentrationEnd"}}"><i class="fa-light fa-xmark"></i></button></span>
+    {{/each}}
+  </div>
+  {{/if}}
 </aside>

@@ -217,6 +217,50 @@ export function readIdentity(actor) {
 }
 
 /**
+ * Everything the actor window's rail shows. dnd5e 5.3.3 shapes: `attributes.hd` is a HitDice object
+ * (`value`, `max`, `largestAvailable`), each class carries its own `spellcasting` ({ability, attack, save}),
+ * `actor.concentration.items` holds the items concentrated on, `attributes.exhaustion` is the level.
+ * @param {Object} actor
+ */
+export function readRail(actor) {
+  const system = actor?.system ?? {};
+  const attributes = system.attributes ?? {};
+  const config = globalThis.CONFIG?.DND5E ?? {};
+  const hp = attributes.hp ?? {};
+  const hd = attributes.hd ?? {};
+  const conMod = num(system.abilities?.con?.mod, 0);
+  const movement = attributes.movement ?? {};
+  const casting = Object.values(actor?.classes ?? {})
+    .filter((cls) => cls.spellcasting?.ability && cls.spellcasting.progression !== "none")
+    .map((cls) => ({
+      name: cls.name,
+      ability: config.abilities?.[cls.spellcasting.ability]?.label ?? cls.spellcasting.ability,
+      dc: num(cls.spellcasting.save, 0),
+      attack: num(cls.spellcasting.attack, 0)
+    }));
+  return {
+    hp: { value: num(hp.value, 0), max: num(hp.max, 0), temp: num(hp.temp, 0) },
+    ac: num(attributes.ac?.value, 10),
+    init: num(attributes.init?.total, 0),
+    speed: num(movement.walk, 0),
+    speedUnit: unitAbbreviation("movementUnits", movement.units || "ft"),
+    prof: num(attributes.prof, 0),
+    inspiration: Boolean(attributes.inspiration),
+    exhaustion: { value: num(attributes.exhaustion, 0), max: num(config.conditionTypes?.exhaustion?.levels, 6) },
+    death: { success: num(attributes.death?.success, 0), failure: num(attributes.death?.failure, 0) },
+    hitDice: {
+      value: num(hd.value, 0),
+      max: num(hd.max, 0),
+      formula: hd.largestAvailable ? `${hd.largestAvailable} ${conMod >= 0 ? "+" : "−"} ${Math.abs(conMod)}` : ""
+    },
+    slots: extractSpellSlots(actor),
+    casting,
+    passivePerception: num(system.skills?.prc?.passive, 10),
+    concentration: [...(actor?.concentration?.items ?? [])].map((item) => item.name)
+  };
+}
+
+/**
  * Format item details for rendering in inventory list and tooltips
  * @param {Object} item
  * @returns {Object}

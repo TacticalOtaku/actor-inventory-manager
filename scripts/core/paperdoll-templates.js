@@ -432,7 +432,8 @@ export function getActorPaperdollTemplate(actor) {
 
   // 1. Per-actor template stored directly on the actor
   const customTemplateData = flags[FLAGS.CUSTOM_TEMPLATE];
-  if (customTemplateData && Array.isArray(customTemplateData.slots) && customTemplateData.slots.length > 0) {
+  // A preset without slots (a vehicle's figure) is still the actor's own.
+  if (customTemplateData && Array.isArray(customTemplateData.slots)) {
     return { ...formatTemplateContext({ ...customTemplateData, id: "custom" }), isActorCustom: true };
   }
 
@@ -579,7 +580,7 @@ export function normalizeTemplateData(data) {
   const id = typeof data.id === "string" ? data.id.trim() : "";
   if (!id) fail("missingId", "The template needs an id.");
   if (isReservedTemplateId(id)) fail("reservedId", "The id '{id}' is reserved by a built-in template.", { id });
-  if (!Array.isArray(data.slots) || data.slots.length === 0) fail("noSlots", "The template has no slots.");
+  if (!Array.isArray(data.slots)) fail("noSlots", "The template has no slot list.");
 
   const seen = new Set();
   const slots = data.slots.map((slot, index) => {

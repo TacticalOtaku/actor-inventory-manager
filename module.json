@@ -55,7 +55,8 @@
     "styles/window/header.css",
     "styles/window/drawer.css",
     "styles/window/inventory.css",
-    "styles/window/doll.css"
+    "styles/window/doll.css",
+    "styles/window/editor.css"
   ],
   "languages": [
     {

@@ -243,6 +243,9 @@ slice from the map #28.
 | Paperdoll: figure, slots, two-handed lock, attunement sockets, slotless strip, hold banner | `scripts/ui/doll.js`, `templates/window/doll.hbs`, `assets/figures.svg` |
 | Pure doll layout: slot columns, overflow grid, socket strip, banner | `scripts/core/paperdoll-layout.js` |
 | Built-in presets (figure plus slots) and the default per actor type | `scripts/core/paperdoll-templates.js` |
+| Preset editor window (GM): figure, slots, attunement limit, save, delete, import, export; `api.openEditor(actor)` | `scripts/ui/preset-editor.js`, `templates/window/preset-*.hbs` |
+| Pure editor edits: working copy, slot add/move/remove, unchanged check, preset ids | `scripts/core/preset-editor.js` |
+| Theme attributes for any module window root | `scripts/ui/theme-root.js` |
 
 ### Theme, accent, density, motion
 

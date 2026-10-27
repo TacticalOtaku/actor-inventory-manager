@@ -71,3 +71,8 @@ Run the whole list on set 1, then repeat it on each set after adding its modules
 
 23. Both themes, a narrow window and each motion level; with reduced motion on in the OS only «Выключены» is
     available.
+
+### Release
+
+24. The name «AIM: Actor Window» is not taken: search the Foundry package list and GitHub for «AIM» and «Actor Window»
+    modules. If it is, fall back to «Actor Inventory Manager» (#27).

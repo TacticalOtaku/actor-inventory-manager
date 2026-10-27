@@ -10,6 +10,7 @@ import {
   DENSITIES,
   MOTION_LEVELS,
   RAIL_BLOCKS,
+  SHEET_MENU_TABS,
   SHEET_TABS,
   THEMES,
   effectiveMotion,
@@ -17,7 +18,9 @@ import {
   layoutForWidth,
   motionCap,
   normalizeAccent,
+  orbAction,
   resolveTheme,
+  sheetMenuEntries,
   visibleTabs
 } from "../core/actor-window.js";
 import { readAbilities, readIdentity } from "../integrations/dnd5e.js";
@@ -133,11 +136,12 @@ export class ActorWindow extends WindowBase {
       pendingText: t("AIM.window.panelPending"),
       menuOpen: this.menuOpen,
       xpOpen: this.xpOpen,
-      menu: {
-        traits: actor.type === "character",
-        bastion: actor.type === "character" && Boolean(game.settings.get("dnd5e", "bastionConfiguration")?.enabled),
-        revert: Boolean(actor.isPolymorphed)
-      },
+      menu: Object.fromEntries(sheetMenuEntries({
+        type: actor.type,
+        // dnd5e shows the bastion tab only when bastions are on and the character has reached the threshold level.
+        bastion: Boolean(dnd5e.applications.actor.CharacterActorSheet?.hasBastion?.(actor)),
+        polymorphed: Boolean(actor.isPolymorphed)
+      }).map((entry) => [entry, true])),
       askReset: this.askReset,
       settings: this.#settingsContext()
     };
@@ -226,6 +230,8 @@ export class ActorWindow extends WindowBase {
     const rerender = () => this.#queueRender();
     const mine = (doc) => doc?.uuid === this.actorKey || doc?.parent?.uuid === this.actorKey;
     this.#hook("updateActor", (actor) => mine(actor) && rerender());
+    // A transformed actor is deleted when it reverts; its window goes with it.
+    this.#hook("deleteActor", (actor) => actor?.uuid === this.actorKey && this.close());
     for (const name of ["createItem", "updateItem", "deleteItem", "createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) {
       this.#hook(name, (doc) => mine(doc) && rerender());
     }
@@ -426,17 +432,22 @@ export class ActorWindow extends WindowBase {
     this.render({ parts: ["main"] });
   }
 
-  // dnd5e 5.3.3 has no standalone dialog for special traits or the bastion: open the actor's sheet on that tab.
   static #onOpenTraits() {
-    this.menuOpen = false;
-    this.actor.sheet.render({ force: true, tab: "details" });
-    this.render({ parts: ["main"] });
+    return this.#openSheetTab(SHEET_MENU_TABS.traits);
   }
 
   static #onOpenBastion() {
+    return this.#openSheetTab(SHEET_MENU_TABS.bastion);
+  }
+
+  /** dnd5e 5.3.3 has no standalone dialog for special traits or the bastion: the actor's sheet opens on that tab. */
+  async #openSheetTab(tab) {
     this.menuOpen = false;
-    this.actor.sheet.render({ force: true, tab: "bastion" });
     this.render({ parts: ["main"] });
+    const sheet = this.actor.sheet;
+    await sheet.render({ force: true });
+    // Another sheet (Tidy or a third-party one) may not have that tab; then it simply opens.
+    if (sheet.constructor.TABS?.some?.((entry) => entry.tab === tab)) sheet.changeTab(tab, "primary");
   }
 
   static async #onRevertForm() {
@@ -458,11 +469,12 @@ export class ActorWindow extends WindowBase {
   /** The ready orb levels up through dnd5e; otherwise it opens the experience card. */
   static async #onLevelOrb(event) {
     const { xp, classes } = readIdentity(this.actor);
-    if (!xp.ready || !this.canEdit || event.shiftKey) {
+    const action = orbAction({ ready: xp.ready, canEdit: this.canEdit, shift: event.shiftKey, classCount: classes.length });
+    if (action === "card") {
       this.xpOpen = !this.xpOpen;
       return this.render({ parts: ["main"] });
     }
-    const classId = classes.length === 1 ? classes[0].id : await chooseClass(classes);
+    const classId = action === "level" ? classes[0].id : await chooseClass(classes);
     if (!classId) return;
     const cls = this.actor.items.get(classId);
     try {

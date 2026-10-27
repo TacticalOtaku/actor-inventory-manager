@@ -10,7 +10,9 @@ import {
   layoutForWidth,
   motionCap,
   normalizeAccent,
+  orbAction,
   resolveTheme,
+  sheetMenuEntries,
   themeFromLegacy,
   visibleTabs
 } from "../scripts/core/actor-window.js";
@@ -84,5 +86,27 @@ describe("tabs", () => {
   it("falls back to Снаряжение when the open tab disappears", () => {
     assert.equal(fallbackTab("spells", ["equipment", "features"]), "equipment");
     assert.equal(fallbackTab("features", ["equipment", "features"]), "features");
+  });
+});
+
+describe("level orb", () => {
+  it("opens the experience card until the orb is ready", () => {
+    assert.equal(orbAction({ ready: false, canEdit: true, shift: false, classCount: 1 }), "card");
+    assert.equal(orbAction({ ready: true, canEdit: false, shift: false, classCount: 1 }), "card");
+    assert.equal(orbAction({ ready: true, canEdit: true, shift: true, classCount: 1 }), "card");
+  });
+
+  it("levels up the only class, or asks which class with several", () => {
+    assert.equal(orbAction({ ready: true, canEdit: true, shift: false, classCount: 1 }), "level");
+    assert.equal(orbAction({ ready: true, canEdit: true, shift: false, classCount: 2 }), "choose");
+    assert.equal(orbAction({ ready: true, canEdit: true, shift: false, classCount: 0 }), "card");
+  });
+});
+
+describe("sheet menu", () => {
+  it("offers special traits and the bastion to characters, reverting only while transformed", () => {
+    assert.deepEqual(sheetMenuEntries({ type: "character", bastion: true, polymorphed: false }), ["openSheet", "traits", "bastion"]);
+    assert.deepEqual(sheetMenuEntries({ type: "character", bastion: false, polymorphed: true }), ["openSheet", "traits", "revert"]);
+    assert.deepEqual(sheetMenuEntries({ type: "npc", bastion: true, polymorphed: false }), ["openSheet"]);
   });
 });

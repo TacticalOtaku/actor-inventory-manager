@@ -1,7 +1,7 @@
 /* AIM: Actor Window - equipment tab: toolbar, purse and load, sections, rows, details, inspector, item menu */
 
 /* Foundry gives every button a min-height; these controls size themselves */
-.aim-equipment button, .aim-inspector button { min-height: 0; }
+.aim-panel button, .aim-inspector button { min-height: 0; }
 
 /* toolbar */
 .aim-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2); margin-bottom: var(--s3); }

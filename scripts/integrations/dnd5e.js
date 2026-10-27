@@ -405,6 +405,60 @@ export function readSpellPreparation(actor) {
   }));
 }
 
+/**
+ * The features tab's entries: feats, and for an NPC or vehicle also weapons as attacks. dnd5e 5.3.3 shapes: the origin
+ * is `flags.dnd5e.advancementRoot` (else `advancementOrigin`) "itemId.advancementId" naming the class, subclass,
+ * species (`race`) or background item; a feature is passive with the `trait` property or no activities; uses are
+ * `uses.max`/`spent` with `uses.recovery` [{period, formula}], a recharge being period "recharge"; an attack
+ * activity labels `toHit` and `damage` [{label}].
+ * @param {Object} actor
+ * @param {{attacks?: boolean}} [options]
+ */
+export function readFeatures(actor, { attacks = false } = {}) {
+  const config = getDnd5eConfig();
+  return [...(actor?.items ?? [])].filter((item) => item.type === "feat" || (attacks && item.type === "weapon")).map((item) => {
+    const system = item.system ?? {};
+    const flags = item.flags?.dnd5e ?? {};
+    const root = actor.items.get(String(flags.advancementRoot ?? flags.advancementOrigin ?? "").split(".")[0]);
+    const properties = system.properties ?? new Set();
+    const activities = [...(system.activities ?? [])];
+    const max = num(system.uses?.max, 0);
+    const spent = num(system.uses?.spent, 0);
+    const recovery = Array.isArray(system.uses?.recovery) ? system.uses.recovery : [];
+    const recharge = recovery.find((r) => r?.period === "recharge");
+    const attack = item.type === "weapon" ? activities.find((a) => a.type === "attack") : null;
+    return {
+      id: item.id,
+      uuid: item.uuid,
+      name: item.name,
+      img: item.img,
+      type: item.type,
+      origin: featureOrigin(root),
+      originId: root?.id ?? null,
+      activation: resolveItemActivation(item).type,
+      passive: properties.has("trait") || activities.length === 0,
+      uses: max > 0 ? { value: Math.max(0, max - spent), max, spent } : null,
+      recovery: recovery.filter((r) => r?.period && r.period !== "recharge")
+        .map((r) => config.limitedUsePeriods?.[r.period]?.label ?? r.period).map((label) => localizeOr(label, label)),
+      recharge: recharge ? { formula: String(recharge.formula ?? "6") } : null,
+      attack: attack ? { toHit: attack.labels?.toHit ?? "", damage: (attack.labels?.damage ?? []).map((d) => d.label).filter(Boolean).join(" + ") } : null,
+      tags: [...properties].filter((key) => key !== "trait").map((key) => config.itemProperties?.[key]?.label ?? key).map((label) => localizeOr(label, label)),
+      sort: num(item.sort, 0)
+    };
+  });
+}
+
+/** The section a feature belongs to from the item its advancement came from. */
+function featureOrigin(root) {
+  switch (root?.type) {
+    case "class": return { kind: "class", key: root.identifier ?? root.system?.identifier ?? root.id };
+    case "subclass": return { kind: "class", key: root.system?.classIdentifier ?? root.class?.identifier ?? "other" };
+    case "race": return { kind: "species", key: "species" };
+    case "background": return { kind: "background", key: "background" };
+    default: return { kind: "other", key: "other" };
+  }
+}
+
 /** The actor's dnd5e coins in CONFIG.DND5E.currencies order (pp, gp, ep, sp, cp in 5.3.3). */
 export function readCoins(actor) {
   const currencies = getDnd5eConfig().currencies ?? {};

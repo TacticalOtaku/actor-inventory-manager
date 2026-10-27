@@ -32,7 +32,7 @@
 
 /* sections */
 .aim-section.is-prepared { border-color: color-mix(in oklab, var(--arcane) 35%, transparent); }
-.aim-sec-meta { flex: none; color: var(--text-3); font: 500 11px var(--font-num); }
+.aim-sec-meta { flex: none; color: var(--text-3); font: 500 11px var(--font-num); white-space: nowrap; }
 .aim-sec-head .aim-sec-n { flex: 1; }
 .aim-sec-meta.is-full { color: var(--warn); }
 .aim-sec-meta.is-over { color: var(--hp); }

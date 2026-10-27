@@ -572,3 +572,34 @@ describe("spells tab reads (dnd5e 5.3.3)", () => {
     assert.deepEqual(readSpellPreparation({}), []);
   });
 });
+
+describe("features tab reads (dnd5e 5.3.3)", () => {
+  afterEach(() => { delete globalThis.CONFIG; });
+
+  it("reads the origin from advancementRoot, passivity, uses with recovery and recharge, and attacks", async () => {
+    const { readFeatures } = await import("../scripts/integrations/dnd5e.js");
+    globalThis.CONFIG = { DND5E: { limitedUsePeriods: { sr: { label: "Короткий отдых" } }, itemProperties: { mgc: { label: "Магический" } } } };
+    const fighter = { id: "cls", type: "class", identifier: "fighter", system: {} };
+    const champion = { id: "sub", type: "subclass", system: { classIdentifier: "fighter" } };
+    const elf = { id: "race", type: "race", system: {} };
+    const items = new Map();
+    const add = (item) => { items.set(item.id, item); return item; };
+    [fighter, champion, elf].forEach(add);
+    const act = (type, extra = {}) => ({ type, activation: { type: "bonus" }, ...extra });
+    add({ id: "sw", name: "Второе дыхание", type: "feat", flags: { dnd5e: { advancementOrigin: "cls.adv1" } }, system: { properties: new Set(), activities: { contents: [act("heal")], [Symbol.iterator]: function* () { yield* this.contents; } }, uses: { max: 1, spent: 1, recovery: [{ period: "sr" }] } } });
+    add({ id: "crit", name: "Улучшенный критический удар", type: "feat", flags: { dnd5e: { advancementRoot: "sub.adv2" } }, system: { properties: new Set(["trait"]), activities: [] } });
+    add({ id: "dark", name: "Тёмное зрение", type: "feat", flags: { dnd5e: { advancementOrigin: "race.adv3" } }, system: { activities: [] } });
+    add({ id: "breath", name: "Дыхание", type: "feat", flags: {}, system: { properties: new Set(["mgc"]), activities: [act("save")], uses: { max: 1, spent: 0, recovery: [{ period: "recharge", formula: "5" }] } } });
+    const bite = { id: "bite", name: "Укус", type: "weapon", system: { activities: [act("attack", { labels: { toHit: "+5", damage: [{ label: "1к10 + 3 колющего" }] } })] } };
+    add(bite);
+    const actor = { items: Object.assign([...items.values()], { get: (id) => items.get(id) }) };
+    const byId = Object.fromEntries(readFeatures(actor, { attacks: true }).map((f) => [f.id, f]));
+    assert.deepEqual(byId.sw.origin, { kind: "class", key: "fighter" });
+    assert.deepEqual([byId.sw.passive, byId.sw.uses, byId.sw.recovery], [false, { value: 0, max: 1, spent: 1 }, ["Короткий отдых"]]);
+    assert.deepEqual([byId.crit.origin.key, byId.crit.passive], ["fighter", true]);
+    assert.deepEqual([byId.dark.origin.kind, byId.dark.passive], ["species", true]);
+    assert.deepEqual([byId.breath.origin.key, byId.breath.recharge, byId.breath.tags], ["other", { formula: "5" }, ["Магический"]]);
+    assert.deepEqual(byId.bite.attack, { toHit: "+5", damage: "1к10 + 3 колющего" });
+    assert.equal(readFeatures(actor).some((f) => f.id === "bite"), false);
+  });
+});

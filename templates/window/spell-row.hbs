@@ -14,7 +14,7 @@
     </div>
     {{#if uses}}
     <span class="aim-charges" data-tooltip="{{uses.value}} / {{uses.max}}">
-      {{#if usePips}}{{#each usePips}}<button type="button" class="aim-pip {{#unless lit}}is-spent{{/unless}}" data-action="spellUse" data-index="{{index}}" {{#unless @root.canEdit}}disabled{{/unless}} aria-label="{{label}}"></button>{{/each}}
+      {{#if usePips}}{{#each usePips}}<button type="button" class="aim-pip {{#unless lit}}is-spent{{/unless}}" data-action="usePip" data-index="{{index}}" {{#unless @root.canEdit}}disabled{{/unless}} aria-label="{{label}}"></button>{{/each}}
       {{else}}<span class="aim-charge-text">{{uses.value}}/{{uses.max}}</span>{{/if}}
     </span>
     {{/if}}

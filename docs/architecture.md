@@ -61,6 +61,8 @@ one place to update when it moves again. Never inline these reads at a call site
 | Vehicle size and cargo capacity for the hold banner | `readVehicleHold` | `integrations/dnd5e.js` |
 | Spells for the spells tab (method, prepared, properties, labels, materials, uses) | `readSpellbook` | `integrations/dnd5e.js` |
 | Prepared spells against each class limit (`spellcasting.preparation`) | `readSpellPreparation` | `integrations/dnd5e.js` |
+| Features by origin (`advancementRoot`/`advancementOrigin`), uses, recovery, recharge, attacks | `readFeatures` | `integrations/dnd5e.js` |
+| Activities a player picks (`canUse`, midi-qol automation-only left out) | `usableActivities` | `integrations/midi-qol.js` |
 
 Shapes handled (dnd5e 5.3.3):
 
@@ -250,6 +252,8 @@ slice from the map #28.
 | Theme attributes for any module window root | `scripts/ui/theme-root.js` |
 | Spells tab: slot tracks, prepared list, spellbook, innate and at-will, casting, template minimise | `scripts/ui/spells.js`, `templates/window/spells.hbs`, `templates/window/spell-row.hbs` |
 | Pure spellbook rules: sections, filters, what can be cast, gem clicks, preparation state | `scripts/core/spellbook.js` |
+| Features tab: by origin for a character, «Действия» by action cost for an NPC or vehicle, uses, recharge | `scripts/ui/features.js`, `templates/window/features.hbs`, `templates/window/feature-row.hbs` |
+| Pure feature rules: origin and action groups, filters, uses entry, recharge label | `scripts/core/features.js` |
 
 ### Theme, accent, density, motion
 

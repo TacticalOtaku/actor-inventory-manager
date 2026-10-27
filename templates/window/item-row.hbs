@@ -4,8 +4,8 @@
       <span class="aim-tile" data-rarity="{{rarity}}"><img src="{{img}}" alt="" loading="lazy">{{#if qtyBadge}}<span class="aim-qty-badge">{{quantity}}</span>{{/if}}</span>
     </button>
     <div class="aim-row-main">
-      <div class="aim-row-name">{{name}}</div>
-      <div class="aim-row-meta">
+      <div class="aim-row-name item-name">{{name}}</div>
+      <div class="aim-row-meta item-detail">
         {{#if weightText}}<span>{{weightText}}</span>{{/if}}{{#if priceText}}<span>{{priceText}}</span>{{/if}}
         {{#if (lookup @root.newItems id)}}<span class="aim-tag is-new">{{localize "AIM.trade.panel.new"}}</span>{{/if}}
         {{#if attuneTag}}<span class="aim-tag is-att">{{attuneTag}}</span>{{/if}}

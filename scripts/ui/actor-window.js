@@ -63,6 +63,7 @@ import { morph } from "./morph.js";
 import { equipItemToSlot, toggleAttunement, toggleItemEquipped, unequipItem, useItem } from "./item-actions.js";
 import { setActorPaperdollTemplate } from "../core/paperdoll-templates.js";
 import { WEIGHTY_CONTAINERS_MODULE_ID, openWeightyContainersDialog } from "../integrations/weighty-containers.js";
+import { styleScItemRows } from "../integrations/sc-rarity-colors.js";
 import { SETTLE, glide, glideFrom, measure } from "./motion.js";
 import { readMotionCaps, schemeIsLight, stampTheme } from "./theme-root.js";
 import { REST_HOOK, buildRailContext, openStatConfig, playLongRest, playRailChanges, railSnapshot, startRuneGlints } from "./rail.js";
@@ -508,6 +509,8 @@ export class ActorWindow extends WindowBase {
     playRailChanges(this.element, this._railPrev, next);
     this._railPrev = next;
     this.#afterEquipmentRender();
+    // A main redraw patches the rows back to the template, so SC styles them again each time.
+    if (options.parts.includes("main")) styleScItemRows(this.element, this.actor);
     this.#playLanding();
     // A reset of the confirmations (an offer changed) shakes the status once.
     const session = sessionFor(this.actor.id);

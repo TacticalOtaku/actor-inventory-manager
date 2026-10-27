@@ -17,9 +17,7 @@ scripts/
   foundry/          adapters to the Foundry runtime (settings, hooks, logging)
   integrations/     adapters to the game system and to other modules
   trade/            currency adapter, offer validation, transfers and GM coordinator
-  tactile/          Tactile design system: accent palette and GSAP motion
   ui/               ApplicationV2 windows and their controllers
-  vendor/gsap/      vendored GSAP 3.13 ESM build (generated, see "Vendored assets")
   main.js           composition root: wires ports, registers hooks, exposes the API
 ```
 
@@ -36,7 +34,7 @@ rather than reaching for `game` directly.
 
 `trade/service.js` is the runtime coordinator. Requests are serialized JSON in the requesting User's AIM flag; `updateUser` supplies the authenticated initiating user ID. No module socket payload authorizes writes. One active GM serializes requests and retains its persisted coordinator ID while connected, so another GM joining cannot take over mid-transfer. The coordinator rechecks actor ownership and both users' confirmations and persists the editing lock before taking snapshots. Complete inventory snapshots live only in a private JournalEntry, never in the public session state; their contents are revalidated before any debit. Transfer and recovery writes check coordinator ownership across asynchronous boundaries. Persisted executing/recovery sessions cannot be resubmitted as transfers. The GM's explicit recovery action restores the saved inventories; interrupted preparation without a saved transfer phase can simply be unlocked.
 
-`ui/trade-panel.js` keeps local unsaved quantities separate from the accepted offer revision. Its drawer shares the side-drawer layout with the grimoire (see "Window layout" below). `actor-inventory-manager.tradeState` updates open drawers when the saved session changes.
+The trade panel of the 1.9 window is gone; the actor window gets its own in the «Обмен в новой оболочке» slice (#36), on the same `trade/` service. `actor-inventory-manager.tradeState` fires when the saved session changes.
 
 ## Data-model adapter rule
 
@@ -54,6 +52,8 @@ one place to update when it moves again. Never inline these reads at a call site
 | Item activation | `resolveItemActivation` | `integrations/dnd5e.js` |
 | Limited uses / recharge | `resolveItemUses` | `integrations/dnd5e.js` |
 | Carrying capacity | `getSystemEncumbrance`, `computeActorCapacity` | `core/weight-calculator.js` |
+| Abilities for the window header | `readAbilities` | `integrations/dnd5e.js` |
+| Level, experience, classes, species, background | `readIdentity` | `integrations/dnd5e.js` |
 
 Shapes handled (dnd5e 5.3.3):
 
@@ -216,103 +216,60 @@ templates, portrait backdrop, auto-reconcile, SC rarity colours) call the
 `actor-inventory-manager.refresh` hook; open windows re-render on it. Document
 hooks are coalesced so a batched change renders once.
 
-## UI and Tactile
+## Actor window and theme
 
-The windows use Tactile, a small design system that lives inside this module:
+Version 2.0 replaces the 1.9 inventory window with the actor window (ADR 0002): one ApplicationV2 window per actor
+UUID, opened from the header button of any `ActorSheetV2` and the `I` key. The approved mock
+`design/character-sheet/mock.html` and its `mock.notes.json` are the behaviour spec; the window is built slice by
+slice from the map #28.
 
 | Part | Where |
 | --- | --- |
-| Tokens (colours, shadows, radii, fonts) | `styles/tactile/tokens.css` |
-| Primitives (blocks, trays, chips, buttons) | `styles/tactile/components.css` |
-| Font faces (generated) | `styles/tactile/fonts.css` |
-| Accent palette | `scripts/tactile/palette.js` |
-| Motion | `scripts/tactile/motion.js` |
-| Theme and accent stamping | `scripts/ui/tactile-theme.js` |
-| AIM window, passport, paperdoll, inventory, drawers, editors | `styles/aim/*.css` |
-| Window layout | `scripts/ui/window-layout.js` |
+| Window, its parts and actions | `scripts/ui/actor-window.js` |
+| Pure rules: layout by width, motion caps, theme, accents, tabs, rail blocks | `scripts/core/actor-window.js` |
+| Templates (rail, main with header and tabs, inspector, settings drawer) | `templates/window/*.hbs` |
+| Theme tokens | `styles/theme/tokens.css` |
+| Window styles | `styles/window/*.css` |
+| Font faces (generated) | `styles/theme/fonts.css` |
+| FLIP glide (Web Animations) | `scripts/ui/motion.js` |
 
-### Theme and accent
+### Theme, accent, density, motion
 
-Tokens are declared on `.tc-root`, the class every AIM window element carries
-(the inventory window, the paperdoll editor and the slot dialog). They are never
-declared on `:root`, so they cannot leak into Foundry or other modules. The
-light set is the default; `applyTactileTheme` stamps the resolved theme
-(`data-theme="dark"` or `"light"`, from the *Interface Theme* setting) on the
-window element, and the accent hue and chroma as `--tc-acc-h` / `--tc-acc-c`.
-The accent comes from the client setting *Accent colour* (ten choices from
-`PALETTE`, default `peach`); its lightness comes from the theme, since the
-accent tokens are OKLCH. Both settings fire the refresh hook. The inventory
-window re-renders on it; the editors re-stamp themselves through
-`watchEditorTheme` / `stampEditorTheme`.
+Tokens are declared on `.aim-root`, the class every AIM window element carries; never on `:root`. «Ночь» is the
+default set; `data-theme="parchment"` overrides every colour token. Accents are stored by name
+(`brass`, `embers`, `arcane`, `forest`, `frost`, `rose`): each theme defines `--acc-<name>`, and
+`data-accent` picks one, so a swatch never writes a colour into `style`. «Авто» follows Foundry's resolved colour
+scheme, read from the `theme-light` class Foundry puts on `body`.
 
-The primitives reset buttons and inputs inside `:where(.tc-root)`, so the
-resets have zero specificity and never override a component's own colours. The
-font reset skips buttons that are themselves Font Awesome icons (a class with
-`fa-`), which would otherwise lose the icon font. Icons are Font Awesome Light
-(`fa-light`); the default paperdoll slots use it too, while user templates saved
-earlier keep the icons stored in them.
+The window stamps `data-theme`, `data-accent`, `data-density`, `data-motion`, `data-fonts`, `data-role` and
+`data-layout` on its root. Motion levels (#9): «Все» (`full`), «Сдержанно» (`reduced`, ambient loops marked
+`.aim-ambient` stop), «Выключены» (`off`, only fades marked `.aim-fade`). Reduced motion in the OS caps the level at
+`off`, Foundry's `performance-low` body class at `reduced`; the player's choice is kept under the cap.
 
-The header button injected into character sheets (`.aim-window-header-btn`) sits
-outside any Tactile root and keeps Foundry's `header-control` styling.
+`tests/theme-contrast.test.js` reads `tokens.css` and checks that text, meaning, rarity, school and accent colours
+reach 4.5:1 on all four surfaces in both themes.
 
-### Window layout
+### Window settings
 
-`window-layout.js` is pure: it takes the layout state (open drawer, the saved
-paperdoll preference, whether the doll was expanded beside a drawer) and the
-viewport width, and returns the layout and the window width. The column widths
-in `styles/aim/window.css` must match its arithmetic.
+Personal settings live in the window's own drawer, not in Foundry's settings window (#17): `windowTheme`,
+`windowAccent`, `windowDensity`, `hiddenRailBlocks` and `hiddenTabs` use scope `user` and follow the player;
+`motionLevel` and `useWebFonts` use scope `client`. The 1.x `theme` and `accent` client settings stay registered,
+hidden, for the 2.0 migration (ADR 0005).
 
-| Layout | Preferred width | Minimum |
-| --- | --- | --- |
-| `open` - paperdoll open, no drawer | 1080 | 1006 |
-| `strip` - paperdoll folded, no drawer | 824 | 750 |
-| `drawerStrip` - drawer, paperdoll folded | 1188 | 1124 |
-| `drawerOpen` - drawer, paperdoll open | 1444 | 1380 |
-| `drawerCompact` - drawer, paperdoll folded, no passport | up to 1124 | 858 |
+### Layout
 
-A drawer (grimoire or trade) takes the paperdoll's place and folds it into its
-strip, so the inventory column keeps its width. Closing the drawer brings the
-paperdoll back as the saved preference has it. Expanding the paperdoll beside a
-drawer works when the screen holds `drawerOpen`; otherwise it closes the drawer
-and opens the paperdoll. On a screen too narrow for `drawerStrip`, the passport
-column hides (`isCompact`). The paperdoll preference and an open grimoire are
-saved per actor.
-
-### Motion
-
-`motion.js` runs on a private GSAP instance imported from `scripts/vendor/gsap/`
-with the `CustomEase` and `Flip` plugins registered on it explicitly. It never
-uses or overwrites a global `gsap` exposed by another module. It provides
-the window entrance (`openWindow`), counting numbers (`countTo`), a settle for a
-newly filled slot (`pop`), a shake for a refused change (`refuse`), the drawer
-entrance (`slideIn`), row moves across re-renders (`captureFlip` / `playFlip`,
-which takes the freshly rendered scope as `root`) and the press feedback on
-buttons (`bindPress`). A refused equip, attunement past the limit or an invalid
-drop shakes its target.
-
-ApplicationV2 replaces the window's DOM on every render, so the window records
-what it needs before rendering (numbers, slot contents, row positions, meter
-widths) and plays the change on the new elements afterwards. Reduced motion
-(`shouldReduceMotion`: the operating system's preference or Foundry's
-`performance-low` body class) leaves only a 150 ms opacity fade.
+The window picks its layout from its own width (`layoutForWidth`): under 420 px compact (rail only), 420–759 narrow
+(the rail becomes a row above the content), 760–1319 standard (rail and content), 1320 and wider (rail, content and
+inspector). A `ResizeObserver` watches the window; when the layout changes, every `[data-flip]` block glides to its
+new place (`glide`, 420 ms) unless motion is off. The collapse button shrinks the window to 320 px.
 
 ### Vendored assets
 
-`npm run vendor` (`tools/vendor.mjs`) copies third-party runtime files from
-`node_modules` into the package; its output is committed. Run it after changing
-the versions in `package.json`.
-
-- GSAP 3.13 ESM into `scripts/vendor/gsap/`. The plugins' self-registration into
-  a foreign `window.gsap` is stripped from the copies.
-- The Onest, JetBrains Mono and Unbounded variable fonts (`@fontsource-variable`,
-  subsets latin, latin-ext, cyrillic, cyrillic-ext) into `assets/fonts/` as
-  woff2, with their licences, and the matching `@font-face` rules into
-  `styles/tactile/fonts.css`.
-
-`fonts.css` is not listed in `module.json`. The client setting *Interface Fonts*
-(`useWebFonts`) adds it as a `<link>` from the module's own folder; with the
-setting off the windows use system fonts. Nothing is fetched from Google or any
-other CDN.
+`npm run vendor` (`tools/vendor.mjs`) copies the Onest, JetBrains Mono and Unbounded variable fonts
+(`@fontsource-variable`, subsets latin, latin-ext, cyrillic, cyrillic-ext) into `assets/fonts/` with their licences,
+and writes the matching `@font-face` rules into `styles/theme/fonts.css`. `fonts.css` is not listed in
+`module.json`: the client setting `useWebFonts` adds it as a `<link>`; with it off the windows use system fonts.
+Nothing is fetched from a CDN.
 
 ### Colour constraints
 
@@ -327,7 +284,7 @@ Two constraints, both learned the hard way:
    background comes from a custom property.** A transition started by a
    custom-property change never settles on the new value, leaving the panel
    painted in the previous theme. The theme swap is wrapped in an
-   `.aim-no-transitions` class for this reason (`ActorInventoryApp#_applyTheme`).
+   theme swap runs through a view transition instead.
 2. **Do not inline `color:` from rarity or spell-school values.** Those palettes
    are tuned for the dark background and drop to ~2:1 contrast on the light
    theme. Expose the colour as a custom property (`--rarity-color`,
@@ -335,11 +292,9 @@ Two constraints, both learned the hard way:
 
 ## Tests
 
-`npm test` runs the Node test runner over `tests/`. Everything under `core/`,
-the pure helpers in `integrations/dnd5e.js`, the window layout and the accent
-palette are testable without Foundry; `vendor-assets.test.js` checks that the
-vendored GSAP files and fonts are complete and that the GSAP plugins do not
-register into a foreign global;
+`npm test` runs the Node test runner over `tests/`. Everything under `core/`
+(including the actor window rules) and the pure helpers in `integrations/dnd5e.js` are testable without Foundry;
+`theme-contrast.test.js` checks the theme tokens;
 new data-model helpers should arrive with a test that pins the dnd5e 5.3.3 data
 shape.
 

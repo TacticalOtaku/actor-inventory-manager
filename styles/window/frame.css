@@ -15,6 +15,8 @@
   border-bottom: 1px solid var(--line);
   color: var(--text-2);
 }
+.aim-window > .window-header .window-title { color: var(--text); }
+.aim-window > .window-header .header-control { color: var(--text-2); }
 .aim-window > .window-content {
   position: relative;
   display: grid;

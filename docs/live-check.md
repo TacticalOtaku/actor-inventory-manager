@@ -39,7 +39,8 @@ Run the whole list on set 1, then repeat it on each set after adding its modules
 7. Damage typed into HP (`−7`) on set 2 runs through midi (`dnd5e.preApplyDamage`); `в8` grants temporary HP and the
    higher value stays; a bare number sets HP.
 8. Turning on a condition from an `exclusiveGroup` turns off the other one of that group.
-9. Deleting a class asks about removing its advancement; deleting a filled container asks about its contents.
+9. Deleting a feature with advancement asks about removing its advancement choices (a class is a header link in the
+   window and is removed on the actor's sheet); deleting a filled container asks about its contents.
 10. A recharge roll, a level up from the level orb, a short and a long rest each give dnd5e's result.
 11. Placing a spell template minimises the window; it comes back when the template is placed or cancelled.
 
@@ -53,7 +54,9 @@ Run the whole list on set 1, then repeat it on each set after adding its modules
 16. An item from the player's own second character moves (gone there, here once). Someone else's item and an Item
     Piles pile row are refused with the reason.
 17. On set 5, a drop into a full container is refused by Weighty Containers and nothing is created or deleted.
-18. On set 3, the same drops work with a Tidy sheet; a drop onto a tray lands in the inventory root with the note.
+18. On set 3, the same drops work with a Tidy sheet; a drop onto a tray lands in the inventory root with the note. The
+    classic Tidy sheet has no `_onDropCreateItems`: items still arrive, and the console says (info) which rules were
+    skipped.
 
 ### Menus
 

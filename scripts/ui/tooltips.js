@@ -8,7 +8,7 @@ import { TIP_TIMING, TIP_MAX_DEPTH, cardsToSweep, openDelay, planClose, planOpen
 import { damageParts } from "../core/damage-scenes.js";
 import { readCardData, readDamageType } from "../integrations/dnd5e.js";
 import { startScene } from "./damage-scenes.js";
-import { getRarityColor, getSpellSchoolColor, isScRarityColorsActive } from "../integrations/sc-rarity-colors.js";
+import { scRarityColor, scSchoolColor } from "../integrations/sc-rarity-colors.js";
 import { stampTheme } from "./theme-root.js";
 
 export const TOOLTIP_TEMPLATE = `modules/${MODULE_ID}/templates/window/tooltip-card.hbs`;
@@ -288,8 +288,8 @@ function tone(el, card) {
   if (card.kind === "damage" && card.color) return el.style.setProperty("--tone", card.color);
   if (card.school) el.dataset.school = card.school;
   else if (card.rarity) el.dataset.rarity = card.rarity;
-  if (!isScRarityColorsActive()) return;
-  const color = card.school ? getSpellSchoolColor(card.school, 0) : card.rarity ? getRarityColor(card.rarity) : null;
+  // Only a colour SC itself gives replaces ours; with that rarity or school left off in SC our palette stays.
+  const color = card.school ? scSchoolColor(card.school, 0) : scRarityColor(card.rarity);
   if (color) el.style.setProperty("--tone", color);
 }
 

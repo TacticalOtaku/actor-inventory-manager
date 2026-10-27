@@ -6,7 +6,7 @@ import { MODULE_ID } from "../constants.js";
 import { VIEWS, listPrefsFor } from "../core/inventory.js";
 import { SPELL_FILTERS, castable, groupSpellbook, preparationState, ready as isReady } from "../core/spellbook.js";
 import { extractSpellSlots, readSpellPreparation, readSpellbook } from "../integrations/dnd5e.js";
-import { getSpellSchoolColor, isScRarityColorsActive } from "../integrations/sc-rarity-colors.js";
+import { scSchoolColor } from "../integrations/sc-rarity-colors.js";
 import { playBurst } from "./bursts.js";
 
 const PARTIALS = `modules/${MODULE_ID}/templates/window`;
@@ -52,7 +52,6 @@ export function buildSpellsContext(actor, state) {
   const slotLevels = [...new Set(extractSpellSlots(actor).filter((s) => s.key !== "pact").map((s) => s.level))];
   const book = groupSpellbook(readSpellbook(actor), { slotLevels, filters: prefs.filters, query: state.query, locale: game.i18n.lang });
   const prep = preparationState(readSpellPreparation(actor));
-  const sc = isScRarityColorsActive();
 
   const row = (section) => (s) => {
     const key = `${section}:${s.id}`;
@@ -64,8 +63,11 @@ export function buildSpellsContext(actor, state) {
       favorite: Boolean(state.favIds?.has(s.id)),
       selected: key === state.selectedKey,
       detail: key === state.selectedKey ? state.detail : null,
-      // SC Rarity Colors decides school colours when active (its per-level variants too), else the --school-* tokens.
-      toneStyle: sc ? `--tone: ${getSpellSchoolColor(s.school, s.level)}` : "",
+      // A school colour SC itself gives (its per-level variants too) wins; otherwise the --school-* tokens.
+      toneStyle: (() => {
+        const color = scSchoolColor(s.school, s.level);
+        return color ? `--tone: ${color}` : "";
+      })(),
       castable: castable(s),
       ritualOnly: !ready && s.ritual,
       castLabel: t(!ready && s.ritual ? "AIM.window.spells.castRitual" : "AIM.window.spells.cast"),

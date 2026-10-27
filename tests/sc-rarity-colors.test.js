@@ -7,7 +7,9 @@ import {
   getRarityColor,
   getSpellSchoolColor,
   hasRarityGlow,
-  invalidateRarityColorCache
+  invalidateRarityColorCache,
+  scRarityColor,
+  scSchoolColor
 } from "../scripts/integrations/sc-rarity-colors.js";
 
 /** SC - Item Rarity Colors 3.0.x as a world sees it: one setting per rarity field, one for spell schools. */
@@ -72,5 +74,25 @@ describe("SC spell school colours", () => {
   it("falls back to the module's school colours when the profile has no colour on", () => {
     stubSc({ "spell-school-styles": { useLevelVariants: false, profiles: { school_abj: { "enable-item-color": false } } } });
     assert.equal(getSpellSchoolColor("abj", 1), SPELL_SCHOOL_COLORS.abj);
+  });
+});
+
+describe("colours SC itself gives (the window keeps its palette otherwise)", () => {
+  it("give a rarity's colour only when SC is on and the GM switched it on", () => {
+    stubSc({ "rare-enable-item-color": true, "rare-item-color": "#ff00aa" });
+    assert.equal(scRarityColor("rare"), "#ff00aa");
+    stubSc({ "rare-enable-item-color": false, "rare-item-color": "#000000" });
+    assert.equal(scRarityColor("rare"), null);
+    stubSc({ "rare-enable-item-color": true, "rare-item-color": "#ff00aa" }, { active: false });
+    assert.equal(scRarityColor("rare"), null);
+  });
+
+  it("give no school colour when SC's school profile is left off", () => {
+    const on = (color) => ({ "enable-item-color": true, "item-color": color });
+    stubSc({ "spell-school-styles": { useLevelVariants: false, profiles: { school_evo: { "enable-item-color": false, "item-color": "#000000" } } } });
+    assert.equal(scSchoolColor("evo"), null);
+    assert.equal(scSchoolColor(null), null);
+    stubSc({ "spell-school-styles": { useLevelVariants: true, profiles: { school_evo: on("#ff4400"), school_evo_lvl_3: on("#ffaa00") } } });
+    assert.deepEqual([scSchoolColor("evo", 3), scSchoolColor("evo", 2)], ["#ffaa00", "#ff4400"]);
   });
 });

@@ -876,6 +876,8 @@ describe("drops from outside (dnd5e 5.3.3 sheet calls, ADR 0004)", () => {
     assert.equal(CharacterActorSheet.prototype._onDropCreateItems.length, 3, "dnd5e's signature: (event, items, behavior)");
     assert.equal(CharacterActorSheet.prototype._onDropItemContainer.length, 3, "dnd5e's signature: (event, item, container)");
     assert.deepEqual([...sheetUnsupportedTypes(actor)], ["facility"]);
+    const { sheetDropsIntoContainers } = await import("../scripts/integrations/dnd5e.js");
+    assert.deepEqual([sheetDropsIntoContainers(actor), sheetDropsIntoContainers({ sheet: { _onDropCreateItems() {} } })], [true, false]);
   });
 
   it("fall back to createWithContents and createDocuments with keepId on a sheet without those methods", async () => {
@@ -886,12 +888,12 @@ describe("drops from outside (dnd5e 5.3.3 sheet calls, ADR 0004)", () => {
       createDocuments: async (data, options) => { seen.push(["documents", data, options]); return data; }
     } } };
     const actor = { sheet: {} };
-    const warn = console.warn;
-    console.warn = () => {};
+    const info = console.info;
+    console.info = () => {};
     try {
       assert.deepEqual(await createDroppedItems(actor, {}, [{ id: "s" }]), [{ name: "s" }]);
     } finally {
-      console.warn = warn;
+      console.info = info;
     }
     assert.deepEqual(seen[1], ["documents", [{ name: "s" }], { parent: actor, keepId: true }]);
   });

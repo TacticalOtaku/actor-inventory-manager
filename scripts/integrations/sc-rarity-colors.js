@@ -224,6 +224,30 @@ export function getItemRarityVisuals(rarity) {
 }
 
 /**
+ * The colour SC - Item Rarity Colors itself gives a rarity, or null when it is off or the GM left that rarity's
+ * colours switched off; the window then keeps its own palette (`--rarity-*` tokens) instead of a fallback.
+ * @param {string} rarity
+ * @returns {string|null}
+ */
+export function scRarityColor(rarity) {
+  if (!isScRarityColorsActive() || !rarity) return null;
+  return pickScColor((field) => readScRaritySetting(rarity, field)) || null;
+}
+
+/**
+ * The colour SC gives a spell school (per level with its level variants), or null when it gives none; the window
+ * then keeps its own school palette (`--school-*` tokens).
+ * @param {string} school
+ * @param {number} [level=0]
+ * @returns {string|null}
+ */
+export function scSchoolColor(school, level = 0) {
+  if (!isScRarityColorsActive() || !school) return null;
+  const profile = readScSpellProfile(school.toLowerCase().trim(), Number(level));
+  return (profile && pickScColor((field) => profile[field])) || null;
+}
+
+/**
  * Get spell school color with SC - Item Rarity Colors & system config support
  * @param {string} school
  * @param {number} [level=0] Spell level, for SC's per-level variants.

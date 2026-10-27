@@ -98,3 +98,18 @@ export function computeActorCurrency(actor) {
     customCurrencies: []
   };
 }
+
+/**
+ * Every currency Item Piles defines for the actor, zero amounts included (the purse shows them all).
+ * @param {Object} actor
+ * @returns {Object[]} empty when Item Piles is inactive or fails
+ */
+export function readPilesCurrencies(actor) {
+  if (!isItemPilesActive()) return [];
+  try {
+    return globalThis.game?.itempiles?.API?.getActorCurrencies(actor, { getAll: true }) ?? [];
+  } catch (err) {
+    LOG.warn("Item Piles currencies could not be read", err);
+    return [];
+  }
+}

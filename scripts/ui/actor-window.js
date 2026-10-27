@@ -23,10 +23,24 @@ import {
   sheetMenuEntries,
   visibleTabs
 } from "../core/actor-window.js";
+import { countAttunedItems, getActorAttunementMax, isItemAttuned } from "../core/attunement.js";
+import { applyCoinEntry, chargeChange, listPrefsFor, parseCoinEntry, withListPref } from "../core/inventory.js";
 import { parseHpEntry, previewHp, vitalState } from "../core/vitals.js";
 import { readAbilities, readIdentity, readRail } from "../integrations/dnd5e.js";
 import { LOG } from "../foundry/logger.js";
-import { glide } from "./motion.js";
+import {
+  EQUIPMENT_TEMPLATES,
+  buildEquipmentContext,
+  buildInspector,
+  buildItemDetail,
+  closeItemMenu,
+  equipmentSnapshot,
+  itemMenuEntries,
+  openItemMenu,
+  playEquipmentChanges
+} from "./equipment.js";
+import { toggleAttunement, toggleItemEquipped, useItem } from "./item-actions.js";
+import { SETTLE, glide } from "./motion.js";
 import { REST_HOOK, buildRailContext, openStatConfig, playLongRest, playRailChanges, railSnapshot, startRuneGlints } from "./rail.js";
 
 const TEMPLATES = `modules/${MODULE_ID}/templates/window`;
@@ -100,14 +114,28 @@ export class ActorWindow extends WindowBase {
       toggleInspiration: ActorWindow.#onToggleInspiration,
       exhaustion: ActorWindow.#onExhaustion,
       rollConcentration: ActorWindow.#onRollConcentration,
-      endConcentration: ActorWindow.#onEndConcentration
+      endConcentration: ActorWindow.#onEndConcentration,
+      listView: ActorWindow.#onListView,
+      listFilter: ActorWindow.#onListFilter,
+      toggleSection: ActorWindow.#onToggleSection,
+      addItem: ActorWindow.#onAddItem,
+      useItem: ActorWindow.#onUseItem,
+      useActivity: ActorWindow.#onUseActivity,
+      equipItem: ActorWindow.#onEquipItem,
+      attuneItem: ActorWindow.#onAttuneItem,
+      stepQty: ActorWindow.#onStepQty,
+      spendCharge: ActorWindow.#onSpendCharge,
+      itemMenu: ActorWindow.#onItemMenu,
+      itemToChat: ActorWindow.#onItemToChat,
+      manageCurrency: ActorWindow.#onManageCurrency,
+      editCoin: ActorWindow.#onEditCoin
     }
   };
 
   static PARTS = {
     rail: { template: `${TEMPLATES}/rail.hbs` },
-    main: { template: `${TEMPLATES}/main.hbs`, scrollable: [".aim-panel"] },
-    inspector: { template: `${TEMPLATES}/inspector.hbs` },
+    main: { template: `${TEMPLATES}/main.hbs`, templates: EQUIPMENT_TEMPLATES, scrollable: [".aim-panel"] },
+    inspector: { template: `${TEMPLATES}/inspector.hbs`, templates: EQUIPMENT_TEMPLATES, scrollable: [""] },
     drawer: { template: `${TEMPLATES}/drawer.hbs`, scrollable: [".aim-drawer-body"] }
   };
 
@@ -126,6 +154,12 @@ export class ActorWindow extends WindowBase {
     this.hpEditing = false;
     this.hpDraft = "";
     this._railPrev = null;
+    // The equipment tab: search, folded sections, the selected entry, the coin being edited.
+    this.query = "";
+    this.collapsed = new Set();
+    this.selected = null;
+    this.coinEditing = null;
+    this.coinDraft = "";
     this._hooks = [];
     this._renderTimer = null;
   }
@@ -144,6 +178,9 @@ export class ActorWindow extends WindowBase {
     const tabs = this.#tabs();
     this.tab = fallbackTab(this.tab, tabs.filter((tab) => !tab.hidden).map((tab) => tab.id));
     for (const tab of tabs) tab.active = tab.id === this.tab;
+    const selected = this.selected ? actor.items.get(this.selected) : null;
+    if (!selected) this.selected = null;
+    const detail = selected ? await buildItemDetail(selected, { canEdit: this.canEdit }) : null;
     return {
       ...(await super._prepareContext(options)),
       actor,
@@ -165,6 +202,17 @@ export class ActorWindow extends WindowBase {
       settings: this.#settingsContext(),
       hpEditing: this.hpEditing,
       hpDraft: this.hpDraft,
+      inv: buildEquipmentContext(actor, {
+        prefs: getSetting("listPrefs"),
+        query: this.query,
+        collapsed: this.collapsed,
+        selected: this.selected,
+        detail,
+        coinEditing: this.coinEditing,
+        coinDraft: this.coinDraft,
+        canEdit: this.canEdit
+      }),
+      inspector: selected ? buildInspector(selected, detail) : null,
       ...buildRailContext(actor, { canEdit: this.canEdit, hasSpells: this.#hasSpells(), hiddenBlocks: getSetting("hiddenRailBlocks") ?? [] })
     };
   }
@@ -276,6 +324,12 @@ export class ActorWindow extends WindowBase {
     this._resizeObserver.observe(this.element);
     this.element.addEventListener("keydown", (event) => this.#onKeydown(event));
     this.element.addEventListener("change", (event) => this.#onChange(event));
+    this.#bindEquipment();
+  }
+
+  async _preRender(context, options) {
+    await super._preRender(context, options);
+    this._equipmentPrev = this.element ? equipmentSnapshot(this.element) : null;
   }
 
   _onRender(context, options) {
@@ -293,6 +347,7 @@ export class ActorWindow extends WindowBase {
     const next = railSnapshot(this.actor);
     playRailChanges(this.element, this._railPrev, next);
     this._railPrev = next;
+    this.#afterEquipmentRender();
   }
 
   #bringFront() {
@@ -391,6 +446,7 @@ export class ActorWindow extends WindowBase {
     this._resizeObserver?.disconnect();
     this._reducedMotion?.removeEventListener("change", this._onReducedMotion);
     clearTimeout(this._renderTimer);
+    clearTimeout(this._searchTimer);
     clearInterval(this._glints);
     OPEN_WINDOWS.delete(this.actorKey);
     super._onClose(options);
@@ -447,8 +503,11 @@ export class ActorWindow extends WindowBase {
   }
 
   #onKeydown(event) {
+    if (this.#onEquipmentKey(event)) return;
     if (event.key !== "Escape") return;
-    if (this.element.classList.contains("is-settings")) {
+    if (closeItemMenu(this.element)) {
+      event.stopPropagation();
+    } else if (this.element.classList.contains("is-settings")) {
       event.stopPropagation();
       this.element.classList.remove("is-settings");
     } else if (this.menuOpen || this.xpOpen) {
@@ -463,6 +522,11 @@ export class ActorWindow extends WindowBase {
     if (input.dataset.settingToggle) return this.#setAndRefresh(input.dataset.settingToggle, input.checked);
     if (input.dataset.railToggle) return this.#toggleListed("hiddenRailBlocks", input.dataset.railToggle, !input.checked);
     if (input.dataset.tabToggle) return this.#toggleListed("hiddenTabs", input.dataset.tabToggle, !input.checked);
+    if (input.name === "inventorySort") return this.#savePrefs({ sort: input.value }).then(() => this.render({ parts: ["main"] }));
+    if (input.dataset.effectToggle) {
+      const item = this.#itemFrom(input);
+      if (this.canEdit) return item?.effects.get(input.dataset.effectToggle)?.update({ disabled: !input.checked });
+    }
     if (input.name === "xp" && input.closest("[data-xp-form]")) {
       const add = Number(input.value);
       if (!this.canEdit || !Number.isFinite(add) || !add) return;
@@ -678,6 +742,242 @@ export class ActorWindow extends WindowBase {
 
   static #onEndConcentration() {
     if (this.canEdit) return this.actor.endConcentration();
+  }
+
+  /* ─── Equipment tab ─── */
+
+  /** Listeners the equipment tab needs beyond click actions, delegated once on the window. */
+  #bindEquipment() {
+    const el = this.element;
+    el.addEventListener("pointerdown", (event) => {
+      if (!event.target.closest?.('[name="inventorySearch"]')) this._searching = false;
+    });
+    el.addEventListener("click", (event) => {
+      const row = event.target.closest("[data-row]");
+      if (row && !event.target.closest("button, input, a, label, select")) this.#toggleSelect(row.closest("[data-item-id]").dataset.itemId);
+    });
+    el.addEventListener("input", (event) => {
+      if (event.target.dataset.coinInput) this.coinDraft = event.target.value;
+      if (event.target.name !== "inventorySearch") return;
+      this.query = event.target.value;
+      // The search field is redrawn while typing; it keeps the focus and the caret.
+      this._searching = true;
+      clearTimeout(this._searchTimer);
+      this._searchTimer = setTimeout(() => this.render({ parts: ["main"] }), 120);
+    });
+    el.addEventListener("contextmenu", (event) => {
+      if (!event.target.closest("[data-charge]")) return;
+      event.preventDefault();
+      this.#changeCharge(this.#itemFrom(event.target), "restore");
+    });
+    el.addEventListener("focusout", (event) => {
+      if (event.target.dataset?.coinInput && this.coinEditing) this.#cancelCoin();
+      if (event.target.name === "inventorySearch" && event.relatedTarget) this._searching = false;
+    });
+    // A row dragged out of the window carries the item's own drag data, so sheets, the canvas and Item Piles take it.
+    el.addEventListener("dragstart", (event) => {
+      const row = event.target.closest?.("[data-row]");
+      const item = row && this.#itemFrom(row);
+      if (!item || !this.canEdit) return;
+      event.dataTransfer.setData("text/plain", JSON.stringify({ ...item.toDragData(), aimActorUuid: this.actorKey, aimItemId: item.id }));
+      event.dataTransfer.effectAllowed = "copyMove";
+      row.classList.add("is-dragging");
+    });
+    el.addEventListener("dragend", (event) => event.target.closest?.("[data-row]")?.classList.remove("is-dragging"));
+  }
+
+  /** Enter or Space selects a focused row and toggles a focused section header; the coin field reads Enter and Esc. */
+  #onEquipmentKey(event) {
+    const target = event.target;
+    if (target.dataset?.coinInput) {
+      if (event.key === "Enter") { event.preventDefault(); this.#applyCoin(target.value); }
+      else if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); this.#cancelCoin(); }
+      else return false;
+      return true;
+    }
+    if (event.key !== "Enter" && event.key !== " ") return false;
+    if (target.matches?.("[data-row]")) {
+      event.preventDefault();
+      this.#toggleSelect(target.closest("[data-item-id]").dataset.itemId);
+      return true;
+    }
+    if (target.matches?.('[data-action="toggleSection"]')) {
+      event.preventDefault();
+      this.#foldSection(target);
+      return true;
+    }
+    return false;
+  }
+
+  #afterEquipmentRender() {
+    const el = this.element;
+    playEquipmentChanges(el, this._equipmentPrev, el.dataset.motion);
+    const coin = el.querySelector("[data-coin-input]");
+    if (coin) {
+      coin.focus();
+      coin.setSelectionRange(coin.value.length, coin.value.length);
+    }
+    const search = el.querySelector('[name="inventorySearch"]');
+    if (search && this._searching && !coin) {
+      search.focus();
+      search.setSelectionRange(search.value.length, search.value.length);
+    }
+    if (this._openDetail) {
+      this._openDetail = false;
+      const detail = el.querySelector(`.aim-rowwrap[data-item-id="${this.selected}"] [data-detail]`);
+      if (detail?.offsetHeight && this.motionOn) {
+        detail.animate([{ height: "0px", opacity: 0 }, { height: `${detail.offsetHeight}px`, opacity: 1 }], { duration: 260, easing: SETTLE });
+      }
+    }
+  }
+
+  #itemFrom(node) {
+    return this.actor.items.get(node?.closest("[data-item-id]")?.dataset.itemId);
+  }
+
+  async #savePrefs(patch) {
+    await game.settings.set(MODULE_ID, "listPrefs", withListPref(getSetting("listPrefs") ?? {}, "equipment", patch));
+  }
+
+  /** Click selects: the inspector shows it in the wide layout, otherwise its details open under the row; again deselects. */
+  async #toggleSelect(id) {
+    const closing = this.selected === id;
+    const open = this.selected && this.element.querySelector(`.aim-rowwrap[data-item-id="${this.selected}"] [data-detail]`);
+    if (open?.offsetHeight && this.motionOn) {
+      await open.animate([{ height: `${open.offsetHeight}px`, opacity: 1 }, { height: "0px", opacity: 0 }], { duration: 200, easing: SETTLE }).finished;
+    }
+    this.selected = closing ? null : id;
+    this._openDetail = !closing;
+    await this.render({ parts: ["main", "inspector"] });
+  }
+
+  #foldSection(head) {
+    const section = head.closest(".aim-section");
+    const id = head.dataset.sectionId;
+    const folded = !this.collapsed.has(id);
+    if (folded) this.collapsed.add(id); else this.collapsed.delete(id);
+    section.classList.toggle("is-collapsed", folded);
+    head.setAttribute("aria-expanded", String(!folded));
+  }
+
+  async #changeCharge(item, direction) {
+    if (!item || !this.canEdit) return;
+    const { max = 0, spent = 0 } = item.system.uses ?? {};
+    const next = chargeChange(spent, max, direction);
+    if (next !== spent) await item.update({ "system.uses.spent": next });
+  }
+
+  async #applyCoin(text) {
+    const entry = parseCoinEntry(text);
+    if (!entry) return this.element.querySelector("[data-coin-input]")?.classList.add("is-invalid");
+    const key = this.coinEditing;
+    this.coinEditing = null;
+    this.coinDraft = "";
+    const current = Number(foundry.utils.getProperty(this.actor, `system.currency.${key}`)) || 0;
+    if (this.canEdit) await this.actor.update({ [`system.currency.${key}`]: applyCoinEntry(current, entry) });
+    this.render({ parts: ["main"] });
+  }
+
+  #cancelCoin() {
+    this.coinEditing = null;
+    this.coinDraft = "";
+    this.render({ parts: ["main"] });
+  }
+
+  /** The lists glide from the old view to the new one; no redraw, the next render reads the saved choice. */
+  static async #onListView(event, target) {
+    const view = target.dataset.view;
+    const panel = this.element.querySelector('[data-panel="equipment"]');
+    const apply = () => {
+      for (const list of panel.querySelectorAll(".aim-section:not([data-section=container]) .aim-items")) list.dataset.view = view;
+      for (const button of panel.querySelectorAll("[data-action=listView]")) button.setAttribute("aria-pressed", String(button.dataset.view === view));
+      for (const row of panel.querySelectorAll(".aim-section:not([data-section=container]) [data-row]")) {
+        if (view === "icons") row.dataset.tooltip = row.querySelector(".aim-row-name")?.textContent ?? "";
+        else delete row.dataset.tooltip;
+      }
+    };
+    if (this.motionOn) glide(panel, ".aim-rowwrap", apply); else apply();
+    await this.#savePrefs({ view });
+  }
+
+  static async #onListFilter(event, target) {
+    const { filters } = listPrefsFor(getSetting("listPrefs"), "equipment");
+    const id = target.dataset.filter;
+    await this.#savePrefs({ filters: filters.includes(id) ? filters.filter((f) => f !== id) : [...filters, id] });
+    this.render({ parts: ["main"] });
+  }
+
+  static #onToggleSection(event, target) {
+    this.#foldSection(target);
+  }
+
+  static #onAddItem(event, target) {
+    if (!this.canEdit) return;
+    const type = target.dataset.type;
+    // dnd5e's CreateDocumentDialog reads the allowed types from the creation options.
+    return Item.implementation.createDialog({ type }, { parent: this.actor, types: [type] });
+  }
+
+  static #onUseItem(event, target) {
+    return useItem(this.#itemFrom(target), event);
+  }
+
+  static #onUseActivity(event, target) {
+    if (!this.canEdit) return;
+    return this.#itemFrom(target)?.system.activities?.get(target.dataset.activityId)?.use({ event });
+  }
+
+  static #onEquipItem(event, target) {
+    const item = this.#itemFrom(target);
+    if (item) return toggleItemEquipped(this.actor, item);
+  }
+
+  /** Past the attunement limit a new attunement is refused with a shake of the row. */
+  static #onAttuneItem(event, target) {
+    const item = this.#itemFrom(target);
+    if (!item || !this.canEdit) return;
+    const max = getActorAttunementMax(this.actor);
+    if (!isItemAttuned(item) && countAttunedItems(this.actor) >= max) {
+      const row = target.closest("[data-item-id]")?.querySelector("[data-row]");
+      row?.classList.remove("is-refused");
+      void row?.offsetWidth;
+      row?.classList.add("is-refused");
+      row?.addEventListener("animationend", () => row.classList.remove("is-refused"), { once: true });
+      ui.notifications.warn(t("AIM.notifications.maxAttunementReached", { max }));
+      return;
+    }
+    return toggleAttunement(item);
+  }
+
+  static #onStepQty(event, target) {
+    const item = this.#itemFrom(target);
+    if (!item || !this.canEdit) return;
+    const next = Math.max(0, (Number(item.system.quantity) || 0) + Number(target.dataset.step));
+    if (next !== item.system.quantity) return item.update({ "system.quantity": next });
+  }
+
+  static #onSpendCharge(event, target) {
+    return this.#changeCharge(this.#itemFrom(target), "spend");
+  }
+
+  static #onItemMenu(event, target) {
+    const item = this.#itemFrom(target);
+    if (item) openItemMenu(this.element, target, itemMenuEntries(item), target.closest("[data-item-id]"));
+  }
+
+  static #onItemToChat(event, target) {
+    return this.#itemFrom(target)?.displayCard();
+  }
+
+  static #onManageCurrency() {
+    if (this.canEdit) return new dnd5e.applications.CurrencyManager({ document: this.actor }).render({ force: true });
+  }
+
+  static #onEditCoin(event, target) {
+    if (!this.canEdit) return;
+    this.coinEditing = target.dataset.coin;
+    this.coinDraft = "";
+    this.render({ parts: ["main"] });
   }
 }
 

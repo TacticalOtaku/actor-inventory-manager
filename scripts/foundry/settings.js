@@ -81,6 +81,13 @@ export function registerModuleSettings() {
       default: [],
       onChange: refreshInventories
     });
+    // Each tab's list view, sort and filters; every window keeps its own copy, so no redraw on change.
+    game.settings.register(MODULE_ID, "listPrefs", {
+      scope: "user",
+      config: false,
+      type: Object,
+      default: {}
+    });
     game.settings.register(MODULE_ID, "motionLevel", {
       scope: "client",
       config: false,

@@ -1,0 +1,8 @@
+<div class="aim-tray" data-tray="{{entry.id}}" data-key="tray-{{entry.id}}">
+  {{#with entry}}{{> "modules/actor-inventory-manager/templates/window/item-row.hbs"}}{{/with}}
+  <div class="aim-tray-body">
+    {{#each contents}}{{> "modules/actor-inventory-manager/templates/window/item-row.hbs"}}{{/each}}
+    {{#each trays}}{{> "modules/actor-inventory-manager/templates/window/tray.hbs"}}{{/each}}
+    {{#unless contents.length}}{{#unless trays.length}}<p class="aim-sec-empty">{{@root.inv.emptyText}}</p>{{/unless}}{{/unless}}
+  </div>
+</div>

@@ -5,7 +5,7 @@
 // (rarity + school colours are resolved through the sc-rarity-colors adapter)
 import { SPELL_SCHOOL_COLORS } from "../constants.js";
 import { countAttunedItems, getActorAttunementMax, getAttunementStatus } from "../core/attunement.js";
-import { canItemBeEquipped } from "../core/item-classifier.js";
+import { PHYSICAL_ITEM_TYPES, canItemBeEquipped } from "../core/item-classifier.js";
 import { getItemWeightInUnit, getSystemWeightUnit, num } from "../core/weight-calculator.js";
 import { computeActorCurrency } from "./item-piles.js";
 import { getItemRarityVisuals, getSpellSchoolVisuals } from "./sc-rarity-colors.js";
@@ -258,6 +258,59 @@ export function readRail(actor) {
     passivePerception: num(system.skills?.prc?.passive, 10),
     concentration: [...(actor?.concentration?.items ?? [])].map((item) => item.name)
   };
+}
+
+/**
+ * The physical items the actor window lists. dnd5e 5.3.3 shapes: `price` is {value, denomination} per unit and
+ * CONFIG.DND5E.currencies[denomination].conversion is coins per gold piece; charges are `uses.max` and `uses.spent`
+ * (`uses.value` is derived); `container` is the id of the holding container; a container's own weight ignores quantity.
+ * @param {Object} actor
+ */
+export function readInventory(actor) {
+  const config = getDnd5eConfig();
+  const unit = getSystemWeightUnit();
+  const entries = [];
+  for (const item of actor?.items ?? []) {
+    if (!PHYSICAL_ITEM_TYPES.has(item.type)) continue;
+    const system = item.system ?? {};
+    const quantity = num(system.quantity, 1);
+    const conversion = num(config.currencies?.[system.price?.denomination ?? "gp"]?.conversion, 1) || 1;
+    const max = num(system.uses?.max, 0);
+    const spent = num(system.uses?.spent, 0);
+    const attunement = getAttunementStatus(item);
+    entries.push({
+      id: item.id,
+      uuid: item.uuid,
+      name: item.name,
+      img: item.img || "icons/svg/item-bag.svg",
+      type: item.type,
+      container: system.container ?? null,
+      weight: getItemWeightInUnit(item, unit),
+      price: num(system.price?.value, 0) / conversion,
+      rarity: system.rarity ?? "",
+      quantity,
+      sort: num(item.sort, 0),
+      equipped: Boolean(system.equipped),
+      canEquip: canItemBeEquipped(item),
+      attunement,
+      attuned: attunement === "attuned",
+      charges: max > 0 ? { value: Math.max(0, max - spent), max, spent, autoDestroy: Boolean(system.uses?.autoDestroy) } : null,
+      identified: system.identified !== false,
+      tags: [...(system.properties ?? [])].map((key) => config.itemProperties?.[key]?.label ?? key)
+    });
+  }
+  return entries;
+}
+
+/** The actor's dnd5e coins in CONFIG.DND5E.currencies order (pp, gp, ep, sp, cp in 5.3.3). */
+export function readCoins(actor) {
+  const currencies = getDnd5eConfig().currencies ?? {};
+  return Object.entries(currencies).map(([key, cfg]) => ({
+    key,
+    label: localizeOr(cfg.label, cfg.label ?? key),
+    abbr: localizeOr(cfg.abbreviation, cfg.abbreviation ?? key),
+    value: num(actor?.system?.currency?.[key], 0)
+  }));
 }
 
 /**

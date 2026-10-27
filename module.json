@@ -53,7 +53,8 @@
     "styles/window/frame.css",
     "styles/window/rail.css",
     "styles/window/header.css",
-    "styles/window/drawer.css"
+    "styles/window/drawer.css",
+    "styles/window/inventory.css"
   ],
   "languages": [
     {

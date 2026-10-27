@@ -5,9 +5,9 @@
 import { AIM_EQUIP_OPTION, ENFORCEMENT_MODES, FLAGS, MODULE_ID } from "../constants.js";
 import { isSupportedActor } from "../core/actor-scope.js";
 import {
-  equipmentRuleEngine,
   findEquipSlot,
-  getActorEquippedMap
+  getActorEquippedMap,
+  resolveEquipValidation
 } from "../core/equipment-rules.js";
 import { getActorSlots } from "../core/paperdoll-templates.js";
 import { getItemAssignedSlot } from "../core/item-classifier.js";
@@ -125,30 +125,6 @@ export function handlePreUpdateItem(item, changes, options, _userId) {
   });
 
   return true;
-}
-
-/**
- * Validate an equip for the given enforcement mode.
- * In auto-swap mode a rule failure caused by another item (a two-handed
- * weapon, a second body armor, a second shield) swaps that item out instead of
- * refusing; the rules are re-run without it until they pass.
- * @returns {import("../core/equipment-rules.js").ValidationResult}
- */
-function resolveEquipValidation(actor, item, targetSlotId, slotMap, mode) {
-  let result = equipmentRuleEngine.validateEquip(actor, item, targetSlotId, { slotMap });
-  if (result.valid || mode !== ENFORCEMENT_MODES.AUTO_SWAP) return result;
-
-  const displaced = [];
-  let remaining = slotMap;
-  for (let attempt = 0; attempt < 5 && !result.valid && result.conflictItem; attempt++) {
-    const conflict = result.conflictItem;
-    displaced.push(conflict);
-    remaining = new Map([...remaining].filter(([, equipped]) => equipped.id !== conflict.id));
-    result = equipmentRuleEngine.validateEquip(actor, item, targetSlotId, { slotMap: remaining });
-  }
-  if (!result.valid) return result;
-  result.autoSwapItems = [...displaced, ...(result.autoSwapItems ?? [])];
-  return result;
 }
 
 /**

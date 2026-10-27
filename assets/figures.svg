@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="fig-human" viewBox="0 0 120 260"><path d="M60 8c11 0 19 9 19 21s-8 22-19 22-19-10-19-22S49 8 60 8zM38 58h44c12 0 20 8 22 20l8 62c1 6-8 8-10 2l-12-50v64l6 84c1 8-12 9-14 1L68 172h-16l-14 69c-2 8-15 7-14-1l6-84V92l-12 50c-2 6-11 4-10-2l8-62c2-12 10-20 22-20z" fill="currentColor"/></symbol>
+  <symbol id="fig-beast" viewBox="0 0 240 160"><path d="M40 60c4-18 22-26 34-20l10-14c4-6 12-2 10 4l-6 14c40-6 90-4 112 6 14 6 20 18 18 30l-4 20c-2 6-10 6-10 0l2-14-10 4 4 40c1 8-10 9-12 1l-8-38c-26 6-52 6-78 2l-6 36c-1 8-12 8-12 0l2-38c-14-4-24-14-28-26l-14 2c-8 0-10-8-4-12z" fill="currentColor"/></symbol>
+  <symbol id="fig-wagon" viewBox="0 0 240 160"><path d="M50 40h150l8 62H42zM30 100h190v10H30zM2 104l40-4v8L2 112z" fill="currentColor"/><circle cx="72" cy="128" r="22" fill="none" stroke="currentColor" stroke-width="7"/><circle cx="182" cy="128" r="22" fill="none" stroke="currentColor" stroke-width="7"/><path d="M60 40c20-36 110-36 130 0" fill="none" stroke="currentColor" stroke-width="6"/></symbol>
+  <symbol id="fig-ship" viewBox="0 0 240 160"><path d="M14 104h212l-24 42H44zM118 8v94M122 14l70 70h-70zM114 22l-60 64h60z" fill="currentColor"/></symbol>
+  <symbol id="fig-airship" viewBox="0 0 240 160"><ellipse cx="120" cy="56" rx="100" ry="40" fill="currentColor"/><path d="M84 104h72l-10 26H94zM96 94l-6 10M144 94l6 10M214 44l20-14v52l-20-14z" fill="currentColor" stroke="currentColor" stroke-width="3"/></symbol>
+</svg>

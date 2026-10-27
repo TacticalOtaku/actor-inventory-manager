@@ -411,9 +411,9 @@ export function getDefaultSlotsForClassification(classification) {
  * @param {Object|null} actor
  * @returns {Array<Object>}
  */
+// An actor's preset decides its slots, none at all for a vehicle without slots; without an actor, every known slot.
 function resolveKnownSlots(actor) {
-  const templateSlots = actor ? getActorSlots(actor) : null;
-  return Array.isArray(templateSlots) && templateSlots.length > 0 ? templateSlots : slotRegistry.getAll();
+  return actor ? getActorSlots(actor) ?? [] : slotRegistry.getAll();
 }
 
 function resolveEffectiveActor(item, actor) {

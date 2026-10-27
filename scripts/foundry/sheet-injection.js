@@ -4,7 +4,7 @@
 
 import { MODULE_ID } from "../constants.js";
 import { canViewActor, isSupportedActor } from "../core/actor-scope.js";
-import { openActorInventory } from "../ui/inventory-app.js";
+import { openActorWindow } from "../ui/actor-window.js";
 import { LOG } from "./logger.js";
 
 /** Action id of the inventory entry in the sheet header menu. */
@@ -20,9 +20,9 @@ function isPrimaryActorSheet(app) {
 
   // Never inject into our own inventory app or dialogs
   if (
-    app.constructor?.name === "ActorInventoryApp" ||
+    app.constructor?.name === "ActorWindow" ||
     app.id?.includes("actor-inventory-manager") ||
-    app.options?.classes?.includes?.("actor-inventory-manager-app") ||
+    app.options?.classes?.includes?.("aim-window") ||
     app.options?.classes?.includes?.("container-rules")
   ) {
     return false;
@@ -78,7 +78,7 @@ export function addInventoryHeaderControl(app, controls) {
     icon: "fa-light fa-shirt",
     label: game.i18n.localize("AIM.sheetButton.label"),
     action: HEADER_ACTION,
-    onClick: () => openActorInventory(app.document ?? app.actor)
+    onClick: () => openActorWindow(app.document ?? app.actor)
   });
 }
 
@@ -97,12 +97,13 @@ function injectHeaderButton(app) {
   headerBtn.type = "button";
   headerBtn.className = "header-control aim-window-header-btn";
   headerBtn.title = game.i18n.localize("AIM.sheetButton.tooltip");
-  headerBtn.setAttribute("aria-label", game.i18n.localize("AIM.sheetButton.label"));
-  headerBtn.innerHTML = '<i class="fa-light fa-shirt"></i>';
+  // «AIM» alone tells a screen reader nothing; the button says what it opens.
+  headerBtn.setAttribute("aria-label", game.i18n.localize("AIM.sheetButton.tooltip"));
+  headerBtn.innerHTML = `<i class="fa-light fa-shirt"></i><span>${game.i18n.localize("AIM.sheetButton.label")}</span>`;
   headerBtn.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    openActorInventory(actor);
+    openActorWindow(actor);
   });
 
   const controlsBtn = header.querySelector(".controls-dropdown, [data-action='toggleControls'], .window-controls");

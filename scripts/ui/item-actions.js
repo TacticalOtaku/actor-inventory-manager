@@ -2,10 +2,10 @@
 // Actor Inventory Manager - Item Actions Controller
 // ─────────────────────────────────────────────────────────
 
-import { AIM_EQUIP_OPTION, FLAGS, MODULE_ID } from "../constants.js";
+import { AIM_EQUIP_OPTION, ENFORCEMENT_MODES, FLAGS, MODULE_ID } from "../constants.js";
 import { canEditActor, isSupportedActor } from "../core/actor-scope.js";
 import { getActorAttunementMax, isItemAttuned, itemRequiresAttunement } from "../core/attunement.js";
-import { equipmentRuleEngine, findEquipSlot, getActorEquippedMap } from "../core/equipment-rules.js";
+import { findEquipSlot, getActorEquippedMap, resolveEquipValidation } from "../core/equipment-rules.js";
 import { canItemBeEquipped } from "../core/item-classifier.js";
 import { LOG } from "../foundry/logger.js";
 
@@ -20,6 +20,15 @@ export function assertCanEdit(actor) {
   if (canEditActor(actor, game.user)) return true;
   ui.notifications?.warn(game.i18n.localize("AIM.notifications.noPermission"));
   return false;
+}
+
+/** The world's rule for a broken equipment rule: block (default), auto_swap or warn. */
+function enforcementMode() {
+  try {
+    return globalThis.game?.settings?.get?.(MODULE_ID, "enforcementMode") ?? ENFORCEMENT_MODES.BLOCK;
+  } catch {
+    return ENFORCEMENT_MODES.BLOCK;
+  }
 }
 
 /**
@@ -40,14 +49,15 @@ export async function equipItemToSlot(actor, item, targetSlotId) {
   }
 
   const currentSlotMap = getActorEquippedMap(actor);
-  const validation = equipmentRuleEngine.validateEquip(actor, item, targetSlotId, {
-    slotMap: currentSlotMap
-  });
+  const mode = enforcementMode();
+  const validation = resolveEquipValidation(actor, item, targetSlotId, currentSlotMap, mode);
 
   if (!validation.valid) {
     ui.notifications?.warn(validation.error);
-    LOG.warn("Equip validation failed in UI", { item: item.name, targetSlotId, error: validation.error });
-    return false;
+    LOG.warn("Equip validation failed in UI", { item: item.name, targetSlotId, error: validation.error, mode });
+    // Warn mode lets a broken rule through with the message; an item never goes into a slot it does not fit.
+    if (mode !== ENFORCEMENT_MODES.WARN || validation.code === "SLOT_INCOMPATIBLE") return false;
+    if (currentSlotMap.get(targetSlotId) && currentSlotMap.get(targetSlotId).id !== item.id) validation.autoSwapItems = [currentSlotMap.get(targetSlotId)];
   }
 
   // One batched write: displaced items and the new one change together, so a

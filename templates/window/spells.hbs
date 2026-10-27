@@ -1,0 +1,52 @@
+{{#*inline "spellSection"}}
+<section class="aim-section {{#if collapsed}}is-collapsed{{/if}}" data-section="{{id}}" data-key="sec-{{id}}">
+  <div class="aim-sec-head" data-action="toggleSection" data-section-id="{{id}}" role="button" tabindex="0" aria-expanded="{{#if collapsed}}false{{else}}true{{/if}}">
+    <i class="fa-light fa-chevron-down aim-chev"></i><h3>{{label}}</h3><span class="aim-sec-n">{{entries.length}}</span>{{#if meta}}<span class="aim-sec-meta">{{meta}}</span>{{/if}}
+  </div>
+  <div class="aim-sec-body"><div class="aim-sec-inner">
+    {{#if entries.length}}
+    <div class="aim-items" data-view="{{@root.spells.prefs.view}}">{{#each entries}}{{> "modules/actor-inventory-manager/templates/window/spell-row.hbs"}}{{/each}}</div>
+    {{else}}<p class="aim-sec-empty">{{@root.spells.emptyText}}</p>{{/if}}
+  </div></div>
+</section>
+{{/inline}}
+<div class="aim-spellbook">
+  <div class="aim-toolbar">
+    <label class="aim-search"><i class="fa-light fa-magnifying-glass"></i><input type="search" name="spellSearch" value="{{spells.query}}" placeholder="{{localize "AIM.window.spells.search"}}" autocomplete="off" spellcheck="false" aria-label="{{localize "AIM.window.spells.search"}}"></label>
+    <div class="aim-seg" role="group" aria-label="{{localize "AIM.window.inv.view"}}">
+      {{#each spells.views}}<button type="button" data-action="listView" data-tab="spells" data-view="{{id}}" aria-pressed="{{active}}" aria-label="{{label}}" data-tooltip="{{label}}"><i class="fa-light {{icon}}"></i></button>{{/each}}
+    </div>
+  </div>
+  <div class="aim-filters aim-spell-filters">
+    {{#each spells.filters}}<button type="button" class="aim-chip {{#if on}}is-on{{/if}}" data-action="listFilter" data-tab="spells" data-filter="{{id}}" aria-pressed="{{on}}">{{label}}</button>{{/each}}
+  </div>
+
+  {{#if spells.tracks.length}}
+  <div class="aim-slot-tracks">
+    {{#each spells.tracks}}
+    <div class="aim-slot-track {{#if pact}}is-pact{{/if}}" {{#if @root.canFavorite}}draggable="true" data-fav-type="slots" data-fav-key="{{key}}" data-tooltip="{{localize "AIM.window.favorites.dragSlots"}}"{{/if}}>
+      <b>{{label}}</b>
+      <span class="aim-gems">{{#each pips}}<button type="button" class="aim-gem {{#if lit}}is-lit{{/if}}" data-action="slotPip" data-slot-key="{{../key}}" data-index="{{index}}" {{#unless @root.canEdit}}disabled{{/unless}} aria-label="{{label}}"></button>{{/each}}</span>
+    </div>
+    {{/each}}
+  </div>
+  {{/if}}
+
+  {{#if spells.prepared.show}}
+  <section class="aim-section is-prepared {{#if spells.prepared.collapsed}}is-collapsed{{/if}}" data-section="prepared" data-key="sec-prepared">
+    <div class="aim-sec-head" data-action="toggleSection" data-section-id="prepared" role="button" tabindex="0" aria-expanded="{{#if spells.prepared.collapsed}}false{{else}}true{{/if}}">
+      <i class="fa-light fa-chevron-down aim-chev"></i><h3>{{localize "AIM.window.spells.prepared"}}</h3><span class="aim-sec-n">{{spells.prepared.entries.length}}</span>
+      {{#if spells.prepared.counter}}<span class="aim-sec-meta is-{{spells.prepared.counter.state}}" data-prep-counter data-tooltip="{{spells.prepared.counter.hint}}">{{spells.prepared.counter.text}}</span>{{/if}}
+    </div>
+    <div class="aim-sec-body"><div class="aim-sec-inner">
+      {{#if spells.prepared.entries.length}}
+      <div class="aim-items" data-view="{{spells.prefs.view}}">{{#each spells.prepared.entries}}{{> "modules/actor-inventory-manager/templates/window/spell-row.hbs"}}{{/each}}</div>
+      {{else}}<p class="aim-sec-empty">{{spells.emptyText}}</p>{{/if}}
+    </div></div>
+  </section>
+  {{/if}}
+
+  <div class="aim-divider">{{localize "AIM.window.spells.book"}}</div>
+  {{#each spells.circles}}{{> spellSection}}{{/each}}
+  {{#each spells.extras}}{{> spellSection}}{{/each}}
+</div>

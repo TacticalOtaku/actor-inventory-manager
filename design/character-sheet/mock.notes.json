@@ -1,0 +1,2241 @@
+{
+  "elements": {
+    "CharacterSheet": {
+      "behaviour": [
+        {
+          "text": "Replaces the dnd5e character sheet entirely: one window holds vitals, abilities, skills, equipment with the paperdoll, spells, features and the biography.",
+          "source": "spec"
+        },
+        {
+          "text": "Opens beside the actor's own sheet, from the header button of any ActorSheetV2 and the I key; it never replaces how a sheet opens (ADR 0002). «Открыть лист персонажа» in the «⋯» menu reaches the actor's own sheet with everything other modules add to it (ADR 0003).",
+          "source": "spec"
+        },
+        {
+          "text": "Picks its layout from its own width, never the screen: under 420 px compact (rail only), 420–759 px narrow (rail becomes a sideways widget strip), 760–1319 px standard (rail + content), 1320 px and wider (rail + content + inspector).",
+          "source": "spec"
+        },
+        {
+          "text": "When the layout changes, every block glides from its old place to its new one (FLIP, 420 ms settle curve) instead of jumping; blocks that appear fade and scale in from 92%.",
+          "source": "spec"
+        },
+        {
+          "text": "The window is resizable from its corner; the minimum is 300 × 520 px.",
+          "source": "spec"
+        },
+        {
+          "text": "Observer sees the same window with every control that changes data hidden or disabled and a «Только просмотр» badge; Owner and GM can change everything.",
+          "source": "spec"
+        },
+        {
+          "text": "Motion follows the level from motionSwitch: at «Выключены» (or under prefers-reduced-motion) only 150 ms fades remain (the mock shows them as instant); at «Сдержанно» ambient loops and particles stop; nothing else changes.",
+          "source": "spec"
+        },
+        {
+          "text": "Theme tokens live on this root element, never on :root.",
+          "source": "spec"
+        },
+        {
+          "text": "The GM gets no separate GM toolbar; GM-only controls live where they act (the HP bar and its steps, the doll preset).",
+          "source": "spec"
+        },
+        {
+          "text": "Controls answer the pointer: cards and buttons light up under the cursor, presses send a ripple from the pointer, buttons and slots lift on hover.",
+          "source": "spec"
+        },
+        {
+          "text": "Rows show an accent edge on hover; their tile lifts and a sheen sweeps across it.",
+          "source": "spec"
+        },
+        {
+          "text": "Tabs preview their underline on hover.",
+          "source": "spec"
+        },
+        {
+          "text": "Starring an entry and casting a spell throw sparks: amber for the star, the spell school colour for a cast.",
+          "source": "spec"
+        },
+        {
+          "text": "Hover light, ripple and lift are reactive: they run at «Все» and «Сдержанно». Sparks are particles: «Все» only. Nothing here runs at «Выключены».",
+          "source": "spec"
+        },
+        {
+          "text": "On open the window settles in from 12 px below and the rail blocks follow one after another.",
+          "source": "spec"
+        },
+        {
+          "text": "Switching tabs and expanding a section bring their entries in as a short cascade, 18 ms apart, at most 24 entries.",
+          "source": "spec"
+        },
+        {
+          "text": "A new accent flows through every colour over 600 ms; a theme change cross-fades the whole sheet.",
+          "source": "spec"
+        },
+        {
+          "text": "Hovering an item, spell, feature, effect, condition, doll slot, attunement socket, favorite, crew portrait or a link opens a card (tooltipCard); see tooltipLayer.",
+          "source": "spec"
+        },
+        {
+          "text": "Scrollbars are styled: slim rounded thumbs on a clear track, accent while hovered or dragged; the tab strip shows none.",
+          "source": "spec"
+        },
+        {
+          "text": "Once a panel is scrolled, the tab strip casts a soft shadow over it.",
+          "source": "spec"
+        },
+        {
+          "text": "One window for three actor types (#8): a character, an NPC with a player owner and a vehicle. The same rail, tabs, settings and effects; the type only decides which blocks and tabs show. A block whose notes have no «Виден» line shows for all three.",
+          "source": "spec"
+        },
+        {
+          "text": "Mock only: «Актор» in the preview bar switches the type; each actor keeps its own state while the mock runs.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "sheetRail": {
+      "behaviour": [
+        {
+          "text": "Always shows HP, hit dice, spell slots, AC, initiative, speed, proficiency, inspiration, exhaustion, concentration and favorites; each block except HP can be hidden in settings.",
+          "source": "spec"
+        },
+        {
+          "text": "In the compact layout the rail is the whole window and also shows the portrait, name and an expand button.",
+          "source": "spec"
+        },
+        {
+          "text": "In the narrow layout the rail becomes one row of fixed-width widgets (HP, hit dice and slots, rest, stats, spellcasting, effects, chips) that scrolls sideways and snaps; favorites and the portrait hide.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "hpBar": {
+      "behaviour": [
+        {
+          "text": "The owner and the GM change HP; observers cannot. Click turns the number into a field: −7 deals damage, +5 heals, a bare number sets HP, в8 grants temporary HP; Enter applies, Esc or leaving the field cancels. Damage and healing go through actor.applyDamage, temporary HP through actor.applyTempHP (the higher value stays). The number counts to its new value over 420 ms.",
+          "source": "spec"
+        },
+        {
+          "text": "While typing, the result is drawn on the bar as a hatched band: red for damage, after temporary HP absorb their share, green for healing. An entry that cannot be read outlines the field red; a hint under the bar lists the entry forms.",
+          "source": "spec"
+        },
+        {
+          "text": "Right click opens the field already holding в, for temporary HP.",
+          "source": "spec"
+        },
+        {
+          "text": "On damage the red fill shrinks at once while a pale ghost of the old value stays for 380 ms, then drains to the new value over 700 ms; the bar shakes once.",
+          "source": "spec"
+        },
+        {
+          "text": "On a heal the fill grows over 420 ms and the bar gives off a green glow; the ghost follows at once.",
+          "source": "spec"
+        },
+        {
+          "text": "Damage takes temporary HP first; temporary HP shows as a striped blue band over the end of the fill and as +N beside the number.",
+          "source": "spec"
+        },
+        {
+          "text": "At 0 HP the death saves block appears under the bar; healing above 0 hides it and clears both counters.",
+          "source": "spec"
+        },
+        {
+          "text": "Under the bar a line shows max HP, temporary HP and the missing amount.",
+          "source": "spec"
+        },
+        {
+          "text": "Rests still restore HP through the dnd5e rest rules, whoever starts the rest.",
+          "source": "spec"
+        },
+        {
+          "text": "The HP bar is always alive: a highlight flows along the fill and the fill beats like a heart.",
+          "source": "spec"
+        },
+        {
+          "text": "The heartbeat quickens as HP falls: 2.8 s above half, 1.7 s at half or below, 0.85 s at a quarter or below.",
+          "source": "spec"
+        },
+        {
+          "text": "Each HP change floats a number over the value: red −N for damage, green +N for healing, blue −N врем. for temporary HP lost first.",
+          "source": "spec"
+        },
+        {
+          "text": "At minimum HP the sheet reacts: from a quarter of max HP the window edge glows red in time with the heartbeat and the number turns red.",
+          "source": "spec"
+        },
+        {
+          "text": "At 0 HP the red edge stays lit, the content desaturates and darkens, the label reads «Без сознания» and the death saves pulse; healing above 0 flashes the HP card green and restores colour.",
+          "source": "spec"
+        },
+        {
+          "text": "Temporary HP get their own effects, as HP do.",
+          "source": "spec"
+        },
+        {
+          "text": "Temporary HP read as an energy shield: the band's stripes keep running and the band glows blue; a shield icon sits beside the number.",
+          "source": "spec"
+        },
+        {
+          "text": "While temporary HP last, the HP card hums with a slow blue aura, on its own calm rhythm rather than the heartbeat.",
+          "source": "spec"
+        },
+        {
+          "text": "Gaining temporary HP sweeps a blue wave over the card, floats +N врем. and throws a few glints from the band.",
+          "source": "spec"
+        },
+        {
+          "text": "Damage absorbed by temporary HP flashes the band and throws blue shards; losing the last temporary HP breaks the shield: a larger burst of shards, a flash and the aura fades.",
+          "source": "spec"
+        },
+        {
+          "text": "Looping effects here (the flowing highlight, the heartbeat, the temporary HP aura) run only at the «Все» motion level and only in the front actor window; reactive effects (ghost, glow, shards, floating numbers) run at «Все» and «Сдержанно».",
+          "source": "spec"
+        },
+        {
+          "text": "A vehicle uses the same field; at 0 HP its label reads «Разрушен».",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "hitDiceTrack": {
+      "behaviour": [
+        {
+          "text": "Shows one die per hit die. Click rolls a die through dnd5e (actor.rollHitDie): the die spins, the roll shows beside it (к6: 3 + 2) and HP rise by the result. No die is given back by hand: rests restore them. With no dice left the track shakes.",
+          "source": "spec"
+        },
+        {
+          "text": "Rests return hit dice as dnd5e decides (actor.initiateRest); the track only shows the result, the returned dice popping back in.",
+          "source": "spec"
+        },
+        {
+          "text": "Shows the roll formula: hit die plus Constitution modifier.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "slotRunes": {
+      "behaviour": [
+        {
+          "text": "Shows one rune per spell slot, grouped by circle; spent runes are hollow.",
+          "source": "spec"
+        },
+        {
+          "text": "Click opens the Spells tab.",
+          "source": "spec"
+        },
+        {
+          "text": "Intact runes and slot gems glint one at a time, at random, about every 2 seconds.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC (for an NPC only when it casts).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "deathSaves": {
+      "behaviour": [
+        {
+          "text": "Visible only at 0 HP; click the n-th mark to set that many successes or failures, click the last set mark to remove it.",
+          "source": "spec"
+        },
+        {
+          "text": "A «Бросить спасбросок от смерти» button rolls through dnd5e (actor.rollDeathSave): 10 or more is a success, less a failure, 1 counts two failures, 20 brings the character back with 1 HP. The result shows beside the button; after three successes or three failures the button hides.",
+          "source": "spec"
+        },
+        {
+          "text": "Marking a success throws green sparks; marking a failure throws red sparks and shakes the block.",
+          "source": "spec"
+        },
+        {
+          "text": "Three successes turn the block green with «Стабилизирована»; three failures dim it with «Погибла».",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "vitalStat": {
+      "behaviour": [
+        {
+          "text": "Shows AC, initiative, speed and proficiency bonus as read-only values; initiative rolls on click.",
+          "source": "spec"
+        },
+        {
+          "text": "AC shows its breakdown (base, Dexterity, items, effects) on hover.",
+          "source": "spec"
+        },
+        {
+          "text": "Right click on AC, initiative or speed opens the dnd5e dialog for it (ArmorClassConfig, InitiativeConfig, MovementSensesConfig) for the owner and the GM.",
+          "source": "spec"
+        },
+        {
+          "text": "An NPC shows AC, initiative, speed, challenge rating, passive Perception and proficiency; a vehicle shows AC, damage threshold, mishap threshold and speed (travel pace per hour, per day on hover).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "inspirationToggle": {
+      "behaviour": [
+        {
+          "text": "Click toggles heroic inspiration; turning it on pops the chip once.",
+          "source": "spec"
+        },
+        {
+          "text": "While on, the chip glows gold, a sheen passes across it every few seconds and its star turns slowly; turning it on throws golden sparks.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "exhaustionTrack": {
+      "behaviour": [
+        {
+          "text": "Click adds one exhaustion level, right click removes one. The number of pips comes from dnd5e's exhaustion config (six by default); lit pips are the current level.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "concentrationBadge": {
+      "behaviour": [
+        {
+          "text": "Appears with a pop when a concentration spell is cast and names the spell. Click on the name rolls a concentration save through dnd5e (actor.rollConcentration) and shows the roll beside it; the cross ends concentration (actor.endConcentration) and the badge leaves.",
+          "source": "spec"
+        },
+        {
+          "text": "Casting another concentration spell replaces the named spell.",
+          "source": "spec"
+        },
+        {
+          "text": "While concentrating, the eye in the badge blinks now and then.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "favoritesList": {
+      "behaviour": [
+        {
+          "text": "Stored in dnd5e's system.favorites, so the vanilla sheet shows the same favorites.",
+          "source": "spec"
+        },
+        {
+          "text": "Holds what dnd5e allows: items, spells, features, skills, tools, spell slot levels, effects and activities; add with ★ on a row or by dragging a row, a skill, a slot track or an effect onto the list.",
+          "source": "spec"
+        },
+        {
+          "text": "Groups favorites by action cost: Действие, Бонусное действие, Реакция, Прочее; empty groups hide. Inside a group the order is manual: drag to reorder, written to system.favorites sort; a new favorite goes to the end of its group.",
+          "source": "spec"
+        },
+        {
+          "text": "When empty, shows a hint to star or drag entries in.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж (dnd5e keeps system.favorites on characters only).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "favoriteRow": {
+      "behaviour": [
+        {
+          "text": "Shows the tile, name and a line under it: attack bonus or save DC and damage, a skill's bonus, a slot level's «2 из 3», an effect's state; on the right the circle as runes, the quantity, the uses or the slot pips.",
+          "source": "spec"
+        },
+        {
+          "text": "Click on the tile acts like dnd5e's useFavorite: uses an item or feature, casts a spell, rolls a skill or tool, toggles an effect; a slot level opens the spells tab.",
+          "source": "spec"
+        },
+        {
+          "text": "Click elsewhere on the row opens the entry's tab and selects it; a skill opens Обзор, an effect opens the Эффекты tab.",
+          "source": "spec"
+        },
+        {
+          "text": "On hover a quick action slides in on the right: cast for a spell, use for an item or active feature.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "sheetHeader": {
+      "behaviour": [
+        {
+          "text": "Shows the level orb, name, class, subclass, species and background; the six abilities sit under it. There is no separate XP bar.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "abilityTile": {
+      "behaviour": [
+        {
+          "text": "Click rolls an ability check (actor.rollAbilityCheck), Shift+click rolls the saving throw (actor.rollSavingThrow); a filled dot marks saving throw proficiency.",
+          "source": "spec"
+        },
+        {
+          "text": "On hover the score slides away and the saving throw bonus («Спас +N») slides in.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "restButton": {
+      "behaviour": [
+        {
+          "text": "Short rest opens the dnd5e short rest dialog.",
+          "source": "spec"
+        },
+        {
+          "text": "Long rest goes through dnd5e (actor.initiateRest), which decides what returns; the sheet animates the result: restored runes and pips pop back in one after another, 70 ms apart.",
+          "source": "spec"
+        },
+        {
+          "text": "A long rest first lets night fall over the sheet, then a warm dawn, and only then do the resources refill.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "settingsButton": {
+      "behaviour": [
+        {
+          "text": "Opens the settings drawer from the right over a scrim; Escape or the scrim closes it. Observers can open it too: the drawer holds only the viewer's own settings.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "collapseButton": {
+      "behaviour": [
+        {
+          "text": "In the header it shrinks the window to 320 px, which switches to the compact layout; in the compact rail it expands back to the previous width, at least 1040 px.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "sheetTabs": {
+      "behaviour": [
+        {
+          "text": "Tabs: Обзор, Снаряжение, Заклинания, Умения, Эффекты, Биография; Обзор, Умения and Биография can be hidden in settings.",
+          "source": "spec"
+        },
+        {
+          "text": "The underline slides to the chosen tab over 420 ms; the new panel fades in from 8 px below.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tabButton": {
+      "behaviour": [
+        {
+          "text": "Click shows its panel; counts show the number of items, spells or features.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "overviewTab": {
+      "behaviour": [
+        {
+          "text": "Shows skills, saving throws, passive senses and proficiencies as cards that wrap by width.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "skillsCard": {
+      "behaviour": [
+        {
+          "text": "Lists the 18 skills with ability, proficiency mark (hollow, filled, ringed for expertise) and total bonus.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "skillRow": {
+      "behaviour": [
+        {
+          "text": "Click rolls the skill check (actor.rollSkill).",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "savesCard": {
+      "behaviour": [
+        {
+          "text": "Lists the six saving throws with proficiency and total bonus.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "saveRow": {
+      "behaviour": [
+        {
+          "text": "Click rolls the saving throw (actor.rollSavingThrow).",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "sensesCard": {
+      "behaviour": [
+        {
+          "text": "Shows passive scores, senses, proficiencies and languages; values are not edited in place, the card's gear opens the dnd5e dialogs.",
+          "source": "spec"
+        },
+        {
+          "text": "Also lists armor proficiencies; tools have their own card.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "equipmentTab": {
+      "behaviour": [
+        {
+          "text": "Shows the purse, load, the paperdoll, the containers and the inventory in sections by dnd5e item type (Оружие, Снаряжение, Расходуемое, Инструменты, Добыча); items inside a container are not repeated in the sections. The doll sits left of the inventory when the tab is at least 700 px wide, otherwise centred above it.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "inventoryToolbar": {
+      "behaviour": [
+        {
+          "text": "Holds search, the sort select, the Экипировано and Настроено filter chips, the view switch, the trade button and the doll toggle.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "searchField": {
+      "behaviour": [
+        {
+          "text": "Filters the tab's lists by name as you type; empty sections say nothing was found.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "viewModeSwitch": {
+      "behaviour": [
+        {
+          "text": "Switches the tab's lists between list, cards and icons only; each tab remembers its own choice.",
+          "source": "spec"
+        },
+        {
+          "text": "Entries glide from their old place to the new one when the view changes.",
+          "source": "spec"
+        },
+        {
+          "text": "Icons-only shows only tiles; the name shows on hover, a dot marks equipped items and a number marks a spell's circle.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "dollToggle": {
+      "behaviour": [
+        {
+          "text": "Shows or hides the paperdoll; the inventory glides to fill the space.",
+          "source": "spec"
+        },
+        {
+          "text": "Uses a figure icon; the hand icon is reserved for equip.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "currencyBar": {
+      "behaviour": [
+        {
+          "text": "Shows pp, gp, ep, sp and cp and the total value in gold; with Item Piles active its currencies and its total are shown instead. Click a coin (owner, GM) to edit: −5 spends, +10 adds, 20 sets (actor.update on system.currency).",
+          "source": "spec"
+        },
+        {
+          "text": "When a total changes it counts to the new value and its coin flips once.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "encumbranceMeter": {
+      "behaviour": [
+        {
+          "text": "Shows carried weight against capacity as text and a bar.",
+          "source": "spec"
+        },
+        {
+          "text": "Thresholds come from dnd5e's system.attributes.encumbrance (world rule, size, Powerful Build, effects; Weighty Containers' reductions through its integration); stops are marked on the bar, which is green, amber past encumbered and red past heavily encumbered; crossing a stop shakes it once. Hidden when the world uses no encumbrance.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC (a vehicle shows its cargo in the rail instead).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "paperdoll": {
+      "behaviour": [
+        {
+          "text": "Shows the preset's figure (humanoid, four-legged beast, wagon, ship or airship) with up to twelve slots in two columns beside it: the first half of the preset's slots fills the left column top-down, the rest the right column bottom-aligned, so the main hand and the off hand face each other on the bottom row.",
+          "source": "spec"
+        },
+        {
+          "text": "With the world setting showActorPortraitBackdrop on, the actor's portrait shows faintly behind the figure.",
+          "source": "spec"
+        },
+        {
+          "text": "A preset without slots (the default for a vehicle) shows its figure as a low banner over the hold with the preset name, size and cargo capacity, not an empty doll; a preset with slots shows the usual doll.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "dollSlot": {
+      "behaviour": [
+        {
+          "text": "A filled slot shows the item's tile; click selects the item (details or inspector, as a row does). Unequip with the × that appears on hover or by dragging the tile out of the slot onto the list; the tile flies back to its row.",
+          "source": "spec"
+        },
+        {
+          "text": "An empty slot equips the first unequipped item that fits; with none it shakes and says so.",
+          "source": "spec"
+        },
+        {
+          "text": "While an item is dragged, the slots it fits glow; dropping it on one equips it through the equipment rules; dropping it on a slot it does not fit shakes the slot with the reason.",
+          "source": "spec"
+        },
+        {
+          "text": "A landed item bounces the slot once.",
+          "source": "spec"
+        },
+        {
+          "text": "Equipment rules (the module's rule engine): slot fit, one body armour, one shield, an occupied slot swaps its item back to its row; while a two-handed weapon is held the off-hand slot shows a lock and a faded copy of that weapon. Third-party rules (registerRule) apply too.",
+          "source": "spec"
+        },
+        {
+          "text": "The world's enforcementMode decides a broken rule: block refuses with the reason (default), auto_swap clears what is in the way, warn allows it and says so. The same rules guard equips made from the vanilla sheet.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "attunementTrack": {
+      "behaviour": [
+        {
+          "text": "Up to three sockets sit centred under the figure between the main hand and off hand slots, with «Настройка N / max» under them.",
+          "source": "spec"
+        },
+        {
+          "text": "The attunement limit is 0–9 (set in the preset editor); with more than three sockets the track moves to its own full-width strip under the doll.",
+          "source": "spec"
+        },
+        {
+          "text": "In the strip, sockets form rows of at most five, centred.",
+          "source": "spec"
+        },
+        {
+          "text": "A filled socket shows the attuned item; an empty one is a dashed ring. Attunement is independent of equipping: dropping an item on a socket attunes it, the × on a filled socket ends it. Past the limit a new attunement is refused with a shake; when a preset switch leaves more attuned items than the limit, the count turns red («4 / 3») and new attunements are refused until it drops.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "listSection": {
+      "behaviour": [
+        {
+          "text": "Click the header to collapse or expand; the body animates its height.",
+          "source": "spec"
+        },
+        {
+          "text": "Dropping an item on a section takes it out of its container; an item's type, and so its section, never changes by a drop.",
+          "source": "spec"
+        },
+        {
+          "text": "In list view each row keeps its tags on one line and fades them out at the right edge, so rows keep one height.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "sectionHeader": {
+      "behaviour": [
+        {
+          "text": "Enter or Space toggles it from the keyboard.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "addItemButton": {
+      "behaviour": [
+        {
+          "text": "Opens dnd5e's item creation for the section's type (Item.createDialog).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "itemRow": {
+      "behaviour": [
+        {
+          "text": "Click selects the row: in the wide layout the inspector shows it, otherwise its description opens under the row; clicking again deselects.",
+          "source": "spec"
+        },
+        {
+          "text": "Owner and GM can drag a row to a doll slot, onto a container, or onto the list to take it out of its container.",
+          "source": "spec"
+        },
+        {
+          "text": "Click on the item's tile uses it through dnd5e (item.use): dnd5e picks the activity, consumes quantity, charges or ammunition and rolls; click elsewhere on the row selects it.",
+          "source": "spec"
+        },
+        {
+          "text": "The row shows weight, price, «Настроено» or «Требует настройки» for items needing attunement, and the item's tags.",
+          "source": "spec"
+        },
+        {
+          "text": "Dragging a row out of the window carries item.toDragData() plus our fields, so other sheets, the canvas and Item Piles take it; dnd5e treats it as a copy.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "itemDetail": {
+      "behaviour": [
+        {
+          "text": "Opens and closes with a height animation; never shown in the wide layout.",
+          "source": "spec"
+        },
+        {
+          "text": "Shows the same body as the inspector: the description with enriched links, one button per activity when there are several (activity.use) or the main action (use, equip, cast, prepare), the entry's own effects with their switches, then В чат and the row menu.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "equipButton": {
+      "behaviour": [
+        {
+          "text": "Equips the item to its first free fitting slot through the equipment rules and the tile flies to the doll, or unequips it and the tile flies back. Items with no fitting slot in the preset (Ioun stones, trinkets) are equipped without a slot.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "favoriteButton": {
+      "behaviour": [
+        {
+          "text": "Stars or unstars the entry; the rail list updates with a glide.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "rowMenuButton": {
+      "behaviour": [
+        {
+          "text": "Opens the item's menu, as on the vanilla sheet: Просмотр, Изменить, Дублировать, Удалить (item.deleteDialog), В чат (item.displayCard), and Идентифицировать for unidentified items.",
+          "source": "spec"
+        },
+        {
+          "text": "For spells the menu is Просмотр, Изменить, Дублировать, Удалить, В чат and Создать свиток (Item5e.createScrollFromSpell).",
+          "source": "spec"
+        },
+        {
+          "text": "For features the menu is Просмотр, Изменить, Дублировать, Удалить, В чат.",
+          "source": "spec"
+        },
+        {
+          "text": "The menu is the window's own component. Entries carry dnd5e's keys (name «DND5E.Identify», «DND5E.ContextMenuActionAttune», id «delete» and the rest); before it shows, the window fires dnd5e.getItemContextOptions(item, menuItems) with Hooks.callAll, so other modules' entries (Item Piles «Give to character») appear. It renders both entry shapes: name/condition/callback and label/visible/onClick.",
+          "source": "spec"
+        },
+        {
+          "text": "Удалить calls item.deleteDialog() without a sheet, so dnd5e asks about advancement and container contents.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "spellsTab": {
+      "behaviour": [
+        {
+          "text": "Shows slot tracks per circle, then a Подготовленные section, then the spellbook (Книга заклинаний) grouped by circle with cantrips first.",
+          "source": "spec"
+        },
+        {
+          "text": "Подготовленные lists every prepared spell of circle 1 and higher, sorted by circle; cantrips are always ready and never listed there.",
+          "source": "spec"
+        },
+        {
+          "text": "In the spellbook, unprepared spells are dimmed to 50%.",
+          "source": "spec"
+        },
+        {
+          "text": "After the spellbook come Врождённые and По желанию, shown only when the actor has such spells; they need no slots.",
+          "source": "spec"
+        },
+        {
+          "text": "Spell-school colours come from SC Rarity Colors when it is active (its spell-school-styles setting, including per-level variants), otherwise from the module's own school palette (--school-* tokens).",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC (for an NPC only when it has spells).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "slotTrack": {
+      "behaviour": [
+        {
+          "text": "One row of slot gems per circle.",
+          "source": "spec"
+        },
+        {
+          "text": "A warlock's pact slots get their own track «Договор · N круг» after the circles, and their own rune group in the rail (system.spells.pact).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "slotPip": {
+      "behaviour": [
+        {
+          "text": "Click a lit gem to spend slots down to it (it bursts), click a hollow one to restore up to it (it pops in).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "spellRow": {
+      "behaviour": [
+        {
+          "text": "Shows school, casting time, range, the components chip В / С / М (hover shows the material and its cost), К for concentration, Р for ritual and «Всегда» for always-prepared spells; innate spells show their uses as pips.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "castButton": {
+      "behaviour": [
+        {
+          "text": "Shown for everything dnd5e can cast now: cantrips, prepared, always-prepared, innate, at-will and pact spells, and rituals; an unprepared non-ritual spell has none.",
+          "source": "spec"
+        },
+        {
+          "text": "Casting calls item.use(): dnd5e's usage dialog chooses the slot, upcasting or ritual casting; the sheet reacts to what dnd5e spent — that gem bursts and sparks fly in the school's colour. The mock imitates the dialog's default (the lowest free slot of the circle or higher).",
+          "source": "spec"
+        },
+        {
+          "text": "With nothing to spend dnd5e refuses: the row shakes and says why; an innate spell used up waits for a long rest.",
+          "source": "spec"
+        },
+        {
+          "text": "A concentration spell sets the concentration badge.",
+          "source": "spec"
+        },
+        {
+          "text": "While its template is being placed the window minimises and comes back once the template is placed or cancelled (dnd5e.preCreateActivityTemplate / dnd5e.createActivityTemplate).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "featuresTab": {
+      "behaviour": [
+        {
+          "text": "Groups features by origin as dnd5e does (advancementOrigin): one section per class with its subclass features inside, then Вид, Предыстория and Прочее (feats and anything without an origin); each section names its source on the right; no class cards — the class and subclass are header links.",
+          "source": "spec"
+        },
+        {
+          "text": "Filters Действие, Бонусное, Реакция, Пассивные, plus the tab search; «+» on a section opens dnd5e's Item.createDialog for a feat.",
+          "source": "spec"
+        },
+        {
+          "text": "Rows do not repeat the source their section is named after; tiles are tinted by origin: class, species, background, other.",
+          "source": "spec"
+        },
+        {
+          "text": "For an NPC and a vehicle the tab is «Действия»: features and attacks grouped by action cost — Особенности, Действия, Бонусные действия, Реакции, Легендарные действия, Действия логова, Прочее; empty groups hide. Attacks are the weapon items themselves and stay in the inventory too. A vehicle shows the tab only when it has any (siege weapons, vehicle features).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "featureRow": {
+      "behaviour": [
+        {
+          "text": "Shows the activation (Действие / Бонусное / Реакция) or «Пассивное», the recovery dnd5e labels (Короткий отдых, Продолжительный отдых, Рассвет, Перезарядка 5–6), tags and uses.",
+          "source": "spec"
+        },
+        {
+          "text": "A passive feature (no activities, or the «trait» property) has a dimmed tile with no action; clicking the row shows its details like any row.",
+          "source": "spec"
+        },
+        {
+          "text": "The row menu is Просмотр, Изменить, Дублировать, Удалить (item.deleteDialog), В чат (item.displayCard).",
+          "source": "spec"
+        },
+        {
+          "text": "In «Действия» an attack shows its to-hit and damage instead of weight and price; the activation tag is left out because the section already names it.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "usesTrack": {
+      "behaviour": [
+        {
+          "text": "Up to 8 uses are pips: click a lit pip to spend down to it, a hollow one to restore up to it (item.update on system.uses.spent).",
+          "source": "spec"
+        },
+        {
+          "text": "Above 8 uses a counter «7 / 10» opens the same edit as HP and coins: −1 spends, +2 restores, 5 sets, capped at the maximum.",
+          "source": "spec"
+        },
+        {
+          "text": "A recharge feature with uses spent shows a d6 button: uses.rollRecharge(), a 5–6 refills it.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "inspectorPanel": {
+      "behaviour": [
+        {
+          "text": "Exists only in the wide layout; shows the selected entry's tile, name, rarity, circle or origin, tags, uses with their recovery, then the same body as the row details.",
+          "source": "spec"
+        },
+        {
+          "text": "With nothing selected it shows a hint.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "settingsDrawer": {
+      "behaviour": [
+        {
+          "text": "Only personal settings live here: theme, accent, density, motion level, decorative fonts, rail blocks, visible tabs. Changes apply at once, no save button.",
+          "source": "spec"
+        },
+        {
+          "text": "Theme, accent, density, rail blocks, visible tabs, the view mode of each list and the doll toggle use scope \"user\" and follow the player to any device; motion level and fonts use scope \"client\" because they depend on the machine. Rail and tab choices apply to every actor window of that user.",
+          "source": "spec"
+        },
+        {
+          "text": "Foundry's module settings keep the world settings for the GM (enforcementMode, autoReconcileSlots, showActorPortraitBackdrop) plus showSheetButton, logLevel and the I keybinding. Personal settings are not repeated there.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "themeSwitch": {
+      "behaviour": [
+        {
+          "text": "Ночь (dark), Пергамент (light) or Авто. Авто follows Foundry's colour scheme for applications, and the OS when Foundry follows it; it switches live and says which theme is in use now.",
+          "source": "spec"
+        },
+        {
+          "text": "A theme change cross-fades through a view transition when motion is above «Выключены».",
+          "source": "spec"
+        },
+        {
+          "text": "«Пергамент» (#26) is warm yellowish paper with brown lines and text, on the same tokens as «Ночь»: every colour token has a light value — surfaces, lines, text, meaning (HP, healing, temporary HP, warning, arcane), rarity, spell schools, the six accents, shadows and scrim. No texture images; paper comes from the surface tones. Variants B («Велень») and C («Карта») are on the prototype/light-theme branch.",
+          "source": "spec"
+        },
+        {
+          "text": "Contrast (WCAG AA): text of all three levels and every meaning, rarity, school and accent colour reach 4.5:1 on all four surfaces in both themes; fills, borders and icons at least 3:1. Lowest pairs: «Ночь» 4.56:1 (third text), «Пергамент» 4.5:1 (warning, legendary, conjuration, brass). The implementation keeps a test in scripts/core over the same token pairs.",
+          "source": "spec"
+        },
+        {
+          "text": "Glows are built from the same tokens, so in «Пергамент» they read as soft coloured shadows; the cursor spotlight stays white; damage type scenes keep their dark stage (#22); damage chips get darker text on paper.",
+          "source": "spec"
+        },
+        {
+          "text": "The window always carries its own tokens; Foundry's light or dark scheme only feeds «Авто». The tooltip layer follows the window's theme and accent.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "accentSwatch": {
+      "behaviour": [
+        {
+          "text": "Six named accents: латунь (default), угли, аркана, лес, иней, роза; the choice recolours every accent token.",
+          "source": "spec"
+        },
+        {
+          "text": "Migration from 1.x: amber→латунь, peach→угли, rose and orchid→роза, lavender and periwinkle→аркана, sage and mint→лес, azure and steel→иней.",
+          "source": "spec"
+        },
+        {
+          "text": "A swatch sets the accent by name (data-accent: brass, embers, arcane, forest, frost, rose), never a colour in style; each theme has its own value for each name, and the stored setting is the name.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "densitySwitch": {
+      "behaviour": [
+        {
+          "text": "Свободно: 44 px rows, 36 px tiles; Плотно: 34 px rows, 28 px tiles.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "motionSwitch": {
+      "behaviour": [
+        {
+          "text": "Three levels: «Все» (reactive and ambient effects, particles), «Сдержанно» (reactive effects and hover only; no ambient loops or particles), «Выключены» (short fades only). Default «Все».",
+          "source": "spec"
+        },
+        {
+          "text": "The level is capped from above: prefers-reduced-motion allows «Выключены» only, Foundry's performance-low «Сдержанно». Levels above the cap are disabled and a line under the switch names the reason.",
+          "source": "spec"
+        },
+        {
+          "text": "The player's own choice is kept under a cap and returns when the cap lifts; the line says so.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "railWidgetToggle": {
+      "behaviour": [
+        {
+          "text": "A switch per rail block; the rest glide to close the gap. Hit points are always shown and their row is disabled with «всегда».",
+          "source": "spec"
+        },
+        {
+          "text": "Blocks the character does not have (Сл и атака and slots for a non-caster) hide themselves; their rows are disabled with «нет у персонажа», and the player's choice for them is kept.",
+          "source": "spec"
+        },
+        {
+          "text": "The rest buttons can be hidden too.",
+          "source": "spec"
+        },
+        {
+          "text": "Lists only the blocks of the current actor type.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tabVisibilityToggle": {
+      "behaviour": [
+        {
+          "text": "Any tab except Снаряжение can be hidden; its row is disabled with «всегда».",
+          "source": "spec"
+        },
+        {
+          "text": "Заклинания hides itself for a character without spells; its row is disabled with «нет у персонажа».",
+          "source": "spec"
+        },
+        {
+          "text": "Hiding the open tab switches to Снаряжение.",
+          "source": "spec"
+        },
+        {
+          "text": "Lists only the tabs of the current actor type.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "mockRolePreview": {
+      "behaviour": [
+        {
+          "text": "Mock only: switches the preview between owner, observer and GM.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "hpStepper": {
+      "behaviour": [
+        {
+          "text": "Buttons −5, −1, +1, +5 apply that damage or healing with the same animations as the bar; only the GM sees them, players and observers never do.",
+          "source": "spec"
+        },
+        {
+          "text": "The GM's shield button sets temporary HP to 8 when that is higher; temporary HP never stack, the higher value stays. The real button lets the GM enter the amount.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "spellcastingStrip": {
+      "behaviour": [
+        {
+          "text": "Shows the spellcasting ability, spell save DC, spell attack bonus and passive Perception; hidden for actors without spellcasting.",
+          "source": "spec"
+        },
+        {
+          "text": "With several casting classes it shows one line per class: ability, save DC and attack bonus.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC (for an NPC only when it casts).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "effectsList": {
+      "behaviour": [
+        {
+          "text": "The rail lists the temporary effects: concentration and conditions first, then the rest of dnd5e's Временные category from actor.allApplicableEffects().",
+          "source": "spec"
+        },
+        {
+          "text": "The full list lives in the Эффекты tab; the rail block can be hidden in settings.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "effectRow": {
+      "behaviour": [
+        {
+          "text": "Shows the effect's icon, name, a short line with its source («от: Плащ защиты») and the time left; permanent effects show no time.",
+          "source": "spec"
+        },
+        {
+          "text": "The switch on the right enables or disables the effect (effect.update({ disabled })); a condition has × to remove it (actor.toggleStatusEffect), concentration has × to end it.",
+          "source": "spec"
+        },
+        {
+          "text": "A suppressed effect (its item unequipped or unattuned) is dashed and dimmed, says why, and its switch is locked.",
+          "source": "spec"
+        },
+        {
+          "text": "Click on the row opens its description and changes under it; right click opens dnd5e's effect menu: Изменить, Дублировать, Удалить, Включить / Выключить.",
+          "source": "spec"
+        },
+        {
+          "text": "The effect menu fires dnd5e.getActiveEffectContextOptions(effect, menuItems) with Hooks.call before it shows; Удалить calls effect.deleteDialog() without a sheet.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "addEffectButton": {
+      "behaviour": [
+        {
+          "text": "Opens the Эффекты tab with the conditions grid and every effect.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "preparedCounter": {
+      "behaviour": [
+        {
+          "text": "Shows prepared spells against the class limit from dnd5e, per casting class; amber at the limit, red past it.",
+          "source": "spec"
+        },
+        {
+          "text": "Past the limit dnd5e only warns: the header shows its preparation warning («Подготовка 11 / 10»); nothing is refused.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "prepareButton": {
+      "behaviour": [
+        {
+          "text": "Toggles whether the spell is prepared; the row glides into or out of Подготовленные.",
+          "source": "spec"
+        },
+        {
+          "text": "Preparing past the limit is allowed, as in dnd5e: the counter turns red and shakes, and the header warns.",
+          "source": "spec"
+        },
+        {
+          "text": "Spells the class always has prepared show no toggle.",
+          "source": "spec"
+        },
+        {
+          "text": "Toggles on a row show their on state by colour only, without a filled box.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "attunementSocket": {
+      "behaviour": [
+        {
+          "text": "Click a filled socket to select its item (inspector in the wide layout, inline details otherwise).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tradeButton": {
+      "behaviour": [
+        {
+          "text": "Opens the trade panel; the built-in trading between players stays.",
+          "source": "spec"
+        },
+        {
+          "text": "Owners see it; observers never do. The GM sees it only while this actor has an active trade (open, executing or waiting for recovery).",
+          "source": "spec"
+        },
+        {
+          "text": "When another player invites this character, a Foundry notification appears and the button carries a glowing dot until the panel is opened.",
+          "source": "spec"
+        },
+        {
+          "text": "Shown for all three types: a vehicle and an NPC with a player owner can be a side of a trade (#8).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tradePanel": {
+      "behaviour": [
+        {
+          "text": "Keeps the current trading rules: requests go through user flags, one active GM coordinates, rechecks ownership and confirmations and moves the assets; the snapshot lives in a private journal.",
+          "source": "spec"
+        },
+        {
+          "text": "Opens beside the inventory without a scrim, so items can be added while it is open; in the standard and wide layouts the content steps aside, in narrow and compact the panel covers the tabs at full width.",
+          "source": "spec"
+        },
+        {
+          "text": "One trade at a time per actor; there is no separate accept step — confirming is accepting, cancelling is declining.",
+          "source": "spec"
+        },
+        {
+          "text": "For the GM the panel is read-only («Ирэн отдаёт» / «Сэра отдаёт» and the status): the GM never edits or confirms for players.",
+          "source": "spec"
+        },
+        {
+          "text": "Without an active GM a warning says the trade will neither start nor finish; starting and confirming are disabled.",
+          "source": "spec"
+        },
+        {
+          "text": "The last request's error from the coordinator shows as a red line with its reason (not enough funds, the offer changed, different currencies); the coordinator clears confirmations as it does now.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tradePartnerSelect": {
+      "behaviour": [
+        {
+          "text": "Lists other players' characters whose owner is online (never the GM) as «Персонаж · игрок»; a character already in a trade is disabled with «уже в обмене»; with nobody to pick, a hint replaces the list.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tradeStartButton": {
+      "behaviour": [
+        {
+          "text": "Sends the start request; the panel switches to the two offers. Disabled without an active GM.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tradeStatus": {
+      "behaviour": [
+        {
+          "text": "Says what the trade waits for: «Ждём предложения», «Отправляется…», «Проверьте и подтвердите», «Ждём подтверждения», «Мастер проводит обмен…», or that a broken trade waits for the GM; a reset of confirmations shakes it.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "myOffer": {
+      "behaviour": [
+        {
+          "text": "No Save step: an edit leaves by itself about 0.5 s after the last change, as the same offer request through the user flag; while it is on the way the status says «Отправляется…» and Подтвердить is disabled; a stale revision is re-sent with the new one.",
+          "source": "spec"
+        },
+        {
+          "text": "Changing either offer clears both confirmations.",
+          "source": "spec"
+        },
+        {
+          "text": "Dropping an inventory row here offers the whole stack.",
+          "source": "spec"
+        },
+        {
+          "text": "Without Item Piles: the five dnd5e coins (пм, зм, эм, см, мм), each capped by the purse; exactly those coins move.",
+          "source": "spec"
+        },
+        {
+          "text": "With Item Piles: one field per Item Piles currency; payment goes by value — the sender pays with what it has and gets change, the receiver gets exactly the named coins; Item Piles' getPaymentData decides whether the purse covers it, so fields have no per-coin cap and a hint shows the sum against the purse.",
+          "source": "spec"
+        },
+        {
+          "text": "If the two sides have different currency setups the trade does not start and says why.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "partnerOffer": {
+      "behaviour": [
+        {
+          "text": "Read-only view of the partner's items and coins with their confirmation state.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "offerItem": {
+      "behaviour": [
+        {
+          "text": "− and + and a number field change the offered quantity between 0 and the stack; partial stacks are allowed; 0 removes it.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "offerButton": {
+      "behaviour": [
+        {
+          "text": "Shown on inventory rows while a trade is open; adds one of the item and the tile flies into the panel.",
+          "source": "spec"
+        },
+        {
+          "text": "Non-empty containers and Item Piles currency items cannot be offered: the button is disabled and says why («Сначала выньте содержимое»). Equipped and attuned items can be offered.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tradeConfirmButton": {
+      "behaviour": [
+        {
+          "text": "Both participants must confirm, a gift included; then the GM carries out the transfer.",
+          "source": "spec"
+        },
+        {
+          "text": "Toggles your confirmation; an empty trade cannot be confirmed.",
+          "source": "spec"
+        },
+        {
+          "text": "Received items arrive unequipped, unattuned and outside any container, marked «Новое» in the inventory until opened.",
+          "source": "spec"
+        },
+        {
+          "text": "The finished trade shows a card «Обмен завершён» with what was given and received.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tradeCancelButton": {
+      "behaviour": [
+        {
+          "text": "Cancels the trade for both sides at once, without a dialog — nothing has moved; the other side sees «<партнёр> отменяет обмен».",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "dollHeader": {
+      "behaviour": [
+        {
+          "text": "Shows «Кукла» and the actor's preset name.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "dollPresetSelect": {
+      "behaviour": [
+        {
+          "text": "The GM picks a doll preset per actor; presets can have many more slots than the standard one.",
+          "source": "spec"
+        },
+        {
+          "text": "Visible to the GM only; players see the preset name. Switching presets re-slots equipment (autoReconcileSlots): an item whose slot is gone moves to a free fitting slot of the new preset, or stays equipped in Без слота; slotless items take a fitting free slot when one appears. Attunement is never removed by a switch.",
+          "source": "spec"
+        },
+        {
+          "text": "Standard presets: Стандарт 2024, Стандарт 2014, Зверь, Повозка, Корабль, Воздушное судно; the GM adds custom ones. A preset is a figure plus its slots; the default follows the actor type.",
+          "source": "spec"
+        },
+        {
+          "text": "The default preset follows the actor type: humanoid for a character and an NPC; for a vehicle by details.type — land → Повозка, water → Корабль, air → Воздушное судно, space → Корабль (no figure of its own). Vehicle defaults have no slots; presets with slots are separate (Повозка · упряжь и орудие, Корабль · орудийные порты, Воздушное судно · оснастка).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "dollPresetEdit": {
+      "behaviour": [
+        {
+          "text": "Opens the existing preset editor, where the GM builds custom presets.",
+          "source": "spec"
+        },
+        {
+          "text": "GM only.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "extraSlots": {
+      "behaviour": [
+        {
+          "text": "Slots that do not fit beside the figure overflow into this wrapping grid under it.",
+          "source": "spec"
+        },
+        {
+          "text": "Twelve slots sit beside the figure; the rest go here at 52 px, as many per row as fit.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "levelOrb": {
+      "behaviour": [
+        {
+          "text": "Shows the character level; the XP progress to the next level fills the orb as a liquid whose surface keeps moving.",
+          "source": "spec"
+        },
+        {
+          "text": "The closer the next level, the stronger the orb glows.",
+          "source": "spec"
+        },
+        {
+          "text": "Progress comes from dnd5e's prepared XP fields (system.details.xp.min, max and pct), so world rules apply.",
+          "source": "spec"
+        },
+        {
+          "text": "Glow grows with the square of progress, so it stays faint early and builds near the level; from 90% the orb slowly pulses.",
+          "source": "spec"
+        },
+        {
+          "text": "When XP changes the liquid rises or falls over 900 ms.",
+          "source": "spec"
+        },
+        {
+          "text": "Hover shows level, current and next-level XP and the percentage; the same text is its accessible name.",
+          "source": "spec"
+        },
+        {
+          "text": "With motion off the surface stands still and the orb does not pulse.",
+          "source": "spec"
+        },
+        {
+          "text": "Characters using milestone levelling (XP hidden in dnd5e settings) get an orb with the level only, no liquid.",
+          "source": "spec"
+        },
+        {
+          "text": "Small bubbles rise through the liquid; hover brightens the orb.",
+          "source": "spec"
+        },
+        {
+          "text": "Click (owner or GM) opens the XP card under the orb: level, progress bar with current and next-level XP, quick +50, +100, +250, +1000, and a field with Добавить and Задать. Escape or a click outside closes it.",
+          "source": "spec"
+        },
+        {
+          "text": "When XP reaches the next level, the orb grows, fills to the brim, glows gold, an arrow rises over it and the number reads 6→7; the card says «можно повысить — нажмите на сферу».",
+          "source": "spec"
+        },
+        {
+          "text": "Click on the ready orb levels up through dnd5e (AdvancementManager.forLevelChange), which asks which class when there are several; right click or Shift+click still opens the XP card.",
+          "source": "spec"
+        },
+        {
+          "text": "In milestone levelling (XP off in dnd5e settings) the orb shows only the level, without liquid or XP card; a click offers the level-up through the same dnd5e manager.",
+          "source": "spec"
+        },
+        {
+          "text": "Observers see the orb and its hover text but cannot open the card or level up.",
+          "source": "spec"
+        },
+        {
+          "text": "The pulse near the next level, the moving surface and the bubbles are ambient effects: «Все» motion level only, front window only.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "mockXpPreview": {
+      "behaviour": [
+        {
+          "text": "Mock only: sets the progress to the next level to preview the fill and glow.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "restBar": {
+      "behaviour": [
+        {
+          "text": "Short and long rest sit in the rail, labelled, right under HP, hit dice and spell slots, so players reach them without searching the header.",
+          "source": "spec"
+        },
+        {
+          "text": "No rest durations on the buttons: each GM sets how long rests take. The short rest button shows the hit dice left; the long rest button lists what it restores.",
+          "source": "spec"
+        },
+        {
+          "text": "Shown to the GM always and to owners only while dnd5e's allowRests setting is on; hidden for observers.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "favoriteCastButton": {
+      "behaviour": [
+        {
+          "text": "Casts the spell or uses the item or feature straight from the rail, under the same rules as in its tab.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "xpCard": {
+      "behaviour": [
+        {
+          "text": "XP card of the level orb: XP is written through actor.update on system.details.xp.value; the card has no level-up button, the ready orb is the button.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "headerLinks": {
+      "behaviour": [
+        {
+          "text": "Class, subclass, species and background in the header subtitle are links: click opens that item's dnd5e sheet.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "sheetMenuButton": {
+      "behaviour": [
+        {
+          "text": "«⋯» in the header opens a menu of rare entries; click outside or Escape closes it.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "sheetMenu": {
+      "behaviour": [
+        {
+          "text": "Открыть лист персонажа — opens the actor's own sheet (actor.sheet.render): dnd5e's, Tidy's or any other, with what other modules add there.",
+          "source": "spec"
+        },
+        {
+          "text": "Особые черты and Бастион open the vanilla sheet on that tab, since dnd5e 5.3.3 has no standalone dialog for them; Бастион shows only when bastions are on in the world.",
+          "source": "spec"
+        },
+        {
+          "text": "Вернуть исходный облик shows only while the actor is transformed (actor.revertOriginalForm).",
+          "source": "spec"
+        },
+        {
+          "text": "The first entry names the type: Открыть лист персонажа / NPC / транспорта. Особые черты and Бастион are for characters only.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "toolsCard": {
+      "behaviour": [
+        {
+          "text": "Overview card listing tool proficiencies with ability, proficiency mark and total bonus.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "toolRow": {
+      "behaviour": [
+        {
+          "text": "Click rolls the tool check through dnd5e (actor.rollToolCheck).",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "defensesCard": {
+      "behaviour": [
+        {
+          "text": "Overview card: damage resistances, immunities, vulnerabilities, condition immunities and damage modification, read from system.traits; empty entries read «нет».",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "cardConfigButton": {
+      "behaviour": [
+        {
+          "text": "Each Overview card shows a gear on hover for the owner and the GM; it opens the matching dnd5e dialog (SkillsConfig, AbilityConfig, ToolsConfig, DamagesConfig / TraitsConfig, MovementSensesConfig, LanguagesConfig, WeaponsConfig). Hidden for observers.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "itemUseButton": {
+      "behaviour": [
+        {
+          "text": "The item tile is a button: click uses the item (item.use).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "quantityStepper": {
+      "behaviour": [
+        {
+          "text": "On hover, − and + beside the quantity change it by one (item.update on system.quantity); hidden for observers.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "chargesTrack": {
+      "behaviour": [
+        {
+          "text": "Items with charges show them as pips instead of a quantity: click spends one, right click restores one (system.uses.spent).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "attuneButton": {
+      "behaviour": [
+        {
+          "text": "Items that need attunement have their own attune toggle, independent of equipping; past the attunement limit it is refused with a shake of the row and the attunement track.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "sortSelect": {
+      "behaviour": [
+        {
+          "text": "Sorts each section by name, weight, price, rarity or by hand (drag); each tab remembers its choice.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "filterChips": {
+      "behaviour": [
+        {
+          "text": "Экипировано and Настроено narrow the lists to equipped or attuned items; each tab remembers its filters.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "currencyManagerButton": {
+      "behaviour": [
+        {
+          "text": "Opens dnd5e's CurrencyManager to convert coins or transfer them to another actor or a container.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "containerSection": {
+      "behaviour": [
+        {
+          "text": "Containers are listed in their own section; each container row is followed by a tray of its contents, and a container inside another nests its own tray.",
+          "source": "spec"
+        },
+        {
+          "text": "Each tray shows the load band and the weight reduction from Weighty Containers; the GM sees a gear that opens the Weighty Containers rules for that container. Without Weighty Containers the dnd5e capacity is shown.",
+          "source": "spec"
+        },
+        {
+          "text": "Dropping an item on a tray puts it in that container; Weighty Containers validates it (capacity, its rules) and a refusal shakes the tray with the reason. A container can never go inside itself.",
+          "source": "spec"
+        },
+        {
+          "text": "With more than three containers they start folded: a folded tray is one line with the load band and a peek of up to six content tiles plus +N; what the user unfolds is remembered; Свернуть все / Развернуть все sits in the section header.",
+          "source": "spec"
+        },
+        {
+          "text": "While dragging, hovering a folded tray for about half a second unfolds it, so an item can reach any nested container.",
+          "source": "spec"
+        },
+        {
+          "text": "Searching unfolds only the containers with matches, down to the nested one, and hides the rest; clearing the search restores the folding.",
+          "source": "spec"
+        },
+        {
+          "text": "An item dropped from outside onto a tray goes into that container: Weighty Containers is pre-checked for our message, then actor.sheet._onDropItemContainer; a sheet without it (Tidy) puts the item in the inventory root with a note.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "containerRulesButton": {
+      "behaviour": [
+        {
+          "text": "GM only: opens the Weighty Containers rules window for the container.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "externalDrop": {
+      "behaviour": [
+        {
+          "text": "Something dragged in from outside (sidebar, compendium, compendium browser, a chat or journal link, a bastion card, another actor) outlines the open tab's content with «Отпустите, чтобы добавить»; every tab takes it. Observers' windows take nothing.",
+          "source": "spec"
+        },
+        {
+          "text": "The item is created through actor.sheet._onDropCreateItems(event, items, \"copy\") (ADR 0004), so dnd5e's sheet rules hold: reset of equipped/attuned/prepared, consumable stacking, the advancement prompt and singleton check, class-level merge and subclass checks, the multi-advancement guard, NPC items to gear. Without that method: Item5e.createWithContents + createDocuments({ keepId: true }).",
+          "source": "spec"
+        },
+        {
+          "text": "Copy from the sidebar, a compendium, chat, a journal or a bastion card. From another actor the user owns: move — copied, checked on the actor, then the source is deleted. From an actor the user does not own, an Item Piles pile included: refused («Передать предмет может его владелец — через обмен» / «Заберите предмет через окно Item Piles»). The GM copies, Shift moves.",
+          "source": "spec"
+        },
+        {
+          "text": "dropActorSheetData(actor, actor.sheet, data) fires before creating; false cancels.",
+          "source": "spec"
+        },
+        {
+          "text": "Spells follow the window's tab: on Снаряжение they become a scroll through dnd5e's createScrollFromSpell dialog; on any other tab they stay spells, with dnd5e's default spellcasting method.",
+          "source": "spec"
+        },
+        {
+          "text": "The sheet's unsupported item types are refused before the call (a vehicle takes no class, species, background or spell). An item folder adds its items; an active effect is created on the actor; an actor is refused («Превращение — в листе персонажа»).",
+          "source": "spec"
+        },
+        {
+          "text": "A refusal shakes the drop area and names the reason at the drop point; dnd5e's own warnings (singleton, several advancements) come as its notifications. While a trade is running: «Идёт обмен — инвентарь закрыт».",
+          "source": "spec"
+        },
+        {
+          "text": "The new row gets the «Новое» tag and lands with a flash; the advancement manager and the scroll dialog open as dnd5e's own windows.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "slotlessStrip": {
+      "behaviour": [
+        {
+          "text": "Items equipped without a slot show as chips under the doll in «Без слота»; click selects, the × unequips.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "spellFilterChips": {
+      "behaviour": [
+        {
+          "text": "Подготовленные, Ритуал, Концентрация, Действие, Бонусное and Реакция narrow the spell lists; they combine.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "pactSlots": {
+      "behaviour": [
+        {
+          "text": "Pact slot pips work like circle pips: click a lit one to spend down to it, a hollow one to restore up to it; a long rest refills them (dnd5e decides, the mock imitates).",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж, NPC (for an NPC only when it casts).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "preparationWarning": {
+      "behaviour": [
+        {
+          "text": "Header chip shown while prepared spells exceed a class limit; it mirrors dnd5e's preparation warning.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "featureUseButton": {
+      "behaviour": [
+        {
+          "text": "The tile of an active feature is a button: click calls item.use() — dnd5e picks the activity (asking when there are several), spends the use and rolls.",
+          "source": "spec"
+        },
+        {
+          "text": "With no uses left dnd5e refuses: the row shakes and says when it recovers, or asks for the recharge roll.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "featureFilterChips": {
+      "behaviour": [
+        {
+          "text": "Filters features by Действие, Бонусное, Реакция and Пассивные; filters combine with the search.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "activityButton": {
+      "behaviour": [
+        {
+          "text": "One per activity of an item or feature that has several; click calls activity.use() for that activity and spends what it consumes.",
+          "source": "spec"
+        },
+        {
+          "text": "Lists activities with activity.canUse; with midi-qol active it also leaves out activities marked midiProperties.automationOnly. Its menu is activity.getContextMenuOptions() plus dnd5e.getItemActivityContext.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "conditionGrid": {
+      "behaviour": [
+        {
+          "text": "Our own list (dnd5e has no conditions dialog), built from CONFIG.statusEffects: the 14 conditions, then statuses such as Уклоняется, Прячется, Летит, Кровотечение; active ones are lit.",
+          "source": "spec"
+        },
+        {
+          "text": "Click toggles the condition with actor.toggleStatusEffect(id); it then appears among the temporary effects. Exhaustion and concentration keep their own rail chips.",
+          "source": "spec"
+        },
+        {
+          "text": "«Новый эффект» creates an effect on the actor (ActiveEffect.implementation.create) and opens its sheet.",
+          "source": "spec"
+        },
+        {
+          "text": "actor.toggleStatusEffect also turns off other conditions of the same exclusiveGroup, unlike the vanilla Effects tab; accepted (ADR 0003).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "effectsTab": {
+      "behaviour": [
+        {
+          "text": "The conditions grid on top, then dnd5e's categories Временные, Пассивные, Выключенные, Недоступные flowing in columns; empty categories hide.",
+          "source": "spec"
+        },
+        {
+          "text": "A favorite effect opens this tab and highlights its row.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "biographyTab": {
+      "behaviour": [
+        {
+          "text": "Repeats the dnd5e biography and writes to dnd5e's own fields, so the vanilla sheet sees the same text: characteristics, personality, and the biography; no module flags.",
+          "source": "spec"
+        },
+        {
+          "text": "Observer sees it read-only.",
+          "source": "spec"
+        },
+        {
+          "text": "For an NPC and a vehicle only the description: no characteristics or personality cards.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "characteristicsCard": {
+      "behaviour": [
+        {
+          "text": "Nine fields from system.details: alignment, age, height, weight, eyes, hair, skin, gender, faith; saved on change.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "personalityCard": {
+      "behaviour": [
+        {
+          "text": "Personality traits, ideals, bonds, flaws and appearance (system.details.trait/ideal/bond/flaw/appearance); saved on change.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: персонаж.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "biographyEditor": {
+      "behaviour": [
+        {
+          "text": "Rich text in system.details.biography.value, edited with Foundry's ProseMirror editor (headings, bold, italic, lists, document links); links are enriched content links.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tradeRecoveryButton": {
+      "behaviour": [
+        {
+          "text": "GM only, while a trade waits for recovery or hangs while executing: «Восстановить инвентари» asks to confirm, then the coordinator restores both inventories from the private journal snapshot.",
+          "source": "spec"
+        },
+        {
+          "text": "After a preparation that was interrupted before any debit, the GM gets «Снять блокировку» instead: nothing to restore, the lock is lifted.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tradeLockBanner": {
+      "behaviour": [
+        {
+          "text": "While a trade is executing or waits for recovery, everyone looking at the window sees «Идёт обмен — инвентарь заблокирован»; edits stay blocked by the current hooks.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "mockTradePreview": {
+      "behaviour": [
+        {
+          "text": "Mock-only: switches trade scenarios (invited, partner cancelled, GM recovery) and toggles Item Piles and an absent GM.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "fontsToggle": {
+      "behaviour": [
+        {
+          "text": "«Декоративные шрифты» is the useWebFonts client setting. Off: system fonts, and the web fonts are not loaded.",
+          "source": "spec"
+        },
+        {
+          "text": "It applies after a reload: on change a line «Применится после перезагрузки» appears with a «Перезагрузить» button.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "settingsResetButton": {
+      "behaviour": [
+        {
+          "text": "«Сбросить настройки окна» at the bottom asks to confirm, then returns theme, accent, density, motion, fonts, rail blocks and tabs to their defaults. A fonts change still waits for a reload.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "mockMotionCap": {
+      "behaviour": [
+        {
+          "text": "Mock only: simulates the reduced-motion and performance-low caps; «Без магии» next to it previews a character without spells.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "crBadge": {
+      "behaviour": [
+        {
+          "text": "Challenge rating in the level orb's place.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: NPC.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "kindSubtitle": {
+      "behaviour": [
+        {
+          "text": "Under the name: size, type and role for an NPC («Средний гуманоид (человек) · телохранитель»); type, size, keel and beam for a vehicle.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: NPC, транспорт.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "legendaryTrack": {
+      "behaviour": [
+        {
+          "text": "Legendary actions and legendary resistance as pips (system.resources.legact / legres); shown only when the NPC has them, otherwise «нет у NPC» in the settings list.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: NPC.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "cargoMeter": {
+      "behaviour": [
+        {
+          "text": "Cargo weight in tons against attributes.capacity.cargo; the bar turns red over capacity.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: транспорт.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "crewBlock": {
+      "behaviour": [
+        {
+          "text": "Crew, passengers and, for a land vehicle, draft animals (system.crew, passengers, draft) as read-only portraits with a count against the maximum and the free places; the composition is edited on the vehicle's own sheet.",
+          "source": "spec"
+        },
+        {
+          "text": "Click opens that actor's window, or its sheet when the window does not support it; an actor the viewer may not see shows as «Неизвестный» without a name.",
+          "source": "spec"
+        },
+        {
+          "text": "Legacy cargo.crew / cargo.passengers entries (name × quantity) show as text rows under «Без актора».",
+          "source": "spec"
+        },
+        {
+          "text": "Lives in the rail under the cargo (variant A); variants B (on the figure banner) and C (own tab) are on the prototype/vehicle-crew branch.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: транспорт.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "figureBanner": {
+      "behaviour": [
+        {
+          "text": "The figure of a preset without slots, as a low banner across the equipment tab over the hold.",
+          "source": "spec"
+        },
+        {
+          "text": "Виден: транспорт (and any actor whose preset has no slots).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "mockActorPreview": {
+      "behaviour": [
+        {
+          "text": "Mock only: switches between the character, the NPC and the vehicle; with the vehicle a «Тип» select (land, water, air, space) changes the figure.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tooltipLayer": {
+      "behaviour": [
+        {
+          "text": "Our own layer on document.body, not game.tooltip: CONFIG.ux.TooltipManager is left alone. The layer carries the window's theme tokens and follows the user's theme, accent and motion level; in a detached window the cards show in that window.",
+          "source": "spec"
+        },
+        {
+          "text": "Cards replace the native title of what they cover (the text moves to aria-label); links inside cards drop data-tooltip, so no core or dnd5e tooltip opens on top.",
+          "source": "spec"
+        },
+        {
+          "text": "Content: items, spells and features from item.system.getCardData() in our template, so dnd5e's visibility rules (unidentified, concealed) hold; effects and rule pages from richTooltip() inside our frame. Read through a named helper with a 5.3.3 test.",
+          "source": "spec"
+        },
+        {
+          "text": "Observers get the same cards and may pin them; cards carry no actions. Clicking a document link opens it if the viewer may (in the mock: in the window's inspector).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tooltipCard": {
+      "behaviour": [
+        {
+          "text": "Look: numbers on the left (attack, effect, charges, weight, price, attunement…), text on the right, property pills under it; the frame glows in the rarity colour (our SC Rarity Colors adapter) or the spell school colour; our palette without SC. Variants A and B are on the prototype/tooltip-cards branch.",
+          "source": "spec"
+        },
+        {
+          "text": "Timing: opens after 400 ms; while a card is open, moving to the next entry swaps it at once; a nested card opens 300 ms after hovering a link; a card closes 200 ms after the pointer leaves both it and its anchor. Keyboard focus opens it the same way; Escape closes unpinned cards.",
+          "source": "spec"
+        },
+        {
+          "text": "Nesting: at most four levels; links on the fourth level stay underlined but open nothing. One live card per level: a new one replaces the unpinned card hanging from the same parent.",
+          "source": "spec"
+        },
+        {
+          "text": "Pinning: hold the pointer on the card for 1.2 s (a ring runs round the edge), middle click, or the pin button. Dragging the head pins and moves it. × or right click closes one card. Pinned cards stay after the actor window closes, until closed or the page reloads.",
+          "source": "spec"
+        },
+        {
+          "text": "At most six pinned cards: a seventh closes the oldest. With two or more pinned, the newest shows «Закрыть все (N)».",
+          "source": "spec"
+        },
+        {
+          "text": "Motion: rises in over 160 ms at «Все» and «Сдержанно»; at «Выключены» only a 150 ms fade.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "damageScene": {
+      "behaviour": [
+        {
+          "text": "A damage type link is a chip in the type's colour (CONFIG.DND5E.damageTypes[k].color, .label); a multi-type part (fire|cold) shows one chip per type. Its card holds a small scene drawn with canvas particles in the type's colour, on a dark stage in both themes.",
+          "source": "spec"
+        },
+        {
+          "text": "Scenes: fire — swaying tongues of flame, embers and smoke; cold — ice spikes erupt, glint and shatter, snow and mist; lightning — branching bolts with flash, sparks and crawling static; acid — drops swell, fall and splash into a pool with ripples, sizzle and vapour; thunder — pressure rings with shake, dust and sound bars; necrotic — a dark core drinking motes of life along curling tendrils; radiant — turning rays, a pulsing sun and twinkling stars; poison — a breathing toxic cloud with rising, popping bubbles; psychic — warped rings closing in, split in two colours, with orbiting glyphs; force — a hexagonal barrier lighting up in a wave inside a turning rune ring; slashing — a claw of three crescent cuts with sparks; piercing — a streak that strikes a mark and bursts; bludgeoning — a falling weight, flash, cracks, debris and dust.",
+          "source": "spec"
+        },
+        {
+          "text": "A type without a scene of its own (added by the world or a module) gets a pulsing orb with orbiting motes in its colour, or the accent colour when it has none.",
+          "source": "spec"
+        },
+        {
+          "text": "Motion (#9): at «Все» the scene loops while the card is open (an ambient effect: paused while the browser tab is hidden); at «Сдержанно» it plays one pass and settles on a still frame; at «Выключены» only the still frame is drawn.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "mockDropPreview": {
+      "behaviour": [
+        {
+          "text": "Mock only: picks what an outside drop carries — a compendium item, an item of your other character, someone else's item, an Item Piles pile, a class with advancement, a spell or an actor.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    }
+  },
+  "edits": {},
+  "renames": {}
+}

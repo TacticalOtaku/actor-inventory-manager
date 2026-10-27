@@ -12,6 +12,16 @@ export function isItemPilesActive() {
   return Boolean(globalThis.game?.modules?.get("item-piles")?.active);
 }
 
+/** Whether an actor is an Item Piles pile (its items are taken through the Item Piles window, not dragged out). */
+export function isItemPile(actor) {
+  if (!isItemPilesActive()) return false;
+  try {
+    return Boolean(globalThis.game.itempiles?.API?.isValidItemPile?.(actor));
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Compute total actor currency value using the Item Piles API
  * @param {Object} actor
@@ -53,6 +63,8 @@ export function computeActorCurrency(actor) {
         let primaryName = "GP";
 
         for (const curr of actorCurrencies) {
+          // Secondary currencies (Item Piles' SECONDARY_CURRENCIES) have no exchange rate and no gold value.
+          if (curr.secondary) continue;
           total += num(curr.quantity, 0) * num(curr.exchangeRate, 1);
           if (curr.primary) {
             const rawAbbr = curr.abbreviation || curr.name || "GP";
@@ -95,4 +107,19 @@ export function computeActorCurrency(actor) {
     formatted: `${formattedTotal} ${primaryName}`,
     customCurrencies: []
   };
+}
+
+/**
+ * Every currency Item Piles defines for the actor, zero amounts included (the purse shows them all).
+ * @param {Object} actor
+ * @returns {Object[]} empty when Item Piles is inactive or fails
+ */
+export function readPilesCurrencies(actor) {
+  if (!isItemPilesActive()) return [];
+  try {
+    return globalThis.game?.itempiles?.API?.getActorCurrencies(actor, { getAll: true }) ?? [];
+  } catch (err) {
+    LOG.warn("Item Piles currencies could not be read", err);
+    return [];
+  }
 }

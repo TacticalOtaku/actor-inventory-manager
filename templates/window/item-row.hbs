@@ -1,0 +1,38 @@
+<div class="aim-rowwrap" data-item-id="{{id}}" data-key="{{id}}">
+  <div class="aim-row {{#if selected}}is-selected{{/if}} {{#if equipped}}is-equipped{{/if}}" data-row {{#if @root.canEdit}}draggable="true"{{/if}} tabindex="0" aria-expanded="{{selected}}" {{#if (eq @root.inv.prefs.view "icons")}}data-tooltip="{{name}}"{{/if}}>
+    <button type="button" class="aim-tile-btn" data-action="useItem" aria-label="{{useLabel}}" data-tooltip="{{localize "AIM.window.inv.useShort"}}" {{#unless @root.canEdit}}disabled{{/unless}}>
+      <span class="aim-tile" data-rarity="{{rarity}}"><img src="{{img}}" alt="" loading="lazy">{{#if qtyBadge}}<span class="aim-qty-badge">{{quantity}}</span>{{/if}}</span>
+    </button>
+    <div class="aim-row-main">
+      <div class="aim-row-name">{{name}}</div>
+      <div class="aim-row-meta">
+        {{#if weightText}}<span>{{weightText}}</span>{{/if}}{{#if priceText}}<span>{{priceText}}</span>{{/if}}
+        {{#if (lookup @root.newItems id)}}<span class="aim-tag is-new">{{localize "AIM.trade.panel.new"}}</span>{{/if}}
+        {{#if attuneTag}}<span class="aim-tag is-att">{{attuneTag}}</span>{{/if}}
+        {{#each tags}}<span class="aim-tag">{{this}}</span>{{/each}}
+      </div>
+    </div>
+    {{#if showCharges}}
+    <span class="aim-charges" data-tooltip="{{chargesHint}}">
+      {{#if pips}}{{#each pips}}<button type="button" class="aim-pip {{#if spent}}is-spent{{/if}}" data-action="spendCharge" data-charge {{#unless @root.canEdit}}disabled{{/unless}} aria-label="{{label}}"></button>{{/each}}
+      {{else}}<button type="button" class="aim-charge-text" data-action="spendCharge" data-charge {{#unless @root.canEdit}}disabled{{/unless}}>{{charges.value}}/{{charges.max}}</button>{{/if}}
+    </span>
+    {{else}}
+    <span class="aim-qty">
+      {{#if @root.canEdit}}<button type="button" data-action="stepQty" data-step="-1" aria-label="{{localize "AIM.window.inv.less"}}">−</button>{{/if}}
+      <b>{{quantity}}</b>
+      {{#if @root.canEdit}}<button type="button" data-action="stepQty" data-step="1" aria-label="{{localize "AIM.window.inv.plus"}}">+</button>{{/if}}
+    </span>
+    {{/if}}
+    <div class="aim-row-act">
+      {{#with (lookup @root.offerRows id)}}<button type="button" class="aim-ibtn aim-mini aim-offer-btn" data-action="tradeOffer" {{#if disabled}}disabled{{/if}} aria-label="{{reason}}" data-tooltip="{{reason}}"><i class="fa-light fa-arrow-right-arrow-left"></i></button>{{/with}}
+      {{#if @root.canEdit}}
+      {{#if attuneable}}<button type="button" class="aim-ibtn aim-mini {{#if attuned}}is-on{{/if}}" data-action="attuneItem" aria-pressed="{{attuned}}" aria-label="{{attuneLabel}}" data-tooltip="{{attuneLabel}}"><i class="fa-light fa-sparkle"></i></button>{{/if}}
+      {{#if canEquip}}<button type="button" class="aim-ibtn aim-mini {{#if equipped}}is-on{{/if}}" data-action="equipItem" aria-pressed="{{equipped}}" aria-label="{{equipLabel}}" data-tooltip="{{equipLabel}}"><i class="fa-light fa-hand"></i></button>{{/if}}
+      {{/if}}
+      {{#if @root.canFavorite}}<button type="button" class="aim-ibtn aim-mini aim-star {{#if favorite}}is-on{{/if}}" data-action="toggleFavorite" aria-pressed="{{#if favorite}}true{{else}}false{{/if}}" aria-label="{{localize "AIM.window.favorites.star"}}" data-tooltip="{{localize "AIM.window.favorites.star"}}"><i class="fa-{{#if favorite}}solid{{else}}light{{/if}} fa-star"></i></button>{{/if}}
+      <button type="button" class="aim-ibtn aim-mini" data-action="itemMenu" aria-haspopup="menu" aria-label="{{localize "AIM.window.inv.more"}}" data-tooltip="{{localize "AIM.window.inv.more"}}"><i class="fa-light fa-ellipsis"></i></button>
+    </div>
+  </div>
+  {{#if detail}}<div class="aim-detail" data-detail>{{#with detail}}{{> "modules/actor-inventory-manager/templates/window/item-detail.hbs"}}{{/with}}</div>{{/if}}
+</div>

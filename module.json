@@ -1,8 +1,8 @@
 {
   "id": "actor-inventory-manager",
-  "title": "Actor Inventory Manager & Paperdoll",
-  "description": "RPG-style Actor Inventory Window with Paperdoll equipment slots, bidirectional rules enforcement with character sheets, and seamless Weighty Containers integration.",
-  "version": "1.9.1",
+  "title": "AIM: Actor Window",
+  "description": "A full actor window for D&D 5e: paperdoll, equipment rules, spells, features, effects and player trading, beside whatever sheet the actor uses.",
+  "version": "2.0.0",
   "compatibility": {
     "minimum": "14",
     "verified": "14.367",
@@ -49,14 +49,20 @@
     "scripts/main.js"
   ],
   "styles": [
-    "styles/tactile/tokens.css",
-    "styles/tactile/components.css",
-    "styles/aim/window.css",
-    "styles/aim/passport.css",
-    "styles/aim/paperdoll.css",
-    "styles/aim/inventory.css",
-    "styles/aim/drawers.css",
-    "styles/aim/editors.css"
+    "styles/theme/tokens.css",
+    "styles/window/frame.css",
+    "styles/window/rail.css",
+    "styles/window/header.css",
+    "styles/window/drawer.css",
+    "styles/window/inventory.css",
+    "styles/window/doll.css",
+    "styles/window/spells.css",
+    "styles/window/features.css",
+    "styles/window/effects.css",
+    "styles/window/overview.css",
+    "styles/window/trade.css",
+    "styles/window/tooltips.css",
+    "styles/window/editor.css"
   ],
   "languages": [
     {
@@ -72,6 +78,6 @@
   ],
   "url": "https://github.com/TacticalOtaku/actor-inventory-manager",
   "manifest": "https://raw.githubusercontent.com/TacticalOtaku/actor-inventory-manager/main/module.json",
-  "download": "https://github.com/TacticalOtaku/actor-inventory-manager/releases/download/v1.9.1/actor-inventory-manager-v1.9.1.zip",
+  "download": "https://github.com/TacticalOtaku/actor-inventory-manager/releases/download/v2.0.0/actor-inventory-manager-v2.0.0.zip",
   "socket": true
 }

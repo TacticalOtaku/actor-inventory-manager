@@ -1,0 +1,26 @@
+{{#*inline "aimCheck"}}<button type="button" class="aim-check" data-action="{{action}}" data-key="{{key}}" {{#unless @root.canEdit}}disabled{{/unless}} {{#if draggable}}draggable="true" data-fav-type="{{kind}}" data-fav-key="{{key}}"{{/if}} aria-label="{{label}} {{totalText}}"><span class="aim-prof" data-mark="{{mark}}" aria-hidden="true"></span>{{#if abilityAbbr}}<span class="aim-check-ab">{{abilityAbbr}}</span>{{/if}}<span class="aim-check-name">{{label}}</span><span class="aim-check-bonus">{{totalText}}</span></button>{{/inline}}
+{{#*inline "aimCardHead"}}<h3>{{title}}{{#if @root.canEdit}}<button type="button" class="aim-ibtn aim-mini aim-card-cfg" data-action="cardConfig" data-card="{{card}}" aria-label="{{label}}" data-tooltip="{{label}}"><i class="fa-light fa-gear"></i></button>{{/if}}</h3>{{/inline}}
+<div class="aim-overview">
+  <section class="aim-card" data-card="skills">
+    {{> aimCardHead title=(localize "AIM.window.overview.skills") card="skills" label=(localize "AIM.window.overview.configure.skills")}}
+    {{#each overview.skills}}{{> aimCheck action="rollSkill"}}{{/each}}
+  </section>
+  <section class="aim-card" data-card="saves">
+    {{> aimCardHead title=(localize "AIM.window.overview.saves") card="saves" label=(localize "AIM.window.overview.configure.saves")}}
+    {{#each overview.saves}}{{> aimCheck action="rollSave" abilityAbbr=""}}{{/each}}
+  </section>
+  {{#if overview.tools}}
+  <section class="aim-card" data-card="tools">
+    {{> aimCardHead title=(localize "AIM.window.overview.tools") card="tools" label=(localize "AIM.window.overview.configure.tools")}}
+    {{#each overview.tools}}{{> aimCheck action="rollTool"}}{{else}}<p class="aim-hint">{{localize "AIM.window.overview.noTools"}}</p>{{/each}}
+  </section>
+  {{/if}}
+  <section class="aim-card" data-card="defenses">
+    {{> aimCardHead title=(localize "AIM.window.overview.defensesTitle") card="defenses" label=(localize "AIM.window.overview.configure.defenses")}}
+    {{#each overview.defenses}}<div class="aim-kv"><span>{{label}}</span><b {{#if none}}class="is-none"{{/if}}>{{#each chips}}<span class="aim-dmg" data-dmg="{{key}}" tabindex="0" style="--dmg: {{color}}">{{label}}</span>{{/each}}{{text}}</b></div>{{/each}}
+  </section>
+  <section class="aim-card" data-card="senses">
+    {{> aimCardHead title=(localize "AIM.window.overview.sensesTitle") card="senses" label=(localize "AIM.window.overview.configure.senses")}}
+    {{#each overview.senses}}<div class="aim-kv"><span>{{label}}</span><b {{#if none}}class="is-none"{{/if}}>{{text}}</b></div>{{/each}}
+  </section>
+</div>

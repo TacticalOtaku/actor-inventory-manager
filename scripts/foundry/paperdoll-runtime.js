@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../constants.js";
 import { configurePaperdollRuntime, formatTemplate } from "../core/paperdoll-runtime.js";
+import { readVehicleType } from "../integrations/dnd5e.js";
 import { LOG } from "./logger.js";
 
 /** Localized string, or the fallback when the key has no translation. */
@@ -27,6 +28,7 @@ export function registerFoundryPaperdollRuntime() {
       } catch {
         return true;
       }
-    }
+    },
+    vehicleType: readVehicleType
   });
 }

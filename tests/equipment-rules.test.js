@@ -106,4 +106,11 @@ describe("auto-reconcile setting", () => {
     configurePaperdollRuntime({ autoReconcileSlots: () => false });
     assert.equal(getActorEquippedMap(actor).size, 0);
   });
+
+  it("leaves an item in a 1.9 attunement or quick slot unplaced (ADR 0005)", () => {
+    const actor = makeActor([weapon("dagger", [], true, "quick1"), weapon("wand", [], true, "attunement2"), weapon("longsword", [], true)]);
+    const map = getActorEquippedMap(actor);
+    assert.equal(map.get("mainHand")?.id, "longsword");
+    assert.deepEqual([...map.values()].map((item) => item.id), ["longsword"]);
+  });
 });

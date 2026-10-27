@@ -1,5 +1,50 @@
 # Changelog
 
+## 2.0.0
+
+**Renamed from Actor Inventory Manager & Paperdoll: the module is now AIM: Actor Window.** Its id stays
+`actor-inventory-manager`, so updating keeps the world's data. **Back up your world before updating.**
+
+### Added
+- The actor window replaces the inventory window: one window per actor beside its sheet, with a rail and tabs for
+  overview, equipment, spells, features or actions, effects and biography. It picks its layout from its own width,
+  and observers get a read-only window.
+- The rail: hit points with typed entry (−7, +5, t8), hit dice, spell slots, AC, initiative, speed, effects,
+  inspiration, exhaustion, concentration, rests and dnd5e favorites; each block can be hidden.
+- Overview with skills, saves, tools, defenses and senses; the biography in dnd5e's own fields.
+- Spells tab with slot gems, preparation and casting through dnd5e; features by origin, NPC and vehicle actions by
+  cost; effects with the conditions grid.
+- The paperdoll gains figures for beasts, wagons, ships and airships, and a GM preset editor with live preview.
+- Tooltip cards for items, spells, effects, rules and damage types, with nesting and pinning; damage types play a
+  scene in their colour, and the window's reactions (damage, healing, temporary HP, death saves, spent slots, the
+  long rest) burst with particles.
+- NPC windows with challenge rating and legendary actions; vehicle windows with thresholds, cargo in tons, crew and
+  passengers.
+- Items, folders and effects dropped from outside the actor go through its sheet, so dnd5e's drop rules hold; items
+  from another owned actor move, someone else's are refused.
+- Item, activity and effect menus carry dnd5e's entries and fire its context-menu hooks, so other modules' entries
+  appear.
+- Night, Parchment and Auto themes, six accents, two densities and three motion levels.
+
+### Changed
+- Trading moved into a panel beside the inventory in the equipment tab.
+- The sheet header button reads «AIM»; the key binding is «Open the actor window».
+
+### Migration
+- The first start of 2.0 moves the world's 1.9 data once, on the GM: quick-slot items become favorites, an actor's
+  own doll becomes a world preset «Own doll: {actor}», world templates become presets, open trades are cancelled with
+  a chat line, and each device's theme and accent move to its user. The GM gets one whispered report; «Run the
+  migration again» in the module settings repeats it. Nothing 1.9 wrote is deleted, so the world can go back to 1.9.x.
+
+### Fixed
+- Colours from SC - Item Rarity Colors reach the window. Before, the module looked for settings SC does not have and
+  always showed its own colours: rarity colours, the rarity glow and spell-school colours (including SC's per-level
+  variants) now come from what the GM set in SC.
+- With Item Piles, the purse total leaves out secondary currencies. Before, each one counted as one gold piece,
+  since Item Piles gives them no exchange rate.
+- With Item Piles active but no currencies set up for the system (Item Piles 3.3 needs the «Item Piles: D&D 5e»
+  module for dnd5e), coin trades say what is missing instead of a generic Item Piles error.
+
 ## 1.9.1
 
 ### Fixed

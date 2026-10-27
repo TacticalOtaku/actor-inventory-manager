@@ -2,7 +2,7 @@
 // Actor Inventory Manager - Equipment Rules & Validation Engine
 // ─────────────────────────────────────────────────────────
 
-import { SLOTS } from "../constants.js";
+import { ENFORCEMENT_MODES, SLOTS } from "../constants.js";
 import { isSupportedActor } from "./actor-scope.js";
 import {
   classifyItem,
@@ -18,6 +18,7 @@ import {
 import { getActorSlots } from "./paperdoll-templates.js";
 import { getPaperdollRuntime } from "./paperdoll-runtime.js";
 import { slotRegistry } from "./slot-definitions.js";
+import { isLegacyNonSlot } from "./migration.js";
 
 /**
  * Result of equipment validation
@@ -61,8 +62,7 @@ function ruleMessage(key, data = {}) {
  * @returns {Array<Object>}
  */
 function actorSlotDefinitions(actor) {
-  const slots = actor ? getActorSlots(actor) : null;
-  return Array.isArray(slots) && slots.length > 0 ? slots : slotRegistry.getAll();
+  return actor ? getActorSlots(actor) ?? [] : slotRegistry.getAll();
 }
 
 function slotDisplayName(actor, slotId) {
@@ -116,7 +116,8 @@ export function getActorEquippedMap(actor) {
     const slotId = getItemAssignedSlot(item);
     if (slotId && validSlotIdSet.has(slotId) && !slotMap.has(slotId)) {
       slotMap.set(slotId, item);
-    } else {
+    } else if (!isLegacyNonSlot(slotId)) {
+      // A 1.9 attunement or quick slot is no slot in 2.0, and auto-placement leaves the item where it is (ADR 0005).
       unassigned.push(item);
     }
   }
@@ -126,8 +127,9 @@ export function getActorEquippedMap(actor) {
   for (const item of unassigned) {
     for (const slotId of getValidSlotsForItem(item, actor)) {
       if (slotMap.has(slotId)) continue;
-      // An off hand is not available while a two-handed weapon is held.
+      // An off hand is not available while a two-handed weapon is held, nor a main hand for one while an off hand is busy.
       if (layout.offSlotIds.includes(slotId) && twoHandedWeaponIn(slotMap, layout)) continue;
+      if (layout.mainSlotIds.includes(slotId) && isTwoHandedWeapon(item) && layout.offSlotIds.some(id => slotMap.has(id))) continue;
       slotMap.set(slotId, item);
       break;
     }
@@ -352,4 +354,32 @@ export function findEquipSlot(actor, item, slotMap = getActorEquippedMap(actor))
     ?? candidates.find(slotId => swapAllowed(slotId) && passes(slotId))
     ?? candidates.find(isFree)
     ?? candidates[0];
+}
+
+/**
+ * Validate an equip for the world's enforcement mode.
+ * In auto-swap mode a rule failure caused by another item (a two-handed weapon, a second body armor, a second
+ * shield) swaps that item out instead of refusing; the rules are re-run without it until they pass.
+ * @param {Object} actor
+ * @param {Object} item
+ * @param {string} targetSlotId
+ * @param {Map<string, Object>} slotMap
+ * @param {string} mode  block | auto_swap | warn
+ * @returns {ValidationResult}
+ */
+export function resolveEquipValidation(actor, item, targetSlotId, slotMap, mode) {
+  let result = equipmentRuleEngine.validateEquip(actor, item, targetSlotId, { slotMap });
+  if (result.valid || mode !== ENFORCEMENT_MODES.AUTO_SWAP) return result;
+
+  const displaced = [];
+  let remaining = slotMap;
+  for (let attempt = 0; attempt < 5 && !result.valid && result.conflictItem; attempt++) {
+    const conflict = result.conflictItem;
+    displaced.push(conflict);
+    remaining = new Map([...remaining].filter(([, equipped]) => equipped.id !== conflict.id));
+    result = equipmentRuleEngine.validateEquip(actor, item, targetSlotId, { slotMap: remaining });
+  }
+  if (!result.valid) return result;
+  result.autoSwapItems = [...displaced, ...(result.autoSwapItems ?? [])];
+  return result;
 }

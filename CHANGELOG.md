@@ -3,6 +3,9 @@
 ## Unreleased
 
 ### Fixed
+- Button labels use the window's font: Foundry gave them Signika, whose Cyrillic stood out (the doll's slot names).
+- The settings switches no longer show Foundry's checkbox square in the off position.
+- With «Decorative fonts» off, headings use the system interface font as well.
 - SC - Item Rarity Colors styles the window's item and spell rows through its own API (3.0.18+), as it styles an
   actor sheet's inventory: the rarity gradient, title and detail colours, the icon border and effects.
 - The window's rarity accent (tiles, tooltip frames, the inspector) takes the colour SC shows: the icon border, or

@@ -1096,6 +1096,26 @@ button.cs-stat:active { transform: scale(0.95); }
 
 /* settings: segmented controls share the width */
 .cs-drawer .cs-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.cs-drawer .cs-seg button:disabled { opacity: 0.4; cursor: not-allowed; }
+.cs-hint { margin: 0; font-size: 11.5px; line-height: 1.4; color: var(--text-3); }
+.cs-hint.is-pending { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); color: var(--warn); }
+.cs-hint.is-pending[hidden] { display: none; }
+.cs-toggle small { margin-left: 6px; font-size: 11px; color: var(--text-3); white-space: nowrap; }
+.cs-toggle.is-off { cursor: default; color: var(--text-3); }
+.cs-toggle input:disabled { opacity: 0.45; cursor: default; }
+.cs-drawer-foot { display: grid; gap: var(--s2); padding-top: var(--s3); border-top: 1px solid var(--line); }
+.cs-drawer-foot > .cs-btn { justify-self: start; }
+.cs-reset-ask { display: flex; justify-content: flex-end; gap: var(--s2); }
+.cs-root[data-fonts="system"] { --font-display: var(--font-ui); }
+/* «Сдержанно»: ambient loops stop, reactive effects and hover stay (#9) */
+.cs-root[data-motion="reduced"] .cs-hp-bar .temp::before, .cs-root[data-motion="reduced"] .cs-hp-bar .fill, .cs-root[data-motion="reduced"] .cs-hp-bar .fill::after,
+.cs-root[data-motion="reduced"]::after, .cs-root[data-motion="reduced"] .cs-hpcard.has-shield:not(.is-shield-up),
+.cs-root[data-motion="reduced"] .cs-chip[data-ui="inspirationToggle"].is-on .cs-ico, .cs-root[data-motion="reduced"] .cs-chip::after,
+.cs-root[data-motion="reduced"] .cs-conc [data-conc-roll] > .cs-ico:first-child, .cs-root[data-motion="reduced"] .cs-wave,
+.cs-root[data-motion="reduced"] .cs-level.is-near, .cs-root[data-motion="reduced"] .cs-level.is-ready, .cs-root[data-motion="reduced"] .cs-level.is-ready::after,
+.cs-root[data-motion="reduced"] [data-ui="tradeButton"].is-invited::after { animation: none !important; }
+.cs-root[data-motion="reduced"][data-vital="down"] .cs-death { animation: cs-pop var(--d-slow) var(--ease-snap) !important; }
+.cs-root[data-motion="reduced"] .cs-bubble { display: none; }
 
 /* trade: the content steps aside so the offer buttons on rows stay reachable */
 .cs-root { transition: width var(--d-slow) var(--ease-settle), --accent 600ms var(--ease-settle), grid-template-columns var(--d-slow) var(--ease-settle); }
@@ -1383,6 +1403,8 @@ button.cs-stat:active { transform: scale(0.95); }
   <label class="mock-xp" data-ui="mockTradePreview">Обмен <select data-mock-trade aria-label="Сценарий обмена"><option value="">обычный</option><option value="invite">вас пригласили</option><option value="cancel">партнёр отменил</option><option value="recovery">сбой у мастера</option><option value="preparing">прервана подготовка</option></select></label>
   <label class="mock-xp"><input type="checkbox" data-mock-piles> Item Piles</label>
   <label class="mock-xp"><input type="checkbox" data-mock-nogm> Мастер не в сети</label>
+  <label class="mock-xp" data-ui="mockMotionCap">Ограничение <select data-mock-cap aria-label="Ограничение анимаций"><option value="">нет</option><option value="reduce">уменьшение движения</option><option value="perf">низкая производительность</option></select></label>
+  <label class="mock-xp"><input type="checkbox" data-mock-nomagic> Без магии</label>
   <label class="mock-xp" data-ui="mockXpPreview">Опыт <input type="range" min="0" max="100" value="72" data-mock-xp aria-label="Прогресс к следующему уровню"></label>
 </div>
 
@@ -1679,16 +1701,18 @@ button.cs-stat:active { transform: scale(0.95); }
         <div class="cs-seg is-text" role="group" data-ui="themeSwitch" data-set="theme">
           <button type="button" data-value="night" aria-pressed="true">Ночь</button>
           <button type="button" data-value="parchment" aria-pressed="false">Пергамент</button>
+          <button type="button" data-value="auto" aria-pressed="false">Авто</button>
         </div>
+        <p class="cs-hint" data-theme-hint hidden></p>
       </div>
       <div class="cs-field"><span>Акцент</span>
         <div class="cs-swatches" data-ui="accentSwatch" data-accent>
-          <button type="button" class="cs-swatch" style="--sw:#d4a55a" data-value="#d4a55a" aria-label="Латунь" aria-pressed="true"></button>
-          <button type="button" class="cs-swatch" style="--sw:#e2734a" data-value="#e2734a" aria-label="Угли" aria-pressed="false"></button>
-          <button type="button" class="cs-swatch" style="--sw:#9b7bff" data-value="#9b7bff" aria-label="Аркана" aria-pressed="false"></button>
-          <button type="button" class="cs-swatch" style="--sw:#5fbf8f" data-value="#5fbf8f" aria-label="Лес" aria-pressed="false"></button>
-          <button type="button" class="cs-swatch" style="--sw:#6fb7e8" data-value="#6fb7e8" aria-label="Иней" aria-pressed="false"></button>
-          <button type="button" class="cs-swatch" style="--sw:#e07aa0" data-value="#e07aa0" aria-label="Роза" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:#d4a55a" data-value="#d4a55a" aria-label="Латунь" title="Латунь" aria-pressed="true"></button>
+          <button type="button" class="cs-swatch" style="--sw:#e2734a" data-value="#e2734a" aria-label="Угли" title="Угли" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:#9b7bff" data-value="#9b7bff" aria-label="Аркана" title="Аркана" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:#5fbf8f" data-value="#5fbf8f" aria-label="Лес" title="Лес" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:#6fb7e8" data-value="#6fb7e8" aria-label="Иней" title="Иней" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:#e07aa0" data-value="#e07aa0" aria-label="Роза" title="Роза" aria-pressed="false"></button>
         </div>
       </div>
       <div class="cs-field"><span>Плотность</span>
@@ -1698,26 +1722,21 @@ button.cs-stat:active { transform: scale(0.95); }
         </div>
       </div>
       <div class="cs-field"><span>Анимации</span>
-        <div class="cs-seg is-text" role="group" data-ui="motionSwitch" data-set="motion">
+        <div class="cs-seg is-text" role="group" data-ui="motionSwitch" data-motion-set>
           <button type="button" data-value="full" aria-pressed="true">Все</button>
+          <button type="button" data-value="reduced" aria-pressed="false">Сдержанно</button>
           <button type="button" data-value="off" aria-pressed="false">Выключены</button>
         </div>
+        <p class="cs-hint" data-motion-hint></p>
       </div>
-      <div class="cs-field" data-ui="railWidgetToggle"><span>Боковая колонка</span>
-        <label class="cs-toggle">Кости хитов<input type="checkbox" checked data-widget="hitDiceTrack"></label>
-        <label class="cs-toggle">Ячейки заклинаний<input type="checkbox" checked data-widget="slotRunes"></label>
-        <label class="cs-toggle">Характеристики КД, иниц., скорость<input type="checkbox" checked data-widget="vitalStat"></label>
-        <label class="cs-toggle">Сл и атака заклинаний<input type="checkbox" checked data-widget="spellcastingStrip"></label>
-        <label class="cs-toggle">Эффекты<input type="checkbox" checked data-widget="effectsList"></label>
-        <label class="cs-toggle">Вдохновение и истощение<input type="checkbox" checked data-widget="chips"></label>
-        <label class="cs-toggle">Кнопки отдыха<input type="checkbox" checked data-widget="restBar"></label>
-        <label class="cs-toggle">Избранное<input type="checkbox" checked data-widget="favoritesList"></label>
+      <div class="cs-field" data-ui="fontsToggle"><span>Шрифты</span>
+        <label class="cs-toggle">Декоративные шрифты<input type="checkbox" checked data-fonts-toggle></label>
+        <div class="cs-hint is-pending" data-fonts-pending hidden><span>Применится после перезагрузки.</span><button type="button" class="cs-btn" data-fonts-reload>Перезагрузить</button></div>
+        <p class="cs-hint">Анимации и шрифты хранятся на этом устройстве, остальное следует за вами.</p>
       </div>
-      <div class="cs-field" data-ui="tabVisibilityToggle"><span>Вкладки</span>
-        <label class="cs-toggle">Обзор<input type="checkbox" checked data-tab-toggle="overview"></label>
-        <label class="cs-toggle">Умения<input type="checkbox" checked data-tab-toggle="features"></label>
-        <label class="cs-toggle">Биография<input type="checkbox" checked data-tab-toggle="biography"></label>
-      </div>
+      <div class="cs-field" data-ui="railWidgetToggle"><span>Боковая колонка</span><div data-rail-toggles></div></div>
+      <div class="cs-field" data-ui="tabVisibilityToggle"><span>Вкладки</span><div data-tab-toggles></div></div>
+      <div class="cs-drawer-foot" data-ui="settingsResetButton"></div>
     </div>
   </div>
 </section>
@@ -1729,7 +1748,8 @@ button.cs-stat:active { transform: scale(0.95); }
   const $ = (s, el = root) => el.querySelector(s);
   const $$ = (s, el = root) => [...el.querySelectorAll(s)];
   const icon = (id) => `<svg class="cs-ico"><use href="#i-${id}"/></svg>`;
-  const motionOn = () => root.dataset.motion !== "off" && !matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const motionOn = () => root.dataset.motion !== "off";
+  const ambientOn = () => root.dataset.motion === "full";
   const SETTLE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
   /* ═══════════ Data, shaped like a dnd5e 5.3.3 actor ═══════════ */
@@ -1878,6 +1898,9 @@ button.cs-stat:active { transform: scale(0.95); }
     piles: false, gmOnline: true, // mock-only: Item Piles active, an active GM connected
     favorites: ["firebolt", "fireball", "misty", "flare", "potion", "shield", "skill:Магия", "slots:3", "effect:mage-armor"],
     conds: new Set(),
+    // Window settings (#17): theme, accent, density, rail and tabs follow the user; motion and fonts stay on this device.
+    theme: "night", motion: "full", fonts: true, fontsApplied: true, hiddenBlocks: new Set(), hiddenTabs: new Set(), askReset: false,
+    motionCapMock: "", noMagic: false, // mock-only: a simulated motion cap and a character without spells
     effOpen: null,
     conc: null,
     exh: 0,
@@ -1950,7 +1973,7 @@ button.cs-stat:active { transform: scale(0.95); }
   }
   // Sparks flying out of an element in a given colour.
   function burst(from, color, n = 10) {
-    if (!motionOn() || !from) return;
+    if (!ambientOn() || !from) return; // particles: «Все» only
     const a = from.getBoundingClientRect(), box = root.getBoundingClientRect();
     if (!a.width) return;
     const cx = a.left - box.left + a.width / 2, cy = a.top - box.top + a.height / 2;
@@ -2841,6 +2864,82 @@ button.cs-stat:active { transform: scale(0.95); }
     $(".cs-readonly-badge").style.display = ro ? "inline-flex" : "";
   }
 
+  /* ═══════════ Window settings (#17) ═══════════ */
+  const MOTION = ["off", "reduced", "full"];
+  const MOTION_ABOUT = { full: "Отклик на действия и фоновые эффекты.", reduced: "Только отклик на действия, без фоновых циклов и частиц.", off: "Только короткие затухания." };
+  const RAIL_BLOCKS = [["hitDiceTrack", "Кости хитов"], ["slotRunes", "Ячейки заклинаний", "magic"], ["vitalStat", "КД, инициатива, скорость"], ["spellcastingStrip", "Сл и атака заклинаний", "magic"], ["effectsList", "Эффекты"], ["chips", "Вдохновение и истощение"], ["restBar", "Кнопки отдыха"], ["favoritesList", "Избранное"]];
+  const SHEET_TABS = [["overview", "Обзор"], ["equipment", "Снаряжение", "always"], ["spells", "Заклинания", "magic"], ["features", "Умения"], ["effects", "Эффекты"], ["biography", "Биография"]];
+  const hasPart = (need) => need !== "magic" || !S.noMagic;
+  const schemeLight = matchMedia("(prefers-color-scheme: light)");
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  // The level is capped from above: reduced motion in the OS allows «Выключены» only, Foundry's performance-low «Сдержанно».
+  function motionCap() {
+    if (S.motionCapMock === "reduce" || reduceMotion.matches) return ["off", "Ограничено: в системе включено уменьшение движения."];
+    if (S.motionCapMock === "perf" || document.body.classList.contains("performance-low")) return ["reduced", "Ограничено: Foundry работает в режиме низкой производительности."];
+    return ["full", ""];
+  }
+  function applyMotion() {
+    const [cap, why] = motionCap();
+    const level = MOTION[Math.min(MOTION.indexOf(S.motion), MOTION.indexOf(cap))];
+    root.dataset.motion = level;
+    $$("[data-motion-set] button").forEach((b) => { b.setAttribute("aria-pressed", b.dataset.value === level); b.disabled = MOTION.indexOf(b.dataset.value) > MOTION.indexOf(cap); });
+    const chosen = $(`[data-motion-set] [data-value="${S.motion}"]`).textContent;
+    $("[data-motion-hint]").textContent = level === S.motion ? `${why ? why + " " : ""}${MOTION_ABOUT[level]}` : `${why} Ваш выбор «${chosen}» вернётся, когда ограничение снимут.`;
+  }
+  // «Авто» follows Foundry's colour scheme for applications, and the OS when Foundry is set to follow it.
+  const themeNow = () => S.theme === "auto" ? (schemeLight.matches ? "parchment" : "night") : S.theme;
+  function applyTheme() {
+    const v = themeNow();
+    $$('[data-set="theme"] button').forEach((b) => b.setAttribute("aria-pressed", b.dataset.value === S.theme));
+    const hint = $("[data-theme-hint]");
+    hint.hidden = S.theme !== "auto";
+    hint.textContent = `Сейчас: ${v === "night" ? "Ночь" : "Пергамент"}, по цветовой схеме Foundry.`;
+    if (root.dataset.theme === v) return;
+    // The transition callback reads the theme again, so a quick second change is not overwritten.
+    if (document.startViewTransition && motionOn()) document.startViewTransition(() => { root.dataset.theme = themeNow(); });
+    else root.dataset.theme = v;
+  }
+  // useWebFonts needs a reload: the toggle only marks the change, the fonts swap after «Перезагрузить».
+  function applyFonts() {
+    $("[data-fonts-toggle]").checked = S.fonts;
+    $("[data-fonts-pending]").hidden = S.fonts === S.fontsApplied;
+    if (S.fontsApplied) delete root.dataset.fonts; else root.dataset.fonts = "system";
+  }
+  function toggleRow(label, attr, key, hidden, need) {
+    const always = need === "always", absent = !hasPart(need);
+    const note = always ? "всегда" : absent ? "нет у персонажа" : "";
+    return `<label class="cs-toggle${always || absent ? " is-off" : ""}"><span>${label}${note ? `<small>${note}</small>` : ""}</span><input type="checkbox" ${attr}="${key}"${!hidden && !absent ? " checked" : ""}${always || absent ? " disabled" : ""}></label>`;
+  }
+  function renderSettingsLists() {
+    $("[data-rail-toggles]").innerHTML = toggleRow("Хиты", "data-widget", "hp", false, "always") + RAIL_BLOCKS.map(([k, l, need]) => toggleRow(l, "data-widget", k, S.hiddenBlocks.has(k), need)).join("");
+    $("[data-tab-toggles]").innerHTML = SHEET_TABS.map(([k, l, need]) => toggleRow(l, "data-tab-toggle", k, S.hiddenTabs.has(k), need)).join("");
+  }
+  // A rail block or tab shows when the user keeps it and the character has it; a hidden open tab falls back to Снаряжение.
+  function applyVisibility() {
+    const blockOf = (k) => k === "chips" ? $(".cs-chips") : k === "vitalStat" ? $(".cs-stats") : $(`.cs-rail [data-ui="${k}"]`);
+    flip($(".cs-rail"), "[data-flip], .cs-stat", () => RAIL_BLOCKS.forEach(([k, , need]) => { blockOf(k).style.display = S.hiddenBlocks.has(k) || !hasPart(need) ? "none" : ""; }));
+    flip($(".cs-tabs"), ".cs-tab", () => SHEET_TABS.forEach(([k, , need]) => { $(`.cs-tab[data-tab="${k}"]`).hidden = S.hiddenTabs.has(k) || !hasPart(need); }));
+    if ($(`.cs-tab[data-tab="${S.tab}"]`).hidden) setTab("equipment");
+    requestAnimationFrame(moveInk);
+  }
+  function renderReset() {
+    $("[data-ui=settingsResetButton]").innerHTML = S.askReset
+      ? `<p class="cs-hint">Вернуть тему, акцент, плотность, анимации, шрифты, колонку и вкладки к значениям по умолчанию?</p><div class="cs-reset-ask"><button type="button" class="cs-btn" data-settings-reset-no>Отмена</button><button type="button" class="cs-btn is-danger" data-settings-reset-yes>Сбросить</button></div>`
+      : `<button type="button" class="cs-btn" data-settings-reset>Сбросить настройки окна</button>`;
+  }
+  function resetSettings() {
+    Object.assign(S, { theme: "night", motion: "full", fonts: true, askReset: false });
+    S.hiddenBlocks.clear(); S.hiddenTabs.clear();
+    root.dataset.density = "comfortable";
+    $$('[data-set="density"] button').forEach((b) => b.setAttribute("aria-pressed", b.dataset.value === "comfortable"));
+    root.style.removeProperty("--accent");
+    $$("[data-accent] button").forEach((b, i) => b.setAttribute("aria-pressed", i === 0));
+    applyTheme(); applyMotion(); applyFonts(); renderSettingsLists(); applyVisibility(); renderReset();
+  }
+  function applySettings() { applyTheme(); applyMotion(); applyFonts(); renderSettingsLists(); renderReset(); }
+  schemeLight.addEventListener("change", applyTheme);
+  reduceMotion.addEventListener("change", applyMotion);
+
   /* ═══════════ Events ═══════════ */
   // × on a slot, a slotless item or a socket acts before the button around it.
   root.addEventListener("click", (e) => {
@@ -2965,10 +3064,14 @@ button.cs-stat:active { transform: scale(0.95); }
     if (t.matches("[data-eff-add]")) return setTab("effects");
     if (t.matches(".cs-effect")) { const k = `${t.dataset.effWhere}:${t.dataset.effect}`; S.effOpen = S.effOpen === k ? null : k; t.classList.toggle("is-open", S.effOpen === k); t.setAttribute("aria-expanded", S.effOpen === k); $$(".cs-effect").forEach((r) => { const on = `${r.dataset.effWhere}:${r.dataset.effect}` === S.effOpen; r.classList.toggle("is-open", on); r.nextElementSibling?.classList.toggle("is-open", on); }); return; }
     if (t.matches(".cs-row")) return select(t.dataset.row);
-    if (t.closest("[data-set]") && t.dataset.value) { const k = t.closest("[data-set]").dataset.set; const v = t.dataset.value;
-      if (k === "theme" && document.startViewTransition && motionOn()) document.startViewTransition(() => { root.dataset.theme = v; });
-      else root.dataset[k] = v; t.parentElement.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b === t)); return; }
+    if (t.closest("[data-motion-set]") && t.dataset.value) { S.motion = t.dataset.value; return applyMotion(); }
+    if (t.closest('[data-set="theme"]') && t.dataset.value) { S.theme = t.dataset.value; return applyTheme(); }
+    if (t.closest("[data-set]") && t.dataset.value) { root.dataset[t.closest("[data-set]").dataset.set] = t.dataset.value; t.parentElement.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b === t)); return; }
     if (t.closest("[data-accent]")) { root.style.setProperty("--accent", t.dataset.value); $$("[data-accent] button").forEach((b) => b.setAttribute("aria-pressed", b === t)); return; }
+    if (t.matches("[data-fonts-reload]")) { S.fontsApplied = S.fonts; applyFonts(); return chip(t, "Мок: окно перезагружено"); }
+    if (t.matches("[data-settings-reset]")) { S.askReset = true; return renderReset(); }
+    if (t.matches("[data-settings-reset-no]")) { S.askReset = false; return renderReset(); }
+    if (t.matches("[data-settings-reset-yes]")) return resetSettings();
   });
   root.addEventListener("contextmenu", (e) => {
     const eff = e.target.closest(".cs-effect");
@@ -3030,20 +3133,10 @@ button.cs-stat:active { transform: scale(0.95); }
       applyRole();
       return;
     }
-    const w = e.target.dataset.widget;
-    if (w) {
-      flip($(".cs-rail"), "[data-flip], .cs-stat", () => {
-        const els = w === "chips" ? [$(".cs-chips")] : w === "vitalStat" ? [$(".cs-stats")] : [$(`[data-ui="${w}"]`)];
-        els.forEach((el) => { el.style.display = e.target.checked ? "" : "none"; });
-      });
-    }
-    const tt = e.target.dataset.tabToggle;
-    if (tt) {
-      const tab = $(`.cs-tab[data-tab="${tt}"]`);
-      flip($(".cs-tabs"), ".cs-tab", () => { tab.hidden = !e.target.checked; });
-      if (!e.target.checked && S.tab === tt) setTab("equipment");
-      requestAnimationFrame(moveInk);
-    }
+    const w = e.target.dataset.widget, tt = e.target.dataset.tabToggle;
+    if (w) { S.hiddenBlocks[e.target.checked ? "delete" : "add"](w); applyVisibility(); }
+    if (tt) { S.hiddenTabs[e.target.checked ? "delete" : "add"](tt); applyVisibility(); }
+    if (e.target.matches("[data-fonts-toggle]")) { S.fonts = e.target.checked; applyFonts(); }
   });
 
   /* tabs lift off the content once it scrolls */
@@ -3238,7 +3331,7 @@ button.cs-stat:active { transform: scale(0.95); }
       featuresTab: "features", featureRow: "features", usesTrack: "features", biographyTab: "biography", characteristicsCard: "biography", personalityCard: "biography", biographyEditor: "biography", featureUseButton: "features", featureFilterChips: "features", effectsTab: "effects", conditionGrid: "effects", addEffectButton: "effects",
       equipmentTab: "equipment", paperdoll: "equipment", dollSlot: "equipment", itemRow: "equipment", equipButton: "equipment", inventoryToolbar: "equipment",
       currencyBar: "equipment", restBar: "equipment", tradeButton: "equipment", dollHeader: "equipment", dollPresetSelect: "equipment", dollPresetEdit: "equipment", extraSlots: "equipment", attunementSocket: "equipment", encumbranceMeter: "equipment", attunementTrack: "equipment", dollToggle: "equipment", addItemButton: "equipment" };
-    root.classList.toggle("is-settings", ["settingsDrawer", "themeSwitch", "accentSwatch", "densitySwitch", "motionSwitch", "railWidgetToggle", "tabVisibilityToggle"].includes(id));
+    root.classList.toggle("is-settings", ["settingsDrawer", "themeSwitch", "accentSwatch", "densitySwitch", "motionSwitch", "fontsToggle", "railWidgetToggle", "tabVisibilityToggle", "settingsResetButton"].includes(id));
     if (tabOf[id]) setTab(tabOf[id]);
     if (id === "deathSaves" && S.hp > 0) { S.hp = 0; S.temp = 0; renderVitals(-1); }
     if (id === "concentrationBadge" && !S.conc) { S.conc = "detect"; renderVitals(); }
@@ -3262,7 +3355,7 @@ button.cs-stat:active { transform: scale(0.95); }
   renderAbilities(); renderOverview(); renderLists(); renderVitals(); renderLevel();
   /* idle twinkle: a random intact rune glints every couple of seconds */
   setInterval(() => {
-    if (!motionOn() || document.hidden) return;
+    if (!ambientOn() || document.hidden) return;
     const lit = $$(".cs-rune:not(.is-spent), .cs-slotpip:not(.is-spent)").filter((e) => e.offsetParent);
     if (lit.length) pulse(lit[Math.floor(Math.random() * lit.length)], "is-twinkle");
   }, 1800);
@@ -3314,6 +3407,8 @@ button.cs-stat:active { transform: scale(0.95); }
   });
   document.querySelector("[data-mock-piles]").addEventListener("change", (e) => { S.piles = e.target.checked; renderTrade(); });
   document.querySelector("[data-mock-nogm]").addEventListener("change", (e) => { S.gmOnline = !e.target.checked; renderTrade(); });
+  document.querySelector("[data-mock-cap]").addEventListener("change", (e) => { S.motionCapMock = e.target.value; applyMotion(); });
+  document.querySelector("[data-mock-nomagic]").addEventListener("change", (e) => { S.noMagic = e.target.checked; renderSettingsLists(); applyVisibility(); });
   // mock-only: show a warlock's pact slots
   document.querySelector("[data-mock-pact]").addEventListener("change", (e) => {
     S.pact = e.target.checked ? { lvl: 2, v: 2, max: 2 } : null;
@@ -3618,6 +3713,7 @@ button.cs-stat:active { transform: scale(0.95); }
   if (topBags.length > 3) items.filter((x) => x.group === "container").forEach((b) => S.collapsed.add("bag-" + b.id));
   renderInventory();
 
+  applySettings();
   applyLayout(layoutFor(root.offsetWidth));
   requestAnimationFrame(moveInk);
 })();

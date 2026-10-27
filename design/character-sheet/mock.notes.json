@@ -27,8 +27,8 @@
           "source": "spec"
         },
         {
-          "text": "With motion off in settings or prefers-reduced-motion, every transition and animation is instant; nothing else changes.",
-          "source": "assumption"
+          "text": "Motion follows the level from motionSwitch: at «Выключены» (or under prefers-reduced-motion) only 150 ms fades remain (the mock shows them as instant); at «Сдержанно» ambient loops and particles stop; nothing else changes.",
+          "source": "spec"
         },
         {
           "text": "Theme tokens live on this root element, never on :root.",
@@ -55,8 +55,8 @@
           "source": "assumption"
         },
         {
-          "text": "All of these stop when motion is off or the system asks for reduced motion.",
-          "source": "assumption"
+          "text": "Hover light, ripple and lift are reactive: they run at «Все» and «Сдержанно». Sparks are particles: «Все» only. Nothing here runs at «Выключены».",
+          "source": "spec"
         },
         {
           "text": "On open the window settles in from 12 px below and the rail blocks follow one after another.",
@@ -382,8 +382,8 @@
     "settingsButton": {
       "behaviour": [
         {
-          "text": "Opens the settings drawer from the right over a scrim; Escape or the scrim closes it.",
-          "source": "assumption"
+          "text": "Opens the settings drawer from the right over a scrim; Escape or the scrim closes it. Observers can open it too: the drawer holds only the viewer's own settings.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -871,7 +871,15 @@
     "settingsDrawer": {
       "behaviour": [
         {
-          "text": "Settings are per user and apply at once: theme, accent, density, motion, rail blocks, visible tabs.",
+          "text": "Only personal settings live here: theme, accent, density, motion level, decorative fonts, rail blocks, visible tabs. Changes apply at once, no save button.",
+          "source": "spec"
+        },
+        {
+          "text": "Theme, accent, density, rail blocks, visible tabs, the view mode of each list and the doll toggle use scope \"user\" and follow the player to any device; motion level and fonts use scope \"client\" because they depend on the machine. Rail and tab choices apply to every actor window of that user.",
+          "source": "spec"
+        },
+        {
+          "text": "Foundry's module settings keep the world settings for the GM (enforcementMode, autoReconcileSlots, showActorPortraitBackdrop) plus showSheetButton, logLevel and the I keybinding. Personal settings are not repeated there.",
           "source": "spec"
         }
       ],
@@ -880,8 +888,12 @@
     "themeSwitch": {
       "behaviour": [
         {
-          "text": "Ночь (dark) or Пергамент (light).",
-          "source": "assumption"
+          "text": "Ночь (dark), Пергамент (light) or Авто. Авто follows Foundry's colour scheme for applications, and the OS when Foundry follows it; it switches live and says which theme is in use now.",
+          "source": "spec"
+        },
+        {
+          "text": "A theme change cross-fades through a view transition when motion is above «Выключены». Polishing Пергамент is the separate «Светлая тема» item on the map.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -889,8 +901,12 @@
     "accentSwatch": {
       "behaviour": [
         {
-          "text": "Six accents: латунь, угли, аркана, лес, иней, роза; the choice recolours every accent token.",
-          "source": "assumption"
+          "text": "Six named accents: латунь (default), угли, аркана, лес, иней, роза; the choice recolours every accent token.",
+          "source": "spec"
+        },
+        {
+          "text": "Migration from 1.x: amber→латунь, peach→угли, rose and orchid→роза, lavender and periwinkle→аркана, sage and mint→лес, azure and steel→иней.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -899,7 +915,7 @@
       "behaviour": [
         {
           "text": "Свободно: 44 px rows, 36 px tiles; Плотно: 34 px rows, 28 px tiles.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -907,8 +923,16 @@
     "motionSwitch": {
       "behaviour": [
         {
-          "text": "Все or Выключены.",
-          "source": "assumption"
+          "text": "Three levels: «Все» (reactive and ambient effects, particles), «Сдержанно» (reactive effects and hover only; no ambient loops or particles), «Выключены» (short fades only). Default «Все».",
+          "source": "spec"
+        },
+        {
+          "text": "The level is capped from above: prefers-reduced-motion allows «Выключены» only, Foundry's performance-low «Сдержанно». Levels above the cap are disabled and a line under the switch names the reason.",
+          "source": "spec"
+        },
+        {
+          "text": "The player's own choice is kept under a cap and returns when the cap lifts; the line says so.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -916,12 +940,16 @@
     "railWidgetToggle": {
       "behaviour": [
         {
-          "text": "Hides or shows each rail block; the rest glide to close the gap.",
-          "source": "assumption"
+          "text": "A switch per rail block; the rest glide to close the gap. Hit points are always shown and their row is disabled with «всегда».",
+          "source": "spec"
+        },
+        {
+          "text": "Blocks the character does not have (Сл и атака and slots for a non-caster) hide themselves; their rows are disabled with «нет у персонажа», and the player's choice for them is kept.",
+          "source": "spec"
         },
         {
           "text": "The rest buttons can be hidden too.",
-          "source": "assumption"
+          "source": "spec"
         }
       ],
       "comments": []
@@ -929,8 +957,16 @@
     "tabVisibilityToggle": {
       "behaviour": [
         {
-          "text": "Hides or shows a tab; hiding the open tab switches to Снаряжение.",
-          "source": "assumption"
+          "text": "Any tab except Снаряжение can be hidden; its row is disabled with «всегда».",
+          "source": "spec"
+        },
+        {
+          "text": "Заклинания hides itself for a character without spells; its row is disabled with «нет у персонажа».",
+          "source": "spec"
+        },
+        {
+          "text": "Hiding the open tab switches to Снаряжение.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1724,6 +1760,37 @@
       "behaviour": [
         {
           "text": "Mock-only: switches trade scenarios (invited, partner cancelled, GM recovery) and toggles Item Piles and an absent GM.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "fontsToggle": {
+      "behaviour": [
+        {
+          "text": "«Декоративные шрифты» is the useWebFonts client setting. Off: system fonts, and the web fonts are not loaded.",
+          "source": "spec"
+        },
+        {
+          "text": "It applies after a reload: on change a line «Применится после перезагрузки» appears with a «Перезагрузить» button.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "settingsResetButton": {
+      "behaviour": [
+        {
+          "text": "«Сбросить настройки окна» at the bottom asks to confirm, then returns theme, accent, density, motion, fonts, rail blocks and tabs to their defaults. A fonts change still waits for a reload.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "mockMotionCap": {
+      "behaviour": [
+        {
+          "text": "Mock only: simulates the reduced-motion and performance-low caps; «Без магии» next to it previews a character without spells.",
           "source": "spec"
         }
       ],

@@ -7,7 +7,7 @@ export const INVENTORY_SECTIONS = ["weapon", "equipment", "consumable", "tool", 
 export const VIEWS = ["list", "grid", "icons"];
 export const SORTS = ["name", "weight", "price", "rarity", "manual"];
 export const LIST_FILTERS = ["equipped", "attuned"];
-const RARITY_ORDER = ["", "common", "uncommon", "rare", "veryRare", "legendary", "artifact"];
+export const RARITY_ORDER = Object.freeze(["", "common", "uncommon", "rare", "veryRare", "legendary", "artifact"]);
 
 /**
  * A tab's list view, sort and filters, as remembered in the user's listPrefs setting.

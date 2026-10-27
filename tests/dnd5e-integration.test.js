@@ -876,8 +876,6 @@ describe("drops from outside (dnd5e 5.3.3 sheet calls, ADR 0004)", () => {
     assert.equal(CharacterActorSheet.prototype._onDropCreateItems.length, 3, "dnd5e's signature: (event, items, behavior)");
     assert.equal(CharacterActorSheet.prototype._onDropItemContainer.length, 3, "dnd5e's signature: (event, item, container)");
     assert.deepEqual([...sheetUnsupportedTypes(actor)], ["facility"]);
-    const { sheetDropsIntoContainers } = await import("../scripts/integrations/dnd5e.js");
-    assert.deepEqual([sheetDropsIntoContainers(actor), sheetDropsIntoContainers({ sheet: { _onDropCreateItems() {} } })], [true, false]);
   });
 
   it("fall back to createWithContents and createDocuments with keepId on a sheet without those methods", async () => {

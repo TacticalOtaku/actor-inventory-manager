@@ -4,8 +4,8 @@
 // ─────────────────────────────────────────────────────────
 
 import { FLAGS, MODULE_ID } from "../constants.js";
-import { dropBehavior, received, refusedType, spellBecomes } from "../core/external-drop.js";
-import { createDroppedItems, createDroppedSpell, sheetDropsIntoContainers, sheetUnsupportedTypes } from "../integrations/dnd5e.js";
+import { dropBehavior, landedOutside, received, refusedType, spellBecomes } from "../core/external-drop.js";
+import { createDroppedItems, createDroppedSpell, sheetUnsupportedTypes } from "../integrations/dnd5e.js";
 import { isItemPile } from "../integrations/item-piles.js";
 import { validateContainerDrop } from "../integrations/weighty-containers.js";
 import { sessionFor } from "../trade/service.js";
@@ -136,5 +136,6 @@ export async function dropFromOutside(app, event, { tray = null } = {}) {
   // Weighty Containers refuses an overflowing container in its own words; the tray still shakes.
   if (container && !received(before, quantities(actor))) return { refusal: null, note: null, shakeTray: true };
   // A sheet that cannot put items into a container (Tidy) leaves them in the inventory root (ADR 0004).
-  return { refusal: null, note: container && created.length && !sheetDropsIntoContainers(actor) ? t("AIM.window.drop.root") : null };
+  const outside = container && landedOutside(created.map((item) => item.system?.container), container.id);
+  return { refusal: null, note: outside ? t("AIM.window.drop.root") : null };
 }

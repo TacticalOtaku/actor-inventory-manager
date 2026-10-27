@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- SC - Item Rarity Colors styles the window's item and spell rows through its own API (3.0.18+), as it styles an
+  actor sheet's inventory: the rarity gradient, title and detail colours, the icon border and effects.
+- The window's rarity accent (tiles, tooltip frames, the inspector) takes the colour SC shows: the icon border, or
+  a gradient's bright second stop, instead of the gradient's dark first stop.
+
 ## 2.0.1
 
 ### Added

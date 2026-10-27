@@ -8,6 +8,7 @@ const foundryGlobals = Object.fromEntries(
     "game",
     "ui",
     "canvas",
+    "PIXI",
     "Hooks",
     "CONFIG",
     "CONST",

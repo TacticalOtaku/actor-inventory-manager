@@ -592,7 +592,7 @@ export async function readCardData(doc) {
     const data = await doc.system.getCardData({ secrets: doc.isOwner });
     const labels = data.labels ?? {};
     const stat = (key, value) => (value !== undefined && value !== null && String(value).trim() !== "" ? { key, value: String(value) } : null);
-    const damages = (labels.damages ?? []).map((d) => ({ label: d.label ?? d.formula ?? "", types: String(d.damageType ?? "").split("|").filter(Boolean) }));
+    const damages = (labels.damages ?? []).map((d) => ({ label: d.label ?? d.formula ?? "", formula: d.formula ?? "", types: String(d.damageType ?? "").split("|").filter(Boolean) }));
     const attunement = doc.system?.attunement;
     const currency = config.currencies?.[data.price?.denomination];
     const stats = [
@@ -628,6 +628,21 @@ export async function readCardData(doc) {
     }
   }
   return { kind: "doc", name: doc.name, img: doc.img ?? null, subtitle: localizeOr(doc.constructor?.metadata?.label, "") };
+}
+
+/**
+ * A damage type for its chip and card: label, colour (`color` is a Foundry Color in 5.3.3, shown as CSS) and the
+ * rule page dnd5e links it to; a type the world or a module added may lack a colour.
+ */
+export function readDamageType(key) {
+  const type = getDnd5eConfig().damageTypes?.[key];
+  if (!type) return null;
+  const color = type.color;
+  const css = color === undefined || color === null ? null
+    : typeof color === "string" ? color
+      : typeof color.css === "string" ? color.css
+        : Number.isFinite(Number(color)) ? `#${Number(color).toString(16).padStart(6, "0")}` : null;
+  return { key, label: localizeOr(type.label, type.label ?? key), color: css, reference: type.reference ?? null };
 }
 
 /** dnd5e's label for a trait key («Acid», «Simple», «Herbalism Kit»), the key itself without dnd5e. */
@@ -678,6 +693,11 @@ export function readDefenses(actor) {
     const shown = Number.isFinite(Number(text)) && Number(text) > 0 ? `+${text}` : text.replace(/^-/, "−");
     return `${localizeOr(types[type]?.label, types[type]?.label ?? type)} ${shown}`;
   });
+  // The damage types among them, in the same order, for their chips.
+  out.types = {
+    ...Object.fromEntries(["dr", "di", "dv"].map((trait) => [trait, [...(traits[trait]?.value ?? [])].filter((key) => key in types)])),
+    dm: Object.entries(traits.dm?.amount ?? {}).filter(([key, amount]) => key in types && String(amount ?? "").trim()).map(([key]) => key)
+  };
   return out;
 }
 

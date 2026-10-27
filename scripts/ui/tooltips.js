@@ -5,14 +5,16 @@
 
 import { MODULE_ID } from "../constants.js";
 import { TIP_TIMING, TIP_MAX_DEPTH, cardsToSweep, openDelay, planClose, planOpen, planPin } from "../core/tooltips.js";
-import { readCardData } from "../integrations/dnd5e.js";
+import { damageParts } from "../core/damage-scenes.js";
+import { readCardData, readDamageType } from "../integrations/dnd5e.js";
+import { startScene } from "./damage-scenes.js";
 import { getRarityColor, getSpellSchoolColor, isScRarityColorsActive } from "../integrations/sc-rarity-colors.js";
 import { stampTheme } from "./theme-root.js";
 
 export const TOOLTIP_TEMPLATE = `modules/${MODULE_ID}/templates/window/tooltip-card.hbs`;
 
 /** What opens a card in the window, and inside a card. */
-const TRIGGERS = "[data-row], .aim-slot[data-item-id], .aim-socket[data-item-id], .aim-slotless-item[data-item-id], [data-effect-row], .aim-fav[data-fav-id], .aim-cond[data-status], a.content-link[data-uuid]";
+const TRIGGERS = ".aim-dmg[data-dmg], [data-row], .aim-slot[data-item-id], .aim-socket[data-item-id], .aim-slotless-item[data-item-id], [data-effect-row], .aim-fav[data-fav-id], .aim-cond[data-status], a.content-link[data-uuid]";
 
 const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 
@@ -79,8 +81,7 @@ class TooltipLayer {
     const parent = this.record(anchor.closest(".aim-tip"));
     const plan = planOpen(this.cards, parent?.id ?? null);
     if (!plan) return;
-    const doc = await resolveAnchor(anchor, app);
-    const card = doc && await readCardData(doc);
+    const card = anchor.matches(".aim-dmg[data-dmg]") ? await damageCard(anchor.dataset.dmg) : await readCardData(await resolveAnchor(anchor, app));
     // The pointer may have moved on while the document loaded.
     if (!card || !anchor.isConnected || !(this.under(anchor) || anchor.contains(this.doc.activeElement))) return;
     for (const id of plan.replace) this.close(this.cards.find((c) => c.id === id));
@@ -94,6 +95,11 @@ class TooltipLayer {
     this.restamp();
     this.el.append(cardEl);
     place(cardEl, anchor);
+    const canvas = cardEl.querySelector("canvas[data-scene]");
+    if (canvas) {
+      const stop = startScene(canvas, canvas.dataset.scene, card.color ?? getComputedStyle(this.el).getPropertyValue("--accent").trim(), this.el.dataset.motion);
+      cardEl.addEventListener("aim-tip-close", stop, { once: true });
+    }
     const rec = { id: `tip${++this.seq}`, el: cardEl, anchor, app, parent: parent?.id ?? null, depth: plan.depth, pinned: false, at: 0 };
     this.cards.push(rec);
     this.wire(rec);
@@ -238,13 +244,38 @@ async function resolveAnchor(anchor, app) {
   return actor?.items.get(anchor.closest("[data-item-id]")?.dataset.itemId) ?? null;
 }
 
+/** A damage type's card: its scene, its name and dnd5e's rule page for it when there is one. */
+async function damageCard(key) {
+  const type = readDamageType(key);
+  const page = type?.reference ? await fromUuid(type.reference).catch(() => null) : null;
+  const rule = page ? await readCardData(page) : null;
+  return {
+    kind: "damage",
+    name: type?.label ?? key,
+    subtitle: t(type && type.color ? "AIM.tips.damageType" : "AIM.tips.damageTypeAdded"),
+    color: type?.color ?? null,
+    scene: key,
+    html: rule?.html ?? ""
+  };
+}
+
+/** A damage type as a chip in its colour; a type dnd5e does not know is no chip. */
+export function damageChip(key) {
+  const type = readDamageType(key);
+  return type ? { key, label: type.label, color: type.color ?? "var(--accent)" } : null;
+}
+
 function cardContext(card, depth) {
   return {
     ...card,
     depth,
     stats: (card.stats ?? []).map((s) => ({
       label: t(`AIM.tips.stats.${s.key}`),
-      value: s.key === "attunement" ? `${t(`AIM.tips.attunement.${s.value}`)}${card.attuned ? " ✓" : ""}` : s.value
+      value: s.key === "attunement" ? `${t(`AIM.tips.attunement.${s.value}`)}${card.attuned ? " ✓" : ""}` : s.value,
+      // A damage part shows its formula and a chip per type («fire|cold» is two).
+      parts: s.key === "damage" && card.damages?.some((d) => d.types.length)
+        ? card.damages.map((d) => ({ formula: d.formula || d.label, chips: d.types.flatMap((k) => damageParts(k)).map(damageChip).filter(Boolean) }))
+        : null
     })),
     hint: t("AIM.tips.holdToPin"),
     pinLabel: t("AIM.tips.pin"),
@@ -254,6 +285,7 @@ function cardContext(card, depth) {
 
 /** The frame glows in the rarity or school colour: SC Rarity Colors' when it is on, our palette otherwise. */
 function tone(el, card) {
+  if (card.kind === "damage" && card.color) return el.style.setProperty("--tone", card.color);
   if (card.school) el.dataset.school = card.school;
   else if (card.rarity) el.dataset.rarity = card.rarity;
   if (!isScRarityColorsActive()) return;

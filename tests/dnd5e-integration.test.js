@@ -727,7 +727,11 @@ describe("overview and biography reads (dnd5e 5.3.3)", () => {
       attributes: { senses: { ranges: { darkvision: 120, blindsight: 0 }, units: "ft", special: "Видит невидимое" } },
       skills: { prc: { passive: 14 }, inv: { passive: 11 }, ins: { passive: 13 } }
     } };
-    assert.deepEqual(readDefenses(actor), { dr: [], di: ["Кислота", "Магический урон", "Серебро"], dv: [], ci: ["Отравлен"], dm: ["Огонь −3", "Холод +2"] });
+    globalThis.CONFIG.DND5E.damageTypes.acid = { label: "Кислота" };
+    assert.deepEqual(readDefenses(actor), {
+      dr: [], di: ["Кислота", "Магический урон", "Серебро"], dv: [], ci: ["Отравлен"], dm: ["Огонь −3", "Холод +2"],
+      types: { dr: [], di: ["acid"], dv: [], dm: ["fire", "cold"] }
+    });
     assert.deepEqual(readSenses(actor), {
       passive: { prc: 14, inv: 11, ins: 13 },
       senses: ["Тёмное зрение 120 фт", "Видит невидимое"],
@@ -778,5 +782,21 @@ describe("tooltip card reads (dnd5e 5.3.3)", () => {
     assert.deepEqual([await readCardData(effect)].map((c) => [c.kind, c.html]), [["rich", "<section>Скорость ×2</section>"]]);
     assert.equal((await readCardData(page)).html, "<p>Помеха</p>");
     assert.deepEqual([(await readCardData(actor)).kind, await readCardData(null)], ["doc", null]);
+  });
+});
+
+describe("damage type reads (dnd5e 5.3.3)", () => {
+  afterEach(() => { delete globalThis.CONFIG; });
+
+  it("reads the label, the Color as CSS and the rule page; an added type may have no colour", async () => {
+    const { readDamageType } = await import("../scripts/integrations/dnd5e.js");
+    globalThis.CONFIG = { DND5E: { damageTypes: {
+      fire: { label: "Огонь", color: { css: "#ff6a2b" }, reference: "Compendium.dnd5e.rules.JournalEntry.x.JournalEntryPage.fire" },
+      acid: { label: "Кислота", color: 0x839d50 },
+      eldritch: { label: "Потустороннее" }
+    } } };
+    assert.deepEqual(readDamageType("fire"), { key: "fire", label: "Огонь", color: "#ff6a2b", reference: "Compendium.dnd5e.rules.JournalEntry.x.JournalEntryPage.fire" });
+    assert.equal(readDamageType("acid").color, "#839d50");
+    assert.deepEqual([readDamageType("eldritch").color, readDamageType("nope")], [null, null]);
   });
 });

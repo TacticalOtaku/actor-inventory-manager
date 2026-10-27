@@ -69,3 +69,16 @@
 .aim-tip[data-school="ill"] { --tone: var(--school-ill); }
 .aim-tip[data-school="nec"] { --tone: var(--school-nec); }
 .aim-tip[data-school="trs"] { --tone: var(--school-trs); }
+
+/* damage types: a chip in the type's colour, its card holds a small scene on a dark stage in both themes */
+.aim-dmg {
+  --dmg: var(--accent);
+  display: inline-flex; align-items: center; gap: 4px; margin: 1px 3px 1px 0; padding: 0 7px; border-radius: 99px;
+  border: 1px solid color-mix(in oklab, var(--dmg) 50%, transparent); background: color-mix(in oklab, var(--dmg) 16%, transparent);
+  color: color-mix(in oklab, var(--dmg) 55%, var(--text)); font: 500 11px var(--font-ui); line-height: 1.6; white-space: nowrap; cursor: help;
+}
+.aim-dmg::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--dmg); box-shadow: 0 0 6px var(--dmg); }
+.aim-dmg:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.aim-dmg-part { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px; margin-right: 6px; }
+.aim-tip-scene { position: relative; margin: 8px 10px 0; overflow: hidden; border-radius: var(--r-md); background: #090b10; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--dmg, var(--tone)) 35%, transparent); }
+.aim-tip-scene canvas { display: block; width: 100%; height: 120px; }

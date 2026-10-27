@@ -499,8 +499,8 @@
         "warn": "Warn Only (Show warning but permit invalid equipment)"
       },
       "showSheetButton": {
-        "name": "AIM button in the sheet header",
-        "hint": "Adds the AIM button to actor sheet headers; it opens the actor window."
+        "name": "AIM in the sheet menu",
+        "hint": "Adds AIM to the ⋮ menu of actor sheets; it opens the actor window. The I key opens it too."
       },
       "showActorPortraitBackdrop": {
         "name": "Show Actor Portrait Backdrop in Paperdoll",

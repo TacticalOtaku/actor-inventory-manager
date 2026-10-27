@@ -108,6 +108,8 @@ export async function dropFromOutside(app, event, { tray = null } = {}) {
   const items = dropped.items;
   if (!items.length) return NONE;
   const source = items[0].parent?.documentName === "Actor" ? items[0].parent : null;
+  // A move would delete from an actor whose exchange is running; its preDeleteItem refuses and the item would double.
+  if (source && source.uuid !== actor.uuid && tradeLocked(source)) return { refusal: t("AIM.window.drop.trade"), note: null };
   const { behavior, refusal } = dropBehavior({
     fromActor: Boolean(source),
     sameActor: source?.uuid === actor.uuid,
@@ -129,9 +131,15 @@ export async function dropFromOutside(app, event, { tray = null } = {}) {
   const before = quantities(actor);
   const created = await create(app, event, items, container);
   app.landItems(created.map((item) => item.id).filter(Boolean));
-  // A move finishes only once the actor has it: then the source goes, with its contents.
+  // A move finishes only once the actor has it: then the source goes, with its contents. If the source keeps an item
+  // (a hook refused the delete), the copies go instead, so nothing exists twice.
   if (behavior === "move" && received(before, quantities(actor))) {
     for (const item of items) await item.delete({ deleteContents: true });
+    if (items.some((item) => source.items.has(item.id))) {
+      const copies = created.map((item) => item.id).filter((id) => actor.items.has(id));
+      if (copies.length) await actor.deleteEmbeddedDocuments("Item", copies);
+      return { refusal: t("AIM.window.drop.moveFailed"), note: null };
+    }
   }
   // Weighty Containers refuses an overflowing container in its own words; the tray still shakes.
   if (container && !received(before, quantities(actor))) return { refusal: null, note: null, shakeTray: true };

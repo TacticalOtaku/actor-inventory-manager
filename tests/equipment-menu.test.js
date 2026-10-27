@@ -48,10 +48,19 @@ describe("item row menu", () => {
   it("names the state entries by the item's state, as dnd5e does", () => {
     const sword = item({ type: "weapon", system: { equipped: true, attunement: "required", attuned: false } });
     assert.deepEqual(shown(sword, { ...actions, isFavorite: true }).slice(5), ["DND5E.ContextMenuActionAttune", "DND5E.ContextMenuActionUnequip", "DND5E.FavoriteRemove"]);
-    const spell = item({ type: "spell", system: { method: "spell", prepared: 1 } });
+    const spell = item({ type: "spell", system: { method: "spell", level: 1, prepared: 1 } });
     assert.ok(shown(spell).includes("DND5E.ContextMenuActionUnprepare"));
-    assert.ok(!shown(item({ type: "spell", system: { method: "spell", prepared: 2 } })).some((n) => n.endsWith("prepare")), "an always-prepared spell has no toggle");
-    assert.ok(!shown(item({ type: "spell", system: { method: "innate", prepared: 0 } })).some((n) => n.endsWith("Prepare")));
+    assert.ok(!shown(item({ type: "spell", system: { method: "spell", level: 1, prepared: 2 } })).some((n) => n.endsWith("prepare")), "an always-prepared spell has no toggle");
+    assert.ok(!shown(item({ type: "spell", system: { method: "innate", level: 1, prepared: 0 } })).some((n) => n.endsWith("Prepare")));
+  });
+
+  it("offers preparation by the spells tab's rule: no toggle for a cantrip or a class that knows its spells", () => {
+    const toggles = (it) => shown(it).some((n) => /Prepare$/i.test(n));
+    assert.equal(toggles(item({ type: "spell", system: { method: "spell", level: 0, prepared: 0 } })), false, "a cantrip is always ready");
+    const sorcerer = { ...character, spellcastingClasses: { sorcerer: { system: { spellcasting: { preparation: { max: 0 } } } } } };
+    assert.equal(toggles(item({ type: "spell", actor: sorcerer, system: { method: "spell", level: 1, prepared: 0, classIdentifier: "sorcerer" } })), false);
+    const wizard = { ...character, spellcastingClasses: { wizard: { system: { spellcasting: { preparation: { max: 8 } } } } } };
+    assert.equal(toggles(item({ type: "spell", actor: wizard, system: { method: "spell", level: 1, prepared: 0, classIdentifier: "wizard" } })), true);
   });
 
   it("offers ending concentration, recharge and an NPC's gear where they apply", () => {

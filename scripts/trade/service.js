@@ -1,5 +1,6 @@
 import { MODULE_ID } from "../constants.js";
 import { isSupportedActor, isTradeActor, ownsActor } from "../core/actor-scope.js";
+import { tradesToCancel } from "../core/migration.js";
 import { currencyProfile, tradeError } from "./currencies.js";
 import { changeOffer, confirmOffer, emptyOffer, normalizeOffer, validateStoredOffer } from "./offers.js";
 import { captureInventory, executeTransfer, inventoryChanges, restoreInventory } from "./transfer.js";
@@ -180,9 +181,11 @@ export async function processTradeRequest(request, userId) {
   const state = structuredClone(tradeState());
   const user = game.users.get(userId);
   if (!user?.active || state.receipts?.[userId]?.id === request.id) return;
-  state.coordinatorId = game.user.id;
-  // Persist incumbency before any awaited operation that may touch actor documents.
-  await save(state);
+  // Persist incumbency before any awaited operation that may touch actor documents; once is enough.
+  if (state.coordinatorId !== game.user.id) {
+    state.coordinatorId = game.user.id;
+    await save(state);
+  }
   let error = null;
   try {
     const actor = game.actors.get(request.actorId);
@@ -255,12 +258,42 @@ export async function processTradeRequest(request, userId) {
     LOG.warn("Trade request rejected", e);
     error = e.message?.startsWith("AIM.trade.errors.") ? e.message : "AIM.trade.errors.transfer";
     const session = state.sessions.find(s => s.id === request.sessionId);
+    // A confirmation that cannot settle (an item ran out, the partner left) clears both, so nobody waits on «both confirmed».
     if (session?.status === "open" && session.users.includes(userId)
-      && ["AIM.trade.errors.changed", "AIM.trade.errors.funds", "AIM.trade.errors.providerChanged", "AIM.trade.errors.empty"].includes(error)) session.confirmed = [false, false];
+      && (request.action === "confirm" || ["AIM.trade.errors.changed", "AIM.trade.errors.funds", "AIM.trade.errors.providerChanged", "AIM.trade.errors.empty"].includes(error))) session.confirmed = [false, false];
   }
   state.receipts ??= {};
   state.receipts[userId] = { id: request.id, error };
   await save(state);
+}
+
+/**
+ * The 2.0 migration ends every open trade: in the coordinator's queue, so no request in flight writes the old state
+ * back. Each side hears it in chat and loses its pending request flag. Not the coordinator: throws, and the
+ * migration counts a failure and runs again on the next start.
+ * @returns {Promise<number>} how many trades were cancelled
+ */
+export function cancelOpenTrades() {
+  const run = queue.then(async () => {
+    assertCoordinator();
+    const state = structuredClone(tradeState());
+    const cancelled = tradesToCancel(state.sessions);
+    if (!cancelled.length) return 0;
+    for (const session of cancelled) {
+      session.status = "cancelled";
+      delete session.cancelledBy;
+    }
+    await save(state);
+    for (const session of cancelled) {
+      for (const user of session.users.map(id => game.users.get(id)).filter(Boolean)) {
+        if (user.getFlag(MODULE_ID, REQUEST_FLAG) !== undefined) await user.unsetFlag(MODULE_ID, REQUEST_FLAG);
+      }
+      await ChatMessage.implementation.create({ content: `<p>${game.i18n.localize("AIM.migration.tradeCancelled")}</p>`, whisper: session.users, speaker: { alias: "AIM" } });
+    }
+    return cancelled.length;
+  });
+  queue = run.catch(() => {});
+  return run;
 }
 
 export function registerTradeService() {

@@ -12,15 +12,13 @@ import {
   ownDollPresetId,
   presetFromTemplate,
   quickSlotFavorites,
-  tradesToCancel,
   worthReporting
 } from "../core/migration.js";
+import { cancelOpenTrades } from "../trade/service.js";
 import { LOG } from "./logger.js";
 
 const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 const VERSION_KEY = "migrationVersion";
-const TRADE_STATE = "tradeState";
-const REQUEST_FLAG = "tradeRequest";
 
 /** «Повторить миграцию» in the module settings: a menu that runs it again and closes at once. */
 class RetryMigration extends foundry.applications.api.ApplicationV2 {
@@ -55,15 +53,17 @@ async function migrateActor(actor, templates) {
   let items = 0;
   let presets = 0;
   let changed = false;
+  // An unlinked token actor inherits its base actor's flags and items; only what its own delta changed is its own.
+  const own = actor.isToken ? actor.token?.delta : actor;
   if (actor.type === "character" && typeof actor.system?.addFavorite === "function") {
-    const slots = actor.items.map((item) => ({ id: item.id, slot: item.flags?.[MODULE_ID]?.[FLAGS.SLOT] ?? null }));
+    const slots = [...(own?.items ?? [])].map((item) => ({ id: item.id, slot: item.flags?.[MODULE_ID]?.[FLAGS.SLOT] ?? null }));
     for (const favorite of quickSlotFavorites(slots, actor.system.favorites ?? [])) {
       await actor.system.addFavorite(favorite);
       items++;
       changed = true;
     }
   }
-  const doll = actor.flags?.[MODULE_ID]?.[FLAGS.CUSTOM_TEMPLATE];
+  const doll = own?.flags?.[MODULE_ID]?.[FLAGS.CUSTOM_TEMPLATE];
   if (doll && Array.isArray(doll.slots)) {
     // A token actor shares its base actor's id; its own doll is the token's.
     const key = actor.isToken ? actor.token.id : actor.id;
@@ -72,31 +72,12 @@ async function migrateActor(actor, templates) {
       templates[id] = ownDollPreset(key, doll, t("AIM.migration.ownDoll", { name: actor.name }));
       presets++;
     }
-    if (actor.flags[MODULE_ID][FLAGS.TEMPLATE_ID] !== id) {
+    if (actor.flags?.[MODULE_ID]?.[FLAGS.TEMPLATE_ID] !== id) {
       await actor.setFlag(MODULE_ID, FLAGS.TEMPLATE_ID, id);
       changed = true;
     }
   }
   return { changed: changed || presets > 0, items, presets };
-}
-
-/** Open trades end with the update; their request flags go, and each side hears it in chat. */
-async function cancelOpenTrades() {
-  const state = foundry.utils.deepClone(game.settings.get(MODULE_ID, TRADE_STATE) ?? { sessions: [] });
-  const cancelled = tradesToCancel(state.sessions);
-  if (!cancelled.length) return 0;
-  for (const session of cancelled) {
-    session.status = "cancelled";
-    delete session.cancelledBy;
-  }
-  await game.settings.set(MODULE_ID, TRADE_STATE, state);
-  for (const session of cancelled) {
-    for (const user of session.users.map((id) => game.users.get(id)).filter(Boolean)) {
-      if (user.getFlag(MODULE_ID, REQUEST_FLAG) !== undefined) await user.unsetFlag(MODULE_ID, REQUEST_FLAG);
-    }
-    await ChatMessage.implementation.create({ content: `<p>${t("AIM.migration.tradeCancelled")}</p>`, whisper: session.users, speaker: { alias: "AIM" } });
-  }
-  return cancelled.length;
 }
 
 /**

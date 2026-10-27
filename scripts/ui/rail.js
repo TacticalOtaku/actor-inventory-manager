@@ -129,14 +129,20 @@ export function playRailChanges(root, prev, next) {
   const events = railEvents(prev, next);
   for (const event of events) {
     if (event === "hit" && bar) {
-      // the fill drops at once; a pale ghost of the old value lingers, then drains
-      const from = share(prev.hp, prev.max);
-      bar.querySelector("[data-hp-ghost]").animate([{ width: `${from * 100}%` }, { width: `${from * 100}%`, offset: 0.35 }, { width: `${share(next.hp, next.max) * 100}%` }], { duration: 1080, easing: SETTLE });
+      // the fill drops at once; a pale ghost of the old value lingers, then drains (a transform, not a width: #9)
+      const from = Number(share(prev.hp, prev.max));
+      const ghost = bar.querySelector("[data-hp-ghost]");
+      ghost.style.width = `${from * 100}%`;
+      const left = from ? Number(share(next.hp, next.max)) / from : 0;
+      ghost.animate([{ transform: "scaleX(1)" }, { transform: "scaleX(1)", offset: 0.35 }, { transform: `scaleX(${left})` }], { duration: 1080, easing: SETTLE })
+        .finished.then(() => ghost.style.removeProperty("width"), () => ghost.style.removeProperty("width"));
       pulse(bar, "is-hit");
       floatText(root, value, `−${prev.hp - next.hp}`, "damage");
       playBurst(root, bar, "hit", { at: Number(share(next.hp, next.max)) });
     } else if (event === "heal" && bar) {
-      bar.querySelector("[data-hp-fill]").animate([{ width: `${share(prev.hp, prev.max) * 100}%` }, { width: `${share(next.hp, next.max) * 100}%` }], { duration: 420, easing: SETTLE });
+      // the fill grows from the old value: it already has the new width and scales up into it
+      const to = Number(share(next.hp, next.max));
+      if (to) bar.querySelector("[data-hp-fill]").animate([{ transform: `scaleX(${Number(share(prev.hp, prev.max)) / to})` }, { transform: "scaleX(1)" }], { duration: 420, easing: SETTLE });
       pulse(bar, "is-heal");
       floatText(root, value, `+${next.hp - prev.hp}`, "heal");
       playBurst(root, bar, "heal");
@@ -173,9 +179,9 @@ export function playRailChanges(root, prev, next) {
   }
 }
 
-/** Restored dice, runes and pips pop back in one after another, 70 ms apart. */
+/** Restored dice, runes and pips pop back in one after another, 70 ms apart; a cascade stops at 24 (#9). */
 export function popIn(root) {
-  const items = [...root.querySelectorAll(".aim-die:not(.is-spent), [data-rune]:not(.is-spent)")];
+  const items = [...root.querySelectorAll(".aim-die:not(.is-spent), [data-rune]:not(.is-spent)")].slice(0, 24);
   items.forEach((el, i) => el.animate([{ transform: "scale(0.2)", opacity: 0 }, { transform: "scale(1.25)", opacity: 1, offset: 0.6 }, { transform: "none", opacity: 1 }], { duration: 360, delay: i * 70, easing: SETTLE, fill: "backwards" }));
 }
 

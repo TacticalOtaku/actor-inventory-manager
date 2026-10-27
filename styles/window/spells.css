@@ -21,7 +21,7 @@
 .aim-gem:not(:disabled):hover { transform: rotate(45deg) scale(1.15); }
 .aim-gem.is-burst { animation: aim-gem-burst 520ms var(--ease-settle); }
 .aim-gem.is-pop { animation: aim-gem-pop 360ms var(--ease-snap); }
-@keyframes aim-gem-burst { 30% { transform: rotate(45deg) scale(1.5); filter: brightness(1.8); } }
+@keyframes aim-gem-burst { 30% { transform: rotate(45deg) scale(1.5); } }
 @keyframes aim-gem-pop { from { transform: rotate(45deg) scale(0.3); } 60% { transform: rotate(45deg) scale(1.2); } }
 
 /* sections */

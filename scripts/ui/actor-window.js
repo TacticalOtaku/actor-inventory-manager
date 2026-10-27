@@ -17,7 +17,9 @@ import {
   fallbackTab,
   layoutForWidth,
   motionCap,
+  mergeParts,
   normalizeAccent,
+  partsForActorChange,
   railBlocksFor,
   orbAction,
   resolveTheme,
@@ -423,7 +425,7 @@ export class ActorWindow extends WindowBase {
     const rerender = () => this.#queueRender();
     // An item's own effect is the actor's grandchild.
     const mine = (doc) => [doc, doc?.parent, doc?.parent?.parent].some((d) => d?.uuid === this.actorKey);
-    this.#hook("updateActor", (actor) => mine(actor) && rerender());
+    this.#hook("updateActor", (actor, changes) => mine(actor) && this.#queueRender(actor === this.actor ? partsForActorChange(changes) : null));
     // A transformed actor is deleted when it reverts; its window goes with it.
     this.#hook("deleteActor", (actor) => actor?.uuid === this.actorKey && this.close());
     for (const name of ["createItem", "updateItem", "deleteItem", "createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) {
@@ -627,10 +629,14 @@ export class ActorWindow extends WindowBase {
     this._hooks.push([name, Hooks.on(name, fn)]);
   }
 
-  #queueRender() {
+  #queueRender(parts = null) {
+    this._queuedParts = mergeParts(this._queuedParts, parts);
     clearTimeout(this._renderTimer);
     this._renderTimer = setTimeout(() => {
+      const queued = this._queuedParts;
+      this._queuedParts = undefined;
       if (!this.rendered) return;
+      if (queued) return this.render({ parts: queued });
       // A biography field being typed in, or the open editor, would be redrawn away: the main part waits for it.
       if (!this.#editingBio()) return this.render();
       this._mainStale = true;
@@ -686,8 +692,8 @@ export class ActorWindow extends WindowBase {
     const tab = this.element?.querySelector(`.aim-tab[data-tab="${this.tab}"]`);
     const ink = this.element?.querySelector(".aim-tab-ink");
     if (!tab || !ink) return;
-    ink.style.width = `${tab.offsetWidth}px`;
-    ink.style.transform = `translateX(${tab.offsetLeft}px)`;
+    // The ink is 100 px wide and scales to the tab, so a tab switch animates a transform only (#9).
+    ink.style.transform = `translateX(${tab.offsetLeft}px) scaleX(${tab.offsetWidth / 100})`;
   }
 
   #onKeydown(event) {
@@ -1314,7 +1320,8 @@ export class ActorWindow extends WindowBase {
       this._openDetail = false;
       const detail = el.querySelector(`.aim-rowwrap[data-key="${this.selectedKey}"] [data-detail]`);
       if (detail?.offsetHeight && this.motionOn) {
-        detail.animate([{ height: "0px", opacity: 0 }, { height: `${detail.offsetHeight}px`, opacity: 1 }], { duration: 260, easing: SETTLE });
+        // Opacity and a short slide, not the height: only transform and opacity animate (#9).
+        detail.animate([{ opacity: 0, transform: "translateY(-6px)" }, { opacity: 1, transform: "none" }], { duration: 260, easing: SETTLE });
       }
     }
   }
@@ -1341,7 +1348,7 @@ export class ActorWindow extends WindowBase {
     if (!closing && isNewItem(item) && item.isOwner) item.unsetFlag(MODULE_ID, FLAGS.TRADE_NEW);
     const open = this.selectedKey && this.element.querySelector(`.aim-rowwrap[data-key="${this.selectedKey}"] [data-detail]`);
     if (open?.offsetHeight && this.motionOn) {
-      await open.animate([{ height: `${open.offsetHeight}px`, opacity: 1 }, { height: "0px", opacity: 0 }], { duration: 200, easing: SETTLE }).finished;
+      await open.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-6px)" }], { duration: 160, easing: SETTLE }).finished;
     }
     this.selected = closing ? null : id;
     this.selectedKey = closing ? null : key;

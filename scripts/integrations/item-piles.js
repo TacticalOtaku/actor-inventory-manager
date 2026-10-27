@@ -12,6 +12,16 @@ export function isItemPilesActive() {
   return Boolean(globalThis.game?.modules?.get("item-piles")?.active);
 }
 
+/** Whether an actor is an Item Piles pile (its items are taken through the Item Piles window, not dragged out). */
+export function isItemPile(actor) {
+  if (!isItemPilesActive()) return false;
+  try {
+    return Boolean(globalThis.game.itempiles?.API?.isValidItemPile?.(actor));
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Compute total actor currency value using the Item Piles API
  * @param {Object} actor

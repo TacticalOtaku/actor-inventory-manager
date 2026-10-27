@@ -853,3 +853,59 @@ describe("vehicle reads (dnd5e 5.3.3)", () => {
     assert.equal(readVehicle({ type: "npc", system: {} }), null);
   });
 });
+
+describe("drops from outside (dnd5e 5.3.3 sheet calls, ADR 0004)", () => {
+  afterEach(() => { delete globalThis.CONFIG; });
+
+  it("create through the sheet's _onDropCreateItems(event, items, \"copy\"), or _onDropItemContainer for a container", async () => {
+    const { createDroppedItems, sheetUnsupportedTypes } = await import("../scripts/integrations/dnd5e.js");
+    const calls = [];
+    class CharacterActorSheet {
+      static unsupportedItemTypes = new Set(["facility"]);
+      async _onDropCreateItems(event, items, behavior) { calls.push(["create", event, items, behavior]); return items.map((i) => ({ id: `new-${i.id}` })); }
+      async _onDropItemContainer(event, item, container) { calls.push(["container", event, item, container]); return [{ id: `in-${item.id}` }]; }
+    }
+    const actor = { sheet: new CharacterActorSheet() };
+    const event = { type: "drop" };
+    const sword = { id: "s" };
+    assert.deepEqual(await createDroppedItems(actor, event, [sword]), [{ id: "new-s" }]);
+    assert.deepEqual(calls[0], ["create", event, [sword], "copy"]);
+    const bag = { id: "bag" };
+    assert.deepEqual(await createDroppedItems(actor, event, [sword], { container: bag }), [{ id: "in-s" }]);
+    assert.deepEqual(calls[1], ["container", event, sword, bag]);
+    assert.equal(CharacterActorSheet.prototype._onDropCreateItems.length, 3, "dnd5e's signature: (event, items, behavior)");
+    assert.equal(CharacterActorSheet.prototype._onDropItemContainer.length, 3, "dnd5e's signature: (event, item, container)");
+    assert.deepEqual([...sheetUnsupportedTypes(actor)], ["facility"]);
+  });
+
+  it("fall back to createWithContents and createDocuments with keepId on a sheet without those methods", async () => {
+    const { createDroppedItems } = await import("../scripts/integrations/dnd5e.js");
+    const seen = [];
+    globalThis.CONFIG = { Item: { documentClass: {
+      createWithContents: async (items, options) => { seen.push(["contents", items, options]); return items.map((i) => ({ name: i.id })); },
+      createDocuments: async (data, options) => { seen.push(["documents", data, options]); return data; }
+    } } };
+    const actor = { sheet: {} };
+    const warn = console.warn;
+    console.warn = () => {};
+    try {
+      assert.deepEqual(await createDroppedItems(actor, {}, [{ id: "s" }]), [{ name: "s" }]);
+    } finally {
+      console.warn = warn;
+    }
+    assert.deepEqual(seen[1], ["documents", [{ name: "s" }], { parent: actor, keepId: true }]);
+  });
+
+  it("create a spell that stays a spell with dnd5e's data reset and the spell type's onDropCreate", async () => {
+    const { createDroppedSpell } = await import("../scripts/integrations/dnd5e.js");
+    const made = [];
+    const actor = { id: "a" };
+    globalThis.CONFIG = { Item: {
+      dataModels: { spell: { onDropCreate: (event, who, data) => { data.system.method = "spell"; } } },
+      documentClass: { create: async (data, options) => { made.push([data, options]); return { id: "new" }; } }
+    } };
+    const spell = { toObject: () => ({ _id: "x", name: "Огненный шар", type: "spell", system: { prepared: 1, level: 3 } }) };
+    assert.deepEqual(await createDroppedSpell(actor, {}, spell), [{ id: "new" }]);
+    assert.deepEqual(made, [[{ name: "Огненный шар", type: "spell", system: { level: 3, method: "spell" } }, { parent: actor }]]);
+  });
+});

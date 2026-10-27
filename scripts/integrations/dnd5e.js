@@ -424,6 +424,51 @@ export function readVehicle(actor, { metric = false } = {}) {
 }
 
 /**
+ * Creates items dropped from outside the actor through its sheet (ADR 0004), so dnd5e's sheet rules hold. dnd5e 5.3.3:
+ * the protected `sheet._onDropCreateItems(event, items, behavior)`, always given `"copy"` so dnd5e never deletes the
+ * source (a move is the window's to finish), or `sheet._onDropItemContainer(event, item, container)` for a drop on a
+ * container. A sheet without them (another sheet module) falls back to `Item5e.createWithContents` and
+ * `createDocuments({ keepId: true })`; document rules still run and the console names the sheet rules skipped.
+ * @param {Object} actor
+ * @param {DragEvent} event
+ * @param {Object[]} items      Item documents
+ * @param {{container?: Object|null}} [options]  the container item it was dropped on
+ * @returns {Promise<Object[]>} what was created (stacked consumables create nothing)
+ */
+export async function createDroppedItems(actor, event, items, { container = null } = {}) {
+  const sheet = actor.sheet;
+  if (container && typeof sheet?._onDropItemContainer === "function") {
+    const created = [];
+    for (const item of items) created.push(...[await sheet._onDropItemContainer(event, item, container)].flat().filter(Boolean));
+    return created;
+  }
+  if (typeof sheet?._onDropCreateItems === "function") return [await sheet._onDropCreateItems(event, items, "copy")].flat().filter(Boolean);
+  console.warn(`AIM | ${sheet?.constructor?.name ?? "The actor's sheet"} has no _onDropCreateItems: dnd5e's drop rules (data reset, consumable stacking, advancement, NPC gear) are skipped`);
+  const Item5e = CONFIG.Item.documentClass;
+  const toCreate = await Item5e.createWithContents(items, container ? { container } : {});
+  return Item5e.createDocuments(toCreate, { parent: actor, keepId: true });
+}
+
+/**
+ * A dropped spell that stays a spell, through public calls: dnd5e's sheet would turn it into a scroll by its own
+ * active tab, not the window's (ADR 0004). The data reset dnd5e does on a drop, then the spell type's `onDropCreate`
+ * (dnd5e 5.3.3 picks the default spellcasting method there).
+ * @param {Object} actor
+ * @param {DragEvent} event
+ * @param {Object} spell  the Item document
+ */
+export async function createDroppedSpell(actor, event, spell) {
+  const data = spell.toObject();
+  for (const key of ["attuned", "equipped", "prepared"]) delete data.system?.[key];
+  delete data._id;
+  CONFIG.Item.dataModels.spell?.onDropCreate?.(event, actor, data);
+  return [await CONFIG.Item.documentClass.create(data, { parent: actor })].filter(Boolean);
+}
+
+/** The item types the actor's sheet does not take (dnd5e 5.3.3: `unsupportedItemTypes` on the sheet class). */
+export const sheetUnsupportedTypes = (actor) => actor?.sheet?.constructor?.unsupportedItemTypes ?? new Set();
+
+/**
  * The spells the spells tab lists. dnd5e 5.3.3 shapes: `method` (spell, pact, innate, atwill, ritual) and numeric
  * `prepared` (0, 1, 2 always); concentration and ritual are `properties`; the item's prepared `labels` carry
  * activation, range, school and `components.vsm`; materials are `materials` {value, cost}; uses are `uses.max`/`spent`;

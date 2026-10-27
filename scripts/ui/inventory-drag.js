@@ -8,6 +8,7 @@ import { validateContainerDrop } from "../integrations/weighty-containers.js";
 import { isItemCompatibleWithSlot } from "../core/item-classifier.js";
 import { equipItemToSlot, setItemContainer, unequipItem } from "./item-actions.js";
 import { MODULE_ID } from "../constants.js";
+import { dropFromOutside, refuseDrop, showDropTarget } from "./external-drop.js";
 
 /** Hovering a folded tray this long while dragging unfolds it. */
 const SPRING_MS = 500;
@@ -68,7 +69,7 @@ function shake(node) {
 
 /**
  * Drag listeners for the window's rows, bound once on the window element.
- * Drops from outside the window are left to the external drop (#39).
+ * Drops from outside the actor go to the external drop (ADR 0004); an observer's window takes none.
  * @param {ActorWindow} app
  */
 export function bindInventoryDrag(app) {
@@ -149,7 +150,14 @@ export function bindInventoryDrag(app) {
       if (target) { event.preventDefault(); event.dataTransfer.dropEffect = "link"; }
       return;
     }
-    if (!dragged) return;
+    if (!dragged) {
+      if (!app.canEdit) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "copy";
+      showDropTarget(app, true);
+      light(event.target.closest?.("[data-tray]") ? { node: event.target.closest("[data-tray]") } : null);
+      return;
+    }
     const manual = listPrefsFor(game.settings.get(MODULE_ID, "listPrefs"), "equipment").sort === "manual";
     const target = dropTarget(event.target, event, manual, dragged, fromDoll);
     light(target);
@@ -165,7 +173,10 @@ export function bindInventoryDrag(app) {
   });
 
   el.addEventListener("dragleave", (event) => {
-    if (dragged && !el.contains(event.relatedTarget)) { light(null); stopSpring(); }
+    if (el.contains(event.relatedTarget)) return;
+    light(null);
+    stopSpring();
+    showDropTarget(app, false);
   });
 
   el.addEventListener("drop", (event) => {
@@ -180,7 +191,18 @@ export function bindInventoryDrag(app) {
       else if (added) app.addFavorite(added);
       return;
     }
-    if (!dragged) return;
+    if (!dragged) {
+      showDropTarget(app, false);
+      light(null);
+      if (!app.canEdit) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const tray = app.tab === "equipment" ? event.target.closest?.("[data-tray]")?.dataset.tray ?? null : null;
+      dropFromOutside(app, event, { tray })
+        .then((refusal) => refusal && refuseDrop(app, event, refusal))
+        .catch((error) => console.error("AIM | drop from outside failed", error));
+      return;
+    }
     const manual = listPrefsFor(game.settings.get(MODULE_ID, "listPrefs"), "equipment").sort === "manual";
     const target = dropTarget(event.target, event, manual, dragged, fromDoll);
     const item = dragged;

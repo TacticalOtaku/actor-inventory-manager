@@ -1025,6 +1025,14 @@
       "vehicle": {
         "keel": "keel {length}",
         "beam": "beam {length}"
+      },
+      "drop": {
+        "release": "Release to add",
+        "trade": "A trade is running — the inventory is closed",
+        "actor": "Transformation is on the character sheet",
+        "notOwner": "Only its owner can hand an item over — through a trade",
+        "pile": "Take the item through the Item Piles window",
+        "type": "{type} can't go on this actor"
       }
     },
     "tips": {

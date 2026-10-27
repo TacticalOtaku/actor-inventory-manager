@@ -56,7 +56,7 @@
     {{/each}}
     <span class="aim-tab-ink" aria-hidden="true"></span>
   </nav>
-  <div class="aim-panels">
+  <div class="aim-panels" data-drop-label="{{localize "AIM.window.drop.release"}}">
     {{#each tabs}}
     <section class="aim-panel" data-panel="{{id}}" role="tabpanel" {{#unless active}}hidden{{/unless}}>
       {{#if (eq id "equipment")}}{{> "modules/actor-inventory-manager/templates/window/equipment.hbs" @root}}

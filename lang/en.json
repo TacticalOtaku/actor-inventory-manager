@@ -1056,6 +1056,17 @@
       },
       "damageType": "Damage type",
       "damageTypeAdded": "Damage type of the world or a module"
+    },
+    "migration": {
+      "ownDoll": "Own doll: {name}",
+      "tradeCancelled": "The trade was cancelled by the module update.",
+      "renamed": "<b>AIM: Actor Window</b> — the new name of Actor Inventory Manager & Paperdoll.",
+      "report": "Moved {actors} actors, {items} items, {presets} presets; trades cancelled: {trades}; failures: {failures} — see the console.",
+      "retry": {
+        "name": "Migration to 2.0",
+        "label": "Run the migration again",
+        "hint": "Moves the world's 1.9 data once more (quick slots, own dolls, presets, open trades). Safe to repeat."
+      }
     }
   }
 }

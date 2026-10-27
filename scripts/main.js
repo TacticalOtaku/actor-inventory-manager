@@ -44,6 +44,7 @@ import { openPresetEditor } from "./ui/preset-editor.js";
 import { equipItemToSlot, unequipItem, toggleItemEquipped, useItem, toggleAttunement } from "./ui/item-actions.js";
 import { isItemPilesActive, computeActorCurrency } from "./integrations/item-piles.js";
 import { SC_MODULE_ID, invalidateRarityColorCache } from "./integrations/sc-rarity-colors.js";
+import { migrateLook, registerMigrationSettings, runMigration } from "./foundry/migration.js";
 
 /**
  * Rarity colours are memoized; drop them and redraw open windows whenever
@@ -68,9 +69,13 @@ registerModuleSettings();
 
 Hooks.once("init", () => {
   registerTradeSettings();
+  registerMigrationSettings();
 });
 
 Hooks.once("ready", () => {
+  // The 1.9 → 2.0 migration (ADR 0005): the GM moves the world's data, every client its own look.
+  runMigration().catch((error) => LOG.error("Migration to 2.0 failed", error));
+  migrateLook().catch((error) => LOG.error("Moving the 1.9 theme and accent failed", error));
   registerTradeService();
   registerEnforcementHooks();
   registerSheetInjectionHooks();

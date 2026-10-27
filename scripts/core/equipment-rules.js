@@ -18,6 +18,7 @@ import {
 import { getActorSlots } from "./paperdoll-templates.js";
 import { getPaperdollRuntime } from "./paperdoll-runtime.js";
 import { slotRegistry } from "./slot-definitions.js";
+import { isLegacyNonSlot } from "./migration.js";
 
 /**
  * Result of equipment validation
@@ -115,7 +116,8 @@ export function getActorEquippedMap(actor) {
     const slotId = getItemAssignedSlot(item);
     if (slotId && validSlotIdSet.has(slotId) && !slotMap.has(slotId)) {
       slotMap.set(slotId, item);
-    } else {
+    } else if (!isLegacyNonSlot(slotId)) {
+      // A 1.9 attunement or quick slot is no slot in 2.0, and auto-placement leaves the item where it is (ADR 0005).
       unassigned.push(item);
     }
   }

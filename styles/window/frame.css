@@ -68,9 +68,10 @@
 .aim-tab:hover, .aim-tab[aria-selected="true"] { color: var(--text); }
 .aim-tab[hidden] { display: none; }
 .aim-tab-ink {
-  position: absolute; left: 0; bottom: -1px; height: 2px; width: 0;
+  position: absolute; left: 0; bottom: -1px; height: 2px; width: 100px;
   border-radius: 2px; background: var(--accent);
-  transition: transform var(--d-base) var(--ease-settle), width var(--d-base) var(--ease-settle);
+  transform-origin: left; transform: scaleX(0);
+  transition: transform var(--d-base) var(--ease-settle);
 }
 .aim-panels { position: relative; flex: 1; min-height: 0; }
 .aim-panel { position: absolute; inset: 0; overflow: auto; padding: var(--s4); scrollbar-gutter: stable; }

@@ -2,7 +2,7 @@
 
 .aim-effwrap { display: grid; }
 .aim-effect {
-  display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 3px 6px 3px 4px;
+  position: relative; display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 3px 6px 3px 4px;
   border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface-1); color: var(--text);
   font: 12px var(--font-ui); cursor: pointer; transition: border-color var(--d-fast), opacity var(--d-fast);
 }
@@ -24,8 +24,8 @@
 .aim-effect[draggable="true"] { cursor: grab; }
 .aim-effect.is-refused { animation: aim-shake 360ms var(--ease-settle); }
 /* a favorite effect opened from the rail */
-.aim-effect.is-found { animation: aim-effect-found 1200ms var(--ease-settle); }
-@keyframes aim-effect-found { 15%, 60% { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); } }
+.aim-effect.is-found::after, .aim-check.is-found::after { content: ""; position: absolute; inset: -1px; border: 1px solid var(--accent); border-radius: inherit; box-shadow: 0 0 0 3px var(--accent-soft); pointer-events: none; opacity: 0; animation: aim-effect-found 1200ms var(--ease-settle); }
+@keyframes aim-effect-found { 15%, 60% { opacity: 1; } }
 .aim-effect button { min-height: 0; flex: none; }
 
 .aim-switch { position: relative; width: 28px; height: 16px; padding: 0; border: 0; border-radius: 99px; background: var(--surface-3); cursor: pointer; }

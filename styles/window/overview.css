@@ -9,7 +9,7 @@
 .aim-card:hover .aim-card-cfg, .aim-card-cfg:focus-visible { opacity: 1; }
 
 .aim-check {
-  display: flex; align-items: center; gap: var(--s2); width: 100%; height: 28px; padding: 0 6px;
+  position: relative; display: flex; align-items: center; gap: var(--s2); width: 100%; height: 28px; padding: 0 6px;
   border: 1px solid transparent; border-radius: var(--r-sm); background: transparent; color: var(--text);
   font: 12.5px var(--font-ui); text-align: left; cursor: pointer; transition: border-color var(--d-fast);
 }
@@ -18,7 +18,7 @@
 .aim-check:disabled { cursor: default; color: var(--text); }
 .aim-check[draggable="true"] { cursor: grab; }
 .aim-check.is-dragging { opacity: 0.4; }
-.aim-check.is-found { animation: aim-effect-found 1200ms var(--ease-settle); }
+/* .aim-check.is-found: the ring is in effects.css with the effect rows' */
 .aim-prof { flex: none; width: 8px; height: 8px; border: 1px solid var(--text-3); border-radius: 50%; }
 .aim-prof[data-mark="half"] { border-color: var(--accent); background: linear-gradient(90deg, var(--accent) 50%, transparent 50%); }
 .aim-prof[data-mark="prof"] { border-color: var(--accent); background: var(--accent); }

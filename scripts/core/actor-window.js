@@ -153,3 +153,31 @@ export function sheetMenuEntries({ type, bastion, polymorphed }) {
 
 /** The actor sheet tab each menu entry opens (dnd5e 5.3.3 tab ids). */
 export const SHEET_MENU_TABS = Object.freeze({ traits: "specialTraits", bastion: "bastion" });
+
+/** Actor fields only the rail shows; a change to nothing else redraws the rail alone (#9: a hit stays under a frame). */
+const RAIL_ONLY = Object.freeze(["system.attributes.hp", "system.attributes.death", "system.attributes.inspiration"]);
+
+function changedKeys(changes, prefix = "") {
+  return Object.entries(changes ?? {}).flatMap(([key, value]) => {
+    const path = prefix ? `${prefix}.${key}` : key;
+    return value && typeof value === "object" && !Array.isArray(value) ? changedKeys(value, path) : [path];
+  });
+}
+
+/**
+ * The window parts an actor update redraws: the rail alone when every changed field is one only the rail shows,
+ * every part otherwise (null).
+ * @param {Object} changes  the update's changes, nested or dotted
+ * @returns {string[]|null}
+ */
+export function partsForActorChange(changes) {
+  const keys = changedKeys(changes).filter((key) => key !== "_id" && !key.startsWith("_stats"));
+  if (!keys.length) return null;
+  return keys.every((key) => RAIL_ONLY.some((path) => key === path || key.startsWith(`${path}.`))) ? ["rail"] : null;
+}
+
+/** Parts queued for one redraw add up; once any asks for every part (null), every part it is. */
+export function mergeParts(queued, parts) {
+  if (queued === undefined) return parts;
+  return queued && parts ? [...new Set([...queued, ...parts])] : null;
+}

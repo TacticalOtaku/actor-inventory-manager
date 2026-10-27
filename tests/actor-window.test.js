@@ -11,7 +11,9 @@ import {
   motionCap,
   normalizeAccent,
   crLabel,
+  mergeParts,
   orbAction,
+  partsForActorChange,
   railBlocksFor,
   resolveTheme,
   sheetMenuEntries,
@@ -137,5 +139,28 @@ describe("challenge rating", () => {
   it("is written as the books write it", () => {
     assert.deepEqual([0.125, 0.25, 0.5, 0, 1, 17, "2"].map(crLabel), ["1/8", "1/4", "1/2", "0", "1", "17", "2"]);
     assert.deepEqual([null, undefined, "", "x"].map(crLabel), ["—", "—", "—", "—"]);
+  });
+});
+
+describe("what an actor change redraws (#9)", () => {
+  it("redraws the rail alone for hit points, death saves and inspiration", () => {
+    assert.deepEqual(partsForActorChange({ system: { attributes: { hp: { value: 3 } } }, _id: "a", _stats: { modifiedTime: 1 } }), ["rail"]);
+    assert.deepEqual(partsForActorChange({ "system.attributes.hp.temp": 8, "system.attributes.death.success": 1 }), ["rail"]);
+    assert.deepEqual(partsForActorChange({ system: { attributes: { inspiration: true } } }), ["rail"]);
+  });
+
+  it("redraws everything for anything else, or nothing it can tell", () => {
+    assert.equal(partsForActorChange({ system: { attributes: { hp: { value: 3 } }, currency: { gp: 5 } } }), null);
+    assert.equal(partsForActorChange({ name: "Аот" }), null);
+    assert.equal(partsForActorChange({ _id: "a" }), null);
+    assert.equal(partsForActorChange(undefined), null);
+  });
+
+  it("adds up queued parts until one asks for all", () => {
+    assert.deepEqual(mergeParts(undefined, ["rail"]), ["rail"]);
+    assert.deepEqual(mergeParts(["rail"], ["rail", "main"]), ["rail", "main"]);
+    assert.equal(mergeParts(["rail"], null), null);
+    assert.equal(mergeParts(null, ["rail"]), null);
+    assert.equal(mergeParts(undefined, null), null);
   });
 });

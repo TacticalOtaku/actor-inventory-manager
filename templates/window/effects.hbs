@@ -1,4 +1,4 @@
-{{#*inline "aimCond"}}<button type="button" class="aim-cond {{#if on}}is-on{{/if}}" data-action="toggleCondition" data-status="{{id}}" aria-pressed="{{#if on}}true{{else}}false{{/if}}" {{#unless @root.canEdit}}disabled{{/unless}} data-tooltip="{{name}}"><i></i><span>{{name}}</span></button>{{/inline}}
+{{#*inline "aimCond"}}<button type="button" class="aim-cond {{#if on}}is-on{{/if}} {{#if immune}}is-immune{{/if}}" data-action="toggleCondition" data-status="{{id}}" aria-pressed="{{#if on}}true{{else}}false{{/if}}" {{#if immune}}disabled{{else}}{{#unless @root.canEdit}}disabled{{/unless}}{{/if}} data-tooltip="{{#if immune}}{{localize "AIM.window.effects.immune" name=name}}{{else}}{{name}}{{/if}}"><i></i><span>{{name}}</span></button>{{/inline}}
 <div class="aim-effectbook">
   <div class="aim-conds">
     <div class="aim-conds-h">{{localize "AIM.window.effects.conditions"}}</div>

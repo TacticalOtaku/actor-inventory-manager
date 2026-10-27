@@ -60,6 +60,9 @@
 .aim-cond:disabled { cursor: default; }
 .aim-cond.is-on { border-color: color-mix(in oklab, var(--hp) 55%, transparent); color: var(--text); background: color-mix(in oklab, var(--hp) 12%, var(--surface-0)); }
 .aim-cond.is-on i { background: var(--hp); box-shadow: 0 0 6px color-mix(in oklab, var(--hp) 60%, transparent); }
+/* the actor is immune: the condition cannot be applied */
+.aim-cond.is-immune { border-style: dashed; color: var(--text-3); }
+.aim-cond.is-immune span { text-decoration: line-through; }
 .aim-eff-new { justify-self: start; display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; }
 .aim-eff-cats { columns: 280px; column-gap: var(--s3); }
 .aim-eff-cat { display: grid; gap: 3px; margin: 0 0 var(--s3); break-inside: avoid; }

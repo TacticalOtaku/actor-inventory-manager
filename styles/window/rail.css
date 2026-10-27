@@ -162,5 +162,7 @@ button.aim-stat:disabled { cursor: default; }
 .aim-window[data-layout="narrow"] .aim-stats { width: 236px; }
 .aim-window[data-layout="narrow"] .aim-casting { width: 220px; }
 .aim-window[data-layout="narrow"] .aim-effects { width: 230px; }
+/* the strip has no room for the favorites list; they come back in the wider layouts */
+.aim-window[data-layout="narrow"] .aim-favorites { display: none; }
 .aim-window[data-layout="narrow"] .aim-chips { width: 180px; }
 .aim-window[data-layout="narrow"] .aim-death { width: 210px; }

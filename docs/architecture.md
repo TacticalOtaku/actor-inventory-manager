@@ -59,6 +59,8 @@ one place to update when it moves again. Never inline these reads at a call site
 | Container capacity without Weighty Containers (`computeCapacity`) | `readContainerCapacity` | `integrations/dnd5e.js` |
 | Vehicle type (`details.type`, formerly `vehicleType`) | `readVehicleType` | `integrations/dnd5e.js` |
 | Vehicle size and cargo capacity for the hold banner | `readVehicleHold` | `integrations/dnd5e.js` |
+| Spells for the spells tab (method, prepared, properties, labels, materials, uses) | `readSpellbook` | `integrations/dnd5e.js` |
+| Prepared spells against each class limit (`spellcasting.preparation`) | `readSpellPreparation` | `integrations/dnd5e.js` |
 
 Shapes handled (dnd5e 5.3.3):
 
@@ -246,6 +248,8 @@ slice from the map #28.
 | Preset editor window (GM): figure, slots, attunement limit, save, delete, import, export; `api.openEditor(actor)` | `scripts/ui/preset-editor.js`, `templates/window/preset-*.hbs` |
 | Pure editor edits: working copy, slot add/move/remove, unchanged check, preset ids | `scripts/core/preset-editor.js` |
 | Theme attributes for any module window root | `scripts/ui/theme-root.js` |
+| Spells tab: slot tracks, prepared list, spellbook, innate and at-will, casting, template minimise | `scripts/ui/spells.js`, `templates/window/spells.hbs`, `templates/window/spell-row.hbs` |
+| Pure spellbook rules: sections, filters, what can be cast, gem clicks, preparation state | `scripts/core/spellbook.js` |
 
 ### Theme, accent, density, motion
 

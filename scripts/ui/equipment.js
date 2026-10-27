@@ -5,7 +5,8 @@
 import { MODULE_ID } from "../constants.js";
 import { LIST_FILTERS, SORTS, VIEWS, goldParts, groupInventory, listPrefsFor, loadBand, showsCharges, trayFolded, trayPeek } from "../core/inventory.js";
 import { computeActorEncumbrance, getSystemWeightUnit } from "../core/weight-calculator.js";
-import { getDnd5eConfig, readCoins, readContainerCapacity, readInventory, resolveItemUses, unitAbbreviation } from "../integrations/dnd5e.js";
+import { getDnd5eConfig, readCoins, readContainerCapacity, readInventory, readSpellbook, resolveItemUses, unitAbbreviation } from "../integrations/dnd5e.js";
+import { castable, ready } from "../core/spellbook.js";
 import { computeActorCurrency, readPilesCurrencies } from "../integrations/item-piles.js";
 import { getContainerLoad, getContainerWeightReductionPct, isWeightyContainersActive } from "../integrations/weighty-containers.js";
 import { escapeHTML } from "./html.js";
@@ -176,11 +177,20 @@ export async function buildItemDetail(item, { canEdit }) {
     ? await foundry.applications.ux.TextEditor.implementation.enrichHTML(raw, { relativeTo: item, rollData: item.getRollData?.(), secrets: item.isOwner })
     : "";
   const activities = [...(system.activities ?? [])];
+  const spell = item.type === "spell" ? readSpellbook({ items: [item] })[0] : null;
   return {
     description,
     canEdit,
     activities: activities.length > 1 ? activities.map((a) => ({ id: a.id, name: a.name, img: a.img })) : [],
-    useOnly: activities.length === 1,
+    useOnly: !spell && activities.length === 1,
+    // A spell's main actions are casting and preparing.
+    spell: spell && {
+      castable: castable(spell),
+      castLabel: t(castable(spell) && !ready(spell) ? "AIM.window.spells.castRitual" : "AIM.window.spells.cast"),
+      canPrepare: spell.canPrepare && spell.prepared < 2,
+      prepared: spell.prepared >= 1,
+      prepareLabel: t(spell.prepared >= 1 ? "AIM.window.spells.unprepare" : "AIM.window.spells.prepare")
+    },
     canEquip: "equipped" in system,
     equipLabel: t(system.equipped ? "AIM.window.inv.unequip" : "AIM.window.inv.equip"),
     // An unidentified item does not give its effects away to players.
@@ -202,7 +212,10 @@ export function buildInspector(item, detail) {
     img: item.img,
     rarity,
     rarityLabel: rarity && rarity !== "common" ? game.i18n.localize(getDnd5eConfig().itemRarity?.[rarity] ?? "") : "",
-    typeLabel: typeLabel(item.type),
+    // A spell names its circle and school instead of its document type.
+    typeLabel: item.type === "spell"
+      ? [item.system.level ? t("AIM.window.spells.circle", { level: item.system.level }) : t("AIM.window.spells.cantrips"), item.labels?.school].filter(Boolean).join(" · ")
+      : typeLabel(item.type),
     tags: readInventory({ items: [item] })[0]?.tags ?? [],
     usesText: uses.usesDisplay,
     recovery: recovery.join(", "),

@@ -760,6 +760,42 @@
         "own": "Own doll: {actor}",
         "changed": "Changed: «Apply» makes this doll the actor's own, «Save as new» makes it a world preset.",
         "importHint": "Pick a JSON file with a preset: it is saved to the world and opens in the editor."
+      },
+      "spells": {
+        "search": "Find a spell",
+        "circle": "Circle {level}",
+        "pact": "Pact · circle {level}",
+        "cantrips": "Cantrips",
+        "noSlots": "no slots",
+        "gem": "Slot {n}: {track}",
+        "use": "Use {n}",
+        "prepared": "Prepared",
+        "book": "Spellbook",
+        "innate": "Innate",
+        "atwill": "At will",
+        "cast": "Cast",
+        "castRitual": "Cast as a ritual",
+        "prepare": "Prepare",
+        "unprepare": "Unprepare",
+        "always": "Always",
+        "concentration": "Concentration",
+        "concShort": "C",
+        "ritual": "Ritual",
+        "ritualShort": "R",
+        "materialsCost": "M: {text} ({cost} gp)",
+        "limitHint": "Class preparation limit",
+        "overHint": "More prepared than the class limit: dnd5e warns but does not refuse",
+        "warning": "Prepared {value} / {max}",
+        "warningHint": "dnd5e's preparation warning: more prepared than the class limit",
+        "refused": "“{name}” cannot be cast now: dnd5e refused.",
+        "filters": {
+          "prepared": "Prepared",
+          "ritual": "Ritual",
+          "concentration": "Concentration",
+          "action": "Action",
+          "bonus": "Bonus",
+          "reaction": "Reaction"
+        }
       }
     }
   }

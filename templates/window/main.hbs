@@ -9,6 +9,7 @@
       {{/if}}
       <div class="aim-title-text">
         <h2 class="aim-name">{{actor.name}}</h2>
+        {{#if prepWarning}}<span class="aim-prep-warn" data-tooltip="{{localize "AIM.window.spells.warningHint"}}"><i class="fa-light fa-book-bookmark"></i>{{prepWarning}}</span>{{/if}}
         <div class="aim-links">
           {{#each identity.links}}{{#unless @first}}<span class="aim-dot" aria-hidden="true">·</span>{{/unless}}<button type="button" class="aim-link" data-action="openDocument" data-id="{{id}}">{{label}}</button>{{/each}}
         </div>
@@ -57,6 +58,7 @@
     {{#each tabs}}
     <section class="aim-panel" data-panel="{{id}}" role="tabpanel" {{#unless active}}hidden{{/unless}}>
       {{#if (eq id "equipment")}}{{> "modules/actor-inventory-manager/templates/window/equipment.hbs" @root}}
+      {{else if (eq id "spells")}}{{#if @root.spells}}{{> "modules/actor-inventory-manager/templates/window/spells.hbs" @root}}{{/if}}
       {{else}}<p class="aim-empty">{{@root.pendingText}}</p>{{/if}}
     </section>
     {{/each}}

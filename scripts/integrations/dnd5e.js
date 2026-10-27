@@ -344,6 +344,67 @@ export function readVehicleHold(actor) {
   };
 }
 
+/**
+ * The spells the spells tab lists. dnd5e 5.3.3 shapes: `method` (spell, pact, innate, atwill, ritual) and numeric
+ * `prepared` (0, 1, 2 always); concentration and ritual are `properties`; the item's prepared `labels` carry
+ * activation, range, school and `components.vsm`; materials are `materials` {value, cost}; uses are `uses.max`/`spent`;
+ * `classIdentifier` names the class the spell came from (`actor.spellcastingClasses`).
+ * @param {Object} actor
+ */
+export function readSpellbook(actor) {
+  return [...(actor?.items ?? [])].filter((item) => item.type === "spell").map((item) => {
+    const system = item.system ?? {};
+    const labels = item.labels ?? {};
+    const properties = system.properties ?? new Set();
+    const max = num(system.uses?.max, 0);
+    const spent = num(system.uses?.spent, 0);
+    return {
+      id: item.id,
+      uuid: item.uuid,
+      name: item.name,
+      img: item.img,
+      level: num(system.level, 0),
+      school: system.school ?? "",
+      schoolLabel: labels.school ?? "",
+      method: system.method ?? "",
+      prepared: num(system.prepared, 0),
+      // A class without a preparation limit (no formula, a 2014 warlock or sorcerer) knows its spells instead.
+      known: knownByClass(actor, system.classIdentifier),
+      canPrepare: resolveSpellPreparation(item).canPrepare && !knownByClass(actor, system.classIdentifier),
+      ritual: properties.has("ritual"),
+      concentration: properties.has("concentration"),
+      activation: system.activation?.type ?? "",
+      activationLabel: labels.activation ?? "",
+      range: labels.range ?? system.range?.labels?.range ?? "",
+      components: labels.components?.vsm ?? "",
+      materials: system.materials?.value ? { text: system.materials.value, cost: num(system.materials.cost, 0) } : null,
+      uses: max > 0 ? { value: Math.max(0, max - spent), max, spent } : null,
+      sort: num(item.sort, 0)
+    };
+  });
+}
+
+/** Whether the spell's class has no preparation limit, so its spells are known rather than prepared. */
+function knownByClass(actor, identifier) {
+  const cls = identifier ? actor?.spellcastingClasses?.[identifier] : null;
+  return Boolean(cls) && !(num(cls.system?.spellcasting?.preparation?.max, 0) > 0);
+}
+
+/**
+ * Prepared spells against each casting class's limit. dnd5e 5.3.3 counts them on the class:
+ * `actor.spellcastingClasses[identifier].system.spellcasting.preparation` {value, max}.
+ * @param {Object} actor
+ * @returns {{id: string, name: string, value: number, max: number}[]}
+ */
+export function readSpellPreparation(actor) {
+  return Object.values(actor?.spellcastingClasses ?? {}).map((cls) => ({
+    id: cls.id,
+    name: cls.name,
+    value: num(cls.system?.spellcasting?.preparation?.value, 0),
+    max: num(cls.system?.spellcasting?.preparation?.max, 0)
+  }));
+}
+
 /** The actor's dnd5e coins in CONFIG.DND5E.currencies order (pp, gp, ep, sp, cp in 5.3.3). */
 export function readCoins(actor) {
   const currencies = getDnd5eConfig().currencies ?? {};

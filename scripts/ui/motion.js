@@ -33,3 +33,25 @@ export function glide(container, selector, mutate) {
     );
   }
 }
+
+/** Boxes of the matching elements by their `data-key`, to glide them after a redraw replaces them. */
+export function measure(container, selector) {
+  return new Map([...container.querySelectorAll(selector)].map((el) => [el.dataset.key, el.getBoundingClientRect()]));
+}
+
+/** After a redraw, each element with a key measured before glides from its old box; new ones fade in. */
+export function glideFrom(container, selector, before) {
+  for (const el of container.querySelectorAll(selector)) {
+    const from = before.get(el.dataset.key);
+    const to = el.getBoundingClientRect();
+    if (!to.width && !to.height) continue;
+    if (!from) {
+      el.animate([{ opacity: 0, transform: "scale(0.96)" }, { opacity: 1, transform: "none" }], { duration: 300, easing: SETTLE });
+      continue;
+    }
+    const dx = from.left - to.left;
+    const dy = from.top - to.top;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
+    el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }], { duration: 420, easing: SETTLE });
+  }
+}

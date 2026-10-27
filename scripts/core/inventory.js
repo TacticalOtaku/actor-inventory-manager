@@ -13,20 +13,21 @@ const RARITY_ORDER = ["", "common", "uncommon", "rare", "veryRare", "legendary",
  * A tab's list view, sort and filters, as remembered in the user's listPrefs setting.
  * @param {Record<string, object>} all
  * @param {string} tab
+ * @param {string[]} [filters]  the filters this tab knows
  * @returns {{view: string, sort: string, filters: string[]}}
  */
-export function listPrefsFor(all, tab) {
+export function listPrefsFor(all, tab, filters = LIST_FILTERS) {
   const prefs = all?.[tab] ?? {};
   return {
     view: VIEWS.includes(prefs.view) ? prefs.view : "list",
     sort: SORTS.includes(prefs.sort) ? prefs.sort : "name",
-    filters: Array.isArray(prefs.filters) ? prefs.filters.filter((f) => LIST_FILTERS.includes(f)) : []
+    filters: Array.isArray(prefs.filters) ? prefs.filters.filter((f) => filters.includes(f)) : []
   };
 }
 
 /** A copy of every tab's preferences with one tab changed. */
-export function withListPref(all, tab, patch) {
-  return { ...all, [tab]: { ...listPrefsFor(all, tab), ...patch } };
+export function withListPref(all, tab, patch, filters = LIST_FILTERS) {
+  return { ...all, [tab]: { ...listPrefsFor(all, tab, filters), ...patch } };
 }
 
 const COMPARE = {

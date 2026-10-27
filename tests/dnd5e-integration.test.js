@@ -529,3 +529,46 @@ describe("vehicle reads for the doll (dnd5e 5.3.3)", () => {
     assert.equal(readVehicleHold({ system: { traits: { size: "lg" }, attributes: { capacity: { cargo: { value: null, units: "lb" } } } } }).cargo, null);
   });
 });
+
+describe("spells tab reads (dnd5e 5.3.3)", () => {
+  afterEach(() => { delete globalThis.CONFIG; });
+
+  it("reads method, preparation, properties, labels, materials and innate uses", async () => {
+    const { readSpellbook } = await import("../scripts/integrations/dnd5e.js");
+    globalThis.CONFIG = { DND5E: { spellcasting: { spell: { prepares: true }, innate: {} } } };
+    const fireball = {
+      id: "f", uuid: "Actor.a.Item.f", name: "Огненный шар", img: "fb.webp", type: "spell", sort: 100,
+      labels: { school: "Воплощение", activation: "1 действие", range: "150 фт", components: { vsm: "В, С, М" } },
+      system: { level: 3, school: "evo", method: "spell", prepared: 1, properties: new Set(["vocal", "somatic", "material"]),
+        activation: { type: "action" }, materials: { value: "шарик гуано", cost: 0 }, uses: { max: "", spent: 0 } }
+    };
+    const invis = { id: "i", name: "Невидимость", type: "spell", labels: {}, system: { level: 2, method: "innate", prepared: 0, properties: new Set(["concentration"]), activation: { type: "action" }, uses: { max: 1, spent: 1 } } };
+    const sword = { id: "s", name: "Меч", type: "weapon", system: {} };
+    const [fb, iv, ...rest] = readSpellbook({ items: [fireball, invis, sword] });
+    assert.equal(rest.length, 0);
+    assert.deepEqual([fb.level, fb.method, fb.prepared, fb.canPrepare, fb.ritual, fb.concentration], [3, "spell", 1, true, false, false]);
+    assert.deepEqual([fb.schoolLabel, fb.activation, fb.activationLabel, fb.range, fb.components], ["Воплощение", "action", "1 действие", "150 фт", "В, С, М"]);
+    assert.deepEqual(fb.materials, { text: "шарик гуано", cost: 0 });
+    assert.equal(fb.uses, null);
+    assert.deepEqual([iv.canPrepare, iv.concentration, iv.uses], [false, true, { value: 0, max: 1, spent: 1 }]);
+  });
+
+  it("treats the spells of a class without a preparation limit as known", async () => {
+    const { readSpellbook } = await import("../scripts/integrations/dnd5e.js");
+    globalThis.CONFIG = { DND5E: { spellcasting: { pact: { prepares: true } } } };
+    const warlock = { system: { spellcasting: { preparation: { value: 0, max: 0 } } } };
+    const wizard = { system: { spellcasting: { preparation: { value: 2, max: 4 } } } };
+    const spell = (id, cls) => ({ id, name: id, type: "spell", labels: {}, system: { level: 1, method: "pact", prepared: 0, classIdentifier: cls, properties: new Set(), activation: {} } });
+    const [hex, sleep, loose] = readSpellbook({ spellcastingClasses: { warlock, wizard }, items: [spell("hex", "warlock"), spell("sleep", "wizard"), spell("loose", "")] });
+    assert.deepEqual([hex.known, hex.canPrepare], [true, false]);
+    assert.deepEqual([sleep.known, sleep.canPrepare], [false, true]);
+    assert.deepEqual([loose.known, loose.canPrepare], [false, true]);
+  });
+
+  it("reads each casting class's prepared count and limit", async () => {
+    const { readSpellPreparation } = await import("../scripts/integrations/dnd5e.js");
+    const wizard = { id: "w", name: "Волшебник", system: { spellcasting: { preparation: { value: 11, max: 10, formula: "@abilities.int.mod + @classes.wizard.levels" } } } };
+    assert.deepEqual(readSpellPreparation({ spellcastingClasses: { wizard } }), [{ id: "w", name: "Волшебник", value: 11, max: 10 }]);
+    assert.deepEqual(readSpellPreparation({}), []);
+  });
+});

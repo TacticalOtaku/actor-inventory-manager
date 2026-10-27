@@ -95,6 +95,8 @@ export const RAIL_BLOCKS = Object.freeze([
   { id: "spellSlots", needs: "magic", types: ["character", "npc"] },
   { id: "stats" },
   { id: "legendary", needs: "legendary", types: ["npc"] },
+  { id: "cargo", types: ["vehicle"] },
+  { id: "crew", types: ["vehicle"] },
   { id: "spellcasting", needs: "magic", types: ["character", "npc"] },
   { id: "effects" },
   { id: "chips", types: ["character", "npc"] },

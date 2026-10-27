@@ -6,6 +6,7 @@
 import { SPELL_SCHOOL_COLORS } from "../constants.js";
 import { countAttunedItems, getActorAttunementMax, getAttunementStatus } from "../core/attunement.js";
 import { PHYSICAL_ITEM_TYPES, canItemBeEquipped } from "../core/item-classifier.js";
+import { convertWeight } from "../core/vehicle.js";
 import { getItemWeightInUnit, getSystemWeightUnit, num } from "../core/weight-calculator.js";
 import { computeActorCurrency } from "./item-piles.js";
 import { getItemRarityVisuals, getSpellSchoolVisuals } from "./sc-rarity-colors.js";
@@ -368,6 +369,57 @@ export function readVehicleHold(actor) {
     size: label ? localizeOr(label, label) : (size ?? ""),
     cargo: Number.isFinite(Number(cargo.value)) && cargo.value !== null ? Number(cargo.value) : null,
     unit: cargo.units ? unitAbbreviation("weightUnits", cargo.units) : ""
+  };
+}
+
+/**
+ * What a vehicle's window shows. dnd5e 5.3.3: `details.type` (CONFIG.DND5E.vehicleTypes labels), size in
+ * `traits.size`, `traits.keel` / `beam` {value, units}; damage and mishap thresholds `attributes.hp.dt` / `mt`;
+ * travel speed `attributes.travel.speeds[type]` in `travel.units` (CONFIG.DND5E.travelUnits); the hold's load is
+ * `attributes.encumbrance.value` in the default weight unit (kg with metric weights), against
+ * `attributes.capacity.cargo` {value, units}, both converted by CONFIG.DND5E.weightUnits factors; `crew` and
+ * `passengers` are {max, value: actor UUIDs}, `draft.value` actor UUIDs without a maximum; older worlds keep
+ * `cargo.crew` / `cargo.passengers` as {name, quantity} rows.
+ * @param {Object} actor
+ * @param {{metric?: boolean}} [options]  whether dnd5e weighs in metric units
+ */
+export function readVehicle(actor, { metric = false } = {}) {
+  if (actor?.type !== "vehicle") return null;
+  const config = getDnd5eConfig();
+  const system = actor.system ?? {};
+  const attributes = system.attributes ?? {};
+  const traits = system.traits ?? {};
+  const type = system.details?.type ?? null;
+  const typeLabel = config.vehicleTypes?.[type];
+  const size = config.actorSizes?.[traits.size]?.label;
+  const length = (dim) => (num(dim?.value, 0) > 0 ? `${dim.value} ${unitAbbreviation("movementUnits", dim.units || "ft")}` : "");
+  const travel = attributes.travel ?? {};
+  const units = travel.units ?? "mph";
+  const capacity = attributes.capacity?.cargo ?? {};
+  const capUnit = capacity.units || "tn";
+  const factors = Object.fromEntries(Object.entries(config.weightUnits ?? {}).map(([key, unit]) => [key, unit?.conversion]));
+  const loadRaw = num(attributes.encumbrance?.value, 0);
+  const group = (part) => ({ max: num(part?.max, 0) || null, uuids: [...(part?.value ?? [])].filter(Boolean) });
+  const legacy = (kind) => [...(system.cargo?.[kind] ?? [])].filter((row) => row?.name).map((row) => ({ kind, name: row.name, quantity: num(row.quantity, 1) }));
+  const abbreviation = config.travelUnits?.[units]?.abbreviationHour;
+  return {
+    type,
+    typeLabel: typeLabel ? localizeOr(typeLabel, typeLabel) : "",
+    size: size ? localizeOr(size, size) : "",
+    keel: length(traits.keel),
+    beam: length(traits.beam),
+    dt: num(attributes.hp?.dt, 0) || null,
+    mt: num(attributes.hp?.mt, 0) || null,
+    speed: { value: num(travel.speeds?.[type], 0), unit: abbreviation ? localizeOr(abbreviation, abbreviation) : units },
+    cargo: {
+      load: convertWeight(loadRaw, metric ? "kg" : "lb", capUnit, factors) ?? loadRaw,
+      capacity: Number.isFinite(Number(capacity.value)) && capacity.value !== null ? Number(capacity.value) : null,
+      unit: unitAbbreviation("weightUnits", capUnit)
+    },
+    crew: group(system.crew),
+    passengers: group(system.passengers),
+    draft: group(system.draft),
+    legacy: [...legacy("crew"), ...legacy("passengers")]
   };
 }
 

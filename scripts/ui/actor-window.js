@@ -62,6 +62,7 @@ import { SETTLE, glide, glideFrom, measure } from "./motion.js";
 import { readMotionCaps, schemeIsLight, stampTheme } from "./theme-root.js";
 import { REST_HOOK, buildRailContext, openStatConfig, playLongRest, playRailChanges, railSnapshot, startRuneGlints } from "./rail.js";
 import { preloadBursts } from "./bursts.js";
+import { readVehicleOf, vehicleKind } from "./vehicle.js";
 
 const TEMPLATES = `modules/${MODULE_ID}/templates/window`;
 
@@ -83,7 +84,11 @@ const COLLAPSED_WIDTH = 320;
 const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 const hasLegendary = (actor) => Object.values(readNpc(actor)?.legendary ?? {}).some(Boolean);
 /** The settings list names a block by what it holds for this actor type: an NPC's stats add its rating, its chips lack inspiration. */
-const railBlockLabel = (id, type) => t(type === "npc" && (id === "stats" || id === "chips") ? `AIM.window.rail.${id}Npc` : `AIM.window.rail.${id}`);
+const railBlockLabel = (id, type) => {
+  if (type === "npc" && (id === "stats" || id === "chips")) return t(`AIM.window.rail.${id}Npc`);
+  if (type === "vehicle" && id === "stats") return t("AIM.window.rail.statsVehicle");
+  return t(`AIM.window.rail.${id}`);
+};
 const signed = (n) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 
 function windowIdFor(actor) {
@@ -118,6 +123,7 @@ export class ActorWindow extends WindowBase {
       openBastion: ActorWindow.#onOpenBastion,
       revertForm: ActorWindow.#onRevertForm,
       openDocument: ActorWindow.#onOpenDocument,
+      openCrew: ActorWindow.#onOpenCrew,
       rollAbility: ActorWindow.#onRollAbility,
       levelOrb: ActorWindow.#onLevelOrb,
       editHp: ActorWindow.#onEditHp,
@@ -346,10 +352,10 @@ export class ActorWindow extends WindowBase {
       orbLabel: id.xp.ready ? t("AIM.window.xp.ready", { level: id.level + 1 }) : t("AIM.window.xp.orb", { value: id.xp.value, max: id.xp.max }),
       // An NPC's challenge rating sits in the level orb's place, its size and type under the name.
       cr: npc && { text: crLabel(npc.cr), hint: t("AIM.window.npc.crHint", { xp: npc.xp.toLocaleString(game.i18n.lang) }) },
-      kind: npc && [npc.type, npc.size].filter(Boolean).join(" · "),
+      kind: npc ? [npc.type, npc.size].filter(Boolean).join(" · ") : this.actor.type === "vehicle" ? vehicleKind(this.actor) : "",
       summary: npc
         ? [t("AIM.window.npc.crShort", { cr: crLabel(npc.cr) }), npc.type].filter(Boolean).join(" · ")
-        : links.slice(0, 2).map((l) => l.label).join(" · ")
+        : this.actor.type === "vehicle" ? (readVehicleOf(this.actor)?.typeLabel ?? "") : links.slice(0, 2).map((l) => l.label).join(" · ")
     };
   }
 
@@ -816,6 +822,14 @@ export class ActorWindow extends WindowBase {
 
   static #onOpenDocument(event, target) {
     this.actor.items.get(target.dataset.id)?.sheet?.render({ force: true });
+  }
+
+  /** Someone aboard opens in their own window, or on their sheet when the window cannot show them. */
+  static #onOpenCrew(event, target) {
+    const member = fromUuidSync(target.dataset.uuid);
+    if (!member?.testUserPermission?.(game.user, "LIMITED")) return;
+    if (isSupportedActor(member) && member.testUserPermission(game.user, "OBSERVER")) openActorWindow(member);
+    else member.sheet?.render({ force: true });
   }
 
   static #onRollAbility(event, target) {

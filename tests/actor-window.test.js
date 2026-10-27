@@ -120,7 +120,7 @@ describe("rail blocks by actor type (#20)", () => {
     const has = { hasSpells: true, hasLegendary: true };
     assert.deepEqual(ids(railBlocksFor("character", has)), ["hitDice", "spellSlots", "stats", "spellcasting", "effects", "chips", "rest", "favorites"]);
     assert.deepEqual(ids(railBlocksFor("npc", has)), ["spellSlots", "stats", "legendary", "spellcasting", "effects", "chips"]);
-    assert.deepEqual(ids(railBlocksFor("vehicle", has)), ["stats", "effects"]);
+    assert.deepEqual(ids(railBlocksFor("vehicle", has)), ["stats", "cargo", "crew", "effects"]);
   });
 
   it("keep a block the actor lacks listed as absent, and hide it", () => {

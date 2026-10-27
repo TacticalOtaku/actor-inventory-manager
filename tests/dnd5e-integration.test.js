@@ -822,3 +822,34 @@ describe("NPC reads (dnd5e 5.3.3)", () => {
     assert.equal(readNpc({ type: "npc", system: { details: { cr: null } } }).cr, null);
   });
 });
+
+describe("vehicle reads (dnd5e 5.3.3)", () => {
+  afterEach(() => { delete globalThis.CONFIG; });
+
+  it("reads type, size, keel and beam, thresholds, travel speed, the hold in tons and the crew groups", async () => {
+    const { readVehicle } = await import("../scripts/integrations/dnd5e.js");
+    globalThis.CONFIG = { DND5E: {
+      vehicleTypes: { water: "Водный транспорт" }, actorSizes: { grg: { label: "Громадный" } },
+      movementUnits: { ft: { abbreviation: "фт" } },
+      travelUnits: { mph: { abbreviationHour: "миль/ч", conversion: 1 } },
+      weightUnits: { lb: { abbreviation: "фнт", conversion: 1 }, kg: { abbreviation: "кг", conversion: 2.5 }, tn: { abbreviation: "т", conversion: 2000 } }
+    } };
+    const ship = { type: "vehicle", system: {
+      details: { type: "water" },
+      traits: { size: "grg", keel: { value: 70, units: "ft" }, beam: { units: "ft" } },
+      attributes: { hp: { value: 300, max: 300, dt: 15, mt: 20 }, travel: { speeds: { land: 0.5, water: 5, air: 0 }, units: "mph" },
+        encumbrance: { value: 4000, max: 200000 }, capacity: { cargo: { value: 100, units: "tn" } } },
+      crew: { max: 4, value: ["Actor.a", "Actor.b"] }, passengers: { max: 6, value: [] }, draft: { value: [] },
+      cargo: { crew: [{ name: "Матросы", quantity: 10 }], passengers: [{ name: "", quantity: 1 }] }
+    } };
+    const v = readVehicle(ship);
+    assert.deepEqual([v.typeLabel, v.size, v.keel, v.beam, v.dt, v.mt], ["Водный транспорт", "Громадный", "70 фт", "", 15, 20]);
+    assert.deepEqual(v.speed, { value: 5, unit: "миль/ч" });
+    assert.deepEqual(v.cargo, { load: 2, capacity: 100, unit: "т" });
+    assert.deepEqual(v.crew, { max: 4, uuids: ["Actor.a", "Actor.b"] });
+    assert.deepEqual(v.draft, { max: null, uuids: [] });
+    assert.deepEqual(v.legacy, [{ kind: "crew", name: "Матросы", quantity: 10 }]);
+    assert.equal(readVehicle(ship, { metric: true }).cargo.load, 5);
+    assert.equal(readVehicle({ type: "npc", system: {} }), null);
+  });
+});

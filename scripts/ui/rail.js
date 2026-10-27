@@ -6,6 +6,7 @@ import { crLabel, railBlocksFor } from "../core/actor-window.js";
 import { heartbeatFor, railEvents } from "../core/vitals.js";
 import { readNpc, readRail } from "../integrations/dnd5e.js";
 import { playBurst } from "./bursts.js";
+import { buildVehicleRail } from "./vehicle.js";
 import { SETTLE } from "./motion.js";
 
 const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
@@ -63,6 +64,7 @@ export function buildRailContext(actor, { canEdit, hasSpells, hiddenBlocks }) {
       exhaustionPips: Array.from({ length: rail.exhaustion.max }, (_, i) => i < rail.exhaustion.value),
       // Heroic inspiration is a character's; an NPC's chips are exhaustion and concentration.
       hasInspiration: actor.type === "character",
+      vehicle: isVehicle ? buildVehicleRail(actor) : null,
       cr: npc && { text: crLabel(npc.cr), hint: t("AIM.window.npc.xp", { xp: npc.xp.toLocaleString(game.i18n.lang) }) },
       legendary
     },

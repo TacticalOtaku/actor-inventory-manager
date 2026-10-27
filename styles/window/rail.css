@@ -168,3 +168,23 @@ button.aim-stat:disabled { cursor: default; }
 .aim-window[data-layout="narrow"] .aim-favorites { display: none; }
 .aim-window[data-layout="narrow"] .aim-chips { width: 180px; }
 .aim-window[data-layout="narrow"] .aim-death { width: 210px; }
+
+/* ── a vehicle: the hold's load and who is aboard ── */
+.aim-cargo { flex-direction: column; align-items: stretch; gap: 5px; }
+.aim-cargo-bar { position: relative; height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
+.aim-cargo-bar i { position: absolute; inset: 0 auto 0 0; width: calc(var(--share) * 100%); border-radius: inherit; background: var(--accent); transition: width var(--d-slow) var(--ease-settle); }
+.aim-cargo.is-over { border-color: color-mix(in oklab, var(--hp) 55%, transparent); }
+.aim-cargo.is-over .aim-cargo-bar i { background: var(--hp); }
+.aim-cargo.is-over .aim-vlabel b { color: var(--hp); }
+.aim-crew { display: grid; gap: var(--s2); }
+.aim-crew-group { display: grid; gap: 5px; }
+.aim-crew-count { font: 600 11px var(--font-num); color: var(--text-2); }
+.aim-crew-count.is-over { color: var(--hp); }
+.aim-crew-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.aim-crew-face { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 50%; background: var(--surface-2); color: var(--text-3); }
+button.aim-crew-face { cursor: pointer; transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-snap); }
+button.aim-crew-face:hover { border-color: var(--accent); transform: scale(1.06); }
+.aim-crew-face img { width: 100%; height: 100%; object-fit: cover; border: 0; }
+.aim-crew-face.is-free { border-style: dashed; background: transparent; }
+.aim-crew-row { display: flex; justify-content: space-between; gap: var(--s2); font-size: 12px; color: var(--text); }
+.aim-crew-row small { color: var(--text-3); }

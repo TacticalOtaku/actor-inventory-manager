@@ -70,6 +70,7 @@ one place to update when it moves again. Never inline these reads at a call site
 | Tooltip cards (`system.getCardData()` read into numbers, text and pills; `richTooltip()` of effects and rule pages) | `readCardData` | `integrations/dnd5e.js` |
 | Damage types (`CONFIG.DND5E.damageTypes[key]`: label, `color` as a Foundry `Color`, `reference` page) | `readDamageType` | `integrations/dnd5e.js` |
 | NPC kind and legendary pools (`details.cr`, `details.xp.value`, prepared `details.type.label`, `traits.size`, `resources.legact` / `legres` {max, spent}) | `readNpc` | `integrations/dnd5e.js` |
+| Vehicle window (`details.type`, `traits.keel` / `beam`, `hp.dt` / `mt`, `travel.speeds` in `travel.units`, hold load `attributes.encumbrance.value` against `capacity.cargo`, `crew` / `passengers` {max, value: UUIDs}, `draft.value`, legacy `cargo.crew` / `cargo.passengers`) | `readVehicle` | `integrations/dnd5e.js` |
 | Skills and tools (`prof.multiplier` in effect, total, passive) | `readSkills`, `readTools` | `integrations/dnd5e.js` |
 | Defenses (`traits.dr/di/dv/ci` with custom entries, `traits.dm.amount`) | `readDefenses` | `integrations/dnd5e.js` |
 | Passive scores, senses (`attributes.senses.ranges`, moved in 5.3), armor, weapons, languages (`labels`, telepathy) | `readSenses` | `integrations/dnd5e.js` |
@@ -279,6 +280,8 @@ slice from the map #28.
 | Damage chips and the damage type card's scene: one scene per dnd5e type; loops, holds or stills by motion level | `scripts/ui/damage-scenes.js` |
 | Bursts over one element of the window (HP hit and heal, coming back from 0, temporary HP gained, absorbed and broken, death saves, inspiration, spent slot gems and hit dice, coins, the long rest's night and dawn); plain blending without glow on parchment; none with motion off | `scripts/ui/bursts.js` |
 | Pure rail events: what changed between two renders, in the order its effects play | `railEvents` in `scripts/core/vitals.js` |
+| A vehicle's rail: thresholds and speed, the cargo meter, crew, passengers and draft animals with free places, «Неизвестный», rows without an actor; the line of type, size, keel and beam | `scripts/ui/vehicle.js` |
+| Pure vehicle rules: weight conversion, the cargo meter, crew places | `scripts/core/vehicle.js` |
 | Pure scene rules: which type has a scene, multi-type parts, how a motion level plays it | `scripts/core/damage-scenes.js` |
 
 ### Theme, accent, density, motion

@@ -52,6 +52,13 @@
     </button>
     {{/if}}
 
+    {{#if blocks.cargo}}
+    <div class="aim-vrow aim-cargo {{#if rail.vehicle.cargo.over}}is-over{{/if}}" data-block="cargo" data-flip>
+      <span class="aim-vlabel">{{localize "AIM.window.rail.cargo"}} <b>{{rail.vehicle.cargo.valueText}}</b>{{#if rail.vehicle.cargo.max}}/{{rail.vehicle.cargo.maxText}}{{/if}} {{rail.vehicle.cargo.unit}}</span>
+      {{#if rail.vehicle.cargo.max}}<span class="aim-cargo-bar" style="--share: {{rail.vehicle.cargo.share}}"><i></i></span>{{/if}}
+    </div>
+    {{/if}}
+
     {{#if blocks.legendary}}
     <div class="aim-vrow aim-legendary" data-block="legendary" data-flip>
       {{#each rail.legendary}}
@@ -60,6 +67,26 @@
     </div>
     {{/if}}
   </div>
+
+  {{#if blocks.crew}}
+  <div class="aim-crew" data-block="crew" data-flip>
+    {{#each rail.vehicle.crew}}
+    <div class="aim-crew-group" data-crew="{{id}}">
+      <div class="aim-rail-title"><span>{{label}}</span><span class="aim-crew-count {{#if over}}is-over{{/if}}">{{countText}}{{#if freeText}} · {{freeText}}{{/if}}</span></div>
+      <div class="aim-crew-list">
+        {{#each members}}{{#if unknown}}<span class="aim-crew-face is-unknown" data-tooltip="{{name}}" aria-label="{{name}}"><i class="fa-light fa-user-secret"></i></span>{{else}}<button type="button" class="aim-crew-face" data-action="openCrew" data-uuid="{{uuid}}" data-tooltip="{{name}}" aria-label="{{openLabel}}"><img src="{{img}}" alt=""></button>{{/if}}{{/each}}
+        {{#each freeSeats}}<span class="aim-crew-face is-free" aria-hidden="true"></span>{{/each}}
+      </div>
+    </div>
+    {{/each}}
+    {{#if rail.vehicle.legacy.length}}
+    <div class="aim-crew-group">
+      <div class="aim-rail-title"><span>{{localize "AIM.window.crew.noActor"}}</span></div>
+      {{#each rail.vehicle.legacy}}<div class="aim-crew-row"><span>{{name}} × {{quantity}}</span><small>{{kindLabel}}</small></div>{{/each}}
+    </div>
+    {{/if}}
+  </div>
+  {{/if}}
 
   {{#if rail.down}}
   <div class="aim-death {{rail.deathState}}" data-flip>
@@ -82,10 +109,16 @@
   {{#if blocks.stats}}
   <div class="aim-stats" data-block="stats" data-flip>
     <div class="aim-stat is-ac" data-config="ac" data-tooltip="{{localize "AIM.window.stats.acHint"}}"><b>{{rail.ac}}</b><span>{{localize "AIM.window.stats.ac"}}</span></div>
+    {{#if rail.vehicle}}
+    <div class="aim-stat" data-tooltip="{{localize "AIM.window.stats.thresholdHint"}}"><b>{{rail.vehicle.dt}}</b><span>{{localize "AIM.window.stats.threshold"}}</span></div>
+    <div class="aim-stat" data-tooltip="{{localize "AIM.window.stats.mishapHint"}}"><b>{{rail.vehicle.mt}}</b><span>{{localize "AIM.window.stats.mishap"}}</span></div>
+    <div class="aim-stat"><b>{{rail.vehicle.speed.value}}</b><span>{{rail.vehicle.speed.unit}}</span></div>
+    {{else}}
     <button type="button" class="aim-stat" data-action="rollInitiative" data-config="init" {{#unless canEdit}}disabled{{/unless}} data-tooltip="{{localize "AIM.window.stats.initHint"}}"><b>{{rail.initText}}</b><span>{{localize "AIM.window.stats.init"}}</span></button>
     <div class="aim-stat" data-config="movement"><b>{{rail.speed}}</b><span>{{rail.speedUnit}}</span></div>
     {{#if rail.cr}}<div class="aim-stat" data-tooltip="{{rail.cr.hint}}"><b>{{rail.cr.text}}</b><span>{{localize "AIM.window.stats.cr"}}</span></div>{{/if}}
     <div class="aim-stat"><b>{{rail.profText}}</b><span>{{localize "AIM.window.stats.prof"}}</span></div>
+    {{/if}}
   </div>
   {{/if}}
 

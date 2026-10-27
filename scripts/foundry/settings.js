@@ -88,6 +88,13 @@ export function registerModuleSettings() {
       type: Object,
       default: {}
     });
+    // Trays the user folded (true) or unfolded (false), by container UUID.
+    game.settings.register(MODULE_ID, "trayFolds", {
+      scope: "user",
+      config: false,
+      type: Object,
+      default: {}
+    });
     game.settings.register(MODULE_ID, "motionLevel", {
       scope: "client",
       config: false,

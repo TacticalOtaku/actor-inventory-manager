@@ -662,7 +662,20 @@
         "load": "Груз",
         "effects": "Эффекты",
         "uses": "Использования",
-        "noDescription": "Описания нет"
+        "noDescription": "Описания нет",
+        "trayFold": "Свернуть: {name}",
+        "trayUnfold": "Развернуть: {name}",
+        "foldAll": "Свернуть все",
+        "unfoldAll": "Развернуть все",
+        "loadByWc": "Загрузка по Weighty Containers",
+        "loadByDnd5e": "Вместимость контейнера в dnd5e",
+        "pieces": "шт.",
+        "reduction": "−{pct}% веса",
+        "reductionHint": "Weighty Containers: снижение веса содержимого",
+        "rules": "Правила Weighty Containers",
+        "trayEmpty": "Пусто — перетащите сюда предмет",
+        "dropSelf": "«{item}» нельзя положить в самого себя.",
+        "dropInside": "«{container}» лежит внутри «{item}»: контейнер нельзя положить в его собственное содержимое."
       }
     }
   }

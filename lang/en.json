@@ -662,7 +662,20 @@
         "load": "Load",
         "effects": "Effects",
         "uses": "Uses",
-        "noDescription": "No description"
+        "noDescription": "No description",
+        "trayFold": "Fold: {name}",
+        "trayUnfold": "Unfold: {name}",
+        "foldAll": "Fold all",
+        "unfoldAll": "Unfold all",
+        "loadByWc": "Load by Weighty Containers",
+        "loadByDnd5e": "Container capacity in dnd5e",
+        "pieces": "items",
+        "reduction": "−{pct}% weight",
+        "reductionHint": "Weighty Containers: contents weigh less",
+        "rules": "Weighty Containers rules",
+        "trayEmpty": "Empty — drag an item here",
+        "dropSelf": "“{item}” cannot go inside itself.",
+        "dropInside": "“{container}” is inside “{item}”: a container cannot go into its own contents."
       }
     }
   }

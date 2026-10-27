@@ -302,6 +302,20 @@ export function readInventory(actor) {
   return entries;
 }
 
+/**
+ * A container's own capacity, used when Weighty Containers is absent. dnd5e 5.3.3: `system.computeCapacity()` resolves
+ * {value, max, pct, units}, counting items when `capacity.count` is set, else weighing contents; max is Infinity
+ * without a capacity. `capacity.weight.units` is the weight unit key ("lb", "kg").
+ * @param {Object} container
+ * @returns {Promise<{value: number, max: number, kind: "count"|"weight", unit: string}|null>}
+ */
+export async function readContainerCapacity(container) {
+  if (typeof container?.system?.computeCapacity !== "function") return null;
+  const { value = 0, max = Infinity } = await container.system.computeCapacity();
+  const capacity = container.system.capacity ?? {};
+  return { value: num(value, 0), max: Number(max), kind: capacity.count ? "count" : "weight", unit: capacity.weight?.units ?? "lb" };
+}
+
 /** The actor's dnd5e coins in CONFIG.DND5E.currencies order (pp, gp, ep, sp, cp in 5.3.3). */
 export function readCoins(actor) {
   const currencies = getDnd5eConfig().currencies ?? {};

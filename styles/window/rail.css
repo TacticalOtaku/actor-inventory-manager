@@ -141,11 +141,7 @@ button.aim-stat:disabled { cursor: default; }
 .aim-float.is-damage { color: var(--hp); }
 .aim-float.is-heal { color: var(--heal); }
 .aim-float.is-temp { color: var(--temp); }
-.aim-spark { position: absolute; z-index: 40; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; border-radius: 50%; pointer-events: none; }
-.aim-spark.is-temp { background: var(--temp); box-shadow: 0 0 6px var(--temp); width: 7px; height: 3px; border-radius: 1px; }
-.aim-spark.is-heal { background: var(--heal); box-shadow: 0 0 6px var(--heal); }
-.aim-spark.is-damage { background: var(--hp); box-shadow: 0 0 6px var(--hp); }
-.aim-spark.is-gold { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+.aim-burst { position: absolute; z-index: 40; pointer-events: none; }
 .aim-night { position: absolute; inset: 0; z-index: 18; pointer-events: none; background: radial-gradient(120% 90% at 70% 10%, rgb(40 48 110 / 0.55), rgb(8 10 30 / 0.8)); }
 .aim-night.is-dawn { background: linear-gradient(0deg, rgb(255 170 90 / 0.3), transparent 65%); }
 

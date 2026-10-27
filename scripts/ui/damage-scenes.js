@@ -1,171 +1,11 @@
 // ─────────────────────────────────────────────────────────
-// AIM: Actor Window - damage type scenes: sprite particles and filters on one shared PIXI stage, copied into each card
+// AIM: Actor Window - damage type scenes: one per dnd5e type, on the shared effects renderer (ui/vfx.js)
 // ─────────────────────────────────────────────────────────
 
-import { MODULE_ID } from "../constants.js";
 import { sceneFor, scenePlan } from "../core/damage-scenes.js";
+import { RAD, STEP, box, fade, flash, halt, hasPixi, hex, lift, load, makeKit, mix, paint, parseColor, pixelRatio, random, rgb, ring, run, sizeCanvas } from "./vfx.js";
 
-const VFX = `modules/${MODULE_ID}/assets/vfx`;
-const FILTERS = `modules/${MODULE_ID}/scripts/vendor/pixi-filters.js`;
-const TEXTURES = [
-  "circle_02", "circle_03", "circle_05", "dirt_01", "dirt_02", "fire_01", "flame_05", "flame_06", "light_01",
-  "light_02", "light_03", "magic_01", "magic_02", "magic_03", "magic_05", "muzzle_01", "muzzle_02", "muzzle_03",
-  "muzzle_04", "muzzle_05", "scorch_02", "scratch_01", "slash_01", "slash_03", "smoke_07", "smoke_08", "smoke_09",
-  "spark_01", "spark_02", "spark_05", "spark_06", "spark_07", "star_04", "star_05", "star_06", "star_08", "star_09",
-  "trace_05", "trace_06", "trace_07", "twirl_01", "twirl_02", "twirl_03"
-];
 const BG = 0x090b10;
-const STEP = 1 / 60;
-const RAD = Math.PI / 180;
-
-// ── colours ──────────────────────────────────────────────
-
-const rgb = (n) => [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-const hex = ([r, g, b]) => (Math.round(r) << 16) | (Math.round(g) << 8) | Math.round(b);
-const mix = (a, b, k) => hex(rgb(a).map((v, i) => v + (rgb(b)[i] - v) * k));
-
-function parseColor(value) {
-  const m = /^#?([\da-f]{6})/i.exec(String(value ?? "").trim());
-  return m ? parseInt(m[1], 16) : 0xc8a85c;
-}
-
-/** Dark type colours (dnd5e's bludgeoning is navy) are lifted until they glow on the dark stage. */
-function lift(c) {
-  const [r, g, b] = rgb(c).map((v) => v / 255);
-  const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  return luma >= 0.42 ? c : mix(c, 0xffffff, Math.min(0.7, 0.64 - luma));
-}
-
-// ── curves and chance ────────────────────────────────────
-
-/** A number, or keys [[t, v], …] over a particle's life (0…1); colours mix channel by channel. */
-function keyed(keys, k, between) {
-  if (typeof keys === "number") return keys;
-  let i = 1;
-  while (i < keys.length - 1 && keys[i][0] < k) i++;
-  const [t0, v0] = keys[i - 1];
-  const [t1, v1] = keys[i];
-  return between(v0, v1, Math.min(1, Math.max(0, (k - t0) / (t1 - t0 || 1))));
-}
-const curve = (keys, k) => keyed(keys, k, (a, b, f) => a + (b - a) * f);
-const tint = (keys, k) => keyed(keys, k, mix);
-
-/** Seeded, so a still frame comes out the same every time. */
-function random(seed) {
-  let a = seed >>> 0;
-  const next = () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-  next.range = (r) => (Array.isArray(r) ? r[0] + (r[1] - r[0]) * next() : r ?? 0);
-  next.pick = (list) => (Array.isArray(list) ? list[Math.floor(next() * list.length)] : list);
-  return next;
-}
-
-// ── particles ────────────────────────────────────────────
-
-/**
- * One kind of particle. Options: tex (name or names), add (additive, the default), life [s], at(rng) → {x, y, vx?, vy?},
- * dir [deg] and speed [px/s], accel {x, y}, drag, spring {x, y, k} (pulls toward a point: circles at speed r·√k),
- * sway [amp, freq], size [px] with grow (curve), aspect (height to width), rot [deg] and spin [deg/s], align (turns the
- * texture's long side along its motion) with stretch, alpha and color (curves).
- */
-class Particles {
-  constructor(layer, kit, o) {
-    Object.assign(this, { layer, kit, o, live: [], free: [], carry: 0 });
-  }
-
-  spawn(n = 1, at) {
-    const { o, kit } = this;
-    const rng = kit.rng;
-    for (let i = 0; i < n; i++) {
-      const sprite = this.free.pop() ?? this.layer.addChild(new PIXI.Sprite());
-      sprite.texture = kit.tex(rng.pick(o.tex));
-      sprite.anchor.set(0.5);
-      sprite.blendMode = o.add === false ? PIXI.BLEND_MODES.NORMAL : PIXI.BLEND_MODES.ADD;
-      sprite.visible = true;
-      const p = { ...(at ?? o.at?.(rng, i, n) ?? { x: kit.cx, y: kit.cy }) };
-      if (p.vx === undefined) {
-        const dir = rng.range(o.dir ?? [0, 360]) * RAD;
-        const speed = rng.range(o.speed ?? 0);
-        p.vx = Math.cos(dir) * speed;
-        p.vy = Math.sin(dir) * speed;
-      }
-      Object.assign(p, {
-        sprite, age: 0, life: rng.range(o.life ?? 1), px: rng.range(o.size ?? 32) / sprite.texture.width,
-        rot: rng.range(o.rot ?? [0, 360]) * RAD, spin: rng.range(o.spin ?? 0) * RAD, phase: rng() * 6.283
-      });
-      this.live.push(p);
-      this.draw(p);
-    }
-  }
-
-  /** Emits at `rate` particles a second, then moves and redraws every live one. */
-  update(dt, rate = 0) {
-    this.carry += rate * dt;
-    if (this.carry >= 1) {
-      const n = Math.floor(this.carry);
-      this.carry -= n;
-      this.spawn(n);
-    }
-    const { o } = this;
-    const drag = o.drag ? Math.exp(-o.drag * dt) : 1;
-    for (let i = this.live.length - 1; i >= 0; i--) {
-      const p = this.live[i];
-      p.age += dt;
-      if (p.age >= p.life) {
-        p.sprite.visible = false;
-        this.free.push(p.sprite);
-        this.live.splice(i, 1);
-        continue;
-      }
-      let ax = o.accel?.x ?? 0;
-      let ay = o.accel?.y ?? 0;
-      if (o.spring) {
-        ax -= o.spring.k * (p.x - o.spring.x);
-        ay -= o.spring.k * (p.y - o.spring.y);
-      }
-      if (o.sway) ax += o.sway[0] * Math.sin(o.sway[1] * p.age + p.phase);
-      p.vx = (p.vx + ax * dt) * drag;
-      p.vy = (p.vy + ay * dt) * drag;
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.rot += p.spin * dt;
-      this.draw(p);
-    }
-  }
-
-  draw(p) {
-    const { o } = this;
-    const k = p.age / p.life;
-    const s = p.px * curve(o.grow ?? 1, k);
-    const sprite = p.sprite;
-    sprite.position.set(p.x, p.y);
-    sprite.alpha = curve(o.alpha ?? 1, k);
-    sprite.tint = tint(o.color ?? 0xffffff, k);
-    if (o.align) {
-      const speed = Math.hypot(p.vx, p.vy);
-      sprite.rotation = Math.atan2(p.vy, p.vx) + Math.PI / 2;
-      sprite.scale.set(s, s * (o.aspect ?? 1) * (1 + (o.stretch ?? 0) * speed / 100));
-    } else {
-      sprite.rotation = p.rot;
-      sprite.scale.set(s, s * (o.aspect ?? 1));
-    }
-  }
-}
-
-// ── the scenes ───────────────────────────────────────────
-
-const ring = (cx, cy, r0, r1) => (rng) => {
-  const a = rng() * 6.283;
-  const r = rng.range([r0, r1]);
-  return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, a, r };
-};
-const box = (x0, x1, y0, y1) => (rng) => ({ x: rng.range([x0, x1]), y: rng.range([y0, y1]) });
-const fade = (peak = 1, inAt = 0.1, outAt = 0.6) => [[0, 0], [inAt, peak], [outAt, peak * 0.8], [1, 0]];
-const flash = (peak = 1) => [[0, peak], [1, 0]];
 
 /**
  * Each scene: period (s) of its loop, warm (s simulated before the first frame), still (the moment that tells its
@@ -660,40 +500,7 @@ const SCENES = {
   }
 };
 
-// ── the shared stage ─────────────────────────────────────
-
-let textures;
-let renderer;
-const active = new Set();
-let ticking = false;
-
-/** Our copy of pixi-filters keeps to its own global, so a module that brings another version keeps its own. */
-function loadFilters() {
-  return new Promise((resolve) => {
-    if (globalThis.AIMPixiFilters) return resolve(globalThis.AIMPixiFilters);
-    const script = document.createElement("script");
-    script.src = FILTERS;
-    script.onload = () => resolve(globalThis.AIMPixiFilters ?? null);
-    script.onerror = () => resolve(null);
-    document.head.append(script);
-  });
-}
-
-function load() {
-  textures ??= Promise.all([
-    PIXI.Assets.load(TEXTURES.map((name) => `${VFX}/${name}.png`)),
-    loadFilters()
-  ]).then(([loaded, filters]) => ({
-    tex: (name) => loaded[`${VFX}/${name}.png`] ?? PIXI.Texture.WHITE,
-    filters
-  }));
-  return textures;
-}
-
-function stageRenderer() {
-  renderer ??= new PIXI.Renderer({ width: 1, height: 1, backgroundColor: BG, antialias: true, preserveDrawingBuffer: true, powerPreference: "low-power" });
-  return renderer;
-}
+// ── a scene on its stage ─────────────────────────────────
 
 /** Builds a scene on a stage of its own; its filters are optional, a scene without them still draws. */
 function buildScene(key, assets, size, colour) {
@@ -704,6 +511,7 @@ function buildScene(key, assets, size, colour) {
   stage.addChild(new PIXI.Graphics().beginFill(BG).drawRect(0, 0, w, h).endFill());
   const world = stage.addChild(new PIXI.Container());
   const c = lift(colour);
+  const rng = random([...key].reduce((n, ch) => n * 31 + ch.charCodeAt(0), 7));
   const F = assets.filters;
   const filters = [];
   const made = (Filter, ...args) => {
@@ -723,24 +531,10 @@ function buildScene(key, assets, size, colour) {
   if (twist) twist.enabled = true;
   if (split) split.enabled = true;
   stage.filters = filters;
-  const rng = random([...key].reduce((n, ch) => n * 31 + ch.charCodeAt(0), 7));
   let shaking = null;
-  const kit = {
-    w, h, cx: w / 2, cy: h / 2, c, rng, tex: assets.tex,
-    hot: mix(c, 0xffffff, 0.45),
-    deep: mix(c, 0x000000, 0.55),
+  const kit = Object.assign(makeKit(world, assets, { w, h, colour: c, rng }), {
     // The psychic scene splits between the type's colour and a turned one.
     c2: lift(hex([rgb(c)[1], rgb(c)[2], rgb(c)[0]])),
-    fx: (o) => new Particles(world.addChild(new PIXI.Container()), kit, o),
-    sprite(name, x, y, px, { tint: colourOf = 0xffffff, alpha = 1, aspect = 1, add = true } = {}) {
-      const sprite = world.addChild(new PIXI.Sprite(assets.tex(name)));
-      sprite.anchor.set(0.5);
-      sprite.position.set(x, y);
-      sprite.base = px / sprite.texture.width;
-      sprite.scale.set(sprite.base, sprite.base * aspect);
-      Object.assign(sprite, { tint: colourOf, alpha, blendMode: add ? PIXI.BLEND_MODES.ADD : PIXI.BLEND_MODES.NORMAL });
-      return sprite;
-    },
     shake: (amp, time) => { shaking = { amp, time, left: time }; },
     shock(x, y, time, radius) {
       if (!shock) return;
@@ -761,7 +555,7 @@ function buildScene(key, assets, size, colour) {
       split.red = [-px * Math.cos(t * 1.7), px * 0.4 * Math.sin(t * 2.3)];
       split.blue = [px * Math.cos(t * 1.7), -px * 0.4 * Math.sin(t * 2.3)];
     }
-  };
+  });
   const update = def.build(kit);
   let t = -def.warm;
   let last = t - 1e-6;
@@ -791,37 +585,6 @@ function buildScene(key, assets, size, colour) {
   };
 }
 
-function paint(entry) {
-  const r = stageRenderer();
-  const { w, h, ratio } = entry.size;
-  if (r.screen.width !== w || r.screen.height !== h || r.resolution !== ratio) r.resize(w, h, ratio);
-  r.render(entry.scene.stage);
-  entry.ctx.clearRect(0, 0, entry.canvas.width, entry.canvas.height);
-  entry.ctx.drawImage(r.view, 0, 0, entry.canvas.width, entry.canvas.height);
-}
-
-function tick(now) {
-  for (const entry of active) {
-    if (!entry.canvas.isConnected) { entry.stop(); continue; }
-    // Ambient effects pause while the browser tab is hidden (#9).
-    if (entry.canvas.ownerDocument.hidden) { entry.last = now; continue; }
-    const dt = Math.min(0.05, Math.max(0, (now - (entry.last ?? now)) / 1000));
-    entry.last = now;
-    entry.scene.step(dt);
-    // «Сдержанно» plays one loop and holds the telling moment of the next.
-    const hold = entry.scene.def.period + entry.scene.def.still;
-    if (!entry.plan.loop && entry.scene.time >= hold) {
-      entry.scene.runTo(hold);
-      paint(entry);
-      entry.stop();
-      continue;
-    }
-    paint(entry);
-  }
-  ticking = active.size > 0;
-  if (ticking) requestAnimationFrame(tick);
-}
-
 /**
  * Starts a scene on a card's canvas: it loops at «Все» while the card is open (paused in a hidden tab), plays once up
  * to its telling moment and holds it at «Сдержанно», or draws only that moment with motion off. All cards share one
@@ -834,31 +597,38 @@ function tick(now) {
 export function startScene(canvas, type, color, level) {
   const key = sceneFor(type);
   const plan = scenePlan(level);
-  const ratio = Math.min(2, canvas.ownerDocument.defaultView.devicePixelRatio || 1);
-  const size = { w: canvas.clientWidth || 300, h: canvas.clientHeight || 120, ratio };
-  canvas.width = Math.round(size.w * ratio);
-  canvas.height = Math.round(size.h * ratio);
-  const ctx = canvas.getContext("2d");
+  const size = { w: canvas.clientWidth || 300, h: canvas.clientHeight || 120, ratio: pixelRatio(canvas.ownerDocument) };
+  const ctx = sizeCanvas(canvas, size);
   let stopped = false;
   let entry = null;
   const stop = () => {
     if (stopped) return;
     stopped = true;
-    if (entry) { active.delete(entry); entry.scene.destroy(); }
+    if (entry) { halt(entry); entry.scene.destroy(); }
   };
-  if (!ctx || !globalThis.PIXI?.Renderer) return stop;
+  if (!ctx || !hasPixi()) return stop;
   load().then((assets) => {
     if (stopped || !canvas.isConnected) return stop();
-    entry = { canvas, ctx, size, plan, stop, scene: buildScene(key, assets, size, parseColor(color)) };
-    entry.scene.runTo(0);
+    const scene = buildScene(key, assets, size, parseColor(color));
+    // «Сдержанно» plays one loop and holds the telling moment of the next.
+    const hold = scene.def.period + scene.def.still;
+    entry = {
+      canvas, ctx, size, stop, scene, stage: scene.stage,
+      update(dt) {
+        scene.step(dt);
+        if (plan.loop || scene.time < hold) return true;
+        scene.runTo(hold);
+        return false;
+      }
+    };
+    scene.runTo(0);
     if (plan.stillOnly) {
       entry.scene.runTo(entry.scene.def.still);
       paint(entry);
       return stop();
     }
     paint(entry);
-    active.add(entry);
-    if (!ticking) { ticking = true; requestAnimationFrame(tick); }
+    run(entry);
   }).catch((error) => {
     console.warn(`AIM | damage scene «${key}» failed`, error);
     stop();

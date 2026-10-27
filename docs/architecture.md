@@ -274,7 +274,10 @@ slice from the map #28.
 | Pure trade-panel rules: what the trade waits for, offer edits, unchanged offers, partners, recovery action, Item Piles totals | `scripts/core/trade-panel.js` |
 | Tooltip cards on our own layer (`document.body` of the window's document): triggers, timing, nesting, pinning, dragging | `scripts/ui/tooltips.js`, `templates/window/tooltip-card.hbs`, `styles/window/tooltips.css` |
 | Pure card rules: delays, one live card per level, four levels, pin limit and order, closing and sweeping | `scripts/core/tooltips.js` |
-| Damage chips and the damage type card's scene: sprite particles and pixi-filters on one shared PIXI renderer (Foundry's PIXI 7), copied into each card's 2D canvas; loops, holds or stills by motion level | `scripts/ui/damage-scenes.js`, `assets/vfx/`, `scripts/vendor/pixi-filters.js` |
+| Visual effects engine: sprite particles, Kenney textures and pixi-filters on one shared transparent PIXI renderer (Foundry's PIXI 7) that only grows; each effect copies its corner into its own 2D canvas; one frame loop, paused in a hidden tab | `scripts/ui/vfx.js`, `assets/vfx/`, `scripts/vendor/pixi-filters.js` |
+| Damage chips and the damage type card's scene: one scene per dnd5e type; loops, holds or stills by motion level | `scripts/ui/damage-scenes.js` |
+| Bursts over one element of the window (HP hit and heal, coming back from 0, temporary HP gained, absorbed and broken, death saves, inspiration, spent slot gems and hit dice, coins, the long rest's night and dawn); plain blending without glow on parchment; none with motion off | `scripts/ui/bursts.js` |
+| Pure rail events: what changed between two renders, in the order its effects play | `railEvents` in `scripts/core/vitals.js` |
 | Pure scene rules: which type has a scene, multi-type parts, how a motion level plays it | `scripts/core/damage-scenes.js` |
 
 ### Theme, accent, density, motion

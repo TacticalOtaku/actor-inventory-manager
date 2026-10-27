@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { heartbeatFor, parseHpEntry, previewHp, vitalState } from "../scripts/core/vitals.js";
+import { heartbeatFor, parseHpEntry, previewHp, railEvents, vitalState } from "../scripts/core/vitals.js";
 
 describe("HP entry", () => {
   it("reads damage, healing, a bare number and temporary HP", () => {
@@ -46,5 +46,39 @@ describe("vital state", () => {
     assert.equal(heartbeatFor(19, 38), "1.7s");
     assert.equal(heartbeatFor(9, 38), "0.85s");
     assert.equal(vitalState(5, 0), "ok");
+  });
+});
+
+describe("rail events", () => {
+  const base = { hp: 20, max: 30, temp: 0, dice: 3, slots: 4, success: 0, failure: 0, inspiration: false, concentration: "" };
+  const after = (change) => railEvents(base, { ...base, ...change });
+
+  it("play nothing on the first render or when nothing changed", () => {
+    assert.deepEqual(railEvents(null, base), []);
+    assert.deepEqual(after({}), []);
+  });
+
+  it("tell a hit from a heal, and a heal from 0 as coming back", () => {
+    assert.deepEqual(after({ hp: 12 }), ["hit"]);
+    assert.deepEqual(after({ hp: 25 }), ["heal"]);
+    assert.deepEqual(railEvents({ ...base, hp: 0 }, { ...base, hp: 1 }), ["heal", "revive"]);
+    assert.deepEqual(after({ hp: 25, max: 40 }), [], "a new maximum is no heal");
+  });
+
+  it("raise, dent and break the temporary HP shield", () => {
+    assert.deepEqual(after({ temp: 8 }), ["shieldUp"]);
+    assert.deepEqual(railEvents({ ...base, temp: 8 }, { ...base, temp: 3 }), ["absorb"]);
+    assert.deepEqual(railEvents({ ...base, temp: 8 }, { ...base, temp: 0 }), ["shieldBreak"]);
+  });
+
+  it("see dice spent, resources restored, death marks, inspiration and concentration", () => {
+    assert.deepEqual(after({ dice: 2 }), ["diceSpent"]);
+    assert.deepEqual(after({ dice: 4 }), ["restored"]);
+    assert.deepEqual(after({ slots: 5 }), ["restored"]);
+    assert.deepEqual(after({ success: 1, failure: 1 }), ["deathSuccess", "deathFail"]);
+    assert.deepEqual(after({ inspiration: true }), ["inspired"]);
+    assert.deepEqual(railEvents({ ...base, inspiration: true }, base), []);
+    assert.deepEqual(after({ concentration: "a" }), ["concentration"]);
+    assert.deepEqual(railEvents({ ...base, concentration: "a" }, base), [], "ending concentration plays nothing");
   });
 });

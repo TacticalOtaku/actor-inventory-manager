@@ -52,3 +52,29 @@ export function heartbeatFor(value, max) {
   if (state === "hurt") return "1.7s";
   return "2.8s";
 }
+
+/**
+ * What changed in the rail between two renders, in the order its effects play: HP lost or regained (and coming back
+ * from 0), temporary HP gained, absorbed or broken, hit dice spent, dice or slots restored, death save marks,
+ * inspiration turned on, concentration started or switched. A changed maximum is no hit or heal.
+ * @param {Object|null} prev  the rail snapshot before
+ * @param {Object} next       the rail snapshot after
+ * @returns {string[]}
+ */
+export function railEvents(prev, next) {
+  if (!prev) return [];
+  const events = [];
+  if (prev.max === next.max && prev.hp !== next.hp) {
+    if (next.hp < prev.hp) events.push("hit");
+    else events.push("heal", ...(prev.hp <= 0 ? ["revive"] : []));
+  }
+  if (next.temp > prev.temp) events.push("shieldUp");
+  else if (next.temp < prev.temp) events.push(next.temp > 0 ? "absorb" : "shieldBreak");
+  if (next.dice < prev.dice) events.push("diceSpent");
+  if (next.dice > prev.dice || next.slots > prev.slots) events.push("restored");
+  if (next.success > prev.success) events.push("deathSuccess");
+  if (next.failure > prev.failure) events.push("deathFail");
+  if (next.inspiration && !prev.inspiration) events.push("inspired");
+  if (next.concentration && next.concentration !== prev.concentration) events.push("concentration");
+  return events;
+}

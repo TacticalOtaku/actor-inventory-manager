@@ -33,17 +33,23 @@ body {
   /* text */
   --text: #ece6da;
   --text-2: #aaa499;
-  --text-3: #6e6a63;
-  /* accent (user-selectable) */
-  --accent: #d4a55a;
+  --text-3: #96928a;
+  /* accent (user-selectable, by name: each theme has its own value for each of the six) */
+  --acc-brass: #d4a55a;
+  --acc-embers: #e2734a;
+  --acc-arcane: #9d7eff;
+  --acc-forest: #5fbf8f;
+  --acc-frost: #6fb7e8;
+  --acc-rose: #e07aa0;
+  --accent: var(--acc-brass);
   --accent-ink: #1b1206;
   --accent-soft: color-mix(in oklab, var(--accent) 16%, transparent);
   --accent-line: color-mix(in oklab, var(--accent) 45%, transparent);
   /* meaning */
-  --hp: #e0564f;
+  --hp: #e56f69;
   --heal: #5fc28a;
   --temp: #5aa9e6;
-  --arcane: #9b7bff;
+  --arcane: #9d7eff;
   --warn: #e7b04a;
   /* rarity (custom properties, never inline color) */
   --rarity-common: #b8b2a7;
@@ -51,7 +57,7 @@ body {
   --rarity-rare: #5aa9e6;
   --rarity-veryRare: #a77bff;
   --rarity-legendary: #f0a24a;
-  --rarity-artifact: #e0564f;
+  --rarity-artifact: #e56f69;
   /* spell schools */
   --school-abj: #6fb7e8;
   --school-con: #e7b04a;
@@ -89,22 +95,140 @@ body {
   --shadow-1: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 8px 24px rgb(0 0 0 / 0.35);
   --shadow-lift: 0 18px 40px rgb(0 0 0 / 0.5);
 }
-.cs-root[data-theme="parchment"], .cs-layer[data-theme="parchment"] {
-  --surface-0: #f3eee3;
-  --surface-1: #ebe4d6;
-  --surface-2: #e2d9c7;
-  --surface-3: #d6cbb5;
-  --line: rgb(60 40 10 / 0.1);
-  --line-strong: rgb(60 40 10 / 0.2);
-  --scrim: rgb(40 30 15 / 0.25);
-  --text: #2a2419;
-  --text-2: #6a5e4b;
-  --text-3: #988b75;
-  --accent: #9a6420;
-  --accent-ink: #fff8ec;
-  --shadow-1: 0 1px 0 rgb(255 255 255 / 0.6) inset, 0 8px 24px rgb(60 40 10 / 0.15);
-  --shadow-lift: 0 18px 40px rgb(60 40 10 / 0.25);
+/* «Пергамент» (#26): every colour token has a light value; text, meaning, rarity, school and accent colours reach 4.5:1 on all four surfaces */
+.cs-root[data-theme="parchment"][data-light="A"], .cs-layer[data-theme="parchment"][data-light="A"] {
+  --surface-0: #f4eedf;
+  --surface-1: #ece3cf;
+  --surface-2: #e3d8c0;
+  --surface-3: #d8cbae;
+  --line: rgb(70 45 15 / 0.13);
+  --line-strong: rgb(70 45 15 / 0.26);
+  --scrim: rgb(40 28 12 / 0.32);
+  --text: #1f180e;
+  --text-2: #43392d;
+  --text-3: #605544;
+  --accent-ink: #fffaf0;
+  --hp: #a4241d;
+  --heal: #1f613c;
+  --temp: #195a8c;
+  --arcane: #592fda;
+  --warn: #725114;
+  --rarity-common: #5d5548;
+  --rarity-uncommon: #1f613c;
+  --rarity-rare: #195a8c;
+  --rarity-veryRare: #6429d9;
+  --rarity-legendary: #7c4c16;
+  --rarity-artifact: #a4241d;
+  --school-abj: #185a87;
+  --school-con: #725114;
+  --school-div: #3d5684;
+  --school-enc: #a41d4f;
+  --school-evo: #933a1a;
+  --school-ill: #6429d9;
+  --school-nec: #3e5f2f;
+  --school-trs: #1e5f59;
+  --acc-brass: #745017;
+  --acc-embers: #933a1a;
+  --acc-arcane: #592fda;
+  --acc-forest: #216141;
+  --acc-frost: #185a87;
+  --acc-rose: #a41d4f;
+  --shadow-1: 0 1px 0 rgb(255 255 255 / 0.55) inset, 0 6px 18px rgb(70 45 15 / 0.14);
+  --shadow-lift: 0 16px 36px rgb(70 45 15 / 0.22);
 }
+.cs-root[data-theme="parchment"][data-light="B"], .cs-layer[data-theme="parchment"][data-light="B"] {
+  --surface-0: #fbf9f4;
+  --surface-1: #f4f1ea;
+  --surface-2: #ebe7de;
+  --surface-3: #dfdacf;
+  --line: rgb(40 35 25 / 0.1);
+  --line-strong: rgb(40 35 25 / 0.2);
+  --scrim: rgb(30 26 20 / 0.32);
+  --text: #1f1d1a;
+  --text-2: #47433e;
+  --text-3: #655f58;
+  --accent-ink: #fffaf0;
+  --hp: #b62720;
+  --heal: #296c46;
+  --temp: #1b639b;
+  --arcane: #653fdd;
+  --warn: #7d5916;
+  --rarity-common: #655e52;
+  --rarity-uncommon: #296c46;
+  --rarity-rare: #1b639b;
+  --rarity-veryRare: #703adc;
+  --rarity-legendary: #895418;
+  --rarity-artifact: #b62720;
+  --school-abj: #1b6497;
+  --school-con: #7d5916;
+  --school-div: #49608d;
+  --school-enc: #b1295c;
+  --school-evo: #a2401d;
+  --school-ill: #703adc;
+  --school-nec: #476838;
+  --school-trs: #286a63;
+  --acc-brass: #7c5920;
+  --acc-embers: #a2401d;
+  --acc-arcane: #653fdd;
+  --acc-forest: #2a6a4a;
+  --acc-frost: #1b6497;
+  --acc-rose: #b1295c;
+  --shadow-1: 0 1px 0 rgb(255 255 255 / 0.55) inset, 0 6px 18px rgb(40 30 20 / 0.14);
+  --shadow-lift: 0 16px 36px rgb(40 30 20 / 0.22);
+}
+.cs-root[data-theme="parchment"][data-light="C"], .cs-layer[data-theme="parchment"][data-light="C"] {
+  --surface-0: #f1e6cf;
+  --surface-1: #e8dabd;
+  --surface-2: #ddcca9;
+  --surface-3: #cfbb92;
+  --line: rgb(60 35 12 / 0.2);
+  --line-strong: rgb(60 35 12 / 0.4);
+  --scrim: rgb(45 28 10 / 0.32);
+  --text: #1e1409;
+  --text-2: #3b2d1d;
+  --text-3: #5b4935;
+  --accent-ink: #fffaf0;
+  --hp: #93201a;
+  --heal: #1a5735;
+  --temp: #16507d;
+  --arcane: #4e24ce;
+  --warn: #634611;
+  --rarity-common: #534c40;
+  --rarity-uncommon: #1a5735;
+  --rarity-rare: #16507d;
+  --rarity-veryRare: #5923c6;
+  --rarity-legendary: #6d4313;
+  --rarity-artifact: #93201a;
+  --school-abj: #155078;
+  --school-con: #634611;
+  --school-div: #364c77;
+  --school-enc: #931a47;
+  --school-evo: #833417;
+  --school-ill: #5923c6;
+  --school-nec: #365428;
+  --school-trs: #1a554f;
+  --acc-brass: #674612;
+  --acc-embers: #833417;
+  --acc-arcane: #4e24ce;
+  --acc-forest: #1c573a;
+  --acc-frost: #155078;
+  --acc-rose: #931a47;
+  --shadow-1: 0 1px 0 rgb(255 255 255 / 0.55) inset, 0 6px 18px rgb(60 35 12 / 0.14);
+  --shadow-lift: 0 16px 36px rgb(60 35 12 / 0.22);
+}
+.cs-root[data-accent="brass"], .cs-layer[data-accent="brass"] { --accent: var(--acc-brass); }
+.cs-root[data-accent="embers"], .cs-layer[data-accent="embers"] { --accent: var(--acc-embers); }
+.cs-root[data-accent="arcane"], .cs-layer[data-accent="arcane"] { --accent: var(--acc-arcane); }
+.cs-root[data-accent="forest"], .cs-layer[data-accent="forest"] { --accent: var(--acc-forest); }
+.cs-root[data-accent="frost"], .cs-layer[data-accent="frost"] { --accent: var(--acc-frost); }
+.cs-root[data-accent="rose"], .cs-layer[data-accent="rose"] { --accent: var(--acc-rose); }
+/* «Карта»: ink lines, a double rule on cards and section heads */
+.cs-root[data-theme="parchment"][data-light="C"] .cs-card, .cs-root[data-theme="parchment"][data-light="C"] .cs-section { box-shadow: inset 0 0 0 3px var(--surface-1), inset 0 0 0 4px var(--line); }
+.cs-root[data-theme="parchment"][data-light="C"] .cs-sec-head { border-bottom: 1.5px solid var(--line-strong); }
+.cs-root[data-theme="parchment"][data-light="C"] .cs-sec-head h3, .cs-root[data-theme="parchment"][data-light="C"] .cs-card h3 { color: var(--text); letter-spacing: 0.02em; }
+.cs-root[data-theme="parchment"][data-light="C"] .cs-tabs { border-bottom: 1.5px solid var(--line-strong); }
+/* chips of damage types keep their colour but darker text on paper */
+.cs-layer[data-theme="parchment"] .cs-dmg-chip, .cs-root[data-theme="parchment"] .cs-dmg-chip { color: color-mix(in oklab, var(--c) 45%, var(--text)); background: color-mix(in oklab, var(--c) 18%, transparent); }
 .cs-root[data-density="compact"] { --row-h: 34px; --tile: 28px; }
 .cs-root[data-motion="off"] *, .cs-root[data-motion="off"] *::before, .cs-root[data-motion="off"] *::after, .cs-layer[data-motion="off"] *, .cs-layer[data-motion="off"] *::after {
   transition-duration: 0ms !important;
@@ -1492,6 +1616,10 @@ button.cs-stat:active { transform: scale(0.95); }
 .tip-stats:empty { display: none; }
 .tip:has(.tip-stats:empty) .tip-body, .tip:has(.tip-stats:empty) .tip-pills { grid-column: 1 / -1; }
 .tip.is-dmg { width: 264px; grid-template-columns: minmax(0, 1fr); }
+.mock-variants { position: fixed; top: 14px; right: 14px; z-index: 70; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 14px; border-radius: 99px; background: #1a1d26; border: 1px solid rgb(255 255 255 / 0.12); font: 12px "Segoe UI", system-ui; color: #aaa499; }
+.mock-variants .cs-seg { background: #12141b; border-color: rgb(255 255 255 / 0.1); }
+.mock-variants .cs-seg button { color: #6e6a63; font: inherit; min-width: 28px; }
+.mock-variants .cs-seg button[aria-pressed="true"] { background: #2a2f3c; color: #ece6da; }
 </style>
 </head>
 <body>
@@ -1569,7 +1697,7 @@ button.cs-stat:active { transform: scale(0.95); }
   <symbol id="i-figure" viewBox="0 0 120 260"><path d="M60 8c11 0 19 9 19 21s-8 22-19 22-19-10-19-22S49 8 60 8zM38 58h44c12 0 20 8 22 20l8 62c1 6-8 8-10 2l-12-50v64l6 84c1 8-12 9-14 1L68 172h-16l-14 69c-2 8-15 7-14-1l6-84V92l-12 50c-2 6-11 4-10-2l8-62c2-12 10-20 22-20z" fill="currentColor" stroke="none" opacity=".35"/></symbol>
 </svg>
 
-<section class="cs-root" data-ui="CharacterSheet" data-layout="standard" data-theme="night" data-density="comfortable" data-motion="full" data-role="player" data-actor="character" aria-label="Лист персонажа">
+<section class="cs-root" data-ui="CharacterSheet" data-layout="standard" data-theme="night" data-density="comfortable" data-motion="full" data-role="player" data-actor="character" data-accent="brass" data-light="A" aria-label="Лист персонажа">
 
   <!-- ═══════════ Rail ═══════════ -->
   <aside class="cs-rail" data-ui="sheetRail" data-flip>
@@ -1824,12 +1952,12 @@ button.cs-stat:active { transform: scale(0.95); }
       </div>
       <div class="cs-field"><span>Акцент</span>
         <div class="cs-swatches" data-ui="accentSwatch" data-accent>
-          <button type="button" class="cs-swatch" style="--sw:#d4a55a" data-value="#d4a55a" aria-label="Латунь" title="Латунь" aria-pressed="true"></button>
-          <button type="button" class="cs-swatch" style="--sw:#e2734a" data-value="#e2734a" aria-label="Угли" title="Угли" aria-pressed="false"></button>
-          <button type="button" class="cs-swatch" style="--sw:#9b7bff" data-value="#9b7bff" aria-label="Аркана" title="Аркана" aria-pressed="false"></button>
-          <button type="button" class="cs-swatch" style="--sw:#5fbf8f" data-value="#5fbf8f" aria-label="Лес" title="Лес" aria-pressed="false"></button>
-          <button type="button" class="cs-swatch" style="--sw:#6fb7e8" data-value="#6fb7e8" aria-label="Иней" title="Иней" aria-pressed="false"></button>
-          <button type="button" class="cs-swatch" style="--sw:#e07aa0" data-value="#e07aa0" aria-label="Роза" title="Роза" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:var(--acc-brass)" data-value="brass" aria-label="Латунь" title="Латунь" aria-pressed="true"></button>
+          <button type="button" class="cs-swatch" style="--sw:var(--acc-embers)" data-value="embers" aria-label="Угли" title="Угли" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:var(--acc-arcane)" data-value="arcane" aria-label="Аркана" title="Аркана" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:var(--acc-forest)" data-value="forest" aria-label="Лес" title="Лес" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:var(--acc-frost)" data-value="frost" aria-label="Иней" title="Иней" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:var(--acc-rose)" data-value="rose" aria-label="Роза" title="Роза" aria-pressed="false"></button>
         </div>
       </div>
       <div class="cs-field"><span>Плотность</span>
@@ -1859,6 +1987,7 @@ button.cs-stat:active { transform: scale(0.95); }
 </section>
 
 </main>
+<div class="mock-variants" data-ui="mockLightSwitch"><span>Пергамент</span><div class="cs-seg is-text" role="group" aria-label="Вариант светлой темы"><button type="button" data-light-set="A" aria-pressed="true" title="Пергамент: тёплый желтоватый">A</button><button type="button" data-light-set="B" aria-pressed="false" title="Велень: почти белая слоновая кость">B</button><button type="button" data-light-set="C" aria-pressed="false" title="Карта: тёплый фон, чернильные линии">C</button></div></div>
 <div class="cs-layer" data-ui="tooltipLayer"></div>
 <script>
 (() => {
@@ -3265,7 +3394,7 @@ button.cs-stat:active { transform: scale(0.95); }
     S.hiddenBlocks.clear(); S.hiddenTabs.clear();
     root.dataset.density = "comfortable";
     $$('[data-set="density"] button').forEach((b) => b.setAttribute("aria-pressed", b.dataset.value === "comfortable"));
-    root.style.removeProperty("--accent");
+    root.dataset.accent = "brass";
     $$("[data-accent] button").forEach((b, i) => b.setAttribute("aria-pressed", i === 0));
     applyTheme(); applyMotion(); applyFonts(); renderSettingsLists(); applyVisibility(); renderReset();
   }
@@ -3400,7 +3529,7 @@ button.cs-stat:active { transform: scale(0.95); }
     if (t.closest("[data-motion-set]") && t.dataset.value) { S.motion = t.dataset.value; return applyMotion(); }
     if (t.closest('[data-set="theme"]') && t.dataset.value) { S.theme = t.dataset.value; return applyTheme(); }
     if (t.closest("[data-set]") && t.dataset.value) { root.dataset[t.closest("[data-set]").dataset.set] = t.dataset.value; t.parentElement.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b === t)); return; }
-    if (t.closest("[data-accent]")) { root.style.setProperty("--accent", t.dataset.value); $$("[data-accent] button").forEach((b) => b.setAttribute("aria-pressed", b === t)); return; }
+    if (t.closest("[data-accent] .cs-swatch")) { root.dataset.accent = t.dataset.value; $$("[data-accent] button").forEach((b) => b.setAttribute("aria-pressed", b === t)); return; }
     if (t.matches("[data-crew-open]")) { if (t.dataset.crewOpen) return setActor(t.dataset.crewOpen); return chip(t, "Открывает окно этого актора, а без поддержки — его лист"); }
     if (t.matches("[data-fonts-reload]")) { S.fontsApplied = S.fonts; applyFonts(); return chip(t, "Мок: окно перезагружено"); }
     if (t.matches("[data-settings-reset]")) { S.askReset = true; return renderReset(); }
@@ -3738,11 +3867,9 @@ button.cs-stat:active { transform: scale(0.95); }
   // The layer carries the window's theme tokens (it is a module root of its own) and follows the window's settings.
   const layer = document.querySelector('[data-ui="tooltipLayer"]');
   const syncLayer = () => {
-    layer.dataset.theme = root.dataset.theme; layer.dataset.motion = root.dataset.motion;
-    const acc = root.style.getPropertyValue("--accent");
-    if (acc) layer.style.setProperty("--accent", acc); else layer.style.removeProperty("--accent");
+    for (const k of ["theme", "motion", "accent", "light"]) layer.dataset[k] = root.dataset[k];
   };
-  new MutationObserver(syncLayer).observe(root, { attributes: true, attributeFilter: ["data-theme", "data-motion", "style"] });
+  new MutationObserver(syncLayer).observe(root, { attributes: true, attributeFilter: ["data-theme", "data-motion", "data-accent", "data-light"] });
   syncLayer();
   /* ═══════════ Damage type scenes (#22): particles on a canvas, one effect per type ═══════════ */
   // Ambient at «Все» (loops while the card is open), one pass at «Сдержанно», a still frame at «Выключены».
@@ -4784,6 +4911,10 @@ button.cs-stat:active { transform: scale(0.95); }
 
   applySettings();
   const qs = new URLSearchParams(location.search);
+  // mock-only: three looks for «Пергамент» (#26); the switcher also turns the theme on
+  const setLight = (v) => { root.dataset.light = v; document.querySelectorAll("[data-light-set]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.lightSet === v)); };
+  document.querySelector('[data-ui="mockLightSwitch"]').addEventListener("click", (e) => { const b = e.target.closest("[data-light-set]"); if (!b) return; setLight(b.dataset.lightSet); if (S.theme !== "parchment") { S.theme = "parchment"; applyTheme(); } });
+  if (/^[ABC]$/.test(qs.get("light") ?? "")) { setLight(qs.get("light")); S.theme = "parchment"; applyTheme(); }
   if (["npc", "vehicle"].includes(qs.get("actor"))) setActor(qs.get("actor"));
   applyLayout(layoutFor(root.offsetWidth));
   requestAnimationFrame(moveInk);

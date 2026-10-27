@@ -4,6 +4,19 @@
 
 ### Changed
 - AIM opens from the sheet's ⋮ menu and the `I` key; the separate header button is gone.
+- Big trades move items in one write per kind, so offers of many items finish well inside the request timeout.
+
+### Fixed
+- Buttons in the window size to their content: initiative, the hit-dice track, chips and item tiles were cut to
+  Foundry's 28px button height.
+- The theme, density and motion choices in the settings no longer overlap.
+- With the portrait backdrop on, the paperdoll shows the portrait instead of drawing the figure over it.
+- An item can no longer exist twice after a move from an owned actor whose trade is running.
+- A second confirmation that cannot settle (an item ran out, the partner left) clears both confirmations instead
+  of leaving the trade looking finished.
+- The 2.0 migration no longer makes a preset for every unlinked token of an actor with its own doll.
+- The item menu offers Prepare only where the spells tab does (no cantrips, no classes that know their spells).
+- The module API opens a window only for users with Observer permission.
 
 ## 2.0.0
 

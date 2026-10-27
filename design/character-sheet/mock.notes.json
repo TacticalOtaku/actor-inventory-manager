@@ -71,8 +71,8 @@
           "source": "assumption"
         },
         {
-          "text": "Hovering an entry in the icons-only view, a filled doll slot or an attunement socket for 320 ms shows a card with its tile, name, rarity or circle and description.",
-          "source": "assumption"
+          "text": "Hovering an item, spell, feature, effect, condition, doll slot, attunement socket, favorite, crew portrait or a link opens a card (tooltipCard); see tooltipLayer.",
+          "source": "spec"
         },
         {
           "text": "Scrollbars are styled: slim rounded thumbs on a clear track, accent while hovered or dragged; the tab strip shows none.",
@@ -2094,6 +2094,77 @@
       "behaviour": [
         {
           "text": "Mock only: switches between the character, the NPC and the vehicle; with the vehicle a «Тип» select (land, water, air, space) changes the figure.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tooltipLayer": {
+      "behaviour": [
+        {
+          "text": "Our own layer on document.body, not game.tooltip: CONFIG.ux.TooltipManager is left alone. The layer carries the window's theme tokens and follows the user's theme, accent and motion level; in a detached window the cards show in that window.",
+          "source": "spec"
+        },
+        {
+          "text": "Cards replace the native title of what they cover (the text moves to aria-label); links inside cards drop data-tooltip, so no core or dnd5e tooltip opens on top.",
+          "source": "spec"
+        },
+        {
+          "text": "Content: items, spells and features from item.system.getCardData() in our template, so dnd5e's visibility rules (unidentified, concealed) hold; effects and rule pages from richTooltip() inside our frame. Read through a named helper with a 5.3.3 test.",
+          "source": "spec"
+        },
+        {
+          "text": "Observers get the same cards and may pin them; cards carry no actions. Clicking a document link opens it if the viewer may (in the mock: in the window's inspector).",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "tooltipCard": {
+      "behaviour": [
+        {
+          "text": "Look: numbers on the left (attack, effect, charges, weight, price, attunement…), text on the right, property pills under it; the frame glows in the rarity colour (our SC Rarity Colors adapter) or the spell school colour; our palette without SC. Variants A and B are on the prototype/tooltip-cards branch.",
+          "source": "spec"
+        },
+        {
+          "text": "Timing: opens after 400 ms; while a card is open, moving to the next entry swaps it at once; a nested card opens 300 ms after hovering a link; a card closes 200 ms after the pointer leaves both it and its anchor. Keyboard focus opens it the same way; Escape closes unpinned cards.",
+          "source": "spec"
+        },
+        {
+          "text": "Nesting: at most four levels; links on the fourth level stay underlined but open nothing. One live card per level: a new one replaces the unpinned card hanging from the same parent.",
+          "source": "spec"
+        },
+        {
+          "text": "Pinning: hold the pointer on the card for 1.2 s (a ring runs round the edge), middle click, or the pin button. Dragging the head pins and moves it. × or right click closes one card. Pinned cards stay after the actor window closes, until closed or the page reloads.",
+          "source": "spec"
+        },
+        {
+          "text": "At most six pinned cards: a seventh closes the oldest. With two or more pinned, the newest shows «Закрыть все (N)».",
+          "source": "spec"
+        },
+        {
+          "text": "Motion: rises in over 160 ms at «Все» and «Сдержанно»; at «Выключены» only a 150 ms fade.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "damageScene": {
+      "behaviour": [
+        {
+          "text": "A damage type link is a chip in the type's colour (CONFIG.DND5E.damageTypes[k].color, .label); a multi-type part (fire|cold) shows one chip per type. Its card holds a small scene drawn with canvas particles in the type's colour, on a dark stage in both themes.",
+          "source": "spec"
+        },
+        {
+          "text": "Scenes: fire — swaying tongues of flame, embers and smoke; cold — ice spikes erupt, glint and shatter, snow and mist; lightning — branching bolts with flash, sparks and crawling static; acid — drops swell, fall and splash into a pool with ripples, sizzle and vapour; thunder — pressure rings with shake, dust and sound bars; necrotic — a dark core drinking motes of life along curling tendrils; radiant — turning rays, a pulsing sun and twinkling stars; poison — a breathing toxic cloud with rising, popping bubbles; psychic — warped rings closing in, split in two colours, with orbiting glyphs; force — a hexagonal barrier lighting up in a wave inside a turning rune ring; slashing — a claw of three crescent cuts with sparks; piercing — a streak that strikes a mark and bursts; bludgeoning — a falling weight, flash, cracks, debris and dust.",
+          "source": "spec"
+        },
+        {
+          "text": "A type without a scene of its own (added by the world or a module) gets a pulsing orb with orbiting motes in its colour, or the accent colour when it has none.",
+          "source": "spec"
+        },
+        {
+          "text": "Motion (#9): at «Все» the scene loops while the card is open (an ambient effect: paused while the browser tab is hidden); at «Сдержанно» it plays one pass and settles on a still frame; at «Выключены» only the still frame is drawn.",
           "source": "spec"
         }
       ],

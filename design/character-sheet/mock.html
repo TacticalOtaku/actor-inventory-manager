@@ -21,7 +21,7 @@ body {
 }
 
 /* ═══════════ Tokens: live on the window root, never on :root ═══════════ */
-.cs-root {
+.cs-root, .cs-layer {
   /* surfaces */
   --surface-0: #11131a;
   --surface-1: #161922;
@@ -89,7 +89,7 @@ body {
   --shadow-1: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 8px 24px rgb(0 0 0 / 0.35);
   --shadow-lift: 0 18px 40px rgb(0 0 0 / 0.5);
 }
-.cs-root[data-theme="parchment"] {
+.cs-root[data-theme="parchment"], .cs-layer[data-theme="parchment"] {
   --surface-0: #f3eee3;
   --surface-1: #ebe4d6;
   --surface-2: #e2d9c7;
@@ -106,7 +106,7 @@ body {
   --shadow-lift: 0 18px 40px rgb(60 40 10 / 0.25);
 }
 .cs-root[data-density="compact"] { --row-h: 34px; --tile: 28px; }
-.cs-root[data-motion="off"] *, .cs-root[data-motion="off"] *::before, .cs-root[data-motion="off"] *::after {
+.cs-root[data-motion="off"] *, .cs-root[data-motion="off"] *::before, .cs-root[data-motion="off"] *::after, .cs-layer[data-motion="off"] *, .cs-layer[data-motion="off"] *::after {
   transition-duration: 0ms !important;
   animation-duration: 0ms !important;
 }
@@ -558,22 +558,6 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-bubble { position: absolute; bottom: 0; width: 3px; height: 3px; border-radius: 50%; background: rgb(255 255 255 / 0.65); animation: cs-bubble 2.6s ease-in infinite; }
 @keyframes cs-bubble { 0% { bottom: 0; opacity: 0; transform: translateX(0); } 20% { opacity: 0.9; } 100% { bottom: 92%; opacity: 0; transform: translateX(3px); } }
 .cs-level:hover { filter: brightness(1.15); }
-
-/* hover card for icon-only entries, doll slots and attunement sockets */
-.cs-hovercard {
-  position: absolute; z-index: 45; width: 230px; pointer-events: none;
-  display: grid; gap: 6px; padding: 10px 12px;
-  background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: var(--r-md);
-  box-shadow: var(--shadow-lift);
-  opacity: 0; transform: translateY(4px) scale(0.98); transform-origin: top left;
-  transition: opacity var(--d-fast), transform var(--d-base) var(--ease-snap);
-}
-.cs-hovercard.is-on { opacity: 1; transform: none; }
-.cs-hovercard .hc-top { display: flex; align-items: center; gap: 8px; }
-.cs-hovercard .cs-tile { --tile: 30px; }
-.cs-hovercard b { display: block; font: 600 13px/1.2 var(--font-display); }
-.cs-hovercard small { color: var(--tone, var(--text-3)); font-size: 11px; }
-.cs-hovercard p { margin: 0; font-size: 11.5px; line-height: 1.45; color: var(--text-2); }
 
 /* ability tile: hover swaps the score for the saving throw */
 .cs-ability .v, .cs-ability .svt { transition: transform var(--d-base) var(--ease-snap), opacity var(--d-fast); }
@@ -1441,6 +1425,73 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-trade-lock .cs-ico { width: 14px; height: 14px; }
 .cs-tag.is-new { color: var(--accent-ink); background: var(--accent); font-weight: 600; }
 .cs-row.is-fresh { box-shadow: inset 2px 0 0 var(--accent); background: color-mix(in oklab, var(--accent) 7%, transparent); }
+/* ═══════════ Nested cards (#22): our own layer on body, outside the window ═══════════ */
+.cs-layer { position: fixed; inset: 0; z-index: 60; pointer-events: none; font-family: var(--font-ui); color: var(--text); }
+.tip {
+  --tone: var(--accent);
+  position: fixed; width: 272px; max-height: min(70vh, 520px); pointer-events: auto;
+  display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; overflow: hidden;
+  background: var(--surface-1); border: 1px solid color-mix(in oklab, var(--tone) 45%, var(--line-strong)); border-radius: 12px;
+  box-shadow: var(--shadow-lift);
+  animation: tip-in 160ms var(--ease-settle);
+}
+@keyframes tip-in { from { opacity: 0; transform: translateY(6px) scale(0.98); } }
+.tip.is-leaving { opacity: 0; transition: opacity 150ms; }
+.tip-head { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 10px 8px 12px; cursor: default; }
+.tip.is-pinned .tip-head { cursor: grab; }
+.tip.is-dragging .tip-head { cursor: grabbing; }
+.tip-head .cs-tile { --tile: 34px; flex: none; }
+.tip-title { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.tip-title b { font: 600 14px/1.2 var(--font-display); color: color-mix(in oklab, var(--tone) 55%, var(--text)); }
+.tip-title small { font-size: 11px; color: var(--text-3); }
+.tip-btn { flex: none; width: 24px; height: 24px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text-3); cursor: pointer; }
+.tip-btn:hover { background: var(--surface-3); color: var(--text); }
+.tip-btn .cs-ico { width: 14px; height: 14px; }
+.tip.is-pinned [data-tip-pin] { color: var(--tone); }
+.tip-stats { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0; padding: 0 12px 6px; font-size: 11.5px; }
+.tip-stats div { display: flex; gap: 4px; }
+.tip-stats dt { color: var(--text-3); }
+.tip-stats dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tip-body { padding: 2px 12px 10px; overflow: auto; font-size: 12px; line-height: 1.5; color: var(--text-2); }
+.tip-body p { margin: 0 0 6px; }
+.tip-body ul { margin: 4px 0 0; padding-left: 16px; }
+.tip-pills { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 12px 10px; }
+.tip-pills span { padding: 1px 7px; border-radius: 99px; background: var(--surface-3); color: var(--text-2); font-size: 10.5px; }
+.tip-foot { display: flex; justify-content: flex-end; padding: 0 10px 10px; }
+.tip-foot button { padding: 3px 10px; border: 1px solid var(--line-strong); border-radius: 99px; background: transparent; color: var(--text-2); font: 500 11px var(--font-ui); cursor: pointer; }
+.tip-foot button:hover { color: var(--text); border-color: var(--accent-line); }
+.tip-hint { padding: 0 12px 8px; font-size: 10.5px; color: var(--text-3); }
+.tip.is-pinned .tip-hint { display: none; }
+/* long hover to pin: a ring runs round the edge, then the card stays */
+.tip::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; padding: 2px;
+  background: conic-gradient(var(--tone) calc(var(--pin, 0) * 1turn), transparent 0); -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); opacity: 0; }
+.tip.is-pinning::after { opacity: 1; animation: tip-pin 1200ms linear forwards; }
+@property --pin { syntax: "<number>"; inherits: false; initial-value: 0; }
+@keyframes tip-pin { to { --pin: 1; } }
+.tip.is-pinned { border-color: color-mix(in oklab, var(--tone) 70%, transparent); }
+/* links inside cards open their own card */
+.cs-ref { color: color-mix(in oklab, var(--accent) 80%, var(--text)); text-decoration: underline dotted color-mix(in oklab, var(--accent) 55%, transparent); text-underline-offset: 2px; cursor: help; }
+.tip[data-depth="4"] .cs-ref, .tip[data-depth="4"] .cs-dmg-chip { cursor: text; }
+.cs-dmg-chip { display: inline-flex; align-items: center; gap: 4px; padding: 0 6px 0 5px; border-radius: 99px; background: color-mix(in oklab, var(--c) 16%, transparent); color: color-mix(in oklab, var(--c) 75%, var(--text)); font-size: 0.95em; white-space: nowrap; cursor: help; }
+.cs-dmg-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--c); box-shadow: 0 0 6px var(--c); }
+.cs-dmg[data-dmg] { cursor: help; }
+/* damage type card: a small scene in the type's colour */
+.tip.is-dmg { width: 264px; }
+/* a dark window into the scene in both themes, so additive light reads */
+.dmg-anim { position: relative; height: 112px; margin: 0 12px 10px; border-radius: 8px; overflow: hidden; background: radial-gradient(ellipse at 50% 85%, color-mix(in oklab, var(--c) 18%, #0b0c12), #07080c 75%); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06), inset 0 -20px 30px -20px color-mix(in oklab, var(--c) 40%, transparent); }
+.dmg-anim canvas { display: block; width: 100%; height: 100%; }
+.cs-layer[data-motion="reduced"] .cs-layer[data-motion="off"] .cs-layer[data-motion="off"] .tip { animation: none; }
+.cs-layer[data-motion="off"] .tip::after { animation-duration: 1200ms !important; }
+/* the card: numbers on the left, text on the right, rarity as a glow (variant C of the prototype) */
+.tip { width: 380px; grid-template-columns: 112px minmax(0, 1fr); box-shadow: 0 0 0 1px color-mix(in oklab, var(--tone) 35%, transparent), 0 0 26px color-mix(in oklab, var(--tone) 22%, transparent), var(--shadow-lift); }
+.tip > :not(.tip-stats, .tip-body, .tip-pills) { grid-column: 1 / -1; }
+.tip-stats { grid-row: span 2; flex-direction: column; flex-wrap: nowrap; gap: 8px; margin: 0 0 10px 10px; padding: 8px 10px; border-radius: 8px; background: var(--surface-2); align-self: start; }
+.tip-stats div { flex-direction: column; gap: 0; }
+.tip-stats dt { font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; }
+.tip-stats dd { font-size: 13px; }
+.tip-stats:empty { display: none; }
+.tip:has(.tip-stats:empty) .tip-body, .tip:has(.tip-stats:empty) .tip-pills { grid-column: 1 / -1; }
+.tip.is-dmg { width: 264px; grid-template-columns: minmax(0, 1fr); }
 </style>
 </head>
 <body>
@@ -1513,6 +1564,7 @@ button.cs-stat:active { transform: scale(0.95); }
   <symbol id="fig-wagon" viewBox="0 0 240 160"><path d="M50 40h150l8 62H42zM30 100h190v10H30zM2 104l40-4v8L2 112z" fill="currentColor" opacity=".35"/><circle cx="72" cy="128" r="22" fill="none" stroke="currentColor" stroke-width="7" opacity=".35"/><circle cx="182" cy="128" r="22" fill="none" stroke="currentColor" stroke-width="7" opacity=".35"/><path d="M60 40c20-36 110-36 130 0" fill="none" stroke="currentColor" stroke-width="6" opacity=".35"/></symbol>
   <symbol id="fig-ship" viewBox="0 0 240 160"><path d="M14 104h212l-24 42H44zM118 8v94M122 14l70 70h-70zM114 22l-60 64h60z" fill="currentColor" opacity=".35"/></symbol>
   <symbol id="fig-airship" viewBox="0 0 240 160"><ellipse cx="120" cy="56" rx="100" ry="40" fill="currentColor" opacity=".35"/><path d="M84 104h72l-10 26H94zM96 94l-6 10M144 94l6 10M214 44l20-14v52l-20-14z" fill="currentColor" stroke="currentColor" stroke-width="3" opacity=".35"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 3h6l-1 6 4 4v2h-5v6l-1 1-1-1v-6H6v-2l4-4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
   <symbol id="i-figure" viewBox="0 0 120 260"><path d="M60 8c11 0 19 9 19 21s-8 22-19 22-19-10-19-22S49 8 60 8zM38 58h44c12 0 20 8 22 20l8 62c1 6-8 8-10 2l-12-50v64l6 84c1 8-12 9-14 1L68 172h-16l-14 69c-2 8-15 7-14-1l6-84V92l-12 50c-2 6-11 4-10-2l8-62c2-12 10-20 22-20z" fill="currentColor" stroke="none" opacity=".35"/></symbol>
 </svg>
 
@@ -1806,6 +1858,7 @@ button.cs-stat:active { transform: scale(0.95); }
 </section>
 
 </main>
+<div class="cs-layer" data-ui="tooltipLayer"></div>
 <script>
 (() => {
   const root = document.querySelector(".cs-root");
@@ -1977,6 +2030,40 @@ button.cs-stat:active { transform: scale(0.95); }
   };
   const byId = Object.fromEntries([...items, ...spells, ...features].map((x) => [x.id, x]));
   const kind = (x) => (spells.includes(x) ? "spell" : features.includes(x) ? "feature" : "item");
+
+  /* Links in descriptions (#22): the mock writes {dmg:fire}, {cond:blinded}, {rule:key:text}, {doc:id:text}; the module gets real enriched HTML. */
+  const RARITY = { common: "Обычный", uncommon: "Необычный", rare: "Редкий", veryRare: "Очень редкий", legendary: "Легендарный", artifact: "Артефакт" };
+  const GROUP_LABEL = { weapon: "Оружие", equipment: "Снаряжение", consumable: "Расходуемое", tool: "Инструмент", loot: "Добыча", container: "Контейнер" };
+  // Mock stand-in for the rule pages &Reference points at (Compendium.dnd5e.rules).
+  const RULES = {
+    advantage: ["Преимущество", "Бросьте два к20 и возьмите больший результат. Преимущество и помеха на одном броске отменяют друг друга."],
+    disadvantage: ["Помеха", "Бросьте два к20 и возьмите меньший результат."],
+    concentration: ["Концентрация", `Одно заклинание за раз. При получении урона — спасбросок Телосложения, Сл 10 или половина урона. Потеря сознания (${"{cond:unconscious}"}) прерывает концентрацию.`],
+    attunement: ["Настройка", "Короткий отдых рядом с предметом. Одновременно — не больше трёх предметов."],
+    save: ["Спасбросок", "к20 + модификатор характеристики + бонус мастерства, если вы им владеете, против Сл эффекта."]
+  };
+  const COND_TEXT = { blinded: `Существо не видит и проваливает проверки, требующие зрения. Атаки по нему с ${"{rule:advantage:преимуществом}"}, его атаки — с ${"{rule:disadvantage:помехой}"}.`, unconscious: `Существо ${"{cond:incapacitated}"}, роняет то, что держит, и падает. Атаки по нему с преимуществом; попадание вблизи — критическое.`, incapacitated: "Существо не может совершать действия, бонусные действия и реакции; концентрация прерывается." };
+  // Mock colours; the module reads CONFIG.DND5E.damageTypes[k].color and .label.
+  const DMG = { acid: ["Кислота", "#9fd04a"], bludgeoning: ["Дробящий", "#cfc6b6"], cold: ["Холод", "#8fd6ff"], fire: ["Огонь", "#ff6a2b"], force: ["Силовое поле", "#c47cff"], lightning: ["Молния", "#6fb2ff"], necrotic: ["Некротический", "#9a7ab8"], piercing: ["Колющий", "#cfc6b6"], poison: ["Яд", "#7fcf6a"], psychic: ["Психический", "#ff73c8"], radiant: ["Излучение", "#ffd65a"], slashing: ["Рубящий", "#cfc6b6"], thunder: ["Звук", "#b3a4ff"] };
+  const DMG_TEXT = { fire: "Поджигает горючее. Многие существа огня к нему невосприимчивы.", cold: "Ледяной холод: дыхание белого дракона, «Луч холода».", lightning: "Разряд молнии; металл не спасает.", acid: "Разъедающая жидкость.", thunder: "Оглушающий удар звука; слышно за 300 фт.", necrotic: "Иссушает плоть и душу.", radiant: "Опаляющий свет; нежить страдает особенно.", poison: "Ядовитые клыки и газы. Невосприимчивость встречается часто.", psychic: "Удар по разуму.", force: "Чистая магическая энергия; сопротивление к ней — редкость.", slashing: "Мечи, топоры, когти.", piercing: "Копья, стрелы, укусы.", bludgeoning: "Булавы, падения, сжатие." };
+  // Mock enrichment: {dmg:fire|cold}, {cond:blinded}, {rule:key:text}, {doc:id:text} become links that open their own card.
+  const enrich = (s) => String(s ?? "").replace(/\{(dmg|cond|rule|doc):([^}:]+)(?::([^}]+))?\}/g, (_, t, k, text) => {
+    if (t === "dmg") return k.split("|").map((d) => `<span class="cs-dmg-chip" data-card="dmg:${d}" style="--c:${(DMG[d] ?? ["", "var(--accent)"])[1]}">${(DMG[d] ?? [d])[0]}</span>`).join(" ");
+    const name = text ?? (t === "cond" ? [...CONDITIONS, ...STATUSES].find(([c]) => c === k)?.[1] : t === "rule" ? RULES[k]?.[0] : byId[k]?.name) ?? k;
+    return `<a class="cs-ref" data-card="${t}:${k}">${name}</a>`;
+  });
+  const fx = (x) => `<p>${enrich(x)}</p>`;
+  const RICH_DESC = {
+    staff: "Магическое оружие +1: {dmg:bludgeoning} урон 1к6 + 1. Пока посох у вас в руках, +1 к броскам атаки заклинаниями. Требует {rule:attunement:настройки}.",
+    dagger: "{dmg:piercing} урон 1к4. Дистанция броска 20/60 фт.",
+    bow: "{dmg:piercing} урон 1к8. Дистанция 150/600 фт. Двуручное.",
+    firebolt: "Дальнобойная атака заклинанием: 2к10 урона, {dmg:fire}. Горючие предметы загораются.",
+    missile: "Три дротика по 1к4 + 1 урона, {dmg:force}; каждый попадает без броска.",
+    fireball: "Сфера радиусом 20 фт: 8к6 урона, {dmg:fire}. {rule:save:Спасбросок} Ловкости — половина урона.",
+    flare: "Существа в 10 фт от вас — спасбросок Телосложения Сл 15 или {cond:blinded:ослеплены} до конца вашего следующего хода.",
+    wand: "7 зарядов. Действием потратьте 1–3 заряда, чтобы сотворить {doc:missile}. Восстанавливает 1к6 + 1 заряд на рассвете."
+  };
+  for (const [id, d] of Object.entries(RICH_DESC)) { const x = [...items, ...spells, ...features].find((v) => v.id === id); if (x) x.desc = d; }
 
   /* ═══════════ Actor types (#8, #20): a character, an NPC with a player owner, a vehicle ═══════════ */
   // One window for all three; the type only decides which blocks and tabs show ([data-types] in the markup).
@@ -2573,7 +2660,7 @@ button.cs-stat:active { transform: scale(0.95); }
       <div class="cs-effect ${e.conc ? "is-conc" : ""} ${e.cond ? "is-cond" : ""} ${e.disabled ? "is-off" : ""} ${e.why ? "is-supp" : ""} ${open ? "is-open" : ""}" data-ui="effectRow" data-effect="${e.id}" data-eff-where="${where}" ${e.cond || e.conc ? "" : `data-fav-src="effect:${e.id}" draggable="${canEdit()}"`} tabindex="0" aria-expanded="${open}">
         <span class="cs-effect-ic" data-school="${e.school}">${e.cond ? `<b>${e.name[0]}</b>` : icon(e.icon)}</span><span class="cs-effect-n">${e.name}<small>${sub}</small></span>${e.time ? `<span class="cs-effect-t">${e.time}</span>` : ""}${ctl}
       </div>
-      <div class="cs-detail cs-eff-detail ${open ? "is-open" : ""}"><div><p>${e.desc}</p>${e.changes.length ? `<ul class="cs-eff-changes">${e.changes.map((c) => `<li>${c}</li>`).join("")}</ul>` : ""}</div></div>
+      <div class="cs-detail cs-eff-detail ${open ? "is-open" : ""}"><div><p>${enrich(e.desc)}</p>${e.changes.length ? `<ul class="cs-eff-changes">${e.changes.map((c) => `<li>${c}</li>`).join("")}</ul>` : ""}</div></div>
     </div>`;
   }
   // dnd5e has no conditions dialog: the grid is ours and calls actor.toggleStatusEffect(id).
@@ -2697,7 +2784,7 @@ button.cs-stat:active { transform: scale(0.95); }
       + (x.lvl && !x.method && !x.always ? btn(`data-prep="${x.id}"`, "book", x.prep ? "Убрать из подготовленных" : "Подготовить") : "");
     else main = multi || (x.passive ? "" : btn(`data-use-feat="${x.id}"`, x.acts?.[0]?.[1] ?? "hand", x.acts?.[0]?.[0] ?? "Использовать", true));
     const effs = allEffects().filter((e) => e.item === x.id);
-    return `<p>${x.desc}</p>
+    return `<p>${enrich(x.desc)}</p>
       ${effs.length ? `<div class="cs-insp-effs"><div class="cs-eff-cat-h">Эффекты</div>${effs.map((e) => effRow(e, `in-${x.id}`)).join("")}</div>` : ""}
       <div class="acts">${main}<span class="grow"></span><button type="button" class="cs-btn" data-oos="Показывает карточку в чате (item.displayCard)">В чат</button><button type="button" class="cs-ibtn" aria-label="Ещё" data-oos="${MENU_OOS[k]}">${icon("dots")}</button></div>`;
   }
@@ -3609,35 +3696,724 @@ button.cs-stat:active { transform: scale(0.95); }
     const lit = $$(".cs-rune:not(.is-spent), .cs-slotpip:not(.is-spent)").filter((e) => e.offsetParent);
     if (lit.length) pulse(lit[Math.floor(Math.random() * lit.length)], "is-twinkle");
   }, 1800);
-  /* hover card for icon-only entries, doll slots and sockets */
-  const hc = document.createElement("div");
-  hc.className = "cs-hovercard"; hc.setAttribute("role", "tooltip");
-  root.append(hc);
-  let hcTimer = null, hcFor = null;
-  const hcTarget = (el) => el?.closest('.cs-items[data-view="icons"] .cs-row, .cs-slot.is-filled, .cs-socket.is-on');
-  root.addEventListener("pointerover", (e) => {
-    const el = hcTarget(e.target);
-    if (!el || el === hcFor) return;
-    hcFor = el; clearTimeout(hcTimer); hc.classList.remove("is-on");
-    hcTimer = setTimeout(() => {
-      const id = el.dataset.row ?? el.dataset.socket ?? S.equipped[el.dataset.slot];
-      const x = byId[id]; if (!x) return;
-      const k = kind(x);
-      const RAR = { common: "Обычный", uncommon: "Необычный", rare: "Редкий", veryRare: "Очень редкий", legendary: "Легендарный" };
-      const sub = k === "spell" ? `${x.lvl ? `${x.lvl} круг` : "Заговор"} · ${SCHOOLS[x.school]}${x.prep === false || (x.lvl && !x.prep) ? " · не подготовлено" : ""}` : k === "item" ? RAR[x.rarity] : x.src;
-      hc.innerHTML = `<div class="hc-top">${tile(x)}<div><b>${x.name}</b><small ${k === "spell" ? `data-school="${x.school}"` : `data-rarity="${x.rarity ?? "common"}"`}>${sub}</small></div></div><p>${x.desc}</p>`;
-      const a = el.getBoundingClientRect(), box = root.getBoundingClientRect();
-      let left = a.right - box.left + 8, top = a.top - box.top;
-      if (left + 230 > box.width - 8) left = a.left - box.left - 238;
-      top = Math.max(8, Math.min(top, box.height - hc.offsetHeight - 8));
-      hc.style.left = `${Math.max(8, left)}px`; hc.style.top = `${top}px`;
-      hc.classList.add("is-on");
-    }, 320);
+  /* ═══════════ Nested cards (#22) ═══════════ */
+  // Our own layer on body, not game.tooltip: cards nest four deep, pin by a long hover, drag, and outlive the window.
+  // The layer carries the window's theme tokens (it is a module root of its own) and follows the window's settings.
+  const layer = document.querySelector('[data-ui="tooltipLayer"]');
+  const syncLayer = () => {
+    layer.dataset.theme = root.dataset.theme; layer.dataset.motion = root.dataset.motion;
+    const acc = root.style.getPropertyValue("--accent");
+    if (acc) layer.style.setProperty("--accent", acc); else layer.style.removeProperty("--accent");
+  };
+  new MutationObserver(syncLayer).observe(root, { attributes: true, attributeFilter: ["data-theme", "data-motion", "style"] });
+  syncLayer();
+  /* ═══════════ Damage type scenes (#22): particles on a canvas, one effect per type ═══════════ */
+  // Ambient at «Все» (loops while the card is open), one pass at «Сдержанно», a still frame at «Выключены».
+  const hexRgb = (h) => { const m = /^#?([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(h) ?? [0, "c0", "a0", "ff"]; return [1, 2, 3].map((i) => parseInt(m[i], 16)); };
+  const rgba = ([r, g, b], a) => `rgba(${r | 0},${g | 0},${b | 0},${Math.max(0, Math.min(1, a))})`;
+  const mixRgb = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+  const WHITE = [255, 255, 255], BLACK = [0, 0, 0];
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const TAU = Math.PI * 2;
+  // A soft additive light: the building block of every glow.
+  function glow(ctx, x, y, r, rgb, a) {
+    if (r <= 0 || a <= 0) return;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, rgba(rgb, a)); g.addColorStop(0.4, rgba(rgb, a * 0.45)); g.addColorStop(1, rgba(rgb, 0));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+  }
+  // Fades what was drawn last frame instead of clearing it, so fast things leave trails.
+  function fade(st, a) { const { ctx } = st; ctx.globalCompositeOperation = "destination-out"; ctx.fillStyle = `rgba(0,0,0,${a})`; ctx.fillRect(0, 0, st.W, st.H); }
+  function clear(st) { st.ctx.globalCompositeOperation = "source-over"; st.ctx.clearRect(0, 0, st.W, st.H); }
+  // A jagged path between two points by midpoint displacement, for bolts and cracks.
+  function jag(x1, y1, x2, y2, rough, depth) {
+    let pts = [[x1, y1], [x2, y2]];
+    for (let d = 0; d < depth; d++) {
+      const next = [pts[0]];
+      for (let i = 1; i < pts.length; i++) {
+        const [ax, ay] = pts[i - 1], [bx, by] = pts[i], len = Math.hypot(bx - ax, by - ay);
+        const nx = -(by - ay) / (len || 1), ny = (bx - ax) / (len || 1), off = rnd(-rough, rough) * len;
+        next.push([(ax + bx) / 2 + nx * off, (ay + by) / 2 + ny * off], pts[i]);
+      }
+      pts = next;
+    }
+    return pts;
+  }
+  function strokePath(ctx, pts, w, color) { ctx.lineWidth = w; ctx.strokeStyle = color; ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke(); }
+  function star(ctx, x, y, r, rgb, a, rot = 0) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.fillStyle = rgba(rgb, a);
+    ctx.beginPath();
+    for (let i = 0; i < 8; i++) { const rr = i % 2 ? r * 0.18 : r; const an = (i / 8) * TAU; ctx.lineTo(Math.cos(an) * rr, Math.sin(an) * rr); }
+    ctx.fill(); ctx.restore();
+  }
+  // Each scene: init(st) once, step(st, dt) every frame. st.emit is false once a one-pass run stops spawning.
+  const VFX = {
+    fire: {
+      init(st) { st.flames = []; st.embers = []; st.smoke = []; st.roots = [-0.13, 0, 0.12].map((o) => ({ o, ph: rnd(0, TAU) })); },
+      step(st, dt) {
+        const { ctx, W, H, c } = st; clear(st);
+        const hot = mixRgb(c, [255, 226, 150], 0.6), core = [255, 246, 214], ember = mixRgb(c, [255, 200, 120], 0.4), ash = mixRgb(c, BLACK, 0.8);
+        const gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
+        if (st.emit) {
+          // many small, faint cells: the flame's body is their sum, so tongues form where they crowd
+          // three roots sway on their own, so the fire burns as separate tongues, not one blob
+          for (const rt of st.roots) {
+            const rx = W / 2 + (rt.o + Math.sin(st.t * 2.3 + rt.ph) * 0.03) * W;
+            for (let i = 0; i < 5; i++) st.flames.push({ x: rx + gauss() * W * 0.05, y: H + 4, vx: 0, vy: rnd(-120, -75) * (rt.o ? 0.8 : 1), r: rnd(3.5, 6.5), life: 0, max: rnd(0.55, 1), seed: rt.ph, cx: rx });
+          }
+          if (Math.random() < 0.35) st.embers.push({ x: W / 2 + gauss() * W * 0.14, y: H - 10, vx: rnd(-12, 12), vy: rnd(-110, -60), life: 0, max: rnd(0.9, 1.8), seed: rnd(0, TAU) });
+          if (Math.random() < 0.1) st.smoke.push({ x: W / 2 + rnd(-14, 14), y: H * 0.3, vx: rnd(-5, 5), vy: rnd(-16, -9), r: rnd(9, 15), life: 0, max: rnd(1.8, 2.6) });
+        }
+        ctx.globalCompositeOperation = "source-over";
+        st.smoke = st.smoke.filter((p) => (p.life += dt) < p.max);
+        for (const p of st.smoke) { p.x += p.vx * dt; p.y += p.vy * dt; p.r += 9 * dt; const k = p.life / p.max; const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r); g.addColorStop(0, rgba(ash, 0.3 * Math.sin(Math.PI * k))); g.addColorStop(1, rgba(ash, 0)); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill(); }
+        ctx.globalCompositeOperation = "lighter";
+        glow(ctx, W / 2, H + 10, W * 0.4, c, 0.1 + 0.04 * Math.sin(st.t * 9) + 0.03 * Math.sin(st.t * 23));
+        st.flames = st.flames.filter((p) => (p.life += dt) < p.max);
+        for (const p of st.flames) {
+          const k = p.life / p.max;
+          // turbulence pushes cells sideways by height, the centre pulls them back into tongues
+          p.vx += (Math.sin(p.y * 0.11 + st.t * 8 + p.seed) * 80 + (p.cx - p.x) * 2.2) * dt;
+          p.vx *= 1 - 1.5 * dt;
+          p.x += p.vx * dt; p.y += p.vy * dt * (1 + k * 0.8);
+          const col = k < 0.18 ? mixRgb(core, hot, k / 0.18) : k < 0.55 ? mixRgb(hot, c, (k - 0.18) / 0.37) : mixRgb(c, mixRgb(c, BLACK, 0.7), (k - 0.55) / 0.45);
+          glow(ctx, p.x, p.y, p.r * (2.3 - k * 1.5), col, 0.15 * (1 - k) ** 0.6);
+        }
+        st.embers = st.embers.filter((p) => (p.life += dt) < p.max && p.y > -5);
+        ctx.lineCap = "round";
+        for (const p of st.embers) {
+          const k = p.life / p.max, px = p.x, py = p.y;
+          p.vx += Math.sin(st.t * 4 + p.seed) * 35 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy *= 1 - 0.6 * dt;
+          const a = (1 - k) * (0.55 + 0.45 * Math.sin(st.t * 28 + p.seed));
+          strokePath(ctx, [[px, py], [p.x, p.y]], 1.4, rgba(ember, a)); glow(ctx, p.x, p.y, 3.5, hot, a * 0.7);
+        }
+      }
+    },
+    cold: {
+      init(st) {
+        st.flakes = Array.from({ length: 30 }, () => ({ x: rnd(0, st.W), y: rnd(0, st.H), vy: rnd(5, 14), r: rnd(1.2, 3.2), spin: rnd(-2, 2), rot: rnd(0, TAU), tw: rnd(0, TAU) }));
+        st.mist = Array.from({ length: 7 }, (_, i) => ({ x: (i / 6) * st.W, y: st.H - rnd(2, 12), r: rnd(22, 36), v: rnd(-7, 7) }));
+        st.clusters = []; st.shards = []; st.grow = 0;
+      },
+      // A cluster of faceted spikes erupts from the ground, holds with a glint, then shatters.
+      cluster(st) {
+        const x = rnd(st.W * 0.15, st.W * 0.85), n = 3 + (Math.random() * 3 | 0);
+        const spikes = Array.from({ length: n }, (_, i) => ({ dx: (i - (n - 1) / 2) * rnd(5, 8), ang: (i - (n - 1) / 2) * rnd(0.16, 0.3) + rnd(-0.08, 0.08), h: rnd(st.H * 0.3, st.H * 0.68) * (1 - Math.abs(i - (n - 1) / 2) * 0.22), w: rnd(4, 7) }));
+        st.clusters.push({ x, spikes, life: 0, max: 2.1 });
+      },
+      step(st, dt) {
+        const { ctx, W, H, c } = st; clear(st);
+        const ice = mixRgb(c, WHITE, 0.6), deep = mixRgb(c, [20, 40, 90], 0.45);
+        ctx.globalCompositeOperation = "lighter";
+        for (const m of st.mist) { m.x += m.v * dt; if (m.x < -40) m.x = W + 40; if (m.x > W + 40) m.x = -40; glow(ctx, m.x, m.y, m.r, c, 0.1); }
+        st.grow -= dt;
+        if (st.emit && st.grow <= 0) { VFX.cold.cluster(st); st.grow = rnd(0.6, 0.95); }
+        st.clusters = st.clusters.filter((cl) => {
+          cl.life += dt;
+          if (cl.life >= cl.max) {
+            // shatter into tumbling shards
+            for (const sp of cl.spikes) for (let i = 0; i < 5; i++) { const t = rnd(0.1, 0.9), an = -Math.PI / 2 + sp.ang; st.shards.push({ x: cl.x + sp.dx + Math.cos(an) * sp.h * t, y: H + Math.sin(an) * sp.h * t, vx: rnd(-50, 50), vy: rnd(-70, -10), rot: rnd(0, TAU), spin: rnd(-10, 10), s: rnd(2, 4.5), life: 0 }); }
+            return false;
+          }
+          return true;
+        });
+        for (const cl of st.clusters) {
+          const g = 1 - (1 - Math.min(1, cl.life / 0.35)) ** 3;
+          for (const sp of cl.spikes) {
+            const an = -Math.PI / 2 + sp.ang, bx = cl.x + sp.dx, by = H + 2, tx = bx + Math.cos(an) * sp.h * g, ty = by + Math.sin(an) * sp.h * g;
+            const nx = -Math.sin(an) * sp.w / 2, ny = Math.cos(an) * sp.w / 2;
+            // a translucent body, lighter towards the tip, with one lit facet
+            ctx.globalCompositeOperation = "source-over";
+            const body = ctx.createLinearGradient(bx, by, tx, ty); body.addColorStop(0, rgba(deep, 0.75)); body.addColorStop(1, rgba(ice, 0.9));
+            ctx.fillStyle = body; ctx.beginPath(); ctx.moveTo(bx - nx, by - ny); ctx.lineTo(tx, ty); ctx.lineTo(bx + nx, by + ny); ctx.fill();
+            ctx.globalCompositeOperation = "lighter";
+            ctx.fillStyle = rgba(ice, 0.35); ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(tx, ty); ctx.lineTo(bx + nx, by + ny); ctx.fill();
+            ctx.lineWidth = 0.8; ctx.strokeStyle = rgba(WHITE, 0.7); ctx.beginPath(); ctx.moveTo(bx - nx, by - ny); ctx.lineTo(tx, ty); ctx.stroke();
+            const glint = Math.max(0, Math.sin((cl.life - 0.4) * 5 + sp.dx));
+            if (g > 0.95) { star(ctx, tx, ty, 3 + glint * 5, WHITE, 0.4 + glint * 0.6, cl.life); glow(ctx, tx, ty, 9, c, 0.35 + glint * 0.3); }
+          }
+          glow(ctx, cl.x, H, 26, c, 0.25 * g);
+        }
+        st.shards = st.shards.filter((p) => (p.life += dt) < 0.9);
+        for (const p of st.shards) {
+          p.vy += 220 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.rot += p.spin * dt;
+          ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = rgba(ice, 1 - p.life / 0.9);
+          ctx.beginPath(); ctx.moveTo(0, -p.s); ctx.lineTo(p.s * 0.5, p.s * 0.6); ctx.lineTo(-p.s * 0.5, p.s * 0.4); ctx.fill(); ctx.restore();
+        }
+        // rime creeps along the ground
+        ctx.lineWidth = 1; ctx.strokeStyle = rgba(ice, 0.25);
+        ctx.beginPath(); for (let x = 0; x <= W; x += 6) ctx.lineTo(x, H - 2 - Math.abs(Math.sin(x * 0.37) * 3 + Math.sin(x * 0.13) * 2)); ctx.stroke();
+        for (const p of st.flakes) {
+          p.y += p.vy * dt; p.x += Math.sin(st.t + p.tw) * 6 * dt; p.rot += p.spin * dt;
+          if (p.y > H + 4) { p.y = -4; p.x = rnd(0, W); }
+          const tw = 0.5 + 0.5 * Math.sin(st.t * 3 + p.tw);
+          star(ctx, p.x, p.y, p.r, ice, 0.75 * tw, p.rot); glow(ctx, p.x, p.y, p.r * 2.2, c, 0.18 * tw);
+        }
+      }
+    },
+    lightning: {
+      init(st) { st.bolts = []; st.sparks = []; st.next = 0.05; st.flash = 0; st.arcs = []; },
+      bolt(st) {
+        const x1 = rnd(st.W * 0.2, st.W * 0.8), x2 = st.W / 2 + rnd(-st.W * 0.18, st.W * 0.18), main = jag(x1, -4, x2, st.H - 6, 0.22, 6);
+        const branches = Array.from({ length: 2 + (Math.random() * 2 | 0) }, () => { const from = main[(Math.random() * main.length * 0.7) | 0]; return jag(from[0], from[1], from[0] + rnd(-40, 40), from[1] + rnd(14, 40), 0.3, 4); });
+        st.bolts.push({ paths: [main, ...branches], life: 0, max: rnd(0.16, 0.26) });
+        st.flash = 1;
+        for (let i = 0; i < 18; i++) { const an = rnd(Math.PI * 1.05, Math.PI * 1.95); const v = rnd(40, 140); st.sparks.push({ x: x2, y: st.H - 6, vx: Math.cos(an) * v, vy: Math.sin(an) * v, life: 0, max: rnd(0.3, 0.7) }); }
+      },
+      step(st, dt) {
+        const { ctx, W, H, c } = st; fade(st, 0.5);
+        const hot = mixRgb(c, WHITE, 0.7);
+        st.next -= dt;
+        if (st.emit && st.next <= 0) { VFX.lightning.bolt(st); st.next = rnd(0.45, 1.1); }
+        ctx.globalCompositeOperation = "lighter";
+        if (st.flash > 0) { ctx.fillStyle = rgba(c, st.flash * 0.22); ctx.fillRect(0, 0, W, H); st.flash = Math.max(0, st.flash - dt * 6); }
+        ctx.lineCap = "round"; ctx.lineJoin = "round";
+        st.bolts = st.bolts.filter((b) => (b.life += dt) < b.max);
+        for (const b of st.bolts) {
+          const flick = Math.random() < 0.25 ? 0.35 : 1, a = (1 - b.life / b.max) * flick;
+          b.paths.forEach((p, i) => { const w = i ? 0.55 : 1; strokePath(ctx, p, 9 * w, rgba(c, 0.12 * a)); strokePath(ctx, p, 3.2 * w, rgba(c, 0.6 * a)); strokePath(ctx, p, 1.2 * w, rgba(hot, a)); });
+          const end = b.paths[0].at(-1); glow(ctx, end[0], end[1], 26, c, 0.6 * a); glow(ctx, end[0], end[1], 8, WHITE, 0.8 * a);
+        }
+        st.sparks = st.sparks.filter((p) => (p.life += dt) < p.max);
+        for (const p of st.sparks) { const px = p.x, py = p.y; p.vy += 260 * dt; p.x += p.vx * dt; p.y += p.vy * dt; if (p.y > H - 3) { p.y = H - 3; p.vy *= -0.35; } strokePath(ctx, [[px, py], [p.x, p.y]], 1.2, rgba(hot, 1 - p.life / p.max)); }
+        // static crawling between bolts
+        if (Math.random() < 0.3) { const x = rnd(10, W - 10), y = rnd(H * 0.5, H - 4); st.arcs.push({ p: jag(x, y, x + rnd(-18, 18), y + rnd(-10, 4), 0.35, 3), life: 0 }); }
+        st.arcs = st.arcs.filter((a) => (a.life += dt) < 0.08);
+        for (const a of st.arcs) strokePath(ctx, a.p, 0.8, rgba(hot, 0.55));
+      }
+    },
+    acid: {
+      init(st) { st.drops = []; st.splash = []; st.ripples = []; st.bubbles = []; st.vapor = []; st.next = 0; },
+      step(st, dt) {
+        const { ctx, W, H, c } = st; clear(st);
+        const lite = mixRgb(c, WHITE, 0.45), deep = mixRgb(c, BLACK, 0.45), pool = H - 12;
+        st.next -= dt;
+        if (st.emit && st.next <= 0) { st.drops.push({ x: W / 2 + rnd(-W * 0.22, W * 0.22), y: 2, r: 0, phase: "form", v: 0 }); st.next = rnd(0.5, 0.9); }
+        // the pool: a lit ellipse with a darker rim
+        ctx.globalCompositeOperation = "source-over";
+        const pg = ctx.createRadialGradient(W / 2, pool + 4, 4, W / 2, pool + 4, W * 0.42);
+        pg.addColorStop(0, rgba(c, 0.55)); pg.addColorStop(0.7, rgba(deep, 0.35)); pg.addColorStop(1, rgba(deep, 0));
+        ctx.fillStyle = pg; ctx.beginPath(); ctx.ellipse(W / 2, pool + 4, W * 0.42, 10, 0, 0, TAU); ctx.fill();
+        st.vapor = st.vapor.filter((p) => (p.life += dt) < p.max);
+        if (st.emit && Math.random() < 0.25) st.vapor.push({ x: W / 2 + rnd(-W * 0.3, W * 0.3), y: pool, r: rnd(6, 10), life: 0, max: rnd(1.2, 2) });
+        for (const p of st.vapor) { p.y -= 14 * dt; p.x += Math.sin(st.t * 2 + p.r) * 5 * dt; p.r += 7 * dt; const k = p.life / p.max; const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r); g.addColorStop(0, rgba(lite, 0.14 * Math.sin(Math.PI * k))); g.addColorStop(1, rgba(lite, 0)); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill(); }
+        // drops swell on the ceiling, stretch as they fall, burst on the pool
+        for (const d of st.drops) {
+          if (d.phase === "form") { d.r += 7 * dt; if (d.r > 4.2) d.phase = "fall"; }
+          else { d.v += 420 * dt; d.y += d.v * dt; }
+          const stretch = d.phase === "fall" ? 1 + Math.min(1.4, d.v / 160) : 1 + d.r / 6;
+          const g = ctx.createRadialGradient(d.x - d.r * 0.3, d.y - d.r * 0.4, 0, d.x, d.y, d.r * stretch);
+          g.addColorStop(0, rgba(lite, 0.95)); g.addColorStop(1, rgba(c, 0.85));
+          ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(d.x, d.y, d.r, d.r * stretch, 0, 0, TAU); ctx.fill();
+          if (d.y >= pool) {
+            d.dead = true;
+            st.ripples.push({ x: d.x, r: 2, life: 0 });
+            for (let i = 0; i < 9; i++) { const an = rnd(Math.PI * 1.1, Math.PI * 1.9), v = rnd(40, 95); st.splash.push({ x: d.x, y: pool, vx: Math.cos(an) * v, vy: Math.sin(an) * v, r: rnd(1, 2.2), life: 0 }); }
+          }
+        }
+        st.drops = st.drops.filter((d) => !d.dead);
+        ctx.globalCompositeOperation = "lighter";
+        st.ripples = st.ripples.filter((r) => (r.life += dt) < 0.9);
+        for (const r of st.ripples) { const k = r.life / 0.9; ctx.lineWidth = 1.4; ctx.strokeStyle = rgba(lite, 0.7 * (1 - k)); ctx.beginPath(); ctx.ellipse(r.x, pool + 3, 4 + k * 34, 1.5 + k * 6, 0, 0, TAU); ctx.stroke(); }
+        st.splash = st.splash.filter((p) => (p.life += dt) < 0.8 && p.y <= pool + 2);
+        for (const p of st.splash) { p.vy += 300 * dt; p.x += p.vx * dt; p.y += p.vy * dt; glow(ctx, p.x, p.y, p.r * 2.5, lite, 0.8); }
+        // sizzle: small bubbles rise from the pool and pop
+        if (st.emit && Math.random() < 0.45) st.bubbles.push({ x: W / 2 + rnd(-W * 0.32, W * 0.32), y: pool + 2, r: rnd(1, 2.4), life: 0, max: rnd(0.3, 0.6) });
+        st.bubbles = st.bubbles.filter((b) => (b.life += dt) < b.max);
+        for (const b of st.bubbles) { b.y -= 10 * dt; const k = b.life / b.max; ctx.lineWidth = 0.8; ctx.strokeStyle = rgba(lite, k > 0.85 ? 0.3 : 0.75); ctx.beginPath(); ctx.arc(b.x, b.y, b.r * (k > 0.85 ? 2.2 : 1), 0, TAU); ctx.stroke(); }
+      }
+    },
+    thunder: {
+      init(st) { st.waves = []; st.dust = []; st.next = 0.05; st.shake = 0; st.lines = []; },
+      step(st, dt) {
+        const { ctx, W, H, c } = st; clear(st);
+        const lite = mixRgb(c, WHITE, 0.5), cx = W / 2, cy = H * 0.58;
+        st.next -= dt;
+        if (st.emit && st.next <= 0) {
+          st.waves.push({ life: 0 }, { life: -0.12 }, { life: -0.24 });
+          st.shake = 1;
+          for (let i = 0; i < 26; i++) { const dir = Math.random() < 0.5 ? -1 : 1; st.dust.push({ x: cx + rnd(-6, 6), y: H - 4, vx: dir * rnd(30, 110), vy: rnd(-40, -8), r: rnd(3, 7), life: 0, max: rnd(0.8, 1.4) }); }
+          st.next = 1.5;
+        }
+        const sx = (Math.random() - 0.5) * 6 * st.shake, sy = (Math.random() - 0.5) * 4 * st.shake;
+        st.shake = Math.max(0, st.shake - dt * 3);
+        ctx.save(); ctx.translate(sx, sy);
+        ctx.globalCompositeOperation = "source-over";
+        st.dust = st.dust.filter((p) => (p.life += dt) < p.max);
+        for (const p of st.dust) { p.vx *= 1 - 1.5 * dt; p.vy += 30 * dt; p.x += p.vx * dt; p.y = Math.min(H - 2, p.y + p.vy * dt); p.r += 9 * dt; const k = p.life / p.max; const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r); g.addColorStop(0, `rgba(150,145,160,${0.22 * (1 - k)})`); g.addColorStop(1, "rgba(150,145,160,0)"); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill(); }
+        ctx.globalCompositeOperation = "lighter";
+        st.waves = st.waves.filter((w) => (w.life += dt) < 1.1);
+        for (const w of st.waves) {
+          if (w.life < 0) continue;
+          const k = w.life / 1.1, r = 6 + (1 - (1 - k) ** 3) * W * 0.62;
+          // a soft band of pressure with a crisp leading edge, squashed into perspective
+          const th = 14 * (1 - k) + 3, a = 1 - k;
+          ctx.save(); ctx.translate(cx, cy); ctx.scale(1, 0.6);
+          const band = ctx.createRadialGradient(0, 0, Math.max(0, r - th), 0, 0, r + 2);
+          band.addColorStop(0, rgba(c, 0)); band.addColorStop(0.75, rgba(c, 0.3 * a)); band.addColorStop(0.95, rgba(lite, 0.75 * a)); band.addColorStop(1, rgba(lite, 0));
+          ctx.fillStyle = band; ctx.beginPath(); ctx.arc(0, 0, r + 2, 0, TAU); ctx.fill();
+          ctx.restore();
+        }
+        const boom = st.waves.find((w) => w.life >= 0 && w.life < 0.25);
+        if (boom) glow(ctx, cx, cy, 40, c, 0.6 * (1 - boom.life / 0.25));
+        // sound bars at the sides answer the boom
+        for (let i = 0; i < 2; i++) {
+          const side = i ? 1 : -1, amp = st.shake;
+          for (let j = 0; j < 3; j++) { ctx.lineWidth = 1.6; ctx.strokeStyle = rgba(lite, (0.25 + amp * 0.6) * (1 - j * 0.25)); ctx.beginPath(); ctx.arc(cx + side * (W * 0.18 + j * 12), cy, 12 + j * 9, side > 0 ? -0.7 : Math.PI - 0.7, side > 0 ? 0.7 : Math.PI + 0.7); ctx.stroke(); }
+        }
+        ctx.restore();
+      }
+    },
+    necrotic: {
+      init(st) { st.motes = []; st.wisps = Array.from({ length: 5 }, (_, i) => ({ a: (i / 5) * TAU, r: rnd(40, 60), s: rnd(0.4, 0.8) })); },
+      step(st, dt) {
+        const { ctx, W, H, c } = st; fade(st, 0.3);
+        const cx = W / 2, cy = H / 2, sick = mixRgb(c, [160, 255, 140], 0.25), dark = mixRgb(c, BLACK, 0.7);
+        if (st.emit && Math.random() < 0.6) { const an = rnd(0, TAU), r = rnd(W * 0.3, W * 0.5); st.motes.push({ a: an, r, w: rnd(1.2, 2.2), life: 0, size: rnd(0.8, 1.8) }); }
+        ctx.globalCompositeOperation = "source-over";
+        // a dark core that drinks the light around it
+        const g = ctx.createRadialGradient(cx, cy, 2, cx, cy, 38);
+        g.addColorStop(0, "rgba(0,0,0,0.85)"); g.addColorStop(0.55, rgba(dark, 0.5)); g.addColorStop(1, rgba(dark, 0));
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, 38, 0, TAU); ctx.fill();
+        ctx.globalCompositeOperation = "lighter";
+        // tendrils curl in from the edges
+        ctx.lineCap = "round";
+        for (const w of st.wisps) {
+          w.a += w.s * dt;
+          ctx.beginPath();
+          for (let i = 0; i <= 20; i++) { const k = i / 20, an = w.a + k * 2.4, rr = w.r * (1 - k * 0.8) + Math.sin(st.t * 3 + k * 8) * 3; ctx.lineTo(cx + Math.cos(an) * rr * 1.6, cy + Math.sin(an) * rr * 0.75); }
+          ctx.lineWidth = 2.4; ctx.strokeStyle = rgba(c, 0.18); ctx.stroke(); ctx.lineWidth = 0.8; ctx.strokeStyle = rgba(sick, 0.35); ctx.stroke();
+        }
+        // motes of life spiral inward and go out at the core
+        st.motes = st.motes.filter((m) => (m.life += dt) && m.r > 6);
+        for (const m of st.motes) { m.a += m.w * dt * (60 / (m.r + 20)); m.r -= (30 + 900 / (m.r + 10)) * dt; const x = cx + Math.cos(m.a) * m.r * 1.6, y = cy + Math.sin(m.a) * m.r * 0.75; glow(ctx, x, y, m.size * 2.6, sick, 0.32 * Math.min(1, m.r / 30)); }
+        glow(ctx, cx, cy, 30 + Math.sin(st.t * 2.2) * 4, c, 0.18);
+        ctx.lineWidth = 1.2; ctx.strokeStyle = rgba(sick, 0.35 + 0.15 * Math.sin(st.t * 4)); ctx.beginPath(); ctx.ellipse(cx, cy, 22 + Math.sin(st.t * 2.2) * 2, 12, 0, 0, TAU); ctx.stroke();
+      }
+    },
+    radiant: {
+      init(st) { st.sparks = []; st.motes = Array.from({ length: 22 }, () => ({ x: rnd(0, st.W), y: rnd(0, st.H), v: rnd(3, 9), ph: rnd(0, TAU) })); },
+      step(st, dt) {
+        const { ctx, W, H, c } = st; clear(st);
+        const gold = mixRgb(c, WHITE, 0.55), cx = W / 2, cy = H * 0.28;
+        ctx.globalCompositeOperation = "lighter";
+        // rays fan down from the light and turn slowly
+        for (let i = 0; i < 9; i++) {
+          const an = Math.PI / 2 + (i - 4) * 0.2 + Math.sin(st.t * 0.6 + i) * 0.05, len = H * 1.4, wd = 0.05 + 0.03 * Math.sin(st.t * 1.3 + i * 2);
+          const g = ctx.createLinearGradient(cx, cy, cx + Math.cos(an) * len, cy + Math.sin(an) * len);
+          g.addColorStop(0, rgba(gold, 0.22)); g.addColorStop(1, rgba(c, 0));
+          ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(an - wd) * len, cy + Math.sin(an - wd) * len); ctx.lineTo(cx + Math.cos(an + wd) * len, cy + Math.sin(an + wd) * len); ctx.fill();
+        }
+        const pulse = 1 + 0.12 * Math.sin(st.t * 3);
+        glow(ctx, cx, cy, 46 * pulse, c, 0.35); glow(ctx, cx, cy, 18 * pulse, gold, 0.9); glow(ctx, cx, cy, 7, WHITE, 1);
+        star(ctx, cx, cy, 24 * pulse, gold, 0.55, st.t * 0.4); star(ctx, cx, cy, 16 * pulse, WHITE, 0.6, -st.t * 0.6 + 0.4);
+        for (const m of st.motes) { m.y -= m.v * dt; if (m.y < -2) { m.y = H + 2; m.x = rnd(0, W); } const inBeam = Math.max(0, 1 - Math.abs(m.x - cx) / (W * 0.45)); glow(ctx, m.x, m.y, 2.4, gold, (0.25 + 0.5 * inBeam) * (0.6 + 0.4 * Math.sin(st.t * 2 + m.ph))); }
+        if (st.emit && Math.random() < 0.35) st.sparks.push({ x: rnd(10, W - 10), y: rnd(H * 0.35, H - 8), life: 0, max: rnd(0.4, 0.8), r: rnd(3, 6), rot: rnd(0, 1) });
+        st.sparks = st.sparks.filter((s) => (s.life += dt) < s.max);
+        for (const s of st.sparks) { const k = Math.sin(Math.PI * s.life / s.max); star(ctx, s.x, s.y, s.r * k, WHITE, k, s.rot); glow(ctx, s.x, s.y, s.r * 2, gold, 0.5 * k); }
+      }
+    },
+    poison: {
+      init(st) { st.puffs = Array.from({ length: 14 }, () => ({ x: rnd(0, st.W), y: rnd(st.H * 0.35, st.H), r: rnd(16, 30), vx: rnd(-6, 6), ph: rnd(0, TAU) })); st.bubbles = []; st.pops = []; },
+      step(st, dt) {
+        const { ctx, W, H, c } = st; clear(st);
+        const lite = mixRgb(c, WHITE, 0.4), deep = mixRgb(c, BLACK, 0.5);
+        ctx.globalCompositeOperation = "source-over";
+        // a billowing toxic cloud, each puff breathing on its own
+        for (const p of st.puffs) {
+          p.x += (p.vx + Math.sin(st.t * 0.8 + p.ph) * 5) * dt; if (p.x < -30) p.x = W + 30; if (p.x > W + 30) p.x = -30;
+          const r = p.r * (1 + 0.12 * Math.sin(st.t * 1.5 + p.ph)), y = p.y + Math.sin(st.t + p.ph) * 3;
+          const g = ctx.createRadialGradient(p.x, y, 0, p.x, y, r); g.addColorStop(0, rgba(c, 0.3)); g.addColorStop(0.6, rgba(deep, 0.18)); g.addColorStop(1, rgba(deep, 0));
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, y, r, 0, TAU); ctx.fill();
+        }
+        if (st.emit && Math.random() < 0.28) st.bubbles.push({ x: rnd(W * 0.15, W * 0.85), y: H + 4, r: rnd(2.5, 6), v: rnd(14, 28), top: rnd(H * 0.15, H * 0.6), ph: rnd(0, TAU) });
+        ctx.globalCompositeOperation = "lighter";
+        for (const b of st.bubbles) {
+          b.y -= b.v * dt; b.x += Math.sin(st.t * 3 + b.ph) * 8 * dt;
+          ctx.lineWidth = 1; ctx.strokeStyle = rgba(lite, 0.7); ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.stroke();
+          ctx.fillStyle = rgba(c, 0.12); ctx.fill();
+          glow(ctx, b.x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.6, WHITE, 0.55);
+          if (b.y < b.top) { b.dead = true; st.pops.push({ x: b.x, y: b.y, r: b.r, life: 0 }); }
+        }
+        st.bubbles = st.bubbles.filter((b) => !b.dead);
+        st.pops = st.pops.filter((p) => (p.life += dt) < 0.3);
+        for (const p of st.pops) { const k = p.life / 0.3; for (let i = 0; i < 6; i++) { const an = (i / 6) * TAU; glow(ctx, p.x + Math.cos(an) * p.r * (1 + k * 1.8), p.y + Math.sin(an) * p.r * (1 + k * 1.8), 1.8, lite, 1 - k); } }
+      }
+    },
+    psychic: {
+      init(st) { st.rings = []; st.next = 0; st.glyphs = Array.from({ length: 7 }, (_, i) => ({ a: (i / 7) * TAU, r: rnd(28, 44), s: rnd(0.6, 1.2) * (i % 2 ? 1 : -1) })); },
+      step(st, dt) {
+        const { ctx, W, H, c } = st; fade(st, 0.3);
+        const cx = W / 2, cy = H / 2, cyan = mixRgb(c, [120, 230, 255], 0.55), lite = mixRgb(c, WHITE, 0.5);
+        st.next -= dt;
+        if (st.emit && st.next <= 0) { st.rings.push({ life: 0, k: 3 + (Math.random() * 4 | 0), ph: rnd(0, TAU) }); st.next = 0.45; }
+        ctx.globalCompositeOperation = "lighter";
+        st.rings = st.rings.filter((r) => (r.life += dt) < 1.6);
+        for (const r of st.rings) {
+          // rings close in on the mind, warped, split into two colours like a migraine
+          const k = r.life / 1.6, base = (1 - k) ** 1.4 * W * 0.55 + 4, a = Math.sin(Math.PI * k);
+          [[c, 0], [cyan, 2.5]].forEach(([col, off]) => {
+            ctx.lineWidth = 1.6; ctx.strokeStyle = rgba(col, 0.75 * a); ctx.beginPath();
+            for (let i = 0; i <= 64; i++) { const an = (i / 64) * TAU, rr = base * (1 + 0.08 * Math.sin(an * r.k + r.ph + st.t * 4)); ctx.lineTo(cx + off + Math.cos(an) * rr, cy + Math.sin(an) * rr * 0.6); }
+            ctx.stroke();
+          });
+        }
+        for (const g of st.glyphs) {
+          g.a += g.s * dt; const x = cx + Math.cos(g.a) * g.r * 1.7, y = cy + Math.sin(g.a) * g.r * 0.6;
+          ctx.save(); ctx.translate(x, y); ctx.rotate(g.a * 2); ctx.strokeStyle = rgba(lite, 0.7); ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(-3, -3); ctx.lineTo(3, 3); ctx.moveTo(3, -3); ctx.lineTo(0, 0); ctx.stroke(); ctx.restore();
+          glow(ctx, x, y, 6, c, 0.35);
+        }
+        const beat = 0.5 + 0.5 * Math.sin(st.t * 5);
+        glow(ctx, cx, cy, 16 + beat * 6, c, 0.55); glow(ctx, cx, cy, 6, WHITE, 0.6 + beat * 0.3);
+      }
+    },
+    force: {
+      init(st) { st.pulse = 0; st.next = 0.05; st.shards = []; },
+      step(st, dt) {
+        const { ctx, W, H, c } = st; clear(st);
+        const lite = mixRgb(c, WHITE, 0.55), cx = W / 2, cy = H / 2;
+        st.next -= dt;
+        if (st.emit && st.next <= 0) { st.pulse = 0.001; st.next = 1.4; for (let i = 0; i < 14; i++) { const an = rnd(0, TAU); st.shards.push({ x: cx, y: cy, vx: Math.cos(an) * rnd(50, 110), vy: Math.sin(an) * rnd(30, 70), life: 0, rot: rnd(0, TAU) }); } }
+        if (st.pulse) st.pulse += dt;
+        if (st.pulse > 1.2) st.pulse = 0;
+        ctx.globalCompositeOperation = "lighter";
+        // a barrier of hexagons that lights up in a wave from the centre
+        const s = 9, wave = st.pulse ? st.pulse * 140 : -999;
+        for (let row = -6; row <= 6; row++) for (let col = -9; col <= 9; col++) {
+          const x = cx + col * s * 1.5, y = cy + row * s * 1.732 + (col % 2 ? s * 0.866 : 0), d = Math.hypot((x - cx) / 1.6, y - cy);
+          if (d > 50) continue;
+          const lit = Math.max(0, 1 - Math.abs(d - wave) / 14), idle = 0.08 + 0.05 * Math.sin(st.t * 2 + d * 0.2);
+          ctx.strokeStyle = rgba(lit > 0.05 ? lite : c, idle + lit * 0.85); ctx.lineWidth = 0.8 + lit * 1.2;
+          ctx.beginPath(); for (let i = 0; i <= 6; i++) { const an = (i / 6) * TAU; ctx.lineTo(x + Math.cos(an) * s * 0.9, y + Math.sin(an) * s * 0.9); } ctx.stroke();
+        }
+        // a turning ring of runes binds the field
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < 12; i++) { const a0 = st.t * 0.7 + (i / 12) * TAU; ctx.strokeStyle = rgba(lite, i % 3 ? 0.35 : 0.8); ctx.beginPath(); ctx.ellipse(cx, cy, 82, 50, 0, a0, a0 + 0.32); ctx.stroke(); }
+        const p = st.pulse ? Math.max(0, 1 - st.pulse / 0.35) : 0;
+        glow(ctx, cx, cy, 36 + p * 30, c, 0.3 + p * 0.5); glow(ctx, cx, cy, 10 + p * 8, WHITE, 0.5 + p * 0.5);
+        st.shards = st.shards.filter((q) => (q.life += dt) < 0.7);
+        for (const q of st.shards) { q.x += q.vx * dt; q.y += q.vy * dt; q.rot += 6 * dt; const a = 1 - q.life / 0.7; ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.rot); ctx.fillStyle = rgba(lite, a); ctx.beginPath(); ctx.moveTo(0, -3); ctx.lineTo(2, 0); ctx.lineTo(0, 3); ctx.lineTo(-2, 0); ctx.fill(); ctx.restore(); }
+      }
+    },
+    slashing: {
+      init(st) { st.cuts = []; st.sparks = []; st.next = 0.05; st.dir = 1; },
+      step(st, dt) {
+        const { ctx, W, H, c } = st; fade(st, 0.35);
+        const steel = mixRgb(c, WHITE, 0.6);
+        st.next -= dt;
+        if (st.emit && st.next <= 0) {
+          // a claw of three cuts, alternating direction
+          st.dir *= -1;
+          for (let i = 0; i < 3; i++) st.cuts.push({ y: H * (0.32 + i * 0.18), life: -i * 0.06, dir: st.dir, tilt: rnd(-0.35, -0.15) * st.dir });
+          st.next = 1.2;
+        }
+        ctx.globalCompositeOperation = "lighter";
+        st.cuts = st.cuts.filter((k) => (k.life += dt) < 0.55);
+        for (const k of st.cuts) {
+          if (k.life < 0) continue;
+          const t = Math.min(1, k.life / 0.16), a = k.life > 0.16 ? 1 - (k.life - 0.16) / 0.39 : 1;
+          const x0 = k.dir > 0 ? W * 0.08 : W * 0.92, x1 = k.dir > 0 ? W * 0.92 : W * 0.08, xe = x0 + (x1 - x0) * t;
+          const yAt = (x) => k.y + (x - W / 2) * k.tilt;
+          // a crescent: wide in the middle, sharp at both ends
+          ctx.fillStyle = rgba(steel, 0.85 * a);
+          ctx.beginPath(); ctx.moveTo(x0, yAt(x0));
+          for (let i = 0; i <= 20; i++) { const xx = x0 + (xe - x0) * (i / 20); ctx.lineTo(xx, yAt(xx) - Math.sin(Math.PI * i / 20) * 3.2); }
+          for (let i = 20; i >= 0; i--) { const xx = x0 + (xe - x0) * (i / 20); ctx.lineTo(xx, yAt(xx) + Math.sin(Math.PI * i / 20) * 1.2); }
+          ctx.fill();
+          glow(ctx, xe, yAt(xe), 14, c, 0.5 * a);
+          if (k.life < 0.16 && Math.random() < 0.9) for (let i = 0; i < 2; i++) st.sparks.push({ x: xe, y: yAt(xe), vx: k.dir * rnd(20, 90), vy: rnd(-60, 20), life: 0 });
+        }
+        st.sparks = st.sparks.filter((p) => (p.life += dt) < 0.45);
+        for (const p of st.sparks) { const px = p.x, py = p.y; p.vy += 220 * dt; p.x += p.vx * dt; p.y += p.vy * dt; strokePath(ctx, [[px, py], [p.x, p.y]], 1, rgba(steel, 1 - p.life / 0.45)); }
+      }
+    },
+    piercing: {
+      init(st) { st.shot = null; st.next = 0.05; st.sparks = []; st.rings = []; },
+      step(st, dt) {
+        const { ctx, W, H, c } = st; clear(st);
+        const steel = mixRgb(c, WHITE, 0.6), ty = H / 2, tx = W * 0.62;
+        st.next -= dt;
+        if (st.emit && st.next <= 0) { st.shot = { x: -20, v: 620 }; st.next = 1.25; }
+        ctx.globalCompositeOperation = "lighter";
+        if (st.shot) {
+          const s = st.shot, px = s.x; s.x += s.v * dt;
+          // a streak with a motion-blurred tail and a bright head
+          const g = ctx.createLinearGradient(s.x - 90, ty, s.x, ty); g.addColorStop(0, rgba(c, 0)); g.addColorStop(1, rgba(steel, 0.9));
+          ctx.strokeStyle = g; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(Math.max(0, s.x - 90), ty); ctx.lineTo(s.x, ty); ctx.stroke();
+          glow(ctx, s.x, ty, 10, c, 0.5);
+          ctx.fillStyle = rgba(WHITE, 0.95); ctx.beginPath(); ctx.moveTo(s.x + 8, ty); ctx.lineTo(s.x - 4, ty - 3.5); ctx.lineTo(s.x - 4, ty + 3.5); ctx.fill();
+          if (s.x >= tx) {
+            st.shot = null; st.rings.push({ life: 0 });
+            for (let i = 0; i < 22; i++) { const an = rnd(-0.9, 0.9) + (Math.random() < 0.3 ? Math.PI : 0); const v = rnd(60, 180); st.sparks.push({ x: tx, y: ty, vx: Math.cos(an) * v, vy: Math.sin(an) * v, life: 0, max: rnd(0.25, 0.55) }); }
+          }
+        }
+        st.rings = st.rings.filter((r) => (r.life += dt) < 0.45);
+        for (const r of st.rings) { const k = r.life / 0.45; glow(ctx, tx, ty, 26 * (1 - k) + 6, WHITE, 0.9 * (1 - k)); ctx.lineWidth = 2 * (1 - k) + 0.4; ctx.strokeStyle = rgba(c, 0.8 * (1 - k)); ctx.beginPath(); ctx.ellipse(tx, ty, 4 + k * 26, 6 + k * 34, 0, 0, TAU); ctx.stroke(); }
+        st.sparks = st.sparks.filter((p) => (p.life += dt) < p.max);
+        for (const p of st.sparks) { p.vy += 160 * dt; p.x += p.vx * dt; p.y += p.vy * dt; strokePath(ctx, [[p.x - p.vx * 0.03, p.y - p.vy * 0.03], [p.x, p.y]], 1.1, rgba(steel, 1 - p.life / p.max)); }
+        // the mark: a small crosshair where it lands
+        ctx.lineWidth = 1; ctx.strokeStyle = rgba(c, 0.25); ctx.beginPath(); ctx.arc(tx, ty, 10, 0, TAU); ctx.moveTo(tx - 15, ty); ctx.lineTo(tx - 6, ty); ctx.moveTo(tx + 6, ty); ctx.lineTo(tx + 15, ty); ctx.stroke();
+      }
+    },
+    bludgeoning: {
+      init(st) { st.hammer = null; st.next = 0.05; st.cracks = []; st.debris = []; st.dust = []; st.shake = 0; st.flash = 0; },
+      step(st, dt) {
+        const { ctx, W, H, c } = st; clear(st);
+        const lite = mixRgb(c, WHITE, 0.5), gx = W / 2, gy = H - 14;
+        st.next -= dt;
+        if (st.emit && st.next <= 0) { st.hammer = { y: -30, v: 140 }; st.next = 1.6; }
+        const sx = (Math.random() - 0.5) * 7 * st.shake, sy = (Math.random() - 0.5) * 5 * st.shake;
+        st.shake = Math.max(0, st.shake - dt * 3.5);
+        ctx.save(); ctx.translate(sx, sy);
+        // ground line
+        ctx.globalCompositeOperation = "source-over";
+        ctx.strokeStyle = "rgba(120,115,130,0.35)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(8, gy + 0.5); ctx.lineTo(W - 8, gy + 0.5); ctx.stroke();
+        st.dust = st.dust.filter((p) => (p.life += dt) < p.max);
+        for (const p of st.dust) { p.vx *= 1 - 2 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.r += 12 * dt; const k = p.life / p.max; const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r); g.addColorStop(0, `rgba(160,150,140,${0.3 * (1 - k)})`); g.addColorStop(1, "rgba(160,150,140,0)"); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill(); }
+        st.debris = st.debris.filter((p) => (p.life += dt) < 1.2);
+        for (const p of st.debris) { p.vy += 380 * dt; p.x += p.vx * dt; p.y += p.vy * dt; if (p.y > gy) { p.y = gy; p.vy *= -0.3; p.vx *= 0.6; } p.rot += p.spin * dt; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = `rgba(150,140,130,${1 - p.life / 1.2})`; ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.7); ctx.restore(); }
+        ctx.globalCompositeOperation = "lighter";
+        // cracks spread from the point of impact
+        st.cracks = st.cracks.filter((k) => (k.life += dt) < 1.3);
+        for (const k of st.cracks) { const g = Math.min(1, k.life / 0.12), a = k.life > 0.8 ? 1 - (k.life - 0.8) / 0.5 : 1; const n = Math.max(2, Math.ceil(k.p.length * g)); strokePath(ctx, k.p.slice(0, n), 1.3, rgba(lite, 0.85 * a)); strokePath(ctx, k.p.slice(0, n), 3.5, rgba(c, 0.18 * a)); }
+        if (st.flash > 0) { glow(ctx, gx, gy, 60, c, st.flash * 0.6); glow(ctx, gx, gy, 18, WHITE, st.flash); st.flash = Math.max(0, st.flash - dt * 4); }
+        if (st.hammer) {
+          const h = st.hammer; h.v += 1600 * dt; h.y += h.v * dt;
+          const top = Math.min(h.y, gy - 18);
+          // the falling head with a smear of speed above it
+          const g = ctx.createLinearGradient(0, top - 40, 0, top); g.addColorStop(0, rgba(c, 0)); g.addColorStop(1, rgba(lite, 0.35));
+          ctx.fillStyle = g; ctx.fillRect(gx - 13, top - 40, 26, 40);
+          ctx.globalCompositeOperation = "source-over";
+          ctx.fillStyle = rgba(mixRgb(c, [90, 85, 95], 0.6), 1); ctx.fillRect(gx - 14, top, 28, 18);
+          ctx.fillStyle = rgba(lite, 0.6); ctx.fillRect(gx - 14, top, 28, 3);
+          ctx.globalCompositeOperation = "lighter";
+          if (h.y >= gy - 18) {
+            st.hammer = null; st.shake = 1; st.flash = 1;
+            for (let i = 0; i < 7; i++) { const an = Math.PI + (i / 6) * Math.PI + rnd(-0.15, 0.15), len = rnd(22, 58); st.cracks.push({ p: jag(gx, gy, gx + Math.cos(an) * len * 1.4, gy + Math.sin(an) * len * 0.35, 0.25, 3), life: 0 }); }
+            for (let i = 0; i < 14; i++) st.debris.push({ x: gx + rnd(-10, 10), y: gy - 2, vx: rnd(-120, 120), vy: rnd(-200, -80), s: rnd(2, 5), rot: rnd(0, TAU), spin: rnd(-12, 12), life: 0 });
+            for (let i = 0; i < 12; i++) { const dir = i % 2 ? 1 : -1; st.dust.push({ x: gx, y: gy - 3, vx: dir * rnd(40, 120), vy: rnd(-12, -2), r: rnd(4, 8), life: 0, max: rnd(0.8, 1.3) }); }
+          }
+        }
+        ctx.restore();
+      }
+    },
+    generic: {
+      init(st) { st.orbits = Array.from({ length: 8 }, (_, i) => ({ a: (i / 8) * TAU, r: rnd(24, 40), s: rnd(0.8, 1.6) })); },
+      step(st, dt) {
+        const { ctx, W, H, c } = st; fade(st, 0.3);
+        const cx = W / 2, cy = H / 2, lite = mixRgb(c, WHITE, 0.5), beat = 0.5 + 0.5 * Math.sin(st.t * 3);
+        ctx.globalCompositeOperation = "lighter";
+        for (const o of st.orbits) { o.a += o.s * dt; glow(ctx, cx + Math.cos(o.a) * o.r * 1.6, cy + Math.sin(o.a) * o.r * 0.6, 3.5, lite, 0.8); }
+        glow(ctx, cx, cy, 26 + beat * 10, c, 0.45); glow(ctx, cx, cy, 8, WHITE, 0.7);
+      }
+    }
+  };
+  function startVfx(canvas, type, hex) {
+    const fx = VFX[type] ?? VFX.generic;
+    const dpr = Math.min(2, window.devicePixelRatio || 1), W = canvas.clientWidth || 240, H = canvas.clientHeight || 112;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    const ctx = canvas.getContext("2d"); ctx.scale(dpr, dpr);
+    const st = { ctx, W, H, c: hexRgb(hex), t: 0, emit: true };
+    fx.init(st);
+    const level = layer.dataset.motion;
+    // «Выключены»: run the scene briefly off screen and keep that frame.
+    const still = () => { clear(st); const s2 = { ...st, t: 0, emit: true }; fx.init(s2); for (let i = 0; i < 54; i++) { s2.t += 1 / 60; fx.step(s2, 1 / 60); } };
+    if (level === "off") return still();
+    let last = performance.now();
+    const frame = (now) => {
+      if (!canvas.isConnected) return;
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      // Ambient effects pause while the browser tab is hidden (#9).
+      if (!document.hidden) {
+        st.t += dt;
+        // «Сдержанно»: one pass, then the scene settles on a still frame.
+        if (level === "reduced" && st.t > 1.6) st.emit = false;
+        fx.step(st, dt);
+        if (level === "reduced" && st.t > 3.2) return still();
+      }
+      requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }
+  const TIP = { open: [], timer: null, sweep: null, x: -1, y: -1, seq: 0 };
+  const TIP_MAX_DEPTH = 4, TIP_MAX_PINNED = 6;
+  const TRIGGERS = ".cs-row, .cs-slot.is-filled, .cs-socket.is-on, .cs-fav, .cs-effect, .cs-cond, .cs-crew-p:not(.is-free), .cs-dmg[data-dmg], [data-card]";
+  function tipKey(a) {
+    if (a.dataset.card) return a.dataset.card;
+    if (a.matches(".cs-dmg[data-dmg]")) return `dmg:${a.dataset.dmg}`;
+    if (a.matches(".cs-row")) return `doc:${a.dataset.row}`;
+    if (a.matches(".cs-slot")) return S.equipped[a.dataset.slot] ? `doc:${S.equipped[a.dataset.slot]}` : null;
+    if (a.matches(".cs-socket")) return `doc:${a.dataset.socket}`;
+    if (a.matches(".cs-fav")) { const id = a.dataset.favRow; return id.startsWith("effect:") ? `eff:${id.slice(7)}` : id.includes(":") ? null : `doc:${id}`; }
+    if (a.matches(".cs-effect")) { const id = a.dataset.effect; return id.startsWith("cond-") ? `cond:${id.slice(5)}` : `eff:${id}`; }
+    if (a.matches(".cs-cond")) return `cond:${a.dataset.cond}`;
+    if (a.matches(".cs-crew-p")) return a.classList.contains("is-hidden") ? null : `actor:${a.title}`;
+    return null;
+  }
+  // What a card shows; the module takes it from item.system.getCardData() / effect.richTooltip() / page.system.richTooltip().
+  function tipContent(key) {
+    const [t, k] = key.split(/:(.*)/s);
+    if (t === "doc") {
+      const x = byId[k]; if (!x) return null;
+      const kd = kind(x);
+      if (kd === "spell") return { tone: `var(--school-${x.school})`, tile: tile(x), name: x.name, sub: `${x.lvl ? `${x.lvl} круг` : "Заговор"} · ${SCHOOLS[x.school]}`, stats: [x.roll && ["Эффект", x.roll], ["Компоненты", x.comp], ...x.tags.slice(0, 2).map((v, i) => [i ? "Дистанция" : "Время", v])].filter(Boolean), body: fx(x.desc) + (x.mat ? `<p>Материал: ${x.mat}</p>` : ""), pills: [x.conc && "Концентрация", x.ritual && "Ритуал"].filter(Boolean) };
+      if (kd === "feature") return { tone: "var(--accent)", tile: tile(x), name: x.name, sub: x.passive ? "Пассивное умение" : x.src ?? "Умение", stats: [x.roll && ["Эффект", x.roll], x.uses && ["Заряды", `${x.uses[0]} / ${x.uses[1]}`], x.recharge && ["Перезарядка", x.recharge], x.rec && ["Восстановление", x.rec]].filter(Boolean), body: fx(x.desc), pills: x.tags };
+      return { tone: `var(--rarity-${x.rarity ?? "common"})`, tile: tile(x), name: x.name, sub: `${GROUP_LABEL[x.group] ?? "Предмет"} · ${RARITY[x.rarity] ?? "Обычный"}`, stats: [x.roll && ["Атака", x.roll], x.uses && ["Заряды", `${x.uses[0]} / ${x.uses[1]}`], ["Вес", `${+(x.wt * x.qty).toFixed(2)} фнт`], x.price && ["Цена", fmtPrice(x.price)], x.attune && ["Настройка", S.attuned.has(x.id) ? "есть" : "нужна"]].filter(Boolean), body: fx(x.desc), pills: x.tags };
+    }
+    if (t === "eff") {
+      const e = allEffects().find((v) => v.id === k); if (!e) return null;
+      return { tone: `var(--school-${e.school ?? "abj"})`, tile: `<span class="cs-tile" data-school="${e.school}">${icon(e.icon)}</span>`, name: e.name, sub: e.why ? "Недоступен" : e.disabled ? "Выключен" : e.temporary ? "Временный эффект" : "Пассивный эффект", stats: [e.time && ["Длительность", e.time], e.from && ["Источник", e.from]].filter(Boolean), body: fx(e.desc) + (e.changes?.length ? `<ul>${e.changes.map((c) => `<li>${c}</li>`).join("")}</ul>` : ""), pills: [] };
+    }
+    if (t === "cond") {
+      const c = [...CONDITIONS, ...STATUSES].find(([id]) => id === k); if (!c) return null;
+      return { tone: "var(--warn)", tile: `<span class="cs-tile">${icon("eye")}</span>`, name: c[1], sub: "Состояние", stats: [], body: fx(COND_TEXT[k] ?? `${c[2][0].toUpperCase()}${c[2].slice(1)}.`), pills: [] };
+    }
+    if (t === "rule") {
+      const r = RULES[k]; if (!r) return null;
+      return { tone: "var(--accent)", tile: `<span class="cs-tile">${icon("book")}</span>`, name: r[0], sub: "Правило", stats: [], body: fx(r[1]), pills: [] };
+    }
+    if (t === "dmg") {
+      const [label, c] = DMG[k] ?? [k, "var(--accent)"];
+      const anim = DMG[k] ? k : "generic";
+      return { dmg: true, tone: c, c, tile: "", name: label, sub: DMG[k] ? "Тип урона" : "Тип урона мира или модуля", stats: [], pre: `<div class="dmg-anim" data-ui="damageScene" data-vfx="${anim}" data-color="${c}" style="--c:${c}"><canvas></canvas></div>`, body: `<p>${DMG_TEXT[k] ?? "Своей анимации нет — общий импульс в цвете типа."}</p>`, pills: [] };
+    }
+    if (t === "actor") return { tone: "var(--accent)", tile: `<span class="cs-tile">${icon("head")}</span>`, name: k, sub: "Актор", stats: [], body: "<p>Клик открывает окно этого актора, а без поддержки — его лист.</p>", pills: [] };
+    return null;
+  }
+  const recOf = (el) => TIP.open.find((r) => r.el === el);
+  function tipHTML(c, depth) {
+    const stats = c.stats.map(([l, v]) => `<div><dt>${l}</dt><dd>${v}</dd></div>`).join("");
+    const body = depth >= TIP_MAX_DEPTH ? c.body.replace(/data-card="[^"]*"/g, "") : c.body;
+    return `<div class="tip-head" data-tip-drag>${c.tile}<div class="tip-title"><b>${c.name}</b><small>${c.sub}</small></div>`
+      + `<button type="button" class="tip-btn" data-tip-pin aria-label="Закрепить" title="Закрепить">${icon("pin")}</button><button type="button" class="tip-btn" data-tip-close aria-label="Закрыть" title="Закрыть">${icon("close")}</button></div>`
+      + (c.pre ?? "") + `<dl class="tip-stats">${stats}</dl><div class="tip-body">${body}</div>`
+      + (c.pills?.length ? `<div class="tip-pills">${c.pills.map((p) => `<span>${p}</span>`).join("")}</div>` : "")
+      + `<div class="tip-hint">Задержите курсор, чтобы закрепить</div>`;
+  }
+  function placeTip(el, anchor) {
+    const a = anchor.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight;
+    let left = a.right + 8;
+    if (left + w > innerWidth - 8) left = a.left - w - 8;
+    left = Math.max(8, left);
+    const top = Math.max(8, Math.min(a.top, innerHeight - h - 8));
+    el.style.left = `${left}px`; el.style.top = `${top}px`;
+  }
+  function openTip(anchor) {
+    const key = tipKey(anchor);
+    const parent = recOf(anchor.closest(".tip")) ?? null;
+    const depth = parent ? parent.depth + 1 : 1;
+    if (depth > TIP_MAX_DEPTH || !anchor.isConnected) return;
+    if (TIP.open.some((r) => r.anchor === anchor)) return;
+    const c = key && tipContent(key);
+    if (!c) return;
+    // One live card per level: a new one replaces the unpinned card that hangs from the same parent.
+    TIP.open.filter((r) => !r.pinned && r.parent === parent).forEach(closeTip);
+    const el = document.createElement("div");
+    el.className = `tip${c.dmg ? " is-dmg" : ""}`; el.dataset.ui = "tooltipCard"; el.dataset.depth = depth; el.setAttribute("role", "tooltip");
+    el.style.setProperty("--tone", c.tone);
+    el.innerHTML = tipHTML(c, depth);
+    layer.append(el);
+    placeTip(el, anchor);
+    const scene = el.querySelector("[data-vfx]");
+    if (scene) startVfx(scene.querySelector("canvas"), scene.dataset.vfx, scene.dataset.color);
+    const rec = { el, key, anchor, parent, depth, pinned: false, at: 0 };
+    TIP.open.push(rec);
+    el.addEventListener("pointerenter", () => {
+      if (rec.pinned) return;
+      el.classList.add("is-pinning");
+      rec.pinTimer = setTimeout(() => pinTip(rec), 1200);
+    });
+    el.addEventListener("pointerleave", () => { clearTimeout(rec.pinTimer); el.classList.remove("is-pinning"); });
+  }
+  function closeTip(rec) {
+    if (!TIP.open.includes(rec)) return;
+    clearTimeout(rec.pinTimer);
+    TIP.open = TIP.open.filter((r) => r !== rec);
+    TIP.open.filter((r) => r.parent === rec).forEach((r) => (r.pinned ? (r.parent = null) : closeTip(r)));
+    rec.el.classList.add("is-leaving");
+    setTimeout(() => rec.el.remove(), motionOn() ? 150 : 0);
+    updateCloseAll();
+  }
+  function pinTip(rec) {
+    if (rec.pinned) return;
+    clearTimeout(rec.pinTimer);
+    rec.pinned = true; rec.parent = null; rec.at = ++TIP.seq;
+    rec.el.classList.remove("is-pinning"); rec.el.classList.add("is-pinned");
+    rec.el.querySelector("[data-tip-pin]").setAttribute("aria-label", "Закреплено");
+    // At most six pinned cards: the seventh closes the oldest.
+    const pinned = TIP.open.filter((r) => r.pinned).sort((a, b) => a.at - b.at);
+    while (pinned.length > TIP_MAX_PINNED) closeTip(pinned.shift());
+    updateCloseAll();
+  }
+  function updateCloseAll() {
+    layer.querySelectorAll(".tip-foot").forEach((f) => f.remove());
+    const pinned = TIP.open.filter((r) => r.pinned).sort((a, b) => b.at - a.at);
+    if (pinned.length >= 2) pinned[0].el.insertAdjacentHTML("beforeend", `<div class="tip-foot"><button type="button" data-tip-closeall>Закрыть все (${pinned.length})</button></div>`);
+  }
+  // Unpinned cards close 200 ms after the pointer leaves both the card chain and its anchor.
+  function sweepTips() {
+    const under = TIP.x < 0 ? null : document.elementFromPoint(TIP.x, TIP.y);
+    const keep = new Set();
+    const chain = (r) => { while (r) { keep.add(r); r = r.parent; } };
+    chain(recOf(under?.closest(".tip")));
+    TIP.open.forEach((r) => { if (under && r.anchor.contains(under)) chain(r); if (document.activeElement === r.anchor) chain(r); });
+    TIP.open.filter((r) => !r.pinned && !keep.has(r)).forEach(closeTip);
+  }
+  const queueSweep = () => { clearTimeout(TIP.sweep); TIP.sweep = setTimeout(sweepTips, 200); };
+  function stripTitle(a) {
+    // Our card replaces the native tooltip; the text stays for screen readers.
+    if (!a.title) return;
+    if (!a.getAttribute("aria-label")) a.setAttribute("aria-label", a.title);
+    a.removeAttribute("title");
+  }
+  function hoverTrigger(a, delay) {
+    if (!tipKey(a)) return;
+    stripTitle(a);
+    clearTimeout(TIP.timer);
+    TIP.timer = setTimeout(() => openTip(a), delay);
+  }
+  document.addEventListener("pointermove", (e) => { TIP.x = e.clientX; TIP.y = e.clientY; }, { passive: true });
+  document.addEventListener("pointerover", (e) => {
+    const a = e.target.closest?.(TRIGGERS);
+    if (!a || !(root.contains(a) || layer.contains(a)) || a.closest(".cs-drawer")) return;
+    if (a.contains(e.relatedTarget)) return;
+    const inCard = !!a.closest(".tip");
+    const live = TIP.open.some((r) => !r.pinned && r.depth === 1);
+    hoverTrigger(a, inCard ? 300 : live ? 0 : 400);
   });
-  root.addEventListener("pointerout", (e) => {
-    const el = hcTarget(e.target);
-    if (!el || el.contains(e.relatedTarget)) return;
-    clearTimeout(hcTimer); hcFor = null; hc.classList.remove("is-on");
+  document.addEventListener("pointerout", (e) => {
+    const a = e.target.closest?.(TRIGGERS);
+    if (a && !a.contains(e.relatedTarget)) clearTimeout(TIP.timer);
+    queueSweep();
+  });
+  root.addEventListener("focusin", (e) => { const a = e.target.closest(TRIGGERS); if (a && !a.closest(".cs-drawer")) hoverTrigger(a, 400); });
+  root.addEventListener("focusout", queueSweep);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") TIP.open.filter((r) => !r.pinned).forEach(closeTip); });
+  layer.addEventListener("click", (e) => {
+    const rec = recOf(e.target.closest(".tip"));
+    if (!rec) return;
+    if (e.target.closest("[data-tip-close]")) return closeTip(rec);
+    if (e.target.closest("[data-tip-pin]")) return rec.pinned ? undefined : pinTip(rec);
+    if (e.target.closest("[data-tip-closeall]")) return TIP.open.filter((r) => r.pinned).forEach(closeTip);
+    const ref = e.target.closest('[data-card^="doc:"]');
+    if (ref && byId[ref.dataset.card.slice(4)]) select(ref.dataset.card.slice(4));
+  });
+  // Middle click pins, as core does; right click closes one card.
+  layer.addEventListener("pointerdown", (e) => { if (e.button === 1 && e.target.closest(".tip")) e.preventDefault(); });
+  layer.addEventListener("auxclick", (e) => { const rec = recOf(e.target.closest(".tip")); if (rec && e.button === 1) pinTip(rec); });
+  layer.addEventListener("contextmenu", (e) => { const rec = recOf(e.target.closest(".tip")); if (!rec) return; e.preventDefault(); closeTip(rec); });
+  // Dragging by the head pins the card first, then moves it.
+  layer.addEventListener("pointerdown", (e) => {
+    const head = e.target.closest("[data-tip-drag]");
+    if (!head || e.button !== 0 || e.target.closest("button, a, [data-card]")) return;
+    const rec = recOf(head.closest(".tip")); if (!rec) return;
+    pinTip(rec);
+    const el = rec.el, r = el.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+    el.classList.add("is-dragging"); head.setPointerCapture(e.pointerId);
+    const move = (ev) => { el.style.left = `${Math.max(0, Math.min(innerWidth - 40, ev.clientX - dx))}px`; el.style.top = `${Math.max(0, Math.min(innerHeight - 30, ev.clientY - dy))}px`; };
+    const up = () => { el.classList.remove("is-dragging"); head.removeEventListener("pointermove", move); head.removeEventListener("pointerup", up); };
+    head.addEventListener("pointermove", move); head.addEventListener("pointerup", up);
   });
   /* window entrance: the sheet settles in, rail blocks follow one by one */
   if (motionOn()) {

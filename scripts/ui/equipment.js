@@ -12,6 +12,7 @@ import { computeActorCurrency, readPilesCurrencies } from "../integrations/item-
 import { getContainerLoad, getContainerWeightReductionPct, isWeightyContainersActive } from "../integrations/weighty-containers.js";
 import { escapeHTML } from "./html.js";
 import { playBurst } from "./bursts.js";
+import { menuLayout } from "../core/menu.js";
 
 const PARTIALS = `modules/${MODULE_ID}/templates/window`;
 export const EQUIPMENT_TEMPLATES = ["equipment", "doll", "tray", "item-row", "item-detail"].map((name) => `${PARTIALS}/${name}.hbs`);
@@ -228,51 +229,96 @@ export function buildInspector(item, detail) {
 }
 
 /**
- * The row menu, with dnd5e's keys so other modules recognise the entries. Entries may be either shape
- * ({name, icon, condition, callback} or {label, icon, visible, onClick}); #39 adds other modules' entries.
+ * The row menu: the entries of dnd5e 5.3.3's item list, with its keys and groups, so other modules recognise them;
+ * then `dnd5e.getItemContextOptions` lets them add their own. Changes go through the window's own `actions` (the
+ * attunement limit, the doll's rules, the prepare glide, favorites).
+ * @param {Object} item
+ * @param {{equip: Function, attune: Function, prepare: Function, favorite: Function|null, isFavorite: boolean}} actions
  */
-export function itemMenuEntries(item) {
+export function itemMenuEntries(item, actions) {
   const sheetModes = dnd5e.applications.item.ItemSheet5e?.MODES ?? {};
+  const actor = item.actor;
+  const system = item.system ?? {};
   const owner = item.isOwner;
+  const icon = (name) => `<i class="fa-light fa-${name}"></i>`;
+  const prepares = CONFIG.DND5E.spellcasting?.[system.method]?.prepares;
+  const always = system.prepared === CONFIG.DND5E.spellPreparationStates?.always?.value;
   const entries = [
-    { name: "DND5E.ItemView", icon: '<i class="fa-light fa-eye"></i>', callback: () => item.sheet.render({ force: true, mode: sheetModes.PLAY }) },
-    { name: "DND5E.ContextMenuActionEdit", icon: '<i class="fa-light fa-pen"></i>', condition: () => owner, callback: () => item.sheet.render({ force: true, mode: sheetModes.EDIT }) },
+    { name: "DND5E.ItemView", icon: icon("eye"), callback: () => item.sheet.render({ force: true, mode: sheetModes.PLAY }) },
+    { name: "DND5E.ContextMenuActionEdit", icon: icon("pen"), condition: () => owner, callback: () => item.sheet.render({ force: true, mode: sheetModes.EDIT }) },
     {
-      name: "DND5E.ContextMenuActionDuplicate", icon: '<i class="fa-light fa-copy"></i>', condition: () => owner && item.canDuplicate !== false,
+      name: "DND5E.ContextMenuActionDuplicate", icon: icon("copy"), condition: () => owner && item.canDuplicate !== false,
       callback: () => item.clone({ name: game.i18n.format("DOCUMENT.CopyOf", { name: item.name }) }, { save: true, addSource: true })
     },
-    { id: "delete", name: "DND5E.ContextMenuActionDelete", icon: '<i class="fa-light fa-trash"></i>', condition: () => owner && item.canDelete !== false, callback: () => item.deleteDialog() },
-    { name: "DND5E.DisplayCard", icon: '<i class="fa-light fa-message"></i>', callback: () => item.displayCard() },
+    { id: "delete", name: "DND5E.ContextMenuActionDelete", icon: icon("trash"), condition: () => owner && item.canDelete !== false, callback: () => item.deleteDialog() },
+    { name: "DND5E.DisplayCard", icon: icon("message"), condition: () => Boolean(actor), callback: () => item.displayCard() },
     {
-      name: "DND5E.Identify", icon: '<i class="fa-light fa-magnifying-glass"></i>',
-      condition: () => owner && "identified" in item.system && !item.system.identified,
-      callback: () => item.update({ "system.identified": true })
-    }
-  ];
-  if (item.type === "spell") {
-    entries.push({
-      name: "DND5E.Scroll.CreateScroll", icon: '<i class="fa-light fa-scroll"></i>', condition: () => owner,
+      name: "DND5E.Scroll.CreateScroll", icon: icon("scroll"), group: "action",
+      condition: () => item.type === "spell" && !item.getFlag("dnd5e", "cachedFor") && actor?.isOwner,
       callback: async () => {
         const scroll = await Item.implementation.createScrollFromSpell(item);
-        if (scroll) await Item.implementation.create(scroll, { parent: item.parent });
+        if (scroll) await Item.implementation.create(scroll, { parent: actor });
       }
-    });
-  }
+    },
+    {
+      name: "DND5E.ConcentrationBreak", icon: icon("eye-slash"), group: "state",
+      condition: () => Boolean(actor?.concentration?.items?.has(item)), callback: () => actor.endConcentration(item)
+    },
+    {
+      name: `DND5E.ContextMenuAction${system.attuned ? "Unattune" : "Attune"}`, icon: icon("sun"), group: "state",
+      condition: () => Boolean(system.attunement) && owner, callback: () => actions.attune()
+    },
+    {
+      name: `DND5E.ContextMenuAction${system.equipped ? "Unequip" : "Equip"}`, icon: icon("shield-halved"), group: "state",
+      condition: () => "equipped" in system && owner, callback: () => actions.equip()
+    },
+    {
+      name: `DND5E.ContextMenuAction${item.isOnCooldown ? "Charge" : "ExpendCharge"}`, icon: icon("bolt"), group: "state",
+      condition: () => Boolean(item.hasRecharge) && owner, callback: () => item.update({ "system.uses.spent": 1 - (system.uses?.spent ?? 0) })
+    },
+    {
+      name: `DND5E.ContextMenuAction${system.prepared ? "Unprepare" : "Prepare"}`, icon: icon("book-bookmark"), group: "state",
+      condition: () => item.type === "spell" && !item.hasRecharge && Boolean(prepares) && !always && owner && !item.getFlag("dnd5e", "cachedFor"),
+      callback: () => actions.prepare()
+    },
+    {
+      name: "DND5E.Identify", icon: icon("magnifying-glass"), group: "state",
+      condition: () => owner && "identified" in system && !system.identified, callback: () => item.update({ "system.identified": true })
+    },
+    {
+      name: actions.isFavorite ? "DND5E.FavoriteRemove" : "DND5E.Favorite", icon: icon("star"), group: "state",
+      condition: () => Boolean(actions.favorite) && owner, callback: () => actions.favorite()
+    },
+    {
+      name: system.properties?.has?.("gear") ? "DND5E.Gear.Action.Remove" : "DND5E.Gear.Action.Add", icon: icon("axe"), group: "state",
+      condition: () => Boolean(actor?.system?.isNPC) && owner && Boolean(CONFIG.Item.dataModels[item.type]?.schema.has("quantity")),
+      callback: () => {
+        const properties = system.toObject().properties;
+        return item.update({ "system.properties": system.properties.has("gear") ? properties.filter((p) => p !== "gear") : [...properties, "gear"] });
+      }
+    }
+  ];
+  Hooks.callAll("dnd5e.getItemContextOptions", item, entries);
+  return entries;
+}
+
+/** An activity's menu as dnd5e builds it, after `dnd5e.getItemActivityContext` has had its say. */
+export function activityMenuEntries(activity, target) {
+  const entries = activity.getContextMenuOptions?.() ?? [];
+  Hooks.callAll("dnd5e.getItemActivityContext", activity, target, entries);
   return entries;
 }
 
 /** Shows the window's own menu under the anchor; entries in either shape run on click. */
 export function openItemMenu(root, anchor, entries, target) {
   closeItemMenu(root);
-  const shown = entries.filter((e) => {
-    const test = e.condition ?? e.visible;
-    return typeof test === "function" ? test(target) : test ?? true;
-  });
-  if (!shown.length) return;
+  const layout = menuLayout(entries, target);
+  if (!layout.length) return;
+  const shown = layout.map(({ entry }) => entry);
   const menu = document.createElement("div");
   menu.className = "aim-menu aim-popmenu";
   menu.setAttribute("role", "menu");
-  menu.innerHTML = shown.map((e, i) => `<button type="button" role="menuitem" data-menu-index="${i}">${e.icon ?? ""}<span>${escapeHTML(game.i18n.localize(e.name ?? e.label ?? ""))}</span></button>`).join("");
+  menu.innerHTML = layout.map(({ entry: e, divider }, i) => `${divider ? '<hr role="separator">' : ""}<button type="button" role="menuitem" data-menu-index="${i}">${e.icon ?? ""}<span>${escapeHTML(game.i18n.localize(e.name ?? e.label ?? ""))}</span></button>`).join("");
   root.append(menu);
   const box = root.getBoundingClientRect();
   const at = anchor.getBoundingClientRect();

@@ -742,3 +742,41 @@ describe("overview and biography reads (dnd5e 5.3.3)", () => {
     assert.deepEqual(readBiography(actor, ["age", "eyes"]), { fields: { age: "142", eyes: "" }, biography: "<p>Долг</p>" });
   });
 });
+
+describe("tooltip card reads (dnd5e 5.3.3)", () => {
+  afterEach(() => { delete globalThis.CONFIG; });
+
+  it("reads an item's card data into numbers, text and pills", async () => {
+    const { readCardData } = await import("../scripts/integrations/dnd5e.js");
+    globalThis.CONFIG = { DND5E: { currencies: { gp: { abbreviation: "зм" } }, weightUnits: { lb: { abbreviation: "фнт" } } } };
+    const sickle = {
+      documentName: "Item", type: "weapon", name: "Серп", img: "sickle.webp", isOwner: true,
+      system: {
+        rarity: "", attunement: "", armor: { value: null },
+        getCardData: async () => ({
+          name: "Серп", img: "sickle.webp", subtitle: "Простое рукопашное • Подсечка",
+          labels: { toHit: "+2", damages: [{ formula: "1d4", label: "1d4 Рубящий", damageType: "slashing" }, { label: "1d6 Огонь", damageType: "fire|cold" }] },
+          uses: null, weight: { value: 2, units: "lb" }, price: { value: 1, denomination: "gp" },
+          tags: ["Ритуал"], properties: ["Действие", "", "Владение"], description: { value: "<p>Изогнутый клинок.</p>" }
+        })
+      }
+    };
+    const card = await readCardData(sickle);
+    assert.deepEqual(card.stats, [
+      { key: "toHit", value: "+2" }, { key: "damage", value: "1d4 Рубящий, 1d6 Огонь" },
+      { key: "weight", value: "2 фнт" }, { key: "price", value: "1 зм" }
+    ]);
+    assert.deepEqual(card.damages.map((d) => d.types), [["slashing"], ["fire", "cold"]]);
+    assert.deepEqual([card.kind, card.subtitle, card.properties, card.rarity, card.school], ["item", "Простое рукопашное • Подсечка", ["Ритуал", "Действие", "Владение"], "common", null]);
+  });
+
+  it("wraps an effect's or a rule page's rich tooltip, and names anything else", async () => {
+    const { readCardData } = await import("../scripts/integrations/dnd5e.js");
+    const effect = { documentName: "ActiveEffect", name: "Ускорение", img: "haste.webp", richTooltip: async () => ({ content: "<section>Скорость ×2</section>" }) };
+    const page = { documentName: "JournalEntryPage", name: "Лежит", system: { richTooltip: async function () { return { content: `<p>${this.text}</p>` }; }, text: "Помеха" } };
+    const actor = { documentName: "Actor", name: "Торвин", img: "torvin.webp" };
+    assert.deepEqual([await readCardData(effect)].map((c) => [c.kind, c.html]), [["rich", "<section>Скорость ×2</section>"]]);
+    assert.equal((await readCardData(page)).html, "<p>Помеха</p>");
+    assert.deepEqual([(await readCardData(actor)).kind, await readCardData(null)], ["doc", null]);
+  });
+});

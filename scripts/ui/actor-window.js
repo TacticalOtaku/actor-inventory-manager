@@ -49,6 +49,7 @@ import { OVERVIEW_TEMPLATES, buildBiographyContext, buildOverviewContext, cardDi
 import { OfferDraft, buildTradeContext, isNewItem, offerButton, offerWithQuantity, sendTradeRequest } from "./trade.js";
 import { TRADE_HOOK, sessionFor } from "../trade/service.js";
 import { FLAGS } from "../constants.js";
+import { bindTooltips, releaseTooltips } from "./tooltips.js";
 import { buildFavoritesContext, favoriteIdFor, favoriteItemIds, hasFavorites } from "./favorites.js";
 import { SPELL_TEMPLATES, buildSpellsContext, playSlotChanges, preparationWarning, slotSnapshot } from "./spells.js";
 import { openPresetEditor } from "./preset-editor.js";
@@ -437,6 +438,7 @@ export class ActorWindow extends WindowBase {
     this.element.addEventListener("keydown", (event) => this.#onKeydown(event));
     this.element.addEventListener("change", (event) => this.#onChange(event));
     this.#bindEquipment();
+    bindTooltips(this);
   }
 
   async _preRender(context, options) {
@@ -571,6 +573,7 @@ export class ActorWindow extends WindowBase {
 
   _onClose(options) {
     this.tradeDraft.close();
+    releaseTooltips(this);
     for (const [name, id] of this._hooks) Hooks.off(name, id);
     this._hooks = [];
     this._bodyObserver?.disconnect();

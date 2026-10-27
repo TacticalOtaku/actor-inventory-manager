@@ -67,6 +67,7 @@ one place to update when it moves again. Never inline these reads at a call site
 | Effects as dnd5e's sheet lists them (`allApplicableEffects`, `isSuppressed` and why, time left, source) | `readEffects` | `integrations/dnd5e.js` |
 | Effect changes (Foundry 14 `system.changes` with `type`) and their field labels | `readEffectChanges` | `integrations/dnd5e.js` |
 | Statuses for the conditions grid (`CONFIG.statusEffects`, non-pseudo `conditionTypes`, immunities from `traits.ci`) | `readStatusEffects` | `integrations/dnd5e.js` |
+| Tooltip cards (`system.getCardData()` read into numbers, text and pills; `richTooltip()` of effects and rule pages) | `readCardData` | `integrations/dnd5e.js` |
 | Skills and tools (`prof.multiplier` in effect, total, passive) | `readSkills`, `readTools` | `integrations/dnd5e.js` |
 | Defenses (`traits.dr/di/dv/ci` with custom entries, `traits.dm.amount`) | `readDefenses` | `integrations/dnd5e.js` |
 | Passive scores, senses (`attributes.senses.ranges`, moved in 5.3), armor, weapons, languages (`labels`, telepathy) | `readSenses` | `integrations/dnd5e.js` |
@@ -270,6 +271,8 @@ slice from the map #28.
 | Pure overview rules: proficiency marks, the dialogs behind each card, the biography fields | `scripts/core/overview.js` |
 | Trade panel on the `trade/` service: partner, offers with auto-send, coins or Item Piles currencies, confirmation, cancel, GM recovery, lock banner, offer buttons, «New» | `scripts/ui/trade.js`, `templates/window/trade.hbs` |
 | Pure trade-panel rules: what the trade waits for, offer edits, unchanged offers, partners, recovery action, Item Piles totals | `scripts/core/trade-panel.js` |
+| Tooltip cards on our own layer (`document.body` of the window's document): triggers, timing, nesting, pinning, dragging | `scripts/ui/tooltips.js`, `templates/window/tooltip-card.hbs`, `styles/window/tooltips.css` |
+| Pure card rules: delays, one live card per level, four levels, pin limit and order, closing and sweeping | `scripts/core/tooltips.js` |
 
 ### Theme, accent, density, motion
 

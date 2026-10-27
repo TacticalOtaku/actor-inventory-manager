@@ -578,6 +578,58 @@ export function readStatusEffects(actor) {
     .map((s) => ({ id: s.id, name: localizeOr(s.name, s.name ?? s.id), img: s.img, condition: Boolean(conditions[s.id] && !conditions[s.id].pseudo), immune: immune.has(s.id) }));
 }
 
+/**
+ * What a tooltip card shows for a document. Items use their own `system.getCardData()` (dnd5e's visibility rules
+ * for unidentified items and concealed descriptions hold), read into numbers (to-hit, damage, save, armor, charges,
+ * weight, price, attunement), the description and property pills; effects and rule pages bring dnd5e's
+ * `richTooltip()` HTML; anything else is its name and type.
+ * @returns {Promise<object|null>}
+ */
+export async function readCardData(doc) {
+  if (!doc) return null;
+  const config = getDnd5eConfig();
+  if (doc.documentName === "Item" && typeof doc.system?.getCardData === "function") {
+    const data = await doc.system.getCardData({ secrets: doc.isOwner });
+    const labels = data.labels ?? {};
+    const stat = (key, value) => (value !== undefined && value !== null && String(value).trim() !== "" ? { key, value: String(value) } : null);
+    const damages = (labels.damages ?? []).map((d) => ({ label: d.label ?? d.formula ?? "", types: String(d.damageType ?? "").split("|").filter(Boolean) }));
+    const attunement = doc.system?.attunement;
+    const currency = config.currencies?.[data.price?.denomination];
+    const stats = [
+      stat("toHit", labels.toHit),
+      stat("damage", damages.map((d) => d.label).join(", ")),
+      stat("save", labels.save),
+      doc.system?.armor?.value ? stat("armor", doc.system.armor.value) : null,
+      data.uses?.max ? stat("uses", `${num(data.uses.value, 0)} / ${num(data.uses.max, 0)}`) : null,
+      num(data.weight?.value, 0) ? stat("weight", `${data.weight.value} ${unitAbbreviation("weightUnits", data.weight.units || "lb")}`) : null,
+      num(data.price?.value, 0) ? stat("price", `${data.price.value} ${localizeOr(currency?.abbreviation, currency?.abbreviation ?? data.price.denomination ?? "")}`) : null,
+      attunement ? stat("attunement", attunement) : null
+    ].filter(Boolean);
+    return {
+      kind: "item",
+      name: data.name ?? doc.name,
+      img: data.img ?? doc.img,
+      subtitle: data.subtitle ?? "",
+      description: data.description?.value ?? "",
+      properties: [...(data.tags ?? []), ...(data.properties ?? [])].filter((p) => typeof p === "string" && p),
+      stats,
+      damages,
+      attuned: Boolean(doc.system?.attuned),
+      school: doc.type === "spell" ? data.school ?? doc.system?.school ?? null : null,
+      rarity: doc.type === "spell" ? null : doc.system?.rarity || "common"
+    };
+  }
+  const rich = doc.richTooltip ?? doc.system?.richTooltip;
+  if (typeof rich === "function") {
+    const tooltip = await rich.call(doc.richTooltip ? doc : doc.system);
+    if (tooltip?.content) {
+      const html = typeof tooltip.content === "string" ? tooltip.content : tooltip.content.outerHTML ?? "";
+      return { kind: "rich", name: doc.name, img: doc.img ?? doc.src ?? null, subtitle: localizeOr(doc.constructor?.metadata?.label, ""), html };
+    }
+  }
+  return { kind: "doc", name: doc.name, img: doc.img ?? null, subtitle: localizeOr(doc.constructor?.metadata?.label, "") };
+}
+
 /** dnd5e's label for a trait key («Acid», «Simple», «Herbalism Kit»), the key itself without dnd5e. */
 function traitLabel(key, trait) {
   return globalThis.dnd5e?.documents?.Trait?.keyLabel?.(key, { trait }) ?? key;

@@ -991,6 +991,25 @@
           "appearance": "Appearance"
         }
       }
+    },
+    "tips": {
+      "closeAll": "Close all ({n})",
+      "holdToPin": "Hold the pointer here to pin",
+      "pin": "Pin",
+      "stats": {
+        "toHit": "Attack",
+        "damage": "Damage",
+        "save": "Save",
+        "armor": "AC",
+        "uses": "Charges",
+        "weight": "Weight",
+        "price": "Price",
+        "attunement": "Attunement"
+      },
+      "attunement": {
+        "required": "required",
+        "optional": "optional"
+      }
     }
   }
 }

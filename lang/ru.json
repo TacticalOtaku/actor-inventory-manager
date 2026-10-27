@@ -991,6 +991,25 @@
           "appearance": "Внешность"
         }
       }
+    },
+    "tips": {
+      "closeAll": "Закрыть все ({n})",
+      "holdToPin": "Задержите курсор, чтобы закрепить",
+      "pin": "Закрепить",
+      "stats": {
+        "toHit": "Атака",
+        "damage": "Урон",
+        "save": "Спасбросок",
+        "armor": "КД",
+        "uses": "Заряды",
+        "weight": "Вес",
+        "price": "Цена",
+        "attunement": "Настройка"
+      },
+      "attunement": {
+        "required": "нужна",
+        "optional": "можно"
+      }
     }
   }
 }

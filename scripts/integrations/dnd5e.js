@@ -465,9 +465,6 @@ export async function createDroppedSpell(actor, event, spell) {
   return [await CONFIG.Item.documentClass.create(data, { parent: actor })].filter(Boolean);
 }
 
-/** Whether the actor's sheet puts a dropped item into a container (dnd5e's `_onDropItemContainer`; Tidy has none). */
-export const sheetDropsIntoContainers = (actor) => typeof actor?.sheet?._onDropItemContainer === "function";
-
 /** The item types the actor's sheet does not take (dnd5e 5.3.3: `unsupportedItemTypes` on the sheet class). */
 export const sheetUnsupportedTypes = (actor) => actor?.sheet?.constructor?.unsupportedItemTypes ?? new Set();
 

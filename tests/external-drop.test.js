@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { dropBehavior, received, refusedType, spellBecomes } from "../scripts/core/external-drop.js";
+import { dropBehavior, landedOutside, received, refusedType, spellBecomes } from "../scripts/core/external-drop.js";
 
 const base = { fromActor: false, sameActor: false, isPile: false, ownsSource: false, isGM: false, shift: false };
 
@@ -42,5 +42,12 @@ describe("drops from outside (ADR 0004)", () => {
     assert.equal(received(before, new Map([["a", 1], ["b", 3], ["c", 1]])), true);
     assert.equal(received(before, new Map([["a", 1], ["b", 4]])), true);
     assert.equal(received(before, new Map([["a", 1], ["b", 3]])), false);
+  });
+
+  it("notes a drop onto a container only when something stayed outside it", () => {
+    assert.equal(landedOutside(["bag", "bag"], "bag"), false);
+    assert.equal(landedOutside([null], "bag"), true);
+    assert.equal(landedOutside([undefined, "bag"], "bag"), true);
+    assert.equal(landedOutside([], "bag"), false);
   });
 });

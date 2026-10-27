@@ -36,3 +36,11 @@ export function received(before, after) {
   }
   return false;
 }
+
+/**
+ * Whether a drop onto a container left something outside it: a sheet that cannot put items into one (Tidy's new
+ * sheet) creates them in the inventory root, the window says so (ADR 0004).
+ * @param {(string|null|undefined)[]} containers  the `system.container` of each created item
+ * @param {string} containerId
+ */
+export const landedOutside = (containers, containerId) => containers.some((id) => (id ?? null) !== containerId);

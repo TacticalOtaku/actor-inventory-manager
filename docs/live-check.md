@@ -54,9 +54,9 @@ Run the whole list on set 1, then repeat it on each set after adding its modules
 16. An item from the player's own second character moves (gone there, here once). Someone else's item and an Item
     Piles pile row are refused with the reason.
 17. On set 5, a drop into a full container is refused by Weighty Containers and nothing is created or deleted.
-18. On set 3, the same drops work with a Tidy sheet; a drop onto a tray lands in the inventory root with the note. The
-    classic Tidy sheet has no `_onDropCreateItems`: items still arrive, and the console says (info) which rules were
-    skipped.
+18. On set 3, the same drops work with a Tidy sheet; with the new Tidy sheet a drop onto a tray lands in the inventory
+    root with the note. The classic Tidy sheet has no `_onDropCreateItems`: items still arrive (a tray drop in that
+    container, without the note), and the console says (info) which rules were skipped.
 
 ### Menus
 

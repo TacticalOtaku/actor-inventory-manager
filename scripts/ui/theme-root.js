@@ -4,6 +4,8 @@
 
 import { MODULE_ID } from "../constants.js";
 import { effectiveMotion, normalizeAccent, resolveTheme } from "../core/actor-window.js";
+import { RARITY_ORDER } from "../core/inventory.js";
+import { scRarityColor } from "../integrations/sc-rarity-colors.js";
 
 /** Caps the OS and Foundry put on motion (#9). */
 export function readMotionCaps() {
@@ -29,4 +31,10 @@ export function stampTheme(el, { fonts } = {}) {
   el.dataset.density = get("windowDensity");
   el.dataset.motion = effectiveMotion(get("motionLevel"), readMotionCaps());
   el.dataset.fonts = (fonts ?? get("useWebFonts")) ? "web" : "system";
+  // A colour SC - Item Rarity Colors gives a rarity replaces that --rarity-* token wherever the window shows rarity.
+  for (const rarity of RARITY_ORDER.filter(Boolean)) {
+    const color = scRarityColor(rarity);
+    if (color) el.style.setProperty(`--rarity-${rarity}`, color);
+    else el.style.removeProperty(`--rarity-${rarity}`);
+  }
 }

@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { ITEM_RARITY_COLORS } from "../constants.js";
+import { LOG } from "../foundry/logger.js";
 
 export const SC_MODULE_ID = "sc-item-rarity-colors";
 
@@ -12,6 +13,26 @@ export const SC_MODULE_ID = "sc-item-rarity-colors";
  */
 export function isScRarityColorsActive() {
   return Boolean(globalThis.game?.modules?.get?.(SC_MODULE_ID)?.active);
+}
+
+/**
+ * Lets SC - Item Rarity Colors style the window's item and spell rows as it styles an actor sheet's inventory: the
+ * rarity or spell-school gradient, title and detail colours, the icon border and effects, the unidentified cover
+ * (its public API, 3.0.18+: `api.styleItemRow`). Without SC or an older SC, nothing happens.
+ * @param {HTMLElement} root  the window's main part
+ * @param {Object} actor
+ */
+export function styleScItemRows(root, actor) {
+  const styleItemRow = isScRarityColorsActive() ? globalThis.game.modules.get(SC_MODULE_ID).api?.styleItemRow : null;
+  if (typeof styleItemRow !== "function") return;
+  for (const row of root.querySelectorAll('[data-panel="equipment"] [data-item-id] > [data-row], [data-panel="spells"] [data-item-id] > [data-row]')) {
+    const item = actor.items.get(row.parentElement.dataset.itemId);
+    try {
+      if (item) styleItemRow(row, item, { imageSelector: ".aim-tile" });
+    } catch (error) {
+      LOG.debug("SC - Item Rarity Colors could not style a row", error);
+    }
+  }
 }
 
 /**
@@ -79,11 +100,17 @@ function readScRaritySetting(rarity, field) {
   return undefined;
 }
 
-// The colour SC shows for a rarity or school: the first of its colours the GM has switched on.
-const SC_COLOR_FIELDS = [["enable-item-color", "item-color"], ["enable-inventory-border-color", "inventory-border-color"], ["enable-inventory-title-color", "inventory-title-color"]];
+// The colour SC shows most: the icon border when the GM set one; with a gradient its bright second stop (the first is
+// the dark background, as SC's own icon glow uses the second); then the plain item colour and the title colour.
+const SC_COLOR_FIELDS = [
+  [["enable-inventory-border-color"], "inventory-border-color"],
+  [["enable-item-color", "gradient-option"], "secondary-item-color"],
+  [["enable-item-color"], "item-color"],
+  [["enable-inventory-title-color"], "inventory-title-color"]
+];
 function pickScColor(read) {
-  for (const [toggle, field] of SC_COLOR_FIELDS) {
-    const color = read(toggle) === true ? read(field) : null;
+  for (const [toggles, field] of SC_COLOR_FIELDS) {
+    const color = toggles.every((toggle) => read(toggle) === true) ? read(field) : null;
     if (typeof color === "string" && color) return color;
   }
   return null;

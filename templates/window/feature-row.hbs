@@ -8,8 +8,8 @@
     </button>
     {{/if}}
     <div class="aim-row-main">
-      <div class="aim-row-name">{{name}}</div>
-      <div class="aim-row-meta">
+      <div class="aim-row-name item-name">{{name}}</div>
+      <div class="aim-row-meta item-detail">
         {{#if attack}}{{#if attack.toHit}}<span class="aim-tag is-roll">{{attack.toHit}}</span>{{/if}}{{#if attack.damage}}<span>{{attack.damage}}</span>{{/if}}{{/if}}
         {{#if activationLabel}}<span class="aim-tag {{#if passive}}is-passive{{/if}}">{{activationLabel}}</span>{{/if}}
         {{#each recovery}}<span>{{this}}</span>{{/each}}

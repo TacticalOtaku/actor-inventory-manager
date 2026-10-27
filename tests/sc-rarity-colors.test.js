@@ -8,7 +8,8 @@ import {
   hasRarityGlow,
   invalidateRarityColorCache,
   scRarityColor,
-  scSchoolColor
+  scSchoolColor,
+  styleScItemRows
 } from "../scripts/integrations/sc-rarity-colors.js";
 
 /** SC - Item Rarity Colors 3.0.x as a world sees it: one setting per rarity field, one for spell schools. */
@@ -44,6 +45,15 @@ describe("SC rarity colours", () => {
     assert.equal(getRarityColor("uncommon"), "#00ff00");
   });
 
+  it("takes the bright second stop of a gradient, and the icon border over both", () => {
+    stubSc({ "artifact-enable-item-color": true, "artifact-item-color": "#3a0a0e", "artifact-gradient-option": true, "artifact-secondary-item-color": "#b3122a" });
+    assert.equal(scRarityColor("artifact"), "#b3122a");
+    stubSc({ "artifact-enable-item-color": true, "artifact-item-color": "#3a0a0e", "artifact-gradient-option": true, "artifact-secondary-item-color": "#b3122a",
+      "artifact-enable-inventory-border-color": true, "artifact-inventory-border-color": "#ffcc00" });
+    invalidateRarityColorCache();
+    assert.equal(scRarityColor("artifact"), "#ffcc00");
+  });
+
   it("ignores SC settings while SC is inactive", () => {
     stubSc({ "rare-enable-item-color": true, "rare-item-color": "#abcdef" }, { active: false });
     assert.equal(getRarityColor("rare"), ITEM_RARITY_COLORS.rare);
@@ -73,5 +83,25 @@ describe("colours SC itself gives (the window keeps its palette otherwise)", () 
     assert.equal(scSchoolColor(null), null);
     stubSc({ "spell-school-styles": { useLevelVariants: true, profiles: { school_evo: on("#ff4400"), school_evo_lvl_3: on("#ffaa00") } } });
     assert.deepEqual([scSchoolColor("evo", 3), scSchoolColor("evo", 2)], ["#ffaa00", "#ff4400"]);
+  });
+});
+
+describe("rows styled through SC's public API", () => {
+  const rows = [{ parentElement: { dataset: { itemId: "ring" } } }, { parentElement: { dataset: { itemId: "gone" } } }];
+  const root = { querySelectorAll: () => rows };
+  const actor = { items: new Map([["ring", { id: "ring" }]]) };
+
+  it("hands SC each row of a known item, with the tile as its image", () => {
+    const calls = [];
+    globalThis.game = { modules: new Map([[SC_MODULE_ID, { active: true, api: { styleItemRow: (...args) => calls.push(args) } }]]) };
+    styleScItemRows(root, actor);
+    assert.deepEqual(calls, [[rows[0], actor.items.get("ring"), { imageSelector: ".aim-tile" }]]);
+  });
+
+  it("does nothing without SC or with an SC that has no row API", () => {
+    globalThis.game = { modules: new Map([[SC_MODULE_ID, { active: true }]]) };
+    assert.doesNotThrow(() => styleScItemRows(root, actor));
+    globalThis.game = { modules: new Map([[SC_MODULE_ID, { active: false, api: { styleItemRow: () => assert.fail("inactive") } }]]) };
+    styleScItemRows(root, actor);
   });
 });

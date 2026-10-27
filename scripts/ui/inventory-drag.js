@@ -72,7 +72,7 @@ export function bindInventoryDrag(app) {
   const el = app.element;
   let dragged = null;
   let fromDoll = false;
-  // A favorite row being reordered, or a slot track or an effect dragged into the favorites ({type, id}).
+  // A favorite row being reordered, or a slot track, an effect, a skill or a tool dragged into the favorites.
   let draggedFav = null;
   let draggedNew = null;
   let lit = null;
@@ -116,10 +116,10 @@ export function bindInventoryDrag(app) {
   // A row dragged out of the window carries the item's own drag data, so sheets, the canvas and Item Piles take it.
   el.addEventListener("dragstart", (event) => {
     const fav = event.target.closest?.("[data-fav-id]");
-    const track = event.target.closest?.("[data-fav-slots], [data-fav-effect]");
+    const track = event.target.closest?.("[data-fav-type]");
     if ((fav || track) && app.canEdit) {
       draggedFav = fav?.dataset.favId ?? null;
-      draggedNew = !track ? null : track.dataset.favSlots ? { type: "slots", id: track.dataset.favSlots } : { type: "effect", id: track.dataset.favEffect };
+      draggedNew = track ? { type: track.dataset.favType, id: track.dataset.favKey } : null;
       event.dataTransfer.setData("text/plain", JSON.stringify({ aimActorUuid: app.actorKey, aimFavorite: draggedFav, aimNew: draggedNew }));
       event.dataTransfer.effectAllowed = "link";
       (fav ?? track).classList.add("is-dragging");

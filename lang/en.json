@@ -878,6 +878,73 @@
         "slots": "Circle {level} slots",
         "pactSlots": "Pact slots",
         "use": "Use: {name}"
+      },
+      "overview": {
+        "skills": "Skills",
+        "saves": "Saving Throws",
+        "tools": "Tools",
+        "defensesTitle": "Defenses",
+        "sensesTitle": "Senses and Proficiencies",
+        "none": "none",
+        "noTools": "No tool proficiencies",
+        "defenses": {
+          "dr": "Resistances",
+          "di": "Immunities",
+          "dv": "Vulnerabilities",
+          "ci": "Condition immunities",
+          "dm": "Damage modification"
+        },
+        "passive": {
+          "prc": "Passive Perception",
+          "inv": "Passive Investigation",
+          "ins": "Passive Insight"
+        },
+        "senses": {
+          "senses": "Senses",
+          "armor": "Armor",
+          "weapon": "Weapons",
+          "languages": "Languages"
+        },
+        "configure": {
+          "skills": "Configure skills",
+          "saves": "Configure saving throws",
+          "tools": "Configure tools",
+          "defenses": "Configure defenses",
+          "senses": "Configure senses and proficiencies"
+        },
+        "config": {
+          "skills": "Skills",
+          "tool": "Tools",
+          "dr": "Damage resistances",
+          "di": "Damage immunities",
+          "dv": "Damage vulnerabilities",
+          "dm": "Damage modification",
+          "ci": "Condition immunities",
+          "senses": "Senses",
+          "languages": "Languages",
+          "weapon": "Weapon proficiencies",
+          "armor": "Armor proficiencies"
+        }
+      },
+      "bio": {
+        "biography": "Biography",
+        "empty": "No biography yet",
+        "fields": {
+          "alignment": "Alignment",
+          "age": "Age",
+          "height": "Height",
+          "weight": "Weight",
+          "eyes": "Eyes",
+          "hair": "Hair",
+          "skin": "Skin",
+          "gender": "Gender",
+          "faith": "Faith",
+          "trait": "Personality traits",
+          "ideal": "Ideals",
+          "bond": "Bonds",
+          "flaw": "Flaws",
+          "appearance": "Appearance"
+        }
       }
     }
   }

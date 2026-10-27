@@ -1,5 +1,5 @@
 <div class="aim-effwrap" data-effect-uuid="{{uuid}}" data-effect-id="{{id}}" {{#if itemId}}data-parent-id="{{itemId}}"{{/if}} data-effect-rel="{{relativeId}}" data-key="eff-{{where}}-{{uuid}}">
-  <div class="aim-effect is-{{kind}} {{#if disabled}}is-off{{/if}} {{#if suppressed}}is-supp{{/if}} {{#if open}}is-open{{/if}}" data-effect-row data-where="{{where}}" role="button" tabindex="0" aria-expanded="{{#if open}}true{{else}}false{{/if}}" {{#if draggable}}draggable="true" data-fav-effect="{{relativeId}}"{{/if}}>
+  <div class="aim-effect is-{{kind}} {{#if disabled}}is-off{{/if}} {{#if suppressed}}is-supp{{/if}} {{#if open}}is-open{{/if}}" data-effect-row data-where="{{where}}" role="button" tabindex="0" aria-expanded="{{#if open}}true{{else}}false{{/if}}" {{#if draggable}}draggable="true" data-fav-type="effect" data-fav-key="{{relativeId}}"{{/if}}>
     <img src="{{img}}" alt="">
     <span class="aim-effect-n"><span class="aim-effect-name">{{name}}</span>{{#if line}}<small>{{line}}</small>{{/if}}</span>
     {{#if time}}<span class="aim-effect-time">{{time}}</span>{{/if}}

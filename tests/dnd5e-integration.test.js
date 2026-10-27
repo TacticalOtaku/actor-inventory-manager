@@ -686,3 +686,59 @@ describe("effects reads (dnd5e 5.3.3, Foundry 14)", () => {
     assert.deepEqual(readStatusEffects(galley).map((s) => [s.id, s.condition, s.immune]), [["prone", true, true], ["bleeding", false, false], ["dodging", false, false]]);
   });
 });
+
+describe("overview and biography reads (dnd5e 5.3.3)", () => {
+  afterEach(() => { delete globalThis.CONFIG; delete globalThis.dnd5e; });
+
+  const stub = () => {
+    globalThis.CONFIG = { DND5E: {
+      skills: { arc: { label: "Магия" }, prc: { label: "Внимательность" } },
+      abilities: { int: { abbreviation: "инт" }, wis: { abbreviation: "мдр" }, dex: { abbreviation: "лвк" } },
+      damageTypes: { fire: { label: "Огонь" }, cold: { label: "Холод" } },
+      senses: { darkvision: "Тёмное зрение", blindsight: "Слепое зрение" },
+      communicationTypes: { telepathy: { label: "Телепатия" } },
+      movementUnits: { ft: { abbreviation: "фт" } }
+    } };
+    globalThis.dnd5e = { documents: { Trait: { keyLabel: (key) => ({ acid: "Кислота", sim: "Простое", lgt: "Лёгкие", herb: "Набор травника", poisoned: "Отравлен" })[key] ?? key } } };
+  };
+
+  it("reads skills and tools with the multiplier in effect, total and passive", async () => {
+    const { readSkills, readTools } = await import("../scripts/integrations/dnd5e.js");
+    stub();
+    const actor = { system: {
+      skills: { arc: { ability: "int", value: 1, prof: { multiplier: 2 }, total: 7, passive: 17 }, prc: { ability: "wis", value: 0, prof: { multiplier: 0.5 }, total: 2, passive: 12 } },
+      tools: { herb: { ability: "int", value: 1, prof: { multiplier: 1 }, total: 3 } }
+    } };
+    assert.deepEqual(readSkills(actor).map((s) => [s.key, s.label, s.abilityAbbr, s.prof, s.total, s.passive]),
+      [["arc", "Магия", "инт", 2, 7, 17], ["prc", "Внимательность", "мдр", 0.5, 2, 12]]);
+    assert.deepEqual(readTools(actor).map((s) => [s.label, s.prof, s.total]), [["Набор травника", 1, 3]]);
+  });
+
+  it("reads defenses with custom entries and damage modification, senses from ranges, languages from labels", async () => {
+    const { readDefenses, readSenses } = await import("../scripts/integrations/dnd5e.js");
+    stub();
+    const actor = { system: {
+      traits: {
+        di: { value: new Set(["acid"]), custom: "Магический урон; Серебро" }, dr: { value: new Set() }, dv: { value: new Set() },
+        ci: { value: new Set(["poisoned"]) }, dm: { amount: { fire: "-3", cold: "2", acid: "" } },
+        armorProf: { value: new Set(["lgt"]), custom: "" }, weaponProf: { value: new Set(["sim"]), custom: "Кнут" },
+        languages: { labels: { languages: ["Общий", "Драконий"] }, communication: { telepathy: { value: 30 } } }
+      },
+      attributes: { senses: { ranges: { darkvision: 120, blindsight: 0 }, units: "ft", special: "Видит невидимое" } },
+      skills: { prc: { passive: 14 }, inv: { passive: 11 }, ins: { passive: 13 } }
+    } };
+    assert.deepEqual(readDefenses(actor), { dr: [], di: ["Кислота", "Магический урон", "Серебро"], dv: [], ci: ["Отравлен"], dm: ["Огонь −3", "Холод +2"] });
+    assert.deepEqual(readSenses(actor), {
+      passive: { prc: 14, inv: 11, ins: 13 },
+      senses: ["Тёмное зрение 120 фт", "Видит невидимое"],
+      armor: ["Лёгкие"], weapon: ["Простое", "Кнут"],
+      languages: ["Общий", "Драконий", "Телепатия 30 фт"]
+    });
+  });
+
+  it("reads the stored characteristics and the raw biography, not the prepared values", async () => {
+    const { readBiography } = await import("../scripts/integrations/dnd5e.js");
+    const actor = { system: { details: { age: "999" } }, _source: { system: { details: { age: "142", eyes: null, biography: { value: "<p>Долг</p>" } } } } };
+    assert.deepEqual(readBiography(actor, ["age", "eyes"]), { fields: { age: "142", eyes: "" }, biography: "<p>Долг</p>" });
+  });
+});

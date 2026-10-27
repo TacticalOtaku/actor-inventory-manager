@@ -1,0 +1,198 @@
+/* AIM: Actor Window - the rail: HP, hit dice, slots, death saves, rest, stats, spellcasting, effects, chips */
+.aim-vitals { display: grid; gap: var(--s2); }
+.aim-rail-title { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 6px; font: 600 10.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
+.aim-ibtn.aim-mini { width: 22px; height: 22px; }
+
+/* ── hit points ── */
+.aim-hpcard { position: relative; display: grid; gap: 8px; padding: 12px 14px 10px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface-1); box-shadow: var(--shadow-1); }
+.aim-hp-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s2); }
+.aim-hp-label { font: 600 10.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-2); }
+.aim-hp-value { display: inline-flex; align-items: baseline; gap: 2px; padding: 0; border: 0; background: none; color: var(--text); font: 700 30px/1 var(--font-num); font-variant-numeric: tabular-nums; cursor: text; }
+.aim-hp-value:disabled { cursor: default; }
+.aim-hp-value small { font-size: 15px; color: var(--text-3); font-weight: 600; }
+.aim-hp-temp { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; font: 600 14px var(--font-num); font-style: normal; color: var(--temp); }
+.aim-hp-input { width: 120px; height: 34px; padding: 0 10px; border: 1px solid var(--accent-line); border-radius: var(--r-sm); background: var(--surface-0); color: var(--text); font: 600 18px var(--font-num); text-align: right; }
+.aim-hp-input.is-invalid { border-color: var(--hp); box-shadow: 0 0 0 2px color-mix(in oklab, var(--hp) 30%, transparent); }
+.aim-hp-bar { --hp-share: 1; --temp-from: 1; --temp-share: 0; --beat: 2.8s; position: relative; height: 10px; border-radius: 6px; background: var(--surface-0); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+.aim-hp-bar > i { position: absolute; top: 0; bottom: 0; left: 0; display: block; border-radius: 6px; }
+/* every effect here animates opacity or a transform only (#9): glows and shimmer are overlays */
+.aim-hp-ghost { width: calc(var(--hp-share) * 100%); background: color-mix(in oklab, var(--hp) 45%, #fff); opacity: 0.5; transform-origin: left; }
+.aim-hp-fill { width: calc(var(--hp-share) * 100%); background: linear-gradient(90deg, color-mix(in oklab, var(--hp) 70%, #000), var(--hp)); overflow: hidden; transform-origin: left; }
+.aim-hp-fill::before { content: ""; position: absolute; inset: 0; background: rgb(255 255 255 / 0.22); opacity: 0; animation: aim-beat var(--beat) ease-in-out infinite; }
+.aim-hp-fill::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 45%; background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.3) 50%, transparent); transform: translateX(-100%); animation: aim-flow 3.2s linear infinite; }
+@keyframes aim-beat { 0%, 100% { opacity: 0; } 12% { opacity: 1; } 24% { opacity: 0.2; } 36% { opacity: 0.72; } }
+@keyframes aim-flow { to { transform: translateX(330%); } }
+.aim-hp-tempband { left: calc(var(--temp-from) * 100%) !important; width: calc(var(--temp-share) * 100%); overflow: hidden; box-shadow: 0 0 8px color-mix(in oklab, var(--temp) 60%, transparent); }
+.aim-hp-tempband::before { content: ""; position: absolute; top: 0; bottom: 0; left: -11.3px; right: 0; background: repeating-linear-gradient(135deg, var(--temp) 0 4px, color-mix(in oklab, var(--temp) 40%, transparent) 4px 8px); animation: aim-stripes 0.9s linear infinite; }
+.aim-hp-tempband::after { content: ""; position: absolute; inset: 0; background: rgb(255 255 255 / 0.6); opacity: 0; }
+@keyframes aim-stripes { to { transform: translateX(11.3px); } }
+.aim-hp-preview { background: repeating-linear-gradient(135deg, color-mix(in oklab, var(--hp) 85%, #fff) 0 3px, transparent 3px 6px); opacity: 0.9; }
+.aim-hp-preview.is-heal { background: repeating-linear-gradient(135deg, var(--heal) 0 3px, transparent 3px 6px); }
+.aim-hp-preview[hidden] { display: none; }
+.aim-hp-bar.is-hit { animation: aim-shake 360ms var(--ease-settle); }
+.aim-hp-bar::before { content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit; pointer-events: none; opacity: 0; box-shadow: inset 0 0 6px 2px color-mix(in oklab, var(--heal) 80%, transparent); }
+.aim-hp-bar.is-heal::before { animation: aim-heal-glow 700ms ease-out; }
+@keyframes aim-shake { 20% { transform: translateX(-4px); } 45% { transform: translateX(4px); } 70% { transform: translateX(-2px); } }
+@keyframes aim-heal-glow { 30% { opacity: 1; } }
+@keyframes aim-flash { from { opacity: 1; } to { opacity: 0; } }
+
+.aim-hp-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px var(--s2); min-height: 22px; }
+.aim-hp-info { font-size: 11.5px; color: var(--text-3); }
+.aim-hp-steps { display: inline-flex; gap: 3px; }
+.aim-hp-steps button { min-width: 26px; height: 22px; padding: 0 5px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface-2); color: var(--text-2); font: 600 11px var(--font-num); cursor: pointer; }
+.aim-hp-steps button:hover { color: var(--text); border-color: var(--line-strong); }
+.aim-hp-steps .is-temp { color: var(--temp); }
+/* temporary HP read as an energy shield */
+.aim-hpcard::before, .aim-hpcard::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; opacity: 0; }
+.aim-hpcard.has-shield { box-shadow: 0 0 0 1px color-mix(in oklab, var(--temp) 40%, transparent), 0 0 16px color-mix(in oklab, var(--temp) 16%, transparent); }
+.aim-hpcard.has-shield::after { box-shadow: 0 0 0 1px color-mix(in oklab, var(--temp) 70%, transparent), 0 0 26px color-mix(in oklab, var(--temp) 28%, transparent); animation: aim-hum 3.6s ease-in-out infinite; }
+@keyframes aim-hum { 50% { opacity: 1; } }
+.aim-hpcard.is-shield-up::before { box-shadow: 0 0 0 0 color-mix(in oklab, var(--temp) 90%, transparent), inset 0 0 40px color-mix(in oklab, var(--temp) 40%, transparent); animation: aim-flash 700ms var(--ease-settle); }
+.aim-hpcard.is-shield-break::before { box-shadow: 0 0 0 2px color-mix(in oklab, var(--temp) 90%, transparent), 0 0 30px var(--temp); animation: aim-flash 600ms ease-out; }
+.aim-hp-tempband.is-absorb::after { animation: aim-absorb 400ms ease-out; }
+@keyframes aim-absorb { 40% { opacity: 1; } }
+.aim-hpcard.is-revive::before { box-shadow: 0 0 0 0 color-mix(in oklab, var(--heal) 80%, transparent), 0 0 30px var(--heal); animation: aim-flash 900ms ease-out; }
+/* low HP: the window edge glows red in time with the heartbeat; at 0 the content dims */
+.aim-window[data-vital="critical"] .aim-hp-value, .aim-window[data-vital="down"] .aim-hp-value { color: var(--hp); }
+.aim-window[data-vital="critical"] > .window-content::after, .aim-window[data-vital="down"] > .window-content::after { content: ""; position: absolute; inset: 0; z-index: 15; pointer-events: none; box-shadow: inset 0 0 70px 8px color-mix(in oklab, var(--hp) 45%, transparent); }
+.aim-window[data-vital="critical"] > .window-content::after { animation: aim-vignette var(--beat, 0.85s) ease-in-out infinite; }
+@keyframes aim-vignette { 50% { opacity: 0.45; } }
+.aim-window[data-vital="down"] .aim-main, .aim-window[data-vital="down"] .aim-inspector { filter: saturate(0.35) brightness(0.8); }
+.aim-window[data-vital="down"] .aim-hp-label { color: var(--hp); }
+
+/* ── hit dice, slots ── */
+.aim-vrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px var(--s2); min-height: 34px; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-1); color: var(--text); text-align: left; font: inherit; }
+.aim-vrow.is-link { cursor: pointer; transition: border-color var(--d-fast); }
+.aim-vrow.is-link:hover { border-color: color-mix(in oklab, var(--arcane) 45%, transparent); }
+.aim-vlabel { font-size: 12px; color: var(--text-2); }
+.aim-vlabel b { color: var(--text); font: 700 13px var(--font-num); }
+.aim-formula { margin-left: 4px; padding: 0 5px; border-radius: 4px; background: var(--surface-3); color: var(--text-2); font: 600 10.5px var(--font-num); }
+.aim-dice { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.aim-die { width: 16px; height: 16px; padding: 0; border: 1.5px solid var(--accent); border-radius: 4px; background: color-mix(in oklab, var(--accent) 22%, transparent); cursor: pointer; transition: transform var(--d-fast) var(--ease-snap); }
+.aim-die:hover:not(:disabled) { transform: rotate(12deg) scale(1.1); }
+.aim-die.is-spent { border-color: var(--line-strong); background: transparent; }
+.aim-die:disabled { cursor: default; }
+[data-block="hitDice"].is-spin .aim-die:not(.is-spent):last-of-type { animation: aim-spin 500ms var(--ease-settle); }
+@keyframes aim-spin { to { transform: rotate(360deg); } }
+.aim-runes { display: inline-flex; flex-wrap: wrap; gap: 8px; }
+.aim-rune-group { display: inline-flex; gap: 3px; }
+.aim-rune { display: block; width: 7px; height: 7px; rotate: 45deg; border-radius: 1.5px; background: var(--arcane); box-shadow: 0 0 5px color-mix(in oklab, var(--arcane) 60%, transparent); }
+.aim-rune.is-spent { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--arcane) 50%, transparent); }
+.aim-rune.is-glint { animation: aim-glint 700ms ease-out; }
+@keyframes aim-glint { 40% { transform: scale(1.6); } }
+/* legendary actions and resistance, one pool after the other */
+.aim-legendary { flex-direction: column; align-items: stretch; gap: 4px; }
+.aim-legendary-pool { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); }
+.aim-legendary-pips { display: inline-flex; gap: 5px; }
+.aim-legendary-pips i { width: 9px; height: 9px; rotate: 45deg; border-radius: 2px; background: var(--warn); box-shadow: 0 0 5px color-mix(in oklab, var(--warn) 50%, transparent); }
+.aim-legendary-pips i.is-spent { background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); }
+
+/* ── death saves ── */
+.aim-death { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px 10px; padding: 10px 12px; border: 1px solid color-mix(in oklab, var(--hp) 45%, transparent); border-radius: var(--r-md); background: color-mix(in oklab, var(--hp) 8%, var(--surface-1)); font-size: 12px; color: var(--text-2); position: relative; }
+.aim-death::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; pointer-events: none; box-shadow: 0 0 0 4px color-mix(in oklab, var(--hp) 22%, transparent); opacity: 0; animation: aim-death-pulse 1.8s ease-in-out infinite; }
+@keyframes aim-death-pulse { 50% { opacity: 1; } }
+.aim-death-row { display: flex; gap: 6px; }
+.aim-death-row button { width: 18px; height: 18px; padding: 0; border-radius: 50%; border: 1.5px solid var(--line-strong); background: transparent; cursor: pointer; }
+.aim-death-row .is-ok.is-on { background: var(--heal); border-color: var(--heal); }
+.aim-death-row .is-bad.is-on { background: var(--hp); border-color: var(--hp); }
+.aim-death-row button:disabled { cursor: default; }
+.aim-death-state { grid-column: 1 / -1; font-weight: 600; color: var(--text); }
+.aim-death-roll { grid-column: 1 / -1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.aim-death.is-stable::after, .aim-death.is-dead::after { animation: none; }
+.aim-death.is-stable { border-color: color-mix(in oklab, var(--heal) 55%, transparent); background: color-mix(in oklab, var(--heal) 10%, var(--surface-1)); }
+.aim-death.is-dead { opacity: 0.7; }
+.aim-death.is-refused { animation: aim-shake 360ms var(--ease-settle); }
+
+/* ── rest ── */
+.aim-rest { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+.aim-rest-btn { display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-1); color: var(--text); font: 600 12.5px var(--font-ui); text-align: left; cursor: pointer; transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-snap); }
+.aim-rest-btn:hover { border-color: var(--accent-line); transform: translateY(-1px); }
+.aim-rest-btn > i { flex: none; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-3); color: var(--warn); }
+.aim-rest-btn.is-long > i { color: var(--arcane); }
+.aim-rest-btn span { display: grid; }
+.aim-rest-btn small { font: 500 10.5px var(--font-ui); color: var(--text-3); }
+
+/* ── stats, spellcasting ── */
+.aim-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s1); }
+.aim-stat { display: grid; justify-items: center; gap: 1px; padding: 8px 4px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-1); color: var(--text); font: inherit; }
+button.aim-stat { cursor: pointer; transition: border-color var(--d-fast); }
+button.aim-stat:hover:not(:disabled) { border-color: var(--accent-line); }
+button.aim-stat:disabled { cursor: default; }
+.aim-stat b { font: 600 17px/1 var(--font-num); font-variant-numeric: tabular-nums; }
+.aim-stat span { font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+.aim-casting { display: grid; gap: 4px; padding: 8px 10px; border: 1px solid color-mix(in oklab, var(--arcane) 30%, var(--line)); border-radius: var(--r-md); background: color-mix(in oklab, var(--arcane) 6%, var(--surface-1)); }
+.aim-casting-row { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: var(--s3); }
+.aim-casting-row.is-passive { grid-template-columns: 1fr auto; }
+.aim-casting-k { font: 600 10.5px var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; color: var(--arcane); }
+.aim-casting-v { display: inline-flex; align-items: baseline; gap: 3px; }
+.aim-casting-v b { font: 600 15px var(--font-num); }
+.aim-casting-v small { font-size: 10px; color: var(--text-3); }
+
+/* ── effects, chips ── */
+.aim-effects { display: grid; gap: 4px; }
+.aim-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.aim-chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface-1); color: var(--text-2); font: 500 12px var(--font-ui); cursor: pointer; position: relative; overflow: hidden; }
+.aim-chip:disabled { cursor: default; }
+.aim-chip.is-on { color: var(--text); border-color: var(--accent-line); }
+.aim-chip[data-action="toggleInspiration"].is-on { color: var(--warn); border-color: color-mix(in oklab, var(--warn) 55%, transparent); box-shadow: 0 0 12px color-mix(in oklab, var(--warn) 25%, transparent); }
+.aim-chip[data-action="toggleInspiration"].is-on::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 60%; background: linear-gradient(110deg, transparent, rgb(255 240 200 / 0.4) 50%, transparent); transform: translateX(-110%); animation: aim-sheen 3.4s ease-in-out infinite; }
+@keyframes aim-sheen { 60%, 100% { transform: translateX(260%); } }
+.aim-chip[data-action="toggleInspiration"].is-on .aim-chip-ico { animation: aim-turn 6s linear infinite; }
+@keyframes aim-turn { to { rotate: 360deg; } }
+.aim-chip.is-pop { animation: aim-pop 380ms var(--ease-snap); }
+@keyframes aim-pop { 40% { transform: scale(1.15); } }
+.aim-pips { display: inline-flex; gap: 3px; }
+.aim-pips i { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--line-strong); }
+.aim-pips i.is-on { background: var(--warn); border-color: var(--warn); }
+.aim-chip.is-conc { padding: 0; gap: 0; border-color: color-mix(in oklab, var(--arcane) 45%, transparent); }
+.aim-chip.is-conc button { display: inline-flex; align-items: center; gap: 6px; height: 100%; padding: 0 8px 0 10px; border: 0; background: transparent; color: var(--text); font: inherit; cursor: pointer; }
+.aim-chip.is-conc button + button { padding: 0 8px; border-left: 1px solid var(--line); color: var(--text-3); }
+.aim-blink { animation: aim-blink 4.2s ease-in-out infinite; }
+@keyframes aim-blink { 0%, 92%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.1); } }
+
+/* ── floating numbers, sparks, the long rest ── */
+.aim-float { position: absolute; z-index: 40; pointer-events: none; font: 700 15px var(--font-num); text-shadow: 0 1px 3px rgb(0 0 0 / 0.5); white-space: nowrap; }
+.aim-float.is-damage { color: var(--hp); }
+.aim-float.is-heal { color: var(--heal); }
+.aim-float.is-temp { color: var(--temp); }
+.aim-burst { position: absolute; z-index: 40; pointer-events: none; }
+.aim-night { position: absolute; inset: 0; z-index: 18; pointer-events: none; background: radial-gradient(120% 90% at 70% 10%, rgb(40 48 110 / 0.55), rgb(8 10 30 / 0.8)); }
+.aim-night.is-dawn { background: linear-gradient(0deg, rgb(255 170 90 / 0.3), transparent 65%); }
+
+/* looping effects only in the window in front */
+.aim-window:not(.is-front) .aim-ambient, .aim-window:not(.is-front) .aim-ambient::before, .aim-window:not(.is-front) .aim-ambient::after, .aim-window:not(.is-front) .aim-hp-tempband::before, .aim-window:not(.is-front) .aim-hpcard.has-shield::after, .aim-window:not(.is-front) .aim-death::after { animation-play-state: paused; }
+.aim-window[data-motion="reduced"] .aim-hp-fill::after, .aim-window[data-motion="reduced"] .aim-hp-tempband::before, .aim-window[data-motion="reduced"] .aim-hpcard.has-shield::after, .aim-window[data-motion="reduced"] .aim-death::after, .aim-window[data-motion="reduced"] > .window-content::after, .aim-window[data-motion="reduced"] .aim-chip.is-on::after, .aim-window[data-motion="reduced"] .aim-chip-ico { animation: none !important; }
+
+/* ── narrow: one row of fixed-width widgets that scrolls sideways and snaps ── */
+.aim-window[data-layout="narrow"] .aim-rail { scroll-snap-type: x proximity; }
+.aim-window[data-layout="narrow"] .aim-rail > * { flex: 0 0 auto; scroll-snap-align: start; }
+.aim-window[data-layout="narrow"] .aim-vitals { display: grid; grid-template-columns: 236px 200px; grid-auto-rows: min-content; gap: 6px; }
+.aim-window[data-layout="narrow"] .aim-hpcard { grid-row: span 2; }
+.aim-window[data-layout="narrow"] .aim-rest { width: 220px; grid-template-columns: 1fr; }
+.aim-window[data-layout="narrow"] .aim-stats { width: 236px; }
+.aim-window[data-layout="narrow"] .aim-casting { width: 220px; }
+.aim-window[data-layout="narrow"] .aim-effects { width: 230px; }
+/* the strip has no room for the favorites list; they come back in the wider layouts */
+.aim-window[data-layout="narrow"] .aim-favorites { display: none; }
+.aim-window[data-layout="narrow"] .aim-chips { width: 180px; }
+.aim-window[data-layout="narrow"] .aim-death { width: 210px; }
+
+/* ── a vehicle: the hold's load and who is aboard ── */
+.aim-cargo { flex-direction: column; align-items: stretch; gap: 5px; }
+.aim-cargo-bar { position: relative; height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
+.aim-cargo-bar i { position: absolute; inset: 0; background: var(--accent); transform-origin: left; transform: scaleX(var(--share)); transition: transform var(--d-slow) var(--ease-settle); }
+.aim-cargo.is-over { border-color: color-mix(in oklab, var(--hp) 55%, transparent); }
+.aim-cargo.is-over .aim-cargo-bar i { background: var(--hp); }
+.aim-cargo.is-over .aim-vlabel b { color: var(--hp); }
+.aim-crew { display: grid; gap: var(--s2); }
+.aim-crew-group { display: grid; gap: 5px; }
+.aim-crew-count { font: 600 11px var(--font-num); color: var(--text-2); }
+.aim-crew-count.is-over { color: var(--hp); }
+.aim-crew-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.aim-crew-face { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 50%; background: var(--surface-2); color: var(--text-3); }
+button.aim-crew-face { cursor: pointer; transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-snap); }
+button.aim-crew-face:hover { border-color: var(--accent); transform: scale(1.06); }
+.aim-crew-face img { width: 100%; height: 100%; object-fit: cover; border: 0; }
+.aim-crew-face.is-free { border-style: dashed; background: transparent; }
+.aim-crew-row { display: flex; justify-content: space-between; gap: var(--s2); font-size: 12px; color: var(--text); }
+.aim-crew-row small { color: var(--text-3); }

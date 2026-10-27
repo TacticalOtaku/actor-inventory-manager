@@ -20,7 +20,7 @@
       "save": "Save offer",
       "confirm": "Confirm",
       "cancel": "Cancel",
-      "invitation": "A trade is open. Open the Trade tab in your character's inventory.",
+      "invitation": "You were invited to a trade. Open «Trade» in your character's window.",
       "recover": "Restore before trade",
       "recoverWarning": "Both inventories and currency balances will be restored from their pre-trade snapshot. Later changes to those assets will be lost. Ensure nobody is editing either actor and the previous GM is no longer executing the trade. Continue?",
       "status": {
@@ -35,6 +35,7 @@
       "errors": {
         "coordinator": "The trade coordinator disconnected or changed. Ask the active GM to inspect the trade state.",
         "provider": "Could not read currencies or the active Item Piles API. Check its configuration.",
+        "providerNoCurrencies": "Item Piles has no currencies for this system, so coins cannot be traded. Install and enable the «Item Piles: D&D 5e» module, or set up currencies in the Item Piles settings.",
         "providerChanged": "Currency providers or definitions changed or differ between participants. Cancel and start a new trade.",
         "amount": "Enter a valid nonnegative currency amount.",
         "funds": "Insufficient funds or an invalid coin quantity.",
@@ -52,6 +53,51 @@
         "rolledBack": "The transfer failed. Inventories and currencies were restored to their pre-trade state.",
         "recovery": "The transfer was interrupted. A GM must inspect the saved snapshot and restore the trade. Further trading is blocked.",
         "recoveryLost": "The trade snapshot journal is missing, so nothing could be restored. The trade is closed; the GM must check both inventories by hand."
+      },
+      "panel": {
+        "title": "Trade",
+        "intro": "Trade items and coins with another player's character. The GM carries out the transfer once both sides confirm.",
+        "with": "With",
+        "busy": "already trading",
+        "noGM": "No GM online: the trade will neither start nor finish",
+        "status": {
+          "waitOffer": "Waiting for an offer: {partner}",
+          "sending": "Sending…",
+          "review": "Check the offers and confirm",
+          "partnerConfirmed": "{partner} confirms — check and confirm",
+          "waitPartner": "Waiting for confirmation: {partner}",
+          "both": "Both sides confirmed",
+          "executing": "The GM is carrying out the trade…",
+          "recovery": "Trade interrupted: inventories are locked until the GM decides"
+        },
+        "youGive": "You give",
+        "youGet": "You get",
+        "gives": "{name} gives",
+        "confirmed": "confirmed",
+        "notConfirmed": "not confirmed",
+        "unconfirm": "Withdraw confirmation",
+        "addHint": "Press ⇄ on an inventory row or drag an item here — the whole stack",
+        "nothing": "nothing",
+        "nothingYet": "Nothing yet",
+        "pilesHint": "Item Piles: payment with change; Item Piles decides whether the purse covers it",
+        "gmNote": "The GM sees the trade read-only: players change and confirm the offers.",
+        "emptyFirst": "Take the contents out first",
+        "currencyItem": "This is an Item Piles currency: offer it among the coins",
+        "offerOne": "Offer",
+        "new": "New",
+        "lock": "Trade in progress — the inventory is locked until the GM finishes it",
+        "done": "Trade complete",
+        "doneNote": "What you received is in the inventory marked «New»: unequipped, unattuned, outside containers.",
+        "youCancelled": "You cancelled the trade",
+        "partnerCancelled": "{partner} cancels the trade",
+        "nothingMoved": "Nothing was transferred.",
+        "gave": "Gave",
+        "got": "Got",
+        "newTrade": "New trade",
+        "restore": "Restore inventories",
+        "unlock": "Lift the lock",
+        "unlockAsk": "The trade preparation stopped before any debit: there is nothing to restore. Lift the lock?",
+        "notNow": "Not now"
       }
     },
     "app": {
@@ -66,8 +112,8 @@
       "occupied": "Occupied slots"
     },
     "sheetButton": {
-      "label": "RPG Inventory",
-      "tooltip": "Open RPG Equipment Paperdoll & Inventory Manager"
+      "label": "AIM",
+      "tooltip": "Open the actor window"
     },
     "slots": {
       "head": "Head",
@@ -89,7 +135,19 @@
       "quick3": "Quick 3",
       "quick4": "Quick 4",
       "lockedBy2H": "Occupied by Two-Handed Weapon",
-      "twoHandedShort": "2H"
+      "twoHandedShort": "2H",
+      "collar": "Collar",
+      "saddle": "Saddle",
+      "barding": "Barding",
+      "harness": "Harness",
+      "mount": "Mounted weapon",
+      "lantern": "Lantern",
+      "banner": "Banner",
+      "figurehead": "Figurehead",
+      "cannon": "Cannon",
+      "sail": "Sail",
+      "envelope": "Envelope",
+      "gondola": "Gondola"
     },
     "vitals": {
       "level": "Level",
@@ -152,12 +210,40 @@
     },
     "templates": {
       "dnd2024": {
-        "name": "D&D 2024 Rules (Default)",
-        "desc": "Standard 2024 equipment slots, 3 attunement sockets, 2-handed lock, single armor and shield."
+        "name": "Standard 2024",
+        "desc": "Humanoid: 11 slots, 3 attunement sockets, two-handed lock, one body armour and one shield."
       },
       "dnd2014": {
-        "name": "D&D 2014 Rules",
-        "desc": "Classic 2014 5e equipment paperdoll layout."
+        "name": "Standard 2014",
+        "desc": "Humanoid by the 2014 rules: 11 slots, 3 attunement sockets."
+      },
+      "beast": {
+        "name": "Beast",
+        "desc": "A four-legged beast: collar, saddle, barding."
+      },
+      "wagon": {
+        "name": "Wagon",
+        "desc": "A land vehicle without slots: a figure over the hold."
+      },
+      "wagonTack": {
+        "name": "Wagon · tack and weapon",
+        "desc": "A wagon with harness, mounted weapon, lantern and banner slots."
+      },
+      "ship": {
+        "name": "Ship",
+        "desc": "A water vehicle without slots: a figure over the hold."
+      },
+      "shipPorts": {
+        "name": "Ship · gun ports",
+        "desc": "A ship with figurehead, cannon and sail slots."
+      },
+      "airship": {
+        "name": "Airship",
+        "desc": "An air vehicle without slots: a figure over the hold."
+      },
+      "airshipRig": {
+        "name": "Airship · rigging",
+        "desc": "An airship with envelope and gondola slots."
       }
     },
     "editor": {
@@ -242,7 +328,7 @@
         "invalid": "Invalid template data.",
         "missingId": "The template needs an id.",
         "reservedId": "The id '{id}' is reserved by a built-in template.",
-        "noSlots": "The template has no slots.",
+        "noSlots": "The template has no slot list.",
         "slotMissingId": "Slot #{index} has no id.",
         "duplicateSlot": "Slot id '{id}' is used more than once.",
         "invalidJSON": "The text is not valid JSON.",
@@ -413,8 +499,8 @@
         "warn": "Warn Only (Show warning but permit invalid equipment)"
       },
       "showSheetButton": {
-        "name": "Show RPG Inventory Button in Character Sheet",
-        "hint": "Adds a quick access button to the top of actor sheets to open the Paperdoll inventory."
+        "name": "AIM button in the sheet header",
+        "hint": "Adds the AIM button to actor sheet headers; it opens the actor window."
       },
       "showActorPortraitBackdrop": {
         "name": "Show Actor Portrait Backdrop in Paperdoll",
@@ -445,8 +531,8 @@
     },
     "keybindings": {
       "openInventory": {
-        "name": "Toggle RPG Inventory Window",
-        "hint": "Open or close the RPG Inventory & Paperdoll for the selected token or assigned character (Default: I)."
+        "name": "Open the actor window",
+        "hint": "Open or close the actor window of the controlled token, or of your assigned character when no token is controlled."
       },
       "noActorSelected": "Please select a token on the canvas or assign a character to open the inventory.",
       "unsupportedActor": "The inventory is not available for this actor."
@@ -459,6 +545,528 @@
       "offHandBlocked": "Cannot equip '{item}' in the off hand: '{conflict}' requires both hands.",
       "shieldAlreadyEquipped": "Cannot equip '{item}': shield '{conflict}' is already equipped.",
       "singlePerActor": "Cannot equip '{item}': '{conflict}' of the same kind is already equipped."
+    },
+    "window": {
+      "expand": "Expand window",
+      "collapse": "Collapse to a column",
+      "readOnly": "View only",
+      "more": "More",
+      "close": "Close",
+      "cancel": "Cancel",
+      "save": "Save",
+      "abilityHint": "Check; Shift for a saving throw",
+      "panelPending": "This tab arrives in the next 2.0 implementation slices.",
+      "inspectorEmpty": "Select an entry to see its details.",
+      "menu": {
+        "openSheet": "Open character sheet",
+        "traits": "Special traits",
+        "bastion": "Bastion",
+        "revert": "Revert original form"
+      },
+      "xp": {
+        "label": "XP",
+        "add": "Add experience",
+        "ready": "Ready for level {level}: click to level up",
+        "orb": "Experience: {value} of {max}",
+        "chooseClass": "Level up",
+        "chooseClassHint": "Which class gets the level?"
+      },
+      "tabs": {
+        "overview": "Overview",
+        "equipment": "Equipment",
+        "spells": "Spells",
+        "features": "Features",
+        "effects": "Effects",
+        "biography": "Biography",
+        "actions": "Actions"
+      },
+      "rail": {
+        "hp": "Hit points",
+        "hitDice": "Hit dice",
+        "spellSlots": "Spell slots",
+        "stats": "AC, initiative, speed",
+        "spellcasting": "Spell DC and attack",
+        "effects": "Effects",
+        "chips": "Inspiration and exhaustion",
+        "rest": "Rest buttons",
+        "favorites": "Favorites",
+        "rollHitDie": "Roll a hit die",
+        "slots": "Slots",
+        "slotsLink": "Spell slots: open spells",
+        "legendary": "Legendary actions",
+        "statsNpc": "AC, initiative, speed, CR",
+        "chipsNpc": "Exhaustion and concentration",
+        "cargo": "Cargo",
+        "crew": "Crew and passengers",
+        "statsVehicle": "AC, thresholds, speed"
+      },
+      "settings": {
+        "title": "Window settings",
+        "theme": "Theme",
+        "accent": "Accent",
+        "density": "Density",
+        "motion": "Motion",
+        "fonts": "Fonts",
+        "webFonts": "Decorative fonts",
+        "reloadHint": "Takes effect after a reload.",
+        "reload": "Reload",
+        "storageHint": "Motion and fonts are stored on this device; everything else follows you.",
+        "rail": "Side column",
+        "tabs": "Tabs",
+        "always": "always",
+        "absent": "not on this character",
+        "reset": "Reset window settings",
+        "resetAsk": "Return theme, accent, density, motion, fonts, side column and tabs to their defaults?",
+        "resetYes": "Reset",
+        "themeNow": "Now: {theme}, from Foundry's colour scheme.",
+        "capReduced": "Limited: reduced motion is on in the system.",
+        "capPerformance": "Limited: Foundry runs in low performance mode.",
+        "capKeeps": "Your choice «{level}» comes back when the limit is lifted.",
+        "themes": {
+          "night": "Night",
+          "parchment": "Parchment",
+          "auto": "Auto"
+        },
+        "accents": {
+          "brass": "Brass",
+          "embers": "Embers",
+          "arcane": "Arcane",
+          "forest": "Forest",
+          "frost": "Frost",
+          "rose": "Rose"
+        },
+        "densities": {
+          "comfortable": "Comfortable",
+          "compact": "Compact"
+        },
+        "motions": {
+          "full": "All",
+          "reduced": "Restrained",
+          "off": "Off"
+        },
+        "motionAbout": {
+          "full": "Responses to actions and ambient effects.",
+          "reduced": "Responses to actions only, no ambient loops or particles.",
+          "off": "Short fades only."
+        },
+        "absentNpc": "not on this NPC"
+      },
+      "hp": {
+        "edit": "Hit points: change",
+        "forms": "−7 damage · +5 healing · 20 set · t8 temporary",
+        "max": "max {max}",
+        "tempInfo": "temp {temp}",
+        "down": "Unconscious",
+        "destroyed": "Destroyed",
+        "temp": "Temporary hit points",
+        "tempGain": "+{n} temp",
+        "tempLoss": "−{n} temp"
+      },
+      "death": {
+        "successes": "Successes",
+        "failures": "Failures",
+        "success": "Success",
+        "failure": "Failure",
+        "roll": "Roll a death saving throw",
+        "stable": "Stable",
+        "dead": "Dead"
+      },
+      "rest": {
+        "short": "Short rest",
+        "long": "Long rest",
+        "longHint": "Hit points, slots and features",
+        "shortHint": "Hit dice: {n}",
+        "noDice": "No hit dice left"
+      },
+      "stats": {
+        "ac": "AC",
+        "acHint": "Right click for dnd5e's armor class settings",
+        "init": "Init",
+        "initHint": "Roll initiative; right click for settings",
+        "prof": "Prof",
+        "cr": "CR",
+        "threshold": "Thresh.",
+        "thresholdHint": "Damage threshold: less damage does not get through",
+        "mishap": "Mishap",
+        "mishapHint": "Mishap threshold: this much damage or more rolls on the mishap table"
+      },
+      "casting": {
+        "dc": "DC",
+        "attack": "Attack",
+        "passive": "Passive Perception"
+      },
+      "effects": {
+        "all": "Conditions and all effects",
+        "none": "No temporary effects",
+        "conditions": "Conditions",
+        "statuses": "Statuses",
+        "new": "New effect",
+        "newName": "New Effect",
+        "empty": "No effects",
+        "noDetail": "No description or changes",
+        "from": "from: {source}",
+        "why": {
+          "unequipped": "item not equipped",
+          "unattuned": "needs attunement",
+          "other": "unavailable"
+        },
+        "locked": "Unavailable: {why}",
+        "enable": "Enable: {name}",
+        "disable": "Disable: {name}",
+        "remove": "Remove: {name}",
+        "categories": {
+          "temporary": "Temporary",
+          "passive": "Passive",
+          "inactive": "Inactive",
+          "suppressed": "Unavailable"
+        },
+        "immune": "{name}: immune"
+      },
+      "chips": {
+        "inspiration": "Inspiration",
+        "exhaustion": "Exhaustion",
+        "exhaustionHint": "Click +1, right click −1",
+        "concentrationRoll": "Concentration saving throw",
+        "concentrationEnd": "End concentration"
+      },
+      "inv": {
+        "search": "Find an item",
+        "sort": "Order",
+        "sorts": {
+          "name": "By name",
+          "weight": "By weight",
+          "price": "By price",
+          "rarity": "By rarity",
+          "manual": "By hand"
+        },
+        "filters": {
+          "equipped": "Equipped",
+          "attuned": "Attuned"
+        },
+        "view": "View",
+        "views": {
+          "list": "List",
+          "grid": "Cards",
+          "icons": "Icons only"
+        },
+        "sections": {
+          "weapon": "Weapons",
+          "equipment": "Equipment",
+          "consumable": "Consumables",
+          "tool": "Tools",
+          "loot": "Loot",
+          "container": "Containers"
+        },
+        "empty": "Empty",
+        "notFound": "Empty — nothing found",
+        "add": "Add: {type}",
+        "use": "Use: {name}",
+        "useShort": "Use",
+        "attuned": "Attuned",
+        "needsAttune": "Requires attunement",
+        "attune": "Attune",
+        "unattune": "End attunement",
+        "equip": "Equip",
+        "unequip": "Unequip",
+        "more": "More",
+        "less": "Less",
+        "plus": "More",
+        "charges": "Charges {value} / {max}: click spends, right click restores",
+        "charge": "Charge {n}",
+        "toChat": "To chat",
+        "coins": "Coins",
+        "coinEdit": "Change: {coin}",
+        "coinForms": "−5 spends · +10 adds · 20 sets",
+        "manage": "Convert and transfer coins",
+        "total": "Total",
+        "load": "Load",
+        "effects": "Effects",
+        "uses": "Uses",
+        "noDescription": "No description",
+        "trayFold": "Fold: {name}",
+        "trayUnfold": "Unfold: {name}",
+        "foldAll": "Fold all",
+        "unfoldAll": "Unfold all",
+        "loadByWc": "Load by Weighty Containers",
+        "loadByDnd5e": "Container capacity in dnd5e",
+        "pieces": "items",
+        "reduction": "−{pct}% weight",
+        "reductionHint": "Weighty Containers: contents weigh less",
+        "rules": "Weighty Containers rules",
+        "trayEmpty": "Empty — drag an item here",
+        "dropSelf": "“{item}” cannot go inside itself.",
+        "dropInside": "“{container}” is inside “{item}”: a container cannot go into its own contents."
+      },
+      "doll": {
+        "title": "Paperdoll",
+        "figureTitle": "Figure",
+        "preset": "Doll preset",
+        "toggle": "Paperdoll",
+        "show": "Show the paperdoll",
+        "hide": "Hide the paperdoll",
+        "unequip": "Unequip: {item}",
+        "lockedBy": "Held two-handed: {item}",
+        "attune": "Attunement",
+        "attuneCount": "{count} / {max}",
+        "attuneEnd": "End attunement: {item}",
+        "attunedSocket": "Attuned: {item}",
+        "freeSocket": "Free attunement: drag an item here",
+        "slotless": "Without a slot",
+        "extra": "Extra slots",
+        "nothingFits": "Nothing fits the “{slot}” slot.",
+        "cargo": "Cargo: {value} {unit}",
+        "noCargo": "No cargo capacity set"
+      },
+      "editor": {
+        "title": "Doll editor — {actor}",
+        "open": "Preset editor",
+        "source": "Preset",
+        "figure": "Figure",
+        "attunement": "Attunement limit",
+        "figures": {
+          "human": "Humanoid",
+          "beast": "Beast",
+          "wagon": "Wagon",
+          "ship": "Ship",
+          "airship": "Airship"
+        },
+        "preview": "Preview",
+        "slots": "Slots",
+        "noSlots": "No slots: the doll becomes a figure banner over the hold.",
+        "newSlot": "New slot",
+        "up": "Up",
+        "down": "Down",
+        "remove": "Remove slot",
+        "icon": "Icon",
+        "own": "Own doll: {actor}",
+        "changed": "Changed: «Apply» makes this doll the actor's own, «Save as new» makes it a world preset.",
+        "importHint": "Pick a JSON file with a preset: it is saved to the world and opens in the editor."
+      },
+      "spells": {
+        "search": "Find a spell",
+        "circle": "Circle {level}",
+        "pact": "Pact · circle {level}",
+        "cantrips": "Cantrips",
+        "noSlots": "no slots",
+        "gem": "Slot {n}: {track}",
+        "use": "Use {n}",
+        "prepared": "Prepared",
+        "book": "Spellbook",
+        "innate": "Innate",
+        "atwill": "At will",
+        "cast": "Cast",
+        "castRitual": "Cast as a ritual",
+        "prepare": "Prepare",
+        "unprepare": "Unprepare",
+        "always": "Always",
+        "concentration": "Concentration",
+        "concShort": "C",
+        "ritual": "Ritual",
+        "ritualShort": "R",
+        "materialsCost": "M: {text} ({cost} gp)",
+        "limitHint": "Class preparation limit",
+        "overHint": "More prepared than the class limit: dnd5e warns but does not refuse",
+        "warning": "Prepared {value} / {max}",
+        "warningHint": "dnd5e's preparation warning: more prepared than the class limit",
+        "refused": "“{name}” cannot be cast now: dnd5e refused.",
+        "filters": {
+          "prepared": "Prepared",
+          "ritual": "Ritual",
+          "concentration": "Concentration",
+          "action": "Action",
+          "bonus": "Bonus",
+          "reaction": "Reaction"
+        }
+      },
+      "features": {
+        "search": "Find a feature",
+        "passive": "Passive",
+        "activation": {
+          "action": "Action",
+          "bonus": "Bonus",
+          "reaction": "Reaction"
+        },
+        "recharge": "Recharge {range}",
+        "rollRecharge": "Roll the recharge (d6)",
+        "usesEdit": "Change uses",
+        "usesForms": "−1 spends · +2 restores · 5 sets",
+        "level": "Level {level}",
+        "origins": {
+          "species": "Species",
+          "background": "Background",
+          "other": "Other"
+        },
+        "groups": {
+          "passive": "Traits",
+          "action": "Actions",
+          "bonus": "Bonus actions",
+          "reaction": "Reactions",
+          "legendary": "Legendary actions",
+          "lair": "Lair actions",
+          "other": "Other"
+        },
+        "filters": {
+          "action": "Action",
+          "bonus": "Bonus",
+          "reaction": "Reaction",
+          "passive": "Passive"
+        },
+        "add": "Add a feature",
+        "none": "No features",
+        "noActions": "No actions"
+      },
+      "favorites": {
+        "star": "Favorite",
+        "empty": "Star a row ★ or drag an item, spell, feature or slot track here.",
+        "dragSlots": "Drag into Favorites",
+        "groups": {
+          "action": "Action",
+          "bonus": "Bonus action",
+          "reaction": "Reaction",
+          "other": "Other"
+        },
+        "check": "Check {bonus}",
+        "slotsLeft": "{value} of {max}",
+        "on": "on",
+        "off": "off",
+        "suppressed": "unavailable",
+        "toHit": "{bonus} to hit",
+        "save": "DC {dc}",
+        "slots": "Circle {level} slots",
+        "pactSlots": "Pact slots",
+        "use": "Use: {name}"
+      },
+      "overview": {
+        "skills": "Skills",
+        "saves": "Saving Throws",
+        "tools": "Tools",
+        "defensesTitle": "Defenses",
+        "sensesTitle": "Senses and Proficiencies",
+        "none": "none",
+        "noTools": "No tool proficiencies",
+        "defenses": {
+          "dr": "Resistances",
+          "di": "Immunities",
+          "dv": "Vulnerabilities",
+          "ci": "Condition immunities",
+          "dm": "Damage modification"
+        },
+        "passive": {
+          "prc": "Passive Perception",
+          "inv": "Passive Investigation",
+          "ins": "Passive Insight"
+        },
+        "senses": {
+          "senses": "Senses",
+          "armor": "Armor",
+          "weapon": "Weapons",
+          "languages": "Languages"
+        },
+        "configure": {
+          "skills": "Configure skills",
+          "saves": "Configure saving throws",
+          "tools": "Configure tools",
+          "defenses": "Configure defenses",
+          "senses": "Configure senses and proficiencies"
+        },
+        "config": {
+          "skills": "Skills",
+          "tool": "Tools",
+          "dr": "Damage resistances",
+          "di": "Damage immunities",
+          "dv": "Damage vulnerabilities",
+          "dm": "Damage modification",
+          "ci": "Condition immunities",
+          "senses": "Senses",
+          "languages": "Languages",
+          "weapon": "Weapon proficiencies",
+          "armor": "Armor proficiencies"
+        }
+      },
+      "bio": {
+        "biography": "Biography",
+        "empty": "No biography yet",
+        "fields": {
+          "alignment": "Alignment",
+          "age": "Age",
+          "height": "Height",
+          "weight": "Weight",
+          "eyes": "Eyes",
+          "hair": "Hair",
+          "skin": "Skin",
+          "gender": "Gender",
+          "faith": "Faith",
+          "trait": "Personality traits",
+          "ideal": "Ideals",
+          "bond": "Bonds",
+          "flaw": "Flaws",
+          "appearance": "Appearance"
+        }
+      },
+      "legendary": {
+        "actions": "Legendary actions",
+        "resistance": "Legendary resistance"
+      },
+      "npc": {
+        "xp": "Challenge rating: {xp} XP",
+        "crHint": "Challenge rating · {xp} XP",
+        "crShort": "CR {cr}"
+      },
+      "crew": {
+        "crew": "Crew",
+        "passengers": "Passengers",
+        "draft": "Draft animals",
+        "unknown": "Unknown",
+        "noActor": "Without an actor",
+        "count": "{count}/{max}",
+        "free": "{n} free",
+        "open": "Open {name}"
+      },
+      "vehicle": {
+        "keel": "keel {length}",
+        "beam": "beam {length}"
+      },
+      "drop": {
+        "release": "Release to add",
+        "trade": "A trade is running — the inventory is closed",
+        "actor": "Transformation is on the character sheet",
+        "notOwner": "Only its owner can hand an item over — through a trade",
+        "pile": "Take the item through the Item Piles window",
+        "type": "{type} can't go on this actor",
+        "root": "This sheet can't put items into a container — it landed in the inventory root"
+      }
+    },
+    "tips": {
+      "closeAll": "Close all ({n})",
+      "holdToPin": "Hold the pointer here to pin",
+      "pin": "Pin",
+      "stats": {
+        "toHit": "Attack",
+        "damage": "Damage",
+        "save": "Save",
+        "armor": "AC",
+        "uses": "Charges",
+        "weight": "Weight",
+        "price": "Price",
+        "attunement": "Attunement"
+      },
+      "attunement": {
+        "required": "required",
+        "optional": "optional"
+      },
+      "damageType": "Damage type",
+      "damageTypeAdded": "Damage type of the world or a module"
+    },
+    "migration": {
+      "ownDoll": "Own doll: {name}",
+      "tradeCancelled": "The trade was cancelled by the module update.",
+      "renamed": "<b>AIM: Actor Window</b> — the new name of Actor Inventory Manager & Paperdoll.",
+      "report": "Moved {actors} actors, {items} items, {presets} presets; trades cancelled: {trades}; failures: {failures} — see the console.",
+      "retry": {
+        "name": "Migration to 2.0",
+        "label": "Run the migration again",
+        "hint": "Moves the world's 1.9 data once more (quick slots, own dolls, presets, open trades). Safe to repeat."
+      }
     }
   }
 }

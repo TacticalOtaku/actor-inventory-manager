@@ -1,0 +1,72 @@
+<div class="aim-main" data-flip>
+  <header class="aim-head">
+    <div class="aim-title">
+      {{#if identity.hasLevel}}
+      <button type="button" class="aim-level {{#if identity.xp.ready}}is-ready{{/if}}" data-action="levelOrb" style="--xp: {{identity.xpShare}}" aria-label="{{identity.orbLabel}}" data-tooltip="{{identity.orbLabel}}">
+        <span class="aim-level-fill aim-ambient"></span>
+        <span class="aim-level-n">{{identity.level}}{{#if identity.xp.ready}}<small>→{{identity.nextLevel}}</small>{{/if}}</span>
+      </button>
+      {{/if}}
+      {{#if identity.cr}}<div class="aim-cr" data-tooltip="{{identity.cr.hint}}"><b>{{identity.cr.text}}</b><span>{{localize "AIM.window.stats.cr"}}</span></div>{{/if}}
+      <div class="aim-title-text">
+        <h2 class="aim-name">{{actor.name}}</h2>
+        {{#if identity.kind}}<div class="aim-kind">{{identity.kind}}</div>{{/if}}
+        {{#if prepWarning}}<span class="aim-prep-warn" data-tooltip="{{localize "AIM.window.spells.warningHint"}}"><i class="fa-light fa-book-bookmark"></i>{{prepWarning}}</span>{{/if}}
+        <div class="aim-links">
+          {{#each identity.links}}{{#unless @first}}<span class="aim-dot" aria-hidden="true">·</span>{{/unless}}<button type="button" class="aim-link" data-action="openDocument" data-id="{{id}}">{{label}}</button>{{/each}}
+        </div>
+      </div>
+    </div>
+    <div class="aim-tools">
+      {{#unless canEdit}}<span class="aim-readonly"><i class="fa-light fa-lock"></i>{{localize "AIM.window.readOnly"}}</span>{{/unless}}
+      <div class="aim-menu-wrap">
+        <button type="button" class="aim-ibtn" data-action="toggleMenu" aria-haspopup="menu" aria-expanded="{{menuOpen}}" aria-label="{{localize "AIM.window.more"}}" data-tooltip="{{localize "AIM.window.more"}}"><i class="fa-light fa-ellipsis"></i></button>
+        <div class="aim-menu" role="menu" {{#unless menuOpen}}hidden{{/unless}}>
+          <button type="button" role="menuitem" data-action="openSheet">{{localize "AIM.window.menu.openSheet"}}</button>
+          {{#if menu.traits}}<button type="button" role="menuitem" data-action="openTraits">{{localize "AIM.window.menu.traits"}}</button>{{/if}}
+          {{#if menu.bastion}}<button type="button" role="menuitem" data-action="openBastion">{{localize "AIM.window.menu.bastion"}}</button>{{/if}}
+          {{#if menu.revert}}<button type="button" role="menuitem" data-action="revertForm">{{localize "AIM.window.menu.revert"}}</button>{{/if}}
+        </div>
+      </div>
+      <button type="button" class="aim-ibtn" data-action="openSettings" aria-label="{{localize "AIM.window.settings.title"}}" data-tooltip="{{localize "AIM.window.settings.title"}}"><i class="fa-light fa-gear"></i></button>
+      <button type="button" class="aim-ibtn" data-action="collapseWindow" aria-label="{{localize "AIM.window.collapse"}}" data-tooltip="{{localize "AIM.window.collapse"}}"><i class="fa-light fa-down-left-and-up-right-to-center"></i></button>
+    </div>
+    {{#if xpOpen}}
+    <form class="aim-xp-card" data-xp-form>
+      <div class="aim-xp-line"><b>{{identity.xp.value}}</b> / {{identity.xp.max}} <span>{{localize "AIM.window.xp.label"}}</span></div>
+      <div class="aim-xp-bar"><i style="width: {{identity.xp.pct}}%"></i></div>
+      {{#if canEdit}}<label class="aim-xp-add"><span>{{localize "AIM.window.xp.add"}}</span><input type="number" name="xp" step="1" inputmode="numeric" placeholder="0"></label>{{/if}}
+    </form>
+    {{/if}}
+    <div class="aim-abilities">
+      {{#each abilities}}
+      <button type="button" class="aim-ability" data-action="rollAbility" data-ability="{{key}}" aria-label="{{label}}" data-tooltip="{{@root.abilityHint}}" {{#unless @root.canEdit}}disabled{{/unless}}>
+        <span class="aim-ability-save {{#if proficient}}is-prof{{/if}}" aria-hidden="true"></span>
+        <span class="aim-ability-k">{{abbr}}</span>
+        <span class="aim-ability-m">{{modText}}</span>
+        <span class="aim-ability-v">{{value}}</span>
+        <span class="aim-ability-s">{{localize "AIM.window.save"}} {{saveText}}</span>
+      </button>
+      {{/each}}
+    </div>
+  </header>
+  <nav class="aim-tabs" role="tablist">
+    {{#each tabs}}
+    <button type="button" class="aim-tab" role="tab" data-action="switchTab" data-tab="{{id}}" aria-selected="{{active}}" {{#if hidden}}hidden{{/if}}>{{label}}</button>
+    {{/each}}
+    <span class="aim-tab-ink" aria-hidden="true"></span>
+  </nav>
+  <div class="aim-panels" data-drop-label="{{localize "AIM.window.drop.release"}}">
+    {{#each tabs}}
+    <section class="aim-panel" data-panel="{{id}}" role="tabpanel" {{#unless active}}hidden{{/unless}}>
+      {{#if (eq id "equipment")}}{{> "modules/actor-inventory-manager/templates/window/equipment.hbs" @root}}
+      {{else if (eq id "features")}}{{> "modules/actor-inventory-manager/templates/window/features.hbs" @root}}
+      {{else if (eq id "overview")}}{{#if @root.overview}}{{> "modules/actor-inventory-manager/templates/window/overview.hbs" @root}}{{/if}}
+      {{else if (eq id "biography")}}{{> "modules/actor-inventory-manager/templates/window/biography.hbs" @root}}
+      {{else if (eq id "effects")}}{{> "modules/actor-inventory-manager/templates/window/effects.hbs" @root}}
+      {{else if (eq id "spells")}}{{#if @root.spells}}{{> "modules/actor-inventory-manager/templates/window/spells.hbs" @root}}{{/if}}
+      {{else}}<p class="aim-empty">{{@root.pendingText}}</p>{{/if}}
+    </section>
+    {{/each}}
+  </div>
+</div>

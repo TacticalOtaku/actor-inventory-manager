@@ -9,7 +9,6 @@ import {
   isItemAttuned,
   itemRequiresAttunement
 } from "../scripts/core/attunement.js";
-import { buildAttunementSlots } from "../scripts/ui/inventory-context.js";
 
 describe("attunement", () => {
   it("reads the boolean state, not the requirement string", () => {
@@ -71,11 +70,4 @@ describe("attunement cap", () => {
     assert.equal(getActorSourceAttunementMax(null), null);
   });
 
-  it("shows every attuned item, even beyond the cap", () => {
-    const attuned = Array.from({ length: 4 }, (_, i) => ({ id: `i${i}`, system: { attunement: "required", attuned: true } }));
-    const slots = buildAttunementSlots(attuned, 3, item => item);
-    assert.equal(slots.length, 4);
-    assert.equal(slots[3].isOverLimit, true);
-    assert.equal(slots[2].isOverLimit, false);
-  });
 });

@@ -239,14 +239,15 @@ export async function processTradeRequest(request, userId) {
       } else {
         const side = authorizedSide(session, actor.id, user);
         if (session.status !== "open") throw tradeError("stale");
-        if (request.action === "cancel") session.status = "cancelled";
+        if (request.action === "cancel") Object.assign(session, { status: "cancelled", cancelledBy: side });
         else if (request.action === "offer") {
           if (request.revision !== session.revision) throw tradeError("stale");
           changeOffer(session, side, normalizeOffer(actor, request.offer, session.signature));
         } else if (request.action === "confirm") {
           validateStoredOffer(actor, session.offers[side], session.signature);
           if (confirmOffer(session, side, request.revision)) await settle(state, session);
-        } else throw tradeError("request");
+        } else if (request.action === "unconfirm") session.confirmed[side] = false;
+        else throw tradeError("request");
       }
     }
   } catch (e) {

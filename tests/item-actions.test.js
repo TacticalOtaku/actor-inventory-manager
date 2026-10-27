@@ -90,6 +90,36 @@ describe("equipItemToSlot result", () => {
   });
 });
 
+describe("equipItemToSlot and the enforcement mode", () => {
+  const setup = (mode) => {
+    globalThis.game.settings = { get: (module, key) => (key === "enforcementMode" ? mode : undefined) };
+    const actor = makeActor();
+    const axe = addItem(actor, { id: "greataxe", type: "weapon", system: { equipped: true, type: { value: "martialM" }, properties: new Set(["two"]) } });
+    axe.flags = { "actor-inventory-manager": { slot: "mainHand" } };
+    const buckler = addItem(actor, { id: "buckler", system: { type: { value: "shield" }, armor: { value: 2 } } });
+    return { actor, buckler };
+  };
+
+  it("refuses a shield beside a two-handed weapon in block mode", async () => {
+    const { actor, buckler } = setup("block");
+    assert.equal(await equipItemToSlot(actor, buckler, "offHand"), false);
+    assert.equal(actor.writes.length, 0);
+  });
+
+  it("takes the two-handed weapon off in auto-swap mode", async () => {
+    const { actor, buckler } = setup("auto_swap");
+    assert.equal(await equipItemToSlot(actor, buckler, "offHand"), true);
+    assert.deepEqual(actor.writes.map((w) => [w._id, w["system.equipped"]]), [["greataxe", false], ["buckler", true]]);
+  });
+
+  it("lets the shield through with a warning in warn mode, but never into a slot it does not fit", async () => {
+    const { actor, buckler } = setup("warn");
+    assert.equal(await equipItemToSlot(actor, buckler, "offHand"), true);
+    assert.deepEqual(actor.writes.map((w) => w._id), ["buckler"]);
+    assert.equal(await equipItemToSlot(actor, buckler, "head"), false);
+  });
+});
+
 describe("toggleItemEquipped result", () => {
   it("is true when it equips into a slot, unequips, or equips a slotless item", async () => {
     const actor = makeActor();

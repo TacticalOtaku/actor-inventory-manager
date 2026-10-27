@@ -1,0 +1,53 @@
+/* AIM: Actor Window - overview cards (skills, saves, tools, defenses, senses) and the biography */
+
+.aim-overview { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--s3); align-items: start; padding-top: var(--s3); }
+.aim-card { padding: var(--s3); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface-1); }
+.aim-card h3 { display: flex; align-items: center; justify-content: space-between; min-height: 22px; margin: 0 0 var(--s2); border: 0; font: 600 13px var(--font-display); letter-spacing: 0.03em; }
+.aim-card button { min-height: 0; }
+/* the gear shows on hover for the owner and the GM */
+.aim-card-cfg { opacity: 0; transition: opacity var(--d-fast); }
+.aim-card:hover .aim-card-cfg, .aim-card-cfg:focus-visible { opacity: 1; }
+
+.aim-check {
+  position: relative; display: flex; align-items: center; gap: var(--s2); width: 100%; height: 28px; padding: 0 6px;
+  border: 1px solid transparent; border-radius: var(--r-sm); background: transparent; color: var(--text);
+  font: 12.5px var(--font-ui); text-align: left; cursor: pointer; transition: border-color var(--d-fast);
+}
+.aim-check:hover:not(:disabled) { border-color: var(--line-strong); }
+.aim-check:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.aim-check:disabled { cursor: default; color: var(--text); }
+.aim-check[draggable="true"] { cursor: grab; }
+.aim-check.is-dragging { opacity: 0.4; }
+/* .aim-check.is-found: the ring is in effects.css with the effect rows' */
+.aim-prof { flex: none; width: 8px; height: 8px; border: 1px solid var(--text-3); border-radius: 50%; }
+.aim-prof[data-mark="half"] { border-color: var(--accent); background: linear-gradient(90deg, var(--accent) 50%, transparent 50%); }
+.aim-prof[data-mark="prof"] { border-color: var(--accent); background: var(--accent); }
+.aim-prof[data-mark="expert"] { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 2px var(--surface-1), 0 0 0 3px var(--accent); }
+.aim-check-ab { flex: none; width: 26px; color: var(--text-3); font: 500 10px var(--font-num); text-transform: uppercase; }
+.aim-check-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aim-check-bonus { flex: none; font: 600 12.5px var(--font-num); }
+
+.aim-kv { display: flex; justify-content: space-between; gap: var(--s3); padding: 4px 0; border-bottom: 1px solid var(--line); color: var(--text-2); font-size: 12px; }
+.aim-kv:last-child { border: 0; }
+.aim-kv b { color: var(--text); font-weight: 500; text-align: right; }
+.aim-kv b.is-none { color: var(--text-3); font-weight: 400; }
+
+/* biography: dnd5e's own fields */
+.aim-bio { display: grid; gap: var(--s3); align-content: start; padding-top: var(--s3); }
+.aim-bio-chars { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--s2) var(--s3); }
+.aim-bio-field, .aim-bio-trait { display: grid; gap: 3px; }
+.aim-bio-field span, .aim-bio-trait span { color: var(--text-3); font: 600 9.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; }
+.aim-bio-field input, .aim-bio-trait textarea {
+  width: 100%; height: auto; box-sizing: border-box; padding: 4px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+  background: none; color: var(--text); font: 13px var(--font-ui); box-shadow: none; resize: none;
+}
+.aim-bio-trait textarea { min-height: 3.2em; line-height: 1.45; }
+.aim-bio-field input:focus, .aim-bio-trait textarea:focus { outline: none; border-bottom-color: var(--accent); box-shadow: none; }
+.aim-bio-field input:disabled, .aim-bio-trait textarea:disabled { border-bottom-color: transparent; color: var(--text); }
+.aim-bio-traits { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--s3); }
+.aim-bio-trait.is-wide { grid-column: 1 / -1; }
+.aim-bio-text h3 { margin: 0 0 var(--s2); border: 0; font: 600 16px var(--font-display); }
+.aim-bio-text prose-mirror, .aim-prose { display: block; min-height: 180px; color: var(--text); font: 13.5px/1.65 var(--font-ui); }
+.aim-bio-text prose-mirror .editor-content { min-height: 160px; }
+.aim-prose p, .aim-bio-text prose-mirror p { margin: 0 0 var(--s2); }
+.aim-prose .content-link, .aim-bio-text .content-link { padding: 0 4px; border-radius: 4px; background: var(--surface-3); color: var(--accent); text-decoration: none; }

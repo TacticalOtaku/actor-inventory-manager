@@ -1,0 +1,34 @@
+<div class="aim-rowwrap" data-item-id="{{id}}" data-key="{{key}}">
+  <div class="aim-row is-feature {{#if selected}}is-selected{{/if}} {{#if passive}}is-passive{{/if}}" data-row tabindex="0" aria-expanded="{{selected}}" {{#if (eq @root.features.prefs.view "icons")}}data-tooltip="{{name}}"{{/if}}>
+    {{#if passive}}
+    <span class="aim-tile" data-origin="{{origin.kind}}"><img src="{{img}}" alt="" loading="lazy"></span>
+    {{else}}
+    <button type="button" class="aim-tile-btn" data-action="useFeature" aria-label="{{useLabel}}" data-tooltip="{{localize "AIM.window.inv.useShort"}}" {{#unless @root.canEdit}}disabled{{/unless}}>
+      <span class="aim-tile" data-origin="{{origin.kind}}"><img src="{{img}}" alt="" loading="lazy"></span>
+    </button>
+    {{/if}}
+    <div class="aim-row-main">
+      <div class="aim-row-name">{{name}}</div>
+      <div class="aim-row-meta">
+        {{#if attack}}{{#if attack.toHit}}<span class="aim-tag is-roll">{{attack.toHit}}</span>{{/if}}{{#if attack.damage}}<span>{{attack.damage}}</span>{{/if}}{{/if}}
+        {{#if activationLabel}}<span class="aim-tag {{#if passive}}is-passive{{/if}}">{{activationLabel}}</span>{{/if}}
+        {{#each recovery}}<span>{{this}}</span>{{/each}}
+        {{#if rechargeText}}<span>{{rechargeText}}</span>{{/if}}
+        {{#each tags}}<span class="aim-tag">{{this}}</span>{{/each}}
+      </div>
+    </div>
+    {{#if uses}}
+    <span class="aim-charges" data-tooltip="{{uses.value}} / {{uses.max}}">
+      {{#if canRecharge}}{{#if @root.canEdit}}<button type="button" class="aim-ibtn aim-mini aim-recharge" data-action="rechargeItem" aria-label="{{localize "AIM.window.features.rollRecharge"}}" data-tooltip="{{localize "AIM.window.features.rollRecharge"}}"><i class="fa-light fa-dice-d6"></i></button>{{/if}}{{/if}}
+      {{#if usePips}}{{#each usePips}}<button type="button" class="aim-pip {{#unless lit}}is-spent{{/unless}}" data-action="usePip" data-index="{{index}}" {{#unless @root.canEdit}}disabled{{/unless}} aria-label="{{label}}"></button>{{/each}}
+      {{else if usesEditing}}<input type="text" class="aim-uses-input" data-uses-input autocomplete="off" spellcheck="false" value="{{@root.features.usesDraft}}" aria-label="{{localize "AIM.window.features.usesEdit"}}" data-tooltip="{{localize "AIM.window.features.usesForms"}}">
+      {{else}}<button type="button" class="aim-charge-text" data-action="editUses" {{#unless @root.canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.features.usesEdit"}}">{{uses.value}} / {{uses.max}}</button>{{/if}}
+    </span>
+    {{/if}}
+    <div class="aim-row-act">
+      {{#if @root.canFavorite}}<button type="button" class="aim-ibtn aim-mini aim-star {{#if favorite}}is-on{{/if}}" data-action="toggleFavorite" aria-pressed="{{#if favorite}}true{{else}}false{{/if}}" aria-label="{{localize "AIM.window.favorites.star"}}" data-tooltip="{{localize "AIM.window.favorites.star"}}"><i class="fa-{{#if favorite}}solid{{else}}light{{/if}} fa-star"></i></button>{{/if}}
+      <button type="button" class="aim-ibtn aim-mini" data-action="itemMenu" aria-haspopup="menu" aria-label="{{localize "AIM.window.inv.more"}}" data-tooltip="{{localize "AIM.window.inv.more"}}"><i class="fa-light fa-ellipsis"></i></button>
+    </div>
+  </div>
+  {{#if detail}}<div class="aim-detail" data-detail>{{#with detail}}{{> "modules/actor-inventory-manager/templates/window/item-detail.hbs"}}{{/with}}</div>{{/if}}
+</div>

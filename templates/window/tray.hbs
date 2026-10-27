@@ -1,0 +1,17 @@
+<div class="aim-tray {{#if folded}}is-folded{{/if}}" data-tray="{{entry.id}}" data-key="tray-{{entry.id}}">
+  <div class="aim-tray-head">
+    <button type="button" class="aim-tray-toggle" data-action="toggleTray" aria-expanded="{{#if folded}}false{{else}}true{{/if}}" aria-label="{{toggleLabel}}" data-tooltip="{{toggleLabel}}"><i class="fa-light fa-chevron-down"></i></button>
+    {{#with entry}}{{> "modules/actor-inventory-manager/templates/window/item-row.hbs"}}{{/with}}
+    <div class="aim-tray-meta">
+      {{#if band}}<span class="aim-bag-load {{#if band.over}}is-full{{/if}}" style="--fill: {{band.share}}" data-tooltip="{{band.hint}}"><i></i><b>{{band.text}}</b></span>{{/if}}
+      {{#if reduction}}<span class="aim-tag is-wc" data-tooltip="{{localize "AIM.window.inv.reductionHint"}}">{{localize "AIM.window.inv.reduction" pct=reduction}}</span>{{/if}}
+      {{#if @root.inv.rulesButton}}<button type="button" class="aim-ibtn aim-mini" data-action="containerRules" data-item-id="{{entry.id}}" aria-label="{{localize "AIM.window.inv.rules"}}" data-tooltip="{{localize "AIM.window.inv.rules"}}"><i class="fa-light fa-gear"></i></button>{{/if}}
+      <span class="aim-tray-peek" aria-hidden="true">{{#each peek}}<span class="aim-tile" data-rarity="{{rarity}}"><img src="{{img}}" alt="" loading="lazy"></span>{{/each}}{{#if more}}<span class="aim-peek-more">+{{more}}</span>{{/if}}</span>
+    </div>
+  </div>
+  <div class="aim-tray-body"><div class="aim-tray-inner">
+    {{#each contents}}{{> "modules/actor-inventory-manager/templates/window/item-row.hbs"}}{{/each}}
+    {{#each trays}}{{> "modules/actor-inventory-manager/templates/window/tray.hbs"}}{{/each}}
+    {{#unless contents.length}}{{#unless trays.length}}<p class="aim-sec-empty">{{#if @root.inv.query}}{{@root.inv.emptyText}}{{else}}{{localize "AIM.window.inv.trayEmpty"}}{{/if}}</p>{{/unless}}{{/unless}}
+  </div></div>
+</div>

@@ -29,16 +29,13 @@ test("public item mutations and template assignment leave GM NPCs untouched", as
   await useItem(item);
   await setActorPaperdollTemplate(actor, "custom", {});
 });
-test("NPCs cannot open inventory or editor through direct API or constructors", async () => {
+test("NPCs without a player owner cannot open the actor window through the API or the constructor", async () => {
   globalThis.foundry = { applications: { api: { ApplicationV2: class {}, HandlebarsApplicationMixin: Base => Base } } };
-  const { ActorInventoryApp, openActorInventory, toggleActorInventory } = await import("../scripts/ui/inventory-app.js");
-  const { PaperdollEditorApp, openPaperdollEditor } = await import("../scripts/ui/paperdoll-editor.js");
+  const { ActorWindow, openActorWindow, toggleActorWindow } = await import("../scripts/ui/actor-window.js");
   const actor = { type: "npc", hasPlayerOwner: false };
-  assert.equal(await openActorInventory(actor), undefined);
-  assert.equal(await toggleActorInventory(actor), null);
-  assert.equal(openPaperdollEditor(actor), undefined);
-  assert.throws(() => new ActorInventoryApp(actor), /unsupported/);
-  assert.throws(() => new PaperdollEditorApp(actor), /unsupported/);
+  assert.equal(openActorWindow(actor), null);
+  assert.equal(toggleActorWindow(actor), null);
+  assert.throws(() => new ActorWindow(actor), /unsupported/);
 });
 test("direct equipment rules do not impose paperdoll constraints on GM NPCs", () => {
   const actor = { type: "npc", hasPlayerOwner: false, items: new Map() };

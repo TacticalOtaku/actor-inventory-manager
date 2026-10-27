@@ -1,0 +1,64 @@
+/* AIM: Actor Window - the spells tab: slot gems, prepared spells, spell rows, preparation warning */
+
+.aim-spell-filters { flex-wrap: wrap; margin: calc(var(--s1) * -1) 0 var(--s3); }
+
+/* slot tracks: one row of gems per circle, the pact track after them */
+.aim-slot-tracks { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s3); }
+.aim-slot-track { display: grid; gap: 6px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-1); }
+.aim-slot-track b { color: var(--text-3); font: 600 10.5px var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; }
+.aim-slot-track.is-pact { border-color: color-mix(in oklab, var(--arcane) 45%, transparent); }
+.aim-slot-track.is-pact b { color: var(--arcane); }
+.aim-gems { display: flex; gap: 6px; }
+.aim-gem {
+  position: relative; width: 14px; height: 14px; min-height: 0; padding: 0;
+  border: 1.5px solid var(--accent); border-radius: 3px; background: transparent; transform: rotate(45deg);
+  cursor: pointer; transition: box-shadow var(--d-fast), transform var(--d-fast) var(--ease-snap);
+}
+.aim-slot-track.is-pact .aim-gem { border-color: var(--arcane); }
+.aim-gem.is-lit { background: var(--accent); box-shadow: 0 0 8px color-mix(in oklab, var(--accent) 45%, transparent); }
+.aim-slot-track.is-pact .aim-gem.is-lit { background: var(--arcane); box-shadow: 0 0 8px color-mix(in oklab, var(--arcane) 45%, transparent); }
+.aim-gem:disabled { cursor: default; }
+.aim-gem:not(:disabled):hover { transform: rotate(45deg) scale(1.15); }
+.aim-gem.is-burst { animation: aim-gem-burst 520ms var(--ease-settle); }
+.aim-gem.is-pop { animation: aim-gem-pop 360ms var(--ease-snap); }
+@keyframes aim-gem-burst { 30% { transform: rotate(45deg) scale(1.5); } }
+@keyframes aim-gem-pop { from { transform: rotate(45deg) scale(0.3); } 60% { transform: rotate(45deg) scale(1.2); } }
+
+/* sections */
+.aim-section.is-prepared { border-color: color-mix(in oklab, var(--arcane) 35%, transparent); }
+.aim-sec-meta { flex: none; color: var(--text-3); font: 500 11px var(--font-num); white-space: nowrap; }
+.aim-sec-head .aim-sec-n { flex: 1; }
+.aim-sec-meta.is-full { color: var(--warn); }
+.aim-sec-meta.is-over { color: var(--hp); }
+.aim-sec-meta.is-refused { animation: aim-shake 360ms var(--ease-settle); }
+.aim-divider { display: flex; align-items: center; gap: var(--s2); margin: var(--s2) 0 var(--s3); color: var(--text-3); font: 600 11px var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; }
+.aim-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* spell rows */
+[data-school="abj"] { --tone: var(--school-abj); }
+[data-school="con"] { --tone: var(--school-con); }
+[data-school="div"] { --tone: var(--school-div); }
+[data-school="enc"] { --tone: var(--school-enc); }
+[data-school="evo"] { --tone: var(--school-evo); }
+[data-school="ill"] { --tone: var(--school-ill); }
+[data-school="nec"] { --tone: var(--school-nec); }
+[data-school="trs"] { --tone: var(--school-trs); }
+.aim-school { color: var(--tone, var(--text-3)); }
+.aim-lvl { position: absolute; top: -5px; right: -5px; min-width: 15px; height: 15px; padding: 0 3px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface-0); color: var(--text); font: 700 9.5px/13px var(--font-num); text-align: center; }
+.aim-row.is-unprepared .aim-tile, .aim-row.is-unprepared .aim-row-name { opacity: 0.5; }
+.aim-row.is-unprepared:hover .aim-tile, .aim-row.is-unprepared:hover .aim-row-name { opacity: 0.8; }
+.aim-tag.is-comp { color: var(--text-2); }
+.aim-tag.is-conc { color: var(--arcane); background: color-mix(in oklab, var(--arcane) 15%, transparent); }
+.aim-tag.is-rit { color: var(--school-trs); background: color-mix(in oklab, var(--school-trs) 15%, transparent); }
+.aim-tag.is-always { color: var(--accent); background: var(--accent-soft); }
+.aim-row-act .aim-cast { color: var(--tone, var(--accent)); }
+.aim-row-act .aim-cast.is-ritual { color: var(--school-trs); }
+/* toggles show their on state by colour only */
+.aim-row-act .aim-ibtn[data-action="prepareSpell"].is-on { color: var(--arcane); }
+.aim-detail .aim-btn.is-on { border-color: var(--arcane); color: var(--arcane); }
+
+/* the header chip mirroring dnd5e's preparation warning */
+.aim-prep-warn { display: inline-flex; align-items: center; gap: 5px; height: 24px; margin: 2px 0; padding: 0 10px; border-radius: 99px; background: color-mix(in oklab, var(--hp) 16%, var(--surface-2)); color: var(--hp); font-size: 11.5px; }
+
+.aim-window[data-motion="off"] .aim-gem { transition: none; }
+.aim-window[data-motion="off"] .aim-gem.is-burst, .aim-window[data-motion="off"] .aim-gem.is-pop { animation: none; }

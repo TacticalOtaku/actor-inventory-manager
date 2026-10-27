@@ -1,0 +1,42 @@
+<div class="aim-settings">
+<div class="aim-scrim" data-action="closeSettings"></div>
+<div class="aim-drawer" role="dialog" aria-label="{{localize "AIM.window.settings.title"}}">
+  <div class="aim-drawer-head"><h3>{{localize "AIM.window.settings.title"}}</h3><button type="button" class="aim-ibtn" data-action="closeSettings" aria-label="{{localize "AIM.window.close"}}"><i class="fa-light fa-xmark"></i></button></div>
+  <div class="aim-drawer-body">
+    <div class="aim-field"><span>{{localize "AIM.window.settings.theme"}}</span>
+      <div class="aim-seg" role="group">{{#each settings.themes}}<button type="button" data-action="setSetting" data-key="windowTheme" data-value="{{id}}" aria-pressed="{{active}}">{{label}}</button>{{/each}}</div>
+      {{#if settings.themeHint}}<p class="aim-hint">{{settings.themeHint}}</p>{{/if}}
+    </div>
+    <div class="aim-field"><span>{{localize "AIM.window.settings.accent"}}</span>
+      <div class="aim-swatches">{{#each settings.accents}}<button type="button" class="aim-swatch" style="--sw: var(--acc-{{id}})" data-action="setSetting" data-key="windowAccent" data-value="{{id}}" aria-pressed="{{active}}" aria-label="{{label}}" data-tooltip="{{label}}"></button>{{/each}}</div>
+    </div>
+    <div class="aim-field"><span>{{localize "AIM.window.settings.density"}}</span>
+      <div class="aim-seg" role="group">{{#each settings.densities}}<button type="button" data-action="setSetting" data-key="windowDensity" data-value="{{id}}" aria-pressed="{{active}}">{{label}}</button>{{/each}}</div>
+    </div>
+    <div class="aim-field"><span>{{localize "AIM.window.settings.motion"}}</span>
+      <div class="aim-seg" role="group">{{#each settings.motions}}<button type="button" data-action="setSetting" data-key="motionLevel" data-value="{{id}}" aria-pressed="{{active}}" {{#if disabled}}disabled{{/if}}>{{label}}</button>{{/each}}</div>
+      <p class="aim-hint">{{settings.motionHint}}</p>
+    </div>
+    <div class="aim-field"><span>{{localize "AIM.window.settings.fonts"}}</span>
+      <label class="aim-toggle"><span>{{localize "AIM.window.settings.webFonts"}}</span><input type="checkbox" data-setting-toggle="useWebFonts" {{#if settings.webFonts}}checked{{/if}}></label>
+      {{#if settings.fontsPending}}<div class="aim-hint is-pending"><span>{{localize "AIM.window.settings.reloadHint"}}</span><button type="button" class="aim-btn" data-action="reloadPage">{{localize "AIM.window.settings.reload"}}</button></div>{{/if}}
+      <p class="aim-hint">{{localize "AIM.window.settings.storageHint"}}</p>
+    </div>
+    <div class="aim-field"><span>{{localize "AIM.window.settings.rail"}}</span>
+      <label class="aim-toggle is-off"><span>{{localize "AIM.window.rail.hp"}}<small>{{localize "AIM.window.settings.always"}}</small></span><input type="checkbox" checked disabled></label>
+      {{#each settings.railBlocks}}<label class="aim-toggle {{#if absent}}is-off{{/if}}"><span>{{label}}{{#if absent}}<small>{{../settings.absentText}}</small>{{/if}}</span><input type="checkbox" data-rail-toggle="{{id}}" {{#if shown}}checked{{/if}} {{#if absent}}disabled{{/if}}></label>{{/each}}
+    </div>
+    <div class="aim-field"><span>{{localize "AIM.window.settings.tabs"}}</span>
+      {{#each settings.tabs}}<label class="aim-toggle {{#if locked}}is-off{{/if}}"><span>{{label}}{{#if note}}<small>{{note}}</small>{{/if}}</span><input type="checkbox" data-tab-toggle="{{id}}" {{#if shown}}checked{{/if}} {{#if locked}}disabled{{/if}}></label>{{/each}}
+    </div>
+    <div class="aim-drawer-foot">
+      {{#if askReset}}
+      <p class="aim-hint">{{localize "AIM.window.settings.resetAsk"}}</p>
+      <div class="aim-reset-ask"><button type="button" class="aim-btn" data-action="cancelReset">{{localize "AIM.window.cancel"}}</button><button type="button" class="aim-btn is-danger" data-action="confirmReset">{{localize "AIM.window.settings.resetYes"}}</button></div>
+      {{else}}
+      <button type="button" class="aim-btn" data-action="askReset">{{localize "AIM.window.settings.reset"}}</button>
+      {{/if}}
+    </div>
+  </div>
+</div>
+</div>

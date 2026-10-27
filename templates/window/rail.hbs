@@ -1,0 +1,179 @@
+<aside class="aim-rail" data-flip>
+  <div class="aim-rail-portrait" data-flip>
+    <img class="aim-avatar" src="{{actor.img}}" alt="">
+    <div class="aim-rail-id">
+      <div class="aim-rail-name">{{actor.name}}</div>
+      <div class="aim-rail-sub">{{identity.summary}}</div>
+    </div>
+    <button type="button" class="aim-ibtn" data-action="expandWindow" aria-label="{{localize "AIM.window.expand"}}" data-tooltip="{{localize "AIM.window.expand"}}"><i class="fa-light fa-up-right-and-down-left-from-center"></i></button>
+  </div>
+
+  <div class="aim-vitals" data-flip>
+    <div class="aim-hpcard {{#if rail.hp.temp}}has-shield{{/if}}" data-hpcard>
+      <div class="aim-hp-top">
+        <span class="aim-hp-label">{{rail.hpLabel}}</span>
+        {{#if hpEditing}}
+        <input class="aim-hp-input" type="text" inputmode="text" autocomplete="off" spellcheck="false" value="{{hpDraft}}" data-hp-input aria-label="{{localize "AIM.window.hp.edit"}}">
+        {{else}}
+        <button type="button" class="aim-hp-value" data-action="editHp" {{#unless canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.hp.edit"}}">
+          <span data-hp-value>{{rail.hp.value}}</span><small>/{{rail.hp.max}}</small>{{#if rail.hp.temp}}<em class="aim-hp-temp"><i class="fa-light fa-shield"></i>{{rail.hp.temp}}</em>{{/if}}
+        </button>
+        {{/if}}
+      </div>
+      <div class="aim-hp-bar" data-hp-bar style="--hp-share: {{rail.hpShare}}; --temp-from: {{rail.tempFrom}}; --temp-share: {{rail.tempShare}}; --beat: {{rail.beat}}">
+        <i class="aim-hp-ghost" data-hp-ghost></i>
+        <i class="aim-hp-fill aim-ambient" data-hp-fill></i>
+        <i class="aim-hp-tempband" data-hp-tempband></i>
+        <i class="aim-hp-preview" data-hp-preview hidden></i>
+      </div>
+      <div class="aim-hp-foot">
+        {{#if hpEditing}}<span class="aim-hint" data-hp-hint>{{localize "AIM.window.hp.forms"}}</span>
+        {{else}}<span class="aim-hp-info">{{rail.hpInfo}}</span>{{/if}}
+        {{#if isGM}}
+        <span class="aim-hp-steps">
+          {{#each hpSteps}}<button type="button" data-action="stepHp" data-step="{{step}}">{{label}}</button>{{/each}}
+          <button type="button" class="is-temp" data-action="tempHp" aria-label="{{localize "AIM.window.hp.temp"}}" data-tooltip="{{localize "AIM.window.hp.temp"}}"><i class="fa-light fa-shield"></i></button>
+        </span>
+        {{/if}}
+      </div>
+    </div>
+
+    {{#if blocks.hitDice}}
+    <div class="aim-vrow" data-block="hitDice" data-flip>
+      <span class="aim-vlabel">{{localize "AIM.window.rail.hitDice"}} <b>{{rail.hitDice.value}}</b>/{{rail.hitDice.max}} {{#if rail.hitDice.formula}}<span class="aim-formula">{{rail.hitDice.formula}}</span>{{/if}}</span>
+      <span class="aim-dice">{{#each rail.dice}}<button type="button" class="aim-die {{#unless this}}is-spent{{/unless}}" data-action="rollHitDie" {{#unless ../canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.rail.rollHitDie"}}"></button>{{/each}}</span>
+    </div>
+    {{/if}}
+
+    {{#if blocks.spellSlots}}
+    <button type="button" class="aim-vrow is-link" data-block="spellSlots" data-action="switchTab" data-tab="spells" data-flip aria-label="{{localize "AIM.window.rail.slotsLink"}}">
+      <span class="aim-vlabel">{{localize "AIM.window.rail.slots"}} <b>{{rail.slotTotals.value}}</b>/{{rail.slotTotals.max}}</span>
+      <span class="aim-runes">{{#each rail.slots}}<span class="aim-rune-group" data-tooltip="{{label}}">{{#each pips}}<i class="aim-rune {{#unless filled}}is-spent{{/unless}}" data-rune></i>{{/each}}</span>{{/each}}</span>
+    </button>
+    {{/if}}
+
+    {{#if blocks.cargo}}
+    <div class="aim-vrow aim-cargo {{#if rail.vehicle.cargo.over}}is-over{{/if}}" data-block="cargo" data-flip>
+      <span class="aim-vlabel">{{localize "AIM.window.rail.cargo"}} <b>{{rail.vehicle.cargo.valueText}}</b>{{#if rail.vehicle.cargo.max}}/{{rail.vehicle.cargo.maxText}}{{/if}} {{rail.vehicle.cargo.unit}}</span>
+      {{#if rail.vehicle.cargo.max}}<span class="aim-cargo-bar" style="--share: {{rail.vehicle.cargo.share}}"><i></i></span>{{/if}}
+    </div>
+    {{/if}}
+
+    {{#if blocks.legendary}}
+    <div class="aim-vrow aim-legendary" data-block="legendary" data-flip>
+      {{#each rail.legendary}}
+      <span class="aim-legendary-pool"><span class="aim-vlabel">{{label}} <b>{{value}}</b>/{{max}}</span><span class="aim-legendary-pips">{{#each pips}}<i class="{{#unless this}}is-spent{{/unless}}"></i>{{/each}}</span></span>
+      {{/each}}
+    </div>
+    {{/if}}
+  </div>
+
+  {{#if blocks.crew}}
+  <div class="aim-crew" data-block="crew" data-flip>
+    {{#each rail.vehicle.crew}}
+    <div class="aim-crew-group" data-crew="{{id}}">
+      <div class="aim-rail-title"><span>{{label}}</span><span class="aim-crew-count {{#if over}}is-over{{/if}}">{{countText}}{{#if freeText}} · {{freeText}}{{/if}}</span></div>
+      <div class="aim-crew-list">
+        {{#each members}}{{#if unknown}}<span class="aim-crew-face is-unknown" data-tooltip="{{name}}" aria-label="{{name}}"><i class="fa-light fa-user-secret"></i></span>{{else}}<button type="button" class="aim-crew-face" data-action="openCrew" data-uuid="{{uuid}}" data-tooltip="{{name}}" aria-label="{{openLabel}}"><img src="{{img}}" alt=""></button>{{/if}}{{/each}}
+        {{#each freeSeats}}<span class="aim-crew-face is-free" aria-hidden="true"></span>{{/each}}
+      </div>
+    </div>
+    {{/each}}
+    {{#if rail.vehicle.legacy.length}}
+    <div class="aim-crew-group">
+      <div class="aim-rail-title"><span>{{localize "AIM.window.crew.noActor"}}</span></div>
+      {{#each rail.vehicle.legacy}}<div class="aim-crew-row"><span>{{name}} × {{quantity}}</span><small>{{kindLabel}}</small></div>{{/each}}
+    </div>
+    {{/if}}
+  </div>
+  {{/if}}
+
+  {{#if rail.down}}
+  <div class="aim-death {{rail.deathState}}" data-flip>
+    <span>{{localize "AIM.window.death.successes"}}</span>
+    <div class="aim-death-row">{{#each rail.deathMarks.success}}<button type="button" class="is-ok {{#if this}}is-on{{/if}}" data-action="markDeath" data-kind="success" data-index="{{@index}}" {{#unless ../canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.death.success"}}"></button>{{/each}}</div>
+    <span>{{localize "AIM.window.death.failures"}}</span>
+    <div class="aim-death-row">{{#each rail.deathMarks.failure}}<button type="button" class="is-bad {{#if this}}is-on{{/if}}" data-action="markDeath" data-kind="failure" data-index="{{@index}}" {{#unless ../canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.death.failure"}}"></button>{{/each}}</div>
+    {{#if rail.deathText}}<div class="aim-death-state">{{rail.deathText}}</div>{{/if}}
+    {{#if rail.deathOpen}}{{#if canEdit}}<button type="button" class="aim-btn aim-death-roll" data-action="rollDeathSave"><i class="fa-light fa-dice-d20"></i>{{localize "AIM.window.death.roll"}}</button>{{/if}}{{/if}}
+  </div>
+  {{/if}}
+
+  {{#if blocks.rest}}
+  <div class="aim-rest" data-block="rest" data-flip>
+    <button type="button" class="aim-rest-btn is-short" data-action="shortRest"><i class="fa-light fa-campfire"></i><span>{{localize "AIM.window.rest.short"}}<small>{{rail.shortRestHint}}</small></span></button>
+    <button type="button" class="aim-rest-btn is-long" data-action="longRest"><i class="fa-light fa-moon"></i><span>{{localize "AIM.window.rest.long"}}<small>{{localize "AIM.window.rest.longHint"}}</small></span></button>
+  </div>
+  {{/if}}
+
+  {{#if blocks.stats}}
+  <div class="aim-stats" data-block="stats" data-flip>
+    <div class="aim-stat is-ac" data-config="ac" data-tooltip="{{localize "AIM.window.stats.acHint"}}"><b>{{rail.ac}}</b><span>{{localize "AIM.window.stats.ac"}}</span></div>
+    {{#if rail.vehicle}}
+    <div class="aim-stat" data-tooltip="{{localize "AIM.window.stats.thresholdHint"}}"><b>{{rail.vehicle.dt}}</b><span>{{localize "AIM.window.stats.threshold"}}</span></div>
+    <div class="aim-stat" data-tooltip="{{localize "AIM.window.stats.mishapHint"}}"><b>{{rail.vehicle.mt}}</b><span>{{localize "AIM.window.stats.mishap"}}</span></div>
+    <div class="aim-stat"><b>{{rail.vehicle.speed.value}}</b><span>{{rail.vehicle.speed.unit}}</span></div>
+    {{else}}
+    <button type="button" class="aim-stat" data-action="rollInitiative" data-config="init" {{#unless canEdit}}disabled{{/unless}} data-tooltip="{{localize "AIM.window.stats.initHint"}}"><b>{{rail.initText}}</b><span>{{localize "AIM.window.stats.init"}}</span></button>
+    <div class="aim-stat" data-config="movement"><b>{{rail.speed}}</b><span>{{rail.speedUnit}}</span></div>
+    {{#if rail.cr}}<div class="aim-stat" data-tooltip="{{rail.cr.hint}}"><b>{{rail.cr.text}}</b><span>{{localize "AIM.window.stats.cr"}}</span></div>{{/if}}
+    <div class="aim-stat"><b>{{rail.profText}}</b><span>{{localize "AIM.window.stats.prof"}}</span></div>
+    {{/if}}
+  </div>
+  {{/if}}
+
+  {{#if blocks.spellcasting}}
+  <div class="aim-casting" data-block="spellcasting" data-flip>
+    {{#each rail.casting}}
+    <div class="aim-casting-row"><span class="aim-casting-k">{{ability}}</span><span class="aim-casting-v"><b>{{dc}}</b><small>{{localize "AIM.window.casting.dc"}}</small></span><span class="aim-casting-v"><b>{{attackText}}</b><small>{{localize "AIM.window.casting.attack"}}</small></span></div>
+    {{/each}}
+    <div class="aim-casting-row is-passive"><span class="aim-casting-k">{{localize "AIM.window.casting.passive"}}</span><span class="aim-casting-v"><b>{{rail.passivePerception}}</b></span></div>
+  </div>
+  {{/if}}
+
+  {{#if blocks.effects}}
+  <div class="aim-effects" data-block="effects" data-flip>
+    <div class="aim-rail-title"><span>{{localize "AIM.window.rail.effects"}}</span><button type="button" class="aim-ibtn aim-mini" data-action="switchTab" data-tab="effects" aria-label="{{localize "AIM.window.effects.all"}}" data-tooltip="{{localize "AIM.window.effects.all"}}"><i class="fa-light fa-plus"></i></button></div>
+    {{#each effects.rail}}{{> "modules/actor-inventory-manager/templates/window/effect-row.hbs"}}
+    {{else}}
+    <p class="aim-hint">{{localize "AIM.window.effects.none"}}</p>
+    {{/each}}
+  </div>
+  {{/if}}
+
+  {{#if blocks.chips}}
+  <div class="aim-chips" data-block="chips" data-flip>
+    {{#if rail.hasInspiration}}<button type="button" class="aim-chip {{#if rail.inspiration}}is-on{{/if}}" data-action="toggleInspiration" aria-pressed="{{rail.inspiration}}" {{#unless canEdit}}disabled{{/unless}}><i class="fa-light fa-sparkles aim-chip-ico"></i>{{localize "AIM.window.chips.inspiration"}}</button>{{/if}}
+    <button type="button" class="aim-chip {{#if rail.exhaustion.value}}is-on{{/if}}" data-action="exhaustion" data-exhaustion {{#unless canEdit}}disabled{{/unless}} data-tooltip="{{localize "AIM.window.chips.exhaustionHint"}}">{{localize "AIM.window.chips.exhaustion"}} <span class="aim-pips">{{#each rail.exhaustionPips}}<i class="{{#if this}}is-on{{/if}}"></i>{{/each}}</span></button>
+    {{#each rail.concentration}}
+    <span class="aim-chip is-conc"><button type="button" data-action="rollConcentration" {{#unless ../canEdit}}disabled{{/unless}} data-tooltip="{{localize "AIM.window.chips.concentrationRoll"}}"><i class="fa-light fa-eye aim-blink aim-ambient"></i>{{this}}</button><button type="button" data-action="endConcentration" {{#unless ../canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.chips.concentrationEnd"}}" data-tooltip="{{localize "AIM.window.chips.concentrationEnd"}}"><i class="fa-light fa-xmark"></i></button></span>
+    {{/each}}
+  </div>
+  {{/if}}
+
+  {{#if blocks.favorites}}{{#if favorites.show}}
+  <div class="aim-favorites" data-block="favorites" data-favorites data-flip>
+    <div class="aim-rail-title"><span>{{localize "AIM.window.rail.favorites"}}</span></div>
+    {{#each favorites.groups}}
+    <div class="aim-fav-group">
+      <div class="aim-fav-k">{{label}}</div>
+      {{#each entries}}
+      <div class="aim-fav {{#if suppressed}}is-off{{/if}} {{#if (eq toggle false)}}is-off{{/if}}" data-key="{{key}}" data-fav-id="{{id}}" data-action="favOpen" role="button" tabindex="0" {{#if ../../favorites.canEdit}}draggable="true"{{/if}}>
+        <button type="button" class="aim-fav-tile" data-action="favUse" aria-label="{{tileLabel}}" {{#unless ../../favorites.canEdit}}disabled{{/unless}}><img src="{{img}}" alt=""></button>
+        <div class="aim-fav-main"><div class="aim-fav-name">{{title}}</div>{{#if line}}<div class="aim-fav-line">{{line}}</div>{{/if}}</div>
+        <span class="aim-fav-right">
+          {{#if runes}}<span class="aim-fav-runes">{{#each runes}}<i></i>{{/each}}</span>{{/if}}
+          {{#if quantity}}<span class="aim-fav-qty">×{{quantity}}</span>{{/if}}
+          {{#if usePips}}<span class="aim-fav-pips">{{#each usePips}}<i class="{{#if lit}}is-lit{{/if}}"></i>{{/each}}</span>{{/if}}
+          {{#if usesText}}<span class="aim-fav-qty">{{usesText}}</span>{{/if}}
+        </span>
+        {{#if quick}}<button type="button" class="aim-fav-quick" data-action="favUse" aria-label="{{quick.label}}" data-tooltip="{{quick.label}}"><i class="fa-light {{#if (eq quick.kind "cast")}}fa-wand-sparkles{{else}}fa-hand-sparkles{{/if}}"></i></button>{{/if}}
+      </div>
+      {{/each}}
+    </div>
+    {{else}}
+    <p class="aim-hint">{{localize "AIM.window.favorites.empty"}}</p>
+    {{/each}}
+  </div>
+  {{/if}}{{/if}}
+</aside>

@@ -63,6 +63,50 @@ export function normalizeRarityKey(rarity) {
 }
 
 /**
+ * SC keeps one world setting per rarity field, keyed "<rarity>-<field>" (its core/settingsManager.js
+ * getRaritySetting), trying the normalized rarity, then the raw one, then the raw one lowercased.
+ * @param {string} rarity
+ * @param {string} field e.g. "item-color", "enable-item-color"
+ * @returns {*} the setting value, or undefined when SC has no such setting
+ */
+function readScRaritySetting(rarity, field) {
+  const settings = globalThis.game?.settings;
+  const raw = String(rarity ?? "").trim();
+  for (const key of new Set([normalizeRarityKey(rarity), raw, raw.toLowerCase()])) {
+    const id = `${SC_MODULE_ID}.${key}-${field}`;
+    if (key && settings?.settings?.has?.(id)) return settings.get(SC_MODULE_ID, `${key}-${field}`);
+  }
+  return undefined;
+}
+
+// The colour SC shows for a rarity or school: the first of its colours the GM has switched on.
+const SC_COLOR_FIELDS = [["enable-item-color", "item-color"], ["enable-inventory-border-color", "inventory-border-color"], ["enable-inventory-title-color", "inventory-title-color"]];
+function pickScColor(read) {
+  for (const [toggle, field] of SC_COLOR_FIELDS) {
+    const color = read(toggle) === true ? read(field) : null;
+    if (typeof color === "string" && color) return color;
+  }
+  return null;
+}
+
+/**
+ * SC's spell school styles live in one world setting, "spell-school-styles":
+ * { useLevelVariants, profiles: { school_<school>: fields, school_<school>_lvl_<level>: fields } }
+ * (its core/spellSchoolConfig.js). A level profile falls back to the school profile.
+ * @param {string} school dnd5e school key (abj, con, div, enc, evo, ill, nec, trs)
+ * @param {number} level
+ * @returns {object|null} the profile's fields
+ */
+function readScSpellProfile(school, level) {
+  const settings = globalThis.game?.settings;
+  if (!settings?.settings?.has?.(`${SC_MODULE_ID}.spell-school-styles`)) return null;
+  const styles = settings.get(SC_MODULE_ID, "spell-school-styles");
+  const profiles = styles?.profiles ?? {};
+  const levelKey = styles?.useLevelVariants === true && Number.isInteger(level) ? `school_${school}_lvl_${level}` : null;
+  return (levelKey && profiles[levelKey]) || profiles[`school_${school}`] || null;
+}
+
+/**
  * Resolved colours are stable for the lifetime of a render pass but must not
  * outlive a settings change, so the cache is versioned and cleared on demand.
  */
@@ -78,14 +122,13 @@ export function invalidateRarityColorCache() {
  * Resolution walks module settings and computed CSS variables, which is far too
  * expensive to repeat for every item on every re-render.
  * @param {string} rarity
- * @param {Object} [item]
  * @returns {string}
  */
-export function getRarityColor(rarity, item = null) {
+export function getRarityColor(rarity) {
   const normKey = normalizeRarityKey(rarity);
-  // Items only affect the result through the SC API, which is keyed by rarity.
+  // SC colours are per rarity, never per item.
   if (RARITY_COLOR_CACHE.has(normKey)) return RARITY_COLOR_CACHE.get(normKey);
-  const color = resolveRarityColor(rarity, item);
+  const color = resolveRarityColor(rarity);
   RARITY_COLOR_CACHE.set(normKey, color);
   return color;
 }
@@ -94,48 +137,15 @@ export function getRarityColor(rarity, item = null) {
  * Get the color associated with an item rarity, prioritizing SC - Item Rarity Colors,
  * then CONFIG.DND5E.itemRarity, then CSS variables, and finally default fallbacks.
  * @param {string} rarity
- * @param {Object} [item]
  * @returns {string} Hex or CSS color string
  */
-function resolveRarityColor(rarity, item = null) {
+function resolveRarityColor(rarity) {
   const normKey = normalizeRarityKey(rarity);
 
-  // 1. Check SC - Item Rarity Colors API if exposed
+  // 1. SC - Item Rarity Colors, when the GM has switched a colour on for this rarity
   if (isScRarityColorsActive()) {
-    try {
-      const scModule = globalThis.game?.modules?.get?.(SC_MODULE_ID);
-      if (typeof scModule?.api?.getRarityColor === "function") {
-        const scColor = scModule.api.getRarityColor(normKey, item);
-        if (scColor) return scColor;
-      }
-      if (typeof globalThis.scItemRarityColors?.getColor === "function") {
-        const scColor = globalThis.scItemRarityColors.getColor(normKey, item);
-        if (scColor) return scColor;
-      }
-    } catch {
-      // Ignore errors and fall through
-    }
-
-    // Check SC module registered settings
-    try {
-      const settingsKeys = ["rarity-colors", "rarities", "colors", "custom-rarities"];
-      for (const sk of settingsKeys) {
-        // game.settings.get throws for unregistered keys - skip those quietly.
-        if (!globalThis.game?.settings?.settings?.has?.(`${SC_MODULE_ID}.${sk}`)) continue;
-        const val = globalThis.game?.settings?.get?.(SC_MODULE_ID, sk);
-        if (val && typeof val === "object") {
-          const directMatch = val[normKey] || val[rarity];
-          if (typeof directMatch === "string") return directMatch;
-          if (typeof directMatch?.color === "string") return directMatch.color;
-          if (Array.isArray(val)) {
-            const found = val.find(r => (r.id === normKey || r.key === normKey || r.name === normKey || r.label === normKey));
-            if (found?.color) return found.color;
-          }
-        }
-      }
-    } catch {
-      // Fall through
-    }
+    const scColor = pickScColor(field => readScRaritySetting(rarity, field));
+    if (scColor) return scColor;
   }
 
   // 2. Check CONFIG.DND5E.itemRarity (populated by dnd5e, Custom DND5E, or SC)
@@ -179,15 +189,7 @@ export function hasRarityGlow(rarity) {
   const normKey = normalizeRarityKey(rarity);
   if (normKey === "legendary" || normKey === "artifact" || normKey === "mythic") return true;
 
-  if (isScRarityColorsActive()) {
-    try {
-      const dndConfigRarity = globalThis.CONFIG?.DND5E?.itemRarity;
-      const entry = dndConfigRarity?.[normKey];
-      if (entry?.glow === true || entry?.glowColor) return true;
-    } catch {
-      // Fall through
-    }
-  }
+  if (isScRarityColorsActive() && readScRaritySetting(rarity, "glow-option") === true) return true;
 
   return false;
 }
@@ -195,11 +197,10 @@ export function hasRarityGlow(rarity) {
 /**
  * Get full visual presentation details for an item based on its rarity
  * @param {string} rarity
- * @param {Object} [item]
  * @returns {{ color: string, rgb: string, glowColor: string, hasGlow: boolean, rarityKey: string, cssVars: string }}
  */
-export function getItemRarityVisuals(rarity, item = null) {
-  const color = getRarityColor(rarity, item);
+export function getItemRarityVisuals(rarity) {
+  const color = getRarityColor(rarity);
   const rgb = hexToRgb(color);
   const glow = hasRarityGlow(rarity);
   const normKey = normalizeRarityKey(rarity);
@@ -223,31 +224,45 @@ export function getItemRarityVisuals(rarity, item = null) {
 }
 
 /**
+ * The colour SC - Item Rarity Colors itself gives a rarity, or null when it is off or the GM left that rarity's
+ * colours switched off; the window then keeps its own palette (`--rarity-*` tokens) instead of a fallback.
+ * @param {string} rarity
+ * @returns {string|null}
+ */
+export function scRarityColor(rarity) {
+  if (!isScRarityColorsActive() || !rarity) return null;
+  return pickScColor((field) => readScRaritySetting(rarity, field)) || null;
+}
+
+/**
+ * The colour SC gives a spell school (per level with its level variants), or null when it gives none; the window
+ * then keeps its own school palette (`--school-*` tokens).
+ * @param {string} school
+ * @param {number} [level=0]
+ * @returns {string|null}
+ */
+export function scSchoolColor(school, level = 0) {
+  if (!isScRarityColorsActive() || !school) return null;
+  const profile = readScSpellProfile(school.toLowerCase().trim(), Number(level));
+  return (profile && pickScColor((field) => profile[field])) || null;
+}
+
+/**
  * Get spell school color with SC - Item Rarity Colors & system config support
  * @param {string} school
- * @param {number} [_level=0] Unused; kept so existing callers keep their argument order.
+ * @param {number} [level=0] Spell level, for SC's per-level variants.
  * @param {Object} [defaultColors={}]
  * @returns {string}
  */
-export function getSpellSchoolColor(school, _level = 0, defaultColors = {}) {
+export function getSpellSchoolColor(school, level = 0, defaultColors = {}) {
   if (!school) return "#3498db";
   const s = school.toLowerCase().trim();
 
-  // 1. Check SC module spell settings / CONFIG.DND5E
+  // 1. SC - Item Rarity Colors spell school styles (per level when the GM uses level variants)
   if (isScRarityColorsActive()) {
-    try {
-      const spellConfig = globalThis.CONFIG?.DND5E?.spellSchools;
-      if (spellConfig?.[s]?.color) return spellConfig[s].color;
-
-      const scSpellColors = globalThis.game?.settings?.settings?.has?.(`${SC_MODULE_ID}.spell-colors`)
-        ? globalThis.game.settings.get(SC_MODULE_ID, "spell-colors")
-        : null;
-      if (scSpellColors?.[s]) {
-        return typeof scSpellColors[s] === "string" ? scSpellColors[s] : scSpellColors[s].color;
-      }
-    } catch {
-      // Fall through
-    }
+    const profile = readScSpellProfile(s, Number(level));
+    const scColor = profile && pickScColor(field => profile[field]);
+    if (scColor) return scColor;
   }
 
   const dndConfig = globalThis.CONFIG?.DND5E?.spellSchools;
@@ -260,7 +275,7 @@ export function getSpellSchoolColor(school, _level = 0, defaultColors = {}) {
 /**
  * Get spell school visuals with CSS variables for gradients and styling
  * @param {string} school
- * @param {number} [_level=0] Unused; kept so existing callers keep their argument order.
+ * @param {number} [level=0] Spell level, for SC's per-level variants.
  * @param {Object} [defaultColors={}]
  * @returns {{ color: string, rgb: string, cssVars: string }}
  */

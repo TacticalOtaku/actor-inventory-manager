@@ -1,0 +1,67 @@
+<div class="aim-equipment">
+  {{#if tradeLock}}<div class="aim-trade-lock" role="status"><i class="fa-light fa-lock"></i>{{localize "AIM.trade.panel.lock"}}</div>{{/if}}
+  <div class="aim-toolbar">
+    <label class="aim-search"><i class="fa-light fa-magnifying-glass"></i><input type="search" name="inventorySearch" value="{{inv.query}}" placeholder="{{localize "AIM.window.inv.search"}}" autocomplete="off" spellcheck="false" aria-label="{{localize "AIM.window.inv.search"}}"></label>
+    <select class="aim-sort" name="inventorySort" aria-label="{{localize "AIM.window.inv.sort"}}">
+      {{#each inv.sorts}}<option value="{{id}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}
+    </select>
+    <div class="aim-filters">
+      {{#each inv.filters}}<button type="button" class="aim-chip {{#if on}}is-on{{/if}}" data-action="listFilter" data-filter="{{id}}" aria-pressed="{{on}}">{{label}}</button>{{/each}}
+    </div>
+    {{#if trade.button}}<button type="button" class="aim-btn aim-trade-btn {{#if trade.button.invited}}is-invited{{/if}}" data-action="toggleTrade" aria-expanded="{{#if trade.open}}true{{else}}false{{/if}}"><i class="fa-light fa-arrow-right-arrow-left"></i>{{localize "AIM.trade.panel.title"}}</button>{{/if}}
+    <button type="button" class="aim-ibtn aim-doll-toggle {{#unless doll.hidden}}is-on{{/unless}}" data-action="toggleDoll" aria-pressed="{{#if doll.hidden}}false{{else}}true{{/if}}" aria-label="{{#if doll.hidden}}{{localize "AIM.window.doll.show"}}{{else}}{{localize "AIM.window.doll.hide"}}{{/if}}" data-tooltip="{{localize "AIM.window.doll.toggle"}}"><i class="fa-light fa-person"></i></button>
+    <div class="aim-seg" role="group" aria-label="{{localize "AIM.window.inv.view"}}">
+      {{#each inv.views}}<button type="button" data-action="listView" data-view="{{id}}" aria-pressed="{{active}}" aria-label="{{label}}" data-tooltip="{{label}}"><i class="fa-light {{icon}}"></i></button>{{/each}}
+    </div>
+  </div>
+
+  <div class="aim-purse">
+    <div class="aim-coins" role="group" aria-label="{{localize "AIM.window.inv.coins"}}">
+      {{#each inv.coins}}
+      {{#if editing}}
+      <span class="aim-coin is-editing" data-coin="{{key}}"><i></i><input type="text" inputmode="text" autocomplete="off" spellcheck="false" value="{{../inv.coinDraft}}" data-coin-input="{{key}}" aria-label="{{editLabel}}" data-tooltip="{{localize "AIM.window.inv.coinForms"}}"></span>
+      {{else}}
+      <button type="button" class="aim-coin" data-coin="{{key}}" data-action="editCoin" {{#unless editable}}disabled{{/unless}} aria-label="{{editLabel}}" data-tooltip="{{label}}">{{#if img}}<img src="{{img}}" alt="">{{else}}<i></i>{{/if}}<b data-coin-value>{{value}}</b><small>{{abbr}}</small></button>
+      {{/if}}
+      {{/each}}
+      <span class="aim-coin-total" data-tooltip="{{localize "AIM.window.inv.total"}}"><b data-coin-total="{{inv.total.value}}">{{inv.total.text}}</b></span>
+      {{#if inv.canManage}}<button type="button" class="aim-ibtn aim-mini" data-action="manageCurrency" aria-label="{{localize "AIM.window.inv.manage"}}" data-tooltip="{{localize "AIM.window.inv.manage"}}"><i class="fa-light fa-coins"></i></button>{{/if}}
+    </div>
+    {{#if inv.load}}
+    <div class="aim-load is-{{inv.load.tier}}" data-load data-tier="{{inv.load.tier}}" style="--load: {{inv.load.share}}; --t1: {{inv.load.t1}}; --t2: {{inv.load.t2}}" data-tooltip="{{inv.load.tierLabel}}">
+      <span class="aim-load-text">{{localize "AIM.window.inv.load"}} <b>{{inv.load.value}}</b> / {{inv.load.max}} {{inv.load.unit}}</span>
+      <span class="aim-load-bar">{{#if inv.load.stops}}<i class="aim-load-stop is-t1"></i><i class="aim-load-stop is-t2"></i>{{/if}}<i class="aim-load-fill"></i></span>
+    </div>
+    {{/if}}
+  </div>
+
+  <div class="aim-equip {{#unless doll.hidden}}{{#if doll.banner}}has-banner{{else}}has-doll{{/if}}{{/unless}}">
+  {{#unless doll.hidden}}{{> "modules/actor-inventory-manager/templates/window/doll.hbs"}}{{/unless}}
+  <div class="aim-inventory">
+    {{#if inv.containers.length}}
+    <section class="aim-section {{#if inv.containersCollapsed}}is-collapsed{{/if}}" data-section="container" data-key="sec-container">
+      <div class="aim-sec-head" data-action="toggleSection" data-section-id="container" role="button" tabindex="0" aria-expanded="{{#if inv.containersCollapsed}}false{{else}}true{{/if}}">
+        <i class="fa-light fa-chevron-down aim-chev"></i><h3>{{localize "AIM.window.inv.sections.container"}}</h3><span class="aim-sec-n">{{inv.containers.length}}</span>
+        <button type="button" class="aim-linkbtn" data-action="foldAllTrays" data-fold="{{inv.foldAll}}">{{inv.foldAllLabel}}</button>
+      </div>
+      <div class="aim-sec-body"><div class="aim-sec-inner"><div class="aim-items" data-view="list">
+        {{#each inv.containers}}{{> "modules/actor-inventory-manager/templates/window/tray.hbs"}}{{/each}}
+      </div></div></div>
+    </section>
+    {{/if}}
+    {{#each inv.sections}}
+    <section class="aim-section {{#if collapsed}}is-collapsed{{/if}}" data-section="{{id}}" data-key="sec-{{id}}">
+      <div class="aim-sec-head" data-action="toggleSection" data-section-id="{{id}}" role="button" tabindex="0" aria-expanded="{{#if collapsed}}false{{else}}true{{/if}}">
+        <i class="fa-light fa-chevron-down aim-chev"></i><h3>{{label}}</h3><span class="aim-sec-n">{{entries.length}}</span>
+        {{#if @root.canEdit}}<button type="button" class="aim-ibtn aim-mini aim-sec-add" data-action="addItem" data-type="{{id}}" aria-label="{{addLabel}}" data-tooltip="{{addLabel}}"><i class="fa-light fa-plus"></i></button>{{/if}}
+      </div>
+      <div class="aim-sec-body"><div class="aim-sec-inner">
+        {{#if entries.length}}
+        <div class="aim-items" data-view="{{@root.inv.prefs.view}}">{{#each entries}}{{> "modules/actor-inventory-manager/templates/window/item-row.hbs"}}{{/each}}</div>
+        {{else}}<p class="aim-sec-empty">{{@root.inv.emptyText}}</p>{{/if}}
+      </div></div>
+    </section>
+    {{/each}}
+  </div>
+</div>
+</div>

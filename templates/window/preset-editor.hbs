@@ -1,0 +1,61 @@
+<div class="aim-editor-form">
+  <div class="aim-editor-top">
+    <label class="aim-editor-field is-wide"><span>{{localize "AIM.window.editor.source"}}</span>
+      <select name="source">
+        {{#if own}}<option value="custom" selected>{{own}}</option>{{/if}}
+        <optgroup label="{{localize "AIM.editor.presetsGroup"}}">{{#each builtIn}}<option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{/each}}</optgroup>
+        {{#if world.length}}<optgroup label="{{localize "AIM.editor.worldGroup"}}">{{#each world}}<option value="{{id}}" {{#if selected}}selected{{/if}}>{{name}}</option>{{/each}}</optgroup>{{/if}}
+      </select>
+    </label>
+    <label class="aim-editor-field is-wide"><span>{{localize "AIM.editor.templateName"}}</span><input type="text" name="presetName" value="{{working.name}}" autocomplete="off"></label>
+    <label class="aim-editor-field"><span>{{localize "AIM.window.editor.figure"}}</span>
+      <select name="figure">{{#each figures}}<option value="{{id}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
+    </label>
+    <label class="aim-editor-field"><span>{{localize "AIM.window.editor.attunement"}}</span>
+      <select name="attunementMax">{{#each caps}}<option value="{{n}}" {{#if selected}}selected{{/if}}>{{n}}</option>{{/each}}</select>
+    </label>
+  </div>
+  <p class="aim-hint aim-editor-changed" data-changed {{#unless changed}}hidden{{/unless}}><i class="fa-light fa-pen"></i> {{localize "AIM.window.editor.changed"}}</p>
+
+  <div class="aim-editor-slots-head">
+    <span class="aim-editor-k">{{localize "AIM.window.editor.slots"}} <b>{{slots.length}}</b></span>
+    <button type="button" class="aim-btn" data-action="addSlot"><i class="fa-light fa-plus"></i>{{localize "AIM.editor.addSlot"}}</button>
+  </div>
+  <div class="aim-editor-slots">
+    {{#each slots}}
+    <div class="aim-editor-slot" data-slot-id="{{id}}">
+      <div class="aim-editor-slot-head">
+        <span class="aim-editor-slot-n">{{order}}</span>
+        <i class="{{icon}} aim-editor-slot-ico" aria-hidden="true"></i>
+        <input type="text" data-field="label" value="{{shownLabel}}" aria-label="{{localize "AIM.editor.slot.label"}}">
+        <code class="aim-editor-slot-id" data-tooltip="{{localize "AIM.editor.slot.id"}}">{{id}}</code>
+        <button type="button" class="aim-ibtn aim-mini" data-action="moveSlot" data-delta="-1" {{#if first}}disabled{{/if}} aria-label="{{localize "AIM.window.editor.up"}}" data-tooltip="{{localize "AIM.window.editor.up"}}"><i class="fa-light fa-arrow-up"></i></button>
+        <button type="button" class="aim-ibtn aim-mini" data-action="moveSlot" data-delta="1" {{#if last}}disabled{{/if}} aria-label="{{localize "AIM.window.editor.down"}}" data-tooltip="{{localize "AIM.window.editor.down"}}"><i class="fa-light fa-arrow-down"></i></button>
+        <button type="button" class="aim-ibtn aim-mini" data-action="removeSlot" aria-label="{{localize "AIM.window.editor.remove"}}" data-tooltip="{{localize "AIM.window.editor.remove"}}"><i class="fa-light fa-trash"></i></button>
+      </div>
+      <div class="aim-editor-slot-body">
+        <div class="aim-editor-row"><span class="aim-editor-k">{{localize "AIM.editor.slot.itemTypes"}}</span>
+          <span class="aim-editor-chips">{{#each types}}<label class="aim-chip {{#if on}}is-on{{/if}}"><input type="checkbox" data-field="type" value="{{type}}" {{#if on}}checked{{/if}}>{{label}}</label>{{/each}}</span>
+        </div>
+        <label class="aim-editor-row"><span class="aim-editor-k">{{localize "AIM.editor.slot.accepts"}}</span><input type="text" data-field="accepts" value="{{acceptsText}}" placeholder="{{localize "AIM.editor.slot.acceptsPlaceholder"}}"></label>
+        <label class="aim-editor-row"><span class="aim-editor-k">{{localize "AIM.window.editor.icon"}}</span><input type="text" data-field="icon" value="{{icon}}" placeholder="fa-light fa-gem"></label>
+        <div class="aim-editor-row is-rules">{{#each rules}}<label class="aim-editor-check"><input type="checkbox" data-field="rule" value="{{rule}}" {{#if on}}checked{{/if}}>{{label}}</label>{{/each}}</div>
+      </div>
+    </div>
+    {{else}}
+    <p class="aim-sec-empty">{{localize "AIM.window.editor.noSlots"}}</p>
+    {{/each}}
+  </div>
+
+  <footer class="aim-editor-foot">
+    <button type="button" class="aim-btn is-primary" data-action="apply"><i class="fa-light fa-check"></i>{{localize "AIM.editor.applyToActor"}}</button>
+    <button type="button" class="aim-btn" data-action="saveNew"><i class="fa-light fa-floppy-disk"></i>{{localize "AIM.editor.saveAsNew"}}</button>
+    {{#if worldPreset}}
+    <button type="button" class="aim-btn" data-action="save"><i class="fa-light fa-floppy-disk-pen"></i>{{localize "AIM.editor.updateTemplate"}}</button>
+    <button type="button" class="aim-btn is-quiet" data-action="deletePreset"><i class="fa-light fa-trash"></i>{{localize "AIM.editor.deleteTemplate"}}</button>
+    {{/if}}
+    <span class="aim-editor-grow"></span>
+    <button type="button" class="aim-ibtn" data-action="importJSON" aria-label="{{localize "AIM.editor.importJSON"}}" data-tooltip="{{localize "AIM.editor.importJSON"}}"><i class="fa-light fa-file-import"></i></button>
+    <button type="button" class="aim-ibtn" data-action="exportJSON" aria-label="{{localize "AIM.editor.exportJSON"}}" data-tooltip="{{localize "AIM.editor.exportJSON"}}"><i class="fa-light fa-file-export"></i></button>
+  </footer>
+</div>

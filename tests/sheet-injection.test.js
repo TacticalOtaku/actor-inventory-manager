@@ -62,7 +62,7 @@ describe("addInventoryHeaderControl", () => {
     const config = characterSheet();
     config.constructor = class ActorSheetConfig {};
     const inventory = characterSheet();
-    inventory.options.classes.push("actor-inventory-manager-app");
+    inventory.options.classes.push("aim-window");
     for (const app of [config, inventory]) {
       const controls = [];
       addInventoryHeaderControl(app, controls);

@@ -5,6 +5,7 @@
 import { FIGURES, FLAGS, MODULE_ID, SLOTS, TEMPLATE_PRESETS } from "../constants.js";
 import { getPaperdollRuntime } from "./paperdoll-runtime.js";
 import { isSupportedActor } from "./actor-scope.js";
+import { SLOT_ZONES } from "./paperdoll-layout.js";
 
 /**
  * Built-in Preset: D&D 2024 Rules (Default)
@@ -595,6 +596,8 @@ export function normalizeTemplateData(data) {
       label: typeof slot.label === "string" && slot.label.trim() ? slot.label.trim() : slotId,
       icon: typeof slot.icon === "string" && slot.icon.trim() ? slot.icon.trim() : "fa-light fa-gem",
       column: COLUMNS.includes(slot.column) ? slot.column : "center",
+      // The 2.0 doll's zone; without one the slot takes its place by order.
+      ...(SLOT_ZONES.includes(slot.zone) ? { zone: slot.zone } : {}),
       category: typeof slot.category === "string" ? slot.category : "equipment",
       accepts: strings(slot.accepts).map(v => v.toLowerCase()),
       itemTypes: strings(slot.itemTypes),

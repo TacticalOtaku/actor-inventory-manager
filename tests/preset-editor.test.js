@@ -44,6 +44,8 @@ describe("preset editor working copy", () => {
     assert.equal(sameAsPreset({ ...working, figure: "beast" }, DND_2024_TEMPLATE), false);
     assert.equal(sameAsPreset({ ...working, slots: moveSlot(working.slots, "neck", -1) }, DND_2024_TEMPLATE), false);
     assert.equal(sameAsPreset({ ...working, attunementMax: 5 }, DND_2024_TEMPLATE), true, "the cap is written to the actor, not the layout");
+    const placed = { ...working, slots: working.slots.map((slot) => (slot.id === "ring1" ? { ...slot, zone: "right" } : slot)) };
+    assert.equal(sameAsPreset(placed, DND_2024_TEMPLATE), false, "a zone is part of the layout");
   });
 
   it("makes an id from the name that is free and not a built-in one", () => {

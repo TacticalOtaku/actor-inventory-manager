@@ -26,6 +26,25 @@ describe("doll layout", () => {
     assert.equal(layout.figureRows, 5);
   });
 
+  it("puts a slot with a zone where the GM put it, and the rest by order around it", () => {
+    const slots = [{ id: "a", zone: "right" }, { id: "b" }, { id: "c" }, { id: "d", zone: "under" }, { id: "e", zone: "left" }, { id: "f" }];
+    const layout = dollLayout(slots, { max: 0, attuned: 0 });
+    const side = (column) => layout.placed.filter((p) => p.column === column).map((p) => p.slot.id);
+    assert.deepEqual(side(1), ["b", "c", "e"]);
+    assert.deepEqual(side(3), ["a", "f"]);
+    assert.deepEqual(layout.extra.map((s) => s.id), ["d"]);
+    // The right column stays bottom-aligned.
+    assert.deepEqual(layout.placed.filter((p) => p.column === 3).map((p) => p.row), [2, 3]);
+  });
+
+  it("sends a slot whose column is full under the doll, in order", () => {
+    const lefts = Array.from({ length: 7 }, (_, i) => ({ id: `l${i + 1}`, zone: "left" }));
+    const layout = dollLayout(lefts, { max: 0, attuned: 0 });
+    assert.equal(layout.placed.length, 6);
+    assert.deepEqual(layout.extra.map((s) => s.id), ["l7"]);
+    assert.equal(layout.rows, 6);
+  });
+
   it("overflows past twelve slots into the extra grid", () => {
     const layout = dollLayout(ids(19), { max: 3, attuned: 0 });
     assert.equal(layout.placed.length, 12);

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+- The preset editor places each slot again: left, right, under the doll, or by order as before. Presets without a
+  choice keep their layout.
+
 ### Changed
 - AIM opens from the sheet's ⋮ menu and the `I` key; the separate header button is gone.
 - Big trades move items in one write per kind, so offers of many items finish well inside the request timeout.

@@ -46,6 +46,9 @@ import { buildDollContext, firstItemFor } from "./doll.js";
 import { FEATURE_TEMPLATES, buildFeaturesContext, featureMode, hasFeatures } from "./features.js";
 import { EFFECT_TEMPLATES, buildEffectsContext, createActorEffect, effectMenuEntries } from "./effects.js";
 import { OVERVIEW_TEMPLATES, buildBiographyContext, buildOverviewContext, cardDialogs, hasOverview } from "./overview.js";
+import { OfferDraft, buildTradeContext, isNewItem, offerButton, offerWithQuantity, sendTradeRequest } from "./trade.js";
+import { TRADE_HOOK, sessionFor } from "../trade/service.js";
+import { FLAGS } from "../constants.js";
 import { buildFavoritesContext, favoriteIdFor, favoriteItemIds, hasFavorites } from "./favorites.js";
 import { SPELL_TEMPLATES, buildSpellsContext, playSlotChanges, preparationWarning, slotSnapshot } from "./spells.js";
 import { openPresetEditor } from "./preset-editor.js";
@@ -128,6 +131,16 @@ export class ActorWindow extends WindowBase {
       rollSave: ActorWindow.#onRollSave,
       rollTool: ActorWindow.#onRollTool,
       cardConfig: ActorWindow.#onCardConfig,
+      toggleTrade: ActorWindow.#onToggleTrade,
+      tradeStart: ActorWindow.#onTradeStart,
+      tradeConfirm: ActorWindow.#onTradeConfirm,
+      tradeCancel: ActorWindow.#onTradeCancel,
+      tradeQty: ActorWindow.#onTradeQty,
+      tradeOffer: ActorWindow.#onTradeOffer,
+      tradeRecover: ActorWindow.#onTradeRecover,
+      tradeRecoverYes: ActorWindow.#onTradeRecoverYes,
+      tradeRecoverNo: ActorWindow.#onTradeRecoverNo,
+      tradeDismiss: ActorWindow.#onTradeDismiss,
       toggleInspiration: ActorWindow.#onToggleInspiration,
       exhaustion: ActorWindow.#onExhaustion,
       rollConcentration: ActorWindow.#onRollConcentration,
@@ -173,7 +186,8 @@ export class ActorWindow extends WindowBase {
     rail: { template: `${TEMPLATES}/rail.hbs`, templates: EFFECT_TEMPLATES },
     main: { template: `${TEMPLATES}/main.hbs`, templates: [...EQUIPMENT_TEMPLATES, ...SPELL_TEMPLATES, ...FEATURE_TEMPLATES, ...EFFECT_TEMPLATES, ...OVERVIEW_TEMPLATES], scrollable: [".aim-panel"] },
     inspector: { template: `${TEMPLATES}/inspector.hbs`, templates: EQUIPMENT_TEMPLATES, scrollable: [""] },
-    drawer: { template: `${TEMPLATES}/drawer.hbs`, scrollable: [".aim-drawer-body"] }
+    drawer: { template: `${TEMPLATES}/drawer.hbs`, scrollable: [".aim-drawer-body"] },
+    trade: { template: `${TEMPLATES}/trade.hbs`, scrollable: [".aim-trade-body"] }
   };
 
   constructor(actor, options = {}) {
@@ -199,6 +213,13 @@ export class ActorWindow extends WindowBase {
     this.usesDraft = "";
     // «where:uuid» of the effect row whose details are open.
     this.effectOpen = null;
+    // The trade panel: open or not, the offer being edited, invitations seen and finished trades dismissed here.
+    this.tradeOpen = false;
+    this.tradeDraft = new OfferDraft(this);
+    this.tradeSeen = new Set();
+    this.tradeDismissed = new Set();
+    this.tradeAskRestore = false;
+    this.tradeError = null;
     this.selectedKey = null;
     this.collapsed = new Set();
     this.selected = null;
@@ -226,7 +247,14 @@ export class ActorWindow extends WindowBase {
     if (!selected) this.selected = this.selectedKey = null;
     const detail = selected ? await buildItemDetail(selected, { canEdit: this.canEdit }) : null;
     const favIds = favoriteItemIds(actor);
+    const trade = buildTradeContext(actor, { canEdit: this.canEdit, open: this.tradeOpen, draft: this.tradeDraft,
+      askRestore: this.tradeAskRestore, dismissed: this.tradeDismissed, seen: this.tradeSeen, error: this.tradeError });
+    if (!trade.button) this.tradeOpen = false;
     return {
+      trade,
+      tradeLock: ["executing", "recovery"].includes(sessionFor(actor.id)?.status),
+      offerRows: Object.fromEntries(actor.items.map((item) => [item.id, offerButton(trade, item)]).filter(([, state]) => state)),
+      newItems: Object.fromEntries(actor.items.filter(isNewItem).map((item) => [item.id, true])),
       ...(await super._prepareContext(options)),
       actor,
       canEdit: this.canEdit,
@@ -385,6 +413,7 @@ export class ActorWindow extends WindowBase {
       this.#hook(name, (doc) => mine(doc) && rerender());
     }
     this.#hook(REFRESH_HOOK, rerender);
+    this.#hook(TRADE_HOOK, rerender);
     // Weighty Containers announces a rules change on its own hook; the trays' bands and reductions follow.
     this.#hook(`${WEIGHTY_CONTAINERS_MODULE_ID}.updateContainerRules`, rerender);
     // Placing a spell template minimises the window; it comes back once the template is placed or cancelled.
@@ -412,6 +441,10 @@ export class ActorWindow extends WindowBase {
 
   async _preRender(context, options) {
     await super._preRender(context, options);
+    // A number field of the trade panel keeps the focus and the caret across the redraw its own send causes.
+    const field = this.element?.contains(document.activeElement) ? document.activeElement : null;
+    const key = field?.dataset?.offerQty ?? field?.dataset?.tradeCoin;
+    this._tradeFocus = key ? { attr: field.dataset.offerQty ? "data-offer-qty" : "data-trade-coin", key } : null;
     this._equipmentPrev = this.element ? equipmentSnapshot(this.element) : null;
     this._slotsPrev = this.element ? slotSnapshot(this.element) : null;
     this._prepOver = Boolean(this.element?.querySelector("[data-prep-counter].is-over"));
@@ -433,6 +466,18 @@ export class ActorWindow extends WindowBase {
     playRailChanges(this.element, this._railPrev, next);
     this._railPrev = next;
     this.#afterEquipmentRender();
+    // A reset of the confirmations (an offer changed) shakes the status once.
+    const session = sessionFor(this.actor.id);
+    const confirmed = Boolean(session?.confirmed.some(Boolean));
+    if (this._tradePrev?.id === session?.id && this._tradePrev?.confirmed && !confirmed && session?.status === "open") {
+      this.#shake(this.element.querySelector("[data-trade-status]"));
+    }
+    this._tradePrev = session ? { id: session.id, confirmed } : null;
+    if (this._tradeFocus) {
+      const field = this.element.querySelector(`[${this._tradeFocus.attr}="${CSS.escape(this._tradeFocus.key)}"]`);
+      field?.focus();
+      this._tradeFocus = null;
+    }
   }
 
   #bringFront() {
@@ -525,6 +570,7 @@ export class ActorWindow extends WindowBase {
   }
 
   _onClose(options) {
+    this.tradeDraft.close();
     for (const [name, id] of this._hooks) Hooks.off(name, id);
     this._hooks = [];
     this._bodyObserver?.disconnect();
@@ -574,6 +620,7 @@ export class ActorWindow extends WindowBase {
     if (!el) return;
     stampTheme(el, { fonts: this.fontsAtLoad });
     el.dataset.role = this.canEdit ? (game.user.isGM ? "gm" : "owner") : "observer";
+    el.classList.toggle("is-trading", this.tradeOpen);
     el.dataset.actorType = this.actor.type;
     const { hp } = readRail(this.actor);
     el.dataset.vital = vitalState(hp.value, hp.max);
@@ -857,6 +904,146 @@ export class ActorWindow extends WindowBase {
     return this.actor.endConcentration(effect ?? undefined);
   }
 
+  /* ─── Trade ─── */
+
+  /** Redraws the panel and the rows whose offer buttons follow the draft. */
+  renderTrade() {
+    if (this.rendered) this.render({ parts: ["trade", "main"] });
+  }
+
+  #tradeSession() {
+    return sessionFor(this.actor.id);
+  }
+
+  /** Opens beside the inventory, without a scrim; opening clears the invitation dot. */
+  static #onToggleTrade() {
+    this.tradeOpen = !this.tradeOpen;
+    const session = this.#tradeSession();
+    if (this.tradeOpen && session) this.tradeSeen.add(session.id);
+    if (this.tradeOpen) this.#switchTo("equipment");
+    this.#applyRootState();
+    this.render({ parts: ["trade", "main"] });
+  }
+
+  async #tradeRequest(action, data = {}) {
+    this.tradeError = await sendTradeRequest(this.actor, action, data);
+    this.renderTrade();
+    return !this.tradeError;
+  }
+
+  static #onTradeStart() {
+    const select = this.element.querySelector("[data-trade-partner]");
+    const option = select?.selectedOptions?.[0];
+    if (!option || option.disabled || game.user.isGM) return;
+    return this.#tradeRequest("start", { targetId: option.value, targetUserId: option.dataset.user });
+  }
+
+  /** Toggles this side's confirmation; confirming is accepting, the coordinator moves the assets once both did. */
+  static #onTradeConfirm() {
+    const session = this.#tradeSession();
+    if (!session || this.tradeDraft.pending) return;
+    const side = session.actors.indexOf(this.actor.id);
+    if (session.confirmed[side]) return this.#tradeRequest("unconfirm", { sessionId: session.id });
+    return this.#tradeRequest("confirm", { sessionId: session.id, revision: session.revision });
+  }
+
+  /** Nothing has moved yet, so both sides leave at once without a dialog. */
+  static #onTradeCancel() {
+    const session = this.#tradeSession();
+    if (session) return this.#tradeRequest("cancel", { sessionId: session.id });
+  }
+
+  static #onTradeQty(event, target) {
+    const id = target.dataset.id;
+    const current = this.tradeDraft.offer.items.find((e) => e.id === id)?.quantity ?? 0;
+    this.offerItem(this.actor.items.get(id), current + Number(target.dataset.step), { absolute: true });
+  }
+
+  /** The row's button offers one more of the item; the tile flies into the panel. */
+  static #onTradeOffer(event, target) {
+    const item = this.#itemFrom(target);
+    if (!item) return;
+    if (!this.tradeOpen) { this.tradeOpen = true; this.#applyRootState(); }
+    this.#flyToOffer(target.closest("[data-item-id]")?.querySelector(".aim-tile"), item.img);
+    return this.offerItem(item, 1);
+  }
+
+  /** Adds to the offer (a dropped row brings its whole stack) or sets the quantity, within the stack. */
+  offerItem(item, quantity, { absolute = false } = {}) {
+    const session = this.#tradeSession();
+    if (!item || !session || session.status !== "open" || game.user.isGM || !this.canEdit) return;
+    // The draft follows this trade before it changes, or the first redraw after a start would drop the edit.
+    this.tradeDraft.sync(session, session.actors.indexOf(this.actor.id));
+    const draft = this.tradeDraft.offer;
+    const current = draft.items.find((e) => e.id === item.id)?.quantity ?? 0;
+    const max = Number(item.system?.quantity ?? 1);
+    this.tradeDraft.change(offerWithQuantity(draft, item.id, absolute ? quantity : current + quantity, max));
+    this.renderTrade();
+  }
+
+  #onOfferInput(input) {
+    const session = this.#tradeSession();
+    if (!session || session.status !== "open" || game.user.isGM) return;
+    this.tradeDraft.sync(session, session.actors.indexOf(this.actor.id));
+    const draft = this.tradeDraft.offer;
+    if (input.dataset.offerQty) {
+      // A field cleared to type a new number is not yet a 0 that takes the item out.
+      if (input.value === "") return;
+      const item = this.actor.items.get(input.dataset.offerQty);
+      this.tradeDraft.change(offerWithQuantity(draft, item.id, input.value, Number(item.system?.quantity ?? 1)));
+      return this.render({ parts: ["trade"] });
+    }
+    // dnd5e coins are capped by the purse; Item Piles decides by value whether the purse covers the sum.
+    const max = input.max === "" ? Infinity : Number(input.max);
+    const value = Math.max(0, Math.min(max, Math.floor(Number(input.value) || 0)));
+    if (String(value) !== input.value && input.value !== "") input.value = value;
+    const money = { ...draft.money, [input.dataset.tradeCoin]: value };
+    if (!value) delete money[input.dataset.tradeCoin];
+    this.tradeDraft.change({ ...draft, money });
+    // The panel follows the typing (status, the Item Piles sum); the field keeps its focus across the redraw.
+    this.render({ parts: ["trade"] });
+  }
+
+  #flyToOffer(from, img) {
+    const to = this.element.querySelector("[data-offer-drop]");
+    if (!from || !to || !this.motionOn) return;
+    const a = from.getBoundingClientRect();
+    const b = to.getBoundingClientRect();
+    const ghost = Object.assign(document.createElement("img"), { src: img, className: "aim-flight" });
+    Object.assign(ghost.style, { left: `${a.left}px`, top: `${a.top}px`, width: `${a.width}px`, height: `${a.height}px` });
+    document.body.append(ghost);
+    ghost.animate([{ transform: "none", opacity: 1 }, { transform: `translate(${b.left + 24 - a.left}px, ${b.top + 40 - a.top}px) scale(0.7)`, opacity: 0.2 }],
+      { duration: 480, easing: SETTLE }).finished.finally(() => ghost.remove());
+  }
+
+  /** GM only: restoring (or unlocking) asks first. */
+  static #onTradeRecover() {
+    this.tradeAskRestore = true;
+    this.render({ parts: ["trade"] });
+  }
+
+  static #onTradeRecoverNo() {
+    this.tradeAskRestore = false;
+    this.render({ parts: ["trade"] });
+  }
+
+  static async #onTradeRecoverYes() {
+    const session = this.#tradeSession();
+    this.tradeAskRestore = false;
+    if (session && game.user.isGM) await this.#tradeRequest("recover", { sessionId: session.id });
+  }
+
+  static #onTradeDismiss() {
+    const last = foundry.utils.deepClone(this.#lastFinishedTrade());
+    if (last) this.tradeDismissed.add(last.id);
+    this.tradeError = null;
+    this.render({ parts: ["trade", "main"] });
+  }
+
+  #lastFinishedTrade() {
+    return game.settings.get(MODULE_ID, "tradeState")?.sessions?.filter((s) => s.actors.includes(this.actor.id)).at(-1) ?? null;
+  }
+
   /* ─── Overview ─── */
 
   static #onRollSkill(event, target) {
@@ -970,6 +1157,7 @@ export class ActorWindow extends WindowBase {
     el.addEventListener("input", (event) => {
       if (event.target.dataset.coinInput) this.coinDraft = event.target.value;
       if (event.target.matches?.("[data-uses-input]")) this.usesDraft = event.target.value;
+      if (event.target.matches?.("[data-offer-qty], [data-trade-coin]")) return this.#onOfferInput(event.target);
       const field = SEARCH_FIELDS[event.target.name];
       if (!field) return;
       this[field] = event.target.value;
@@ -1099,6 +1287,9 @@ export class ActorWindow extends WindowBase {
   /** Click selects: the inspector shows it in the wide layout, otherwise its details open under the row; again deselects. */
   async #toggleSelect(id, key = id) {
     const closing = this.selectedKey === key;
+    // Opening a received item takes its «Новое» mark off.
+    const item = this.actor.items.get(id);
+    if (!closing && isNewItem(item) && item.isOwner) item.unsetFlag(MODULE_ID, FLAGS.TRADE_NEW);
     const open = this.selectedKey && this.element.querySelector(`.aim-rowwrap[data-key="${this.selectedKey}"] [data-detail]`);
     if (open?.offsetHeight && this.motionOn) {
       await open.animate([{ height: `${open.offsetHeight}px`, opacity: 1 }, { height: "0px", opacity: 0 }], { duration: 200, easing: SETTLE }).finished;

@@ -250,3 +250,21 @@ for (const installed of [false, true]) {
     assert.equal([...actors.get("a").items.values()][0].system.quantity, 2);
   });
 }
+
+test("a participant withdraws only their own confirmation", async () => {
+  setup(); await start();
+  await command("offerRequest0001", "offer", "a", "p1", { revision: 0, offer: { items: [], money: { gp: 3 } } });
+  await command("confirmRequest01", "confirm", "a", "p1", { revision: 1 });
+  await command("unconfirmReq0001", "unconfirm", "b", "p2");
+  assert.deepEqual(tradeState().sessions[0].confirmed, [true, false]);
+  await command("unconfirmReq0002", "unconfirm", "a", "p1");
+  assert.deepEqual(tradeState().sessions[0].confirmed, [false, false]);
+  await command("spoofUnconfirm01", "unconfirm", "a", "p3");
+  assert.equal(tradeState().receipts.p3.error, "AIM.trade.errors.permission");
+});
+
+test("a cancelled trade records which side cancelled it", async () => {
+  setup(); await start();
+  await command("cancelRequest001", "cancel", "b", "p2");
+  assert.deepEqual([tradeState().sessions[0].status, tradeState().sessions[0].cancelledBy], ["cancelled", 1]);
+});

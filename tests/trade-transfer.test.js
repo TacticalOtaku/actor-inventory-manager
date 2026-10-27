@@ -35,7 +35,8 @@ test("partial item transfer conserves quantity and clears recipient equipment st
   assert.equal(received.system.equipped, false);
   assert.equal(received.system.attuned, false);
   assert.equal(received.system.container, null);
-  assert.equal(received.flags["actor-inventory-manager"], undefined);
+  // The slot assignment is gone; only the «Новое» mark remains until the owner opens the item.
+  assert.deepEqual(received.flags["actor-inventory-manager"], { tradeNew: true });
 });
 test("recovery restores inventory and currency after a partial exchange", async () => {
   setup(); const a = actor("a", [potion]);

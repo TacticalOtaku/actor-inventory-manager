@@ -60,6 +60,7 @@
     "styles/window/features.css",
     "styles/window/effects.css",
     "styles/window/overview.css",
+    "styles/window/trade.css",
     "styles/window/editor.css"
   ],
   "languages": [

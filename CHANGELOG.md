@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.2
 
 ### Fixed
 - Button labels use the window's font: Foundry gave them Signika, whose Cyrillic stood out (the doll's slot names).

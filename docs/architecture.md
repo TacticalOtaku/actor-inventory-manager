@@ -240,7 +240,7 @@ hooks are coalesced so a batched change renders once.
 ## Actor window and theme
 
 Version 2.0 replaces the 1.9 inventory window with the actor window (ADR 0002): one ApplicationV2 window per actor
-UUID, opened from the header button of any `ActorSheetV2` and the `I` key. The approved mock
+UUID, opened from the ⋮ menu of any `ActorSheetV2` and the `I` key. The approved mock
 `design/character-sheet/mock.html` and its `mock.notes.json` are the behaviour spec; the window is built slice by
 slice from the map #28.
 

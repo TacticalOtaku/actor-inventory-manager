@@ -25,7 +25,7 @@ Run the whole list on set 1, then repeat it on each set after adding its modules
 
 ### Opening
 
-1. The header button of the dnd5e sheet opens the window; on set 3 so does the button of the Tidy sheet. The `I` key
+1. «AIM» in the ⋮ menu of the dnd5e sheet opens the window; on set 3 so does the one of the Tidy sheet. The `I` key
    opens it for the controlled token.
 2. A GM-only NPC shows no button and ignores the key; a group actor never gets one.
 3. «Открыть лист персонажа» in the window's «⋯» menu opens the actor's own sheet (dnd5e's, or Tidy's on set 3).

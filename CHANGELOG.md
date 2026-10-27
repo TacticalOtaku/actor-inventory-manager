@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- AIM opens from the sheet's ⋮ menu and the `I` key; the separate header button is gone.
+
 ## 2.0.0
 
 **Renamed from Actor Inventory Manager & Paperdoll: the module is now AIM: Actor Window.** Its id stays

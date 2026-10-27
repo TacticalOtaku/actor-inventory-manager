@@ -1,3 +1,14 @@
 <aside class="aim-inspector" data-flip>
+  {{#if inspector}}
+  <div class="aim-insp" data-item-id="{{inspector.id}}">
+    <span class="aim-tile is-large" data-rarity="{{inspector.rarity}}"><img src="{{inspector.img}}" alt=""></span>
+    <h4>{{inspector.name}}</h4>
+    <div class="aim-insp-sub" data-rarity="{{inspector.rarity}}">{{#if inspector.rarityLabel}}<span class="aim-insp-rar">{{inspector.rarityLabel}}</span>{{/if}}<span>{{inspector.typeLabel}}</span></div>
+    {{#if inspector.tags.length}}<div class="aim-row-meta is-wrap">{{#each inspector.tags}}<span class="aim-tag">{{this}}</span>{{/each}}</div>{{/if}}
+    {{#if inspector.usesText}}<div class="aim-insp-uses"><span class="aim-detail-k">{{localize "AIM.window.inv.uses"}}</span> <b>{{inspector.usesText}}</b>{{#if inspector.recovery}} · {{inspector.recovery}}{{/if}}</div>{{/if}}
+    {{#with inspector.detail}}{{> "modules/actor-inventory-manager/templates/window/item-detail.hbs"}}{{/with}}
+  </div>
+  {{else}}
   <p class="aim-empty">{{localize "AIM.window.inspectorEmpty"}}</p>
+  {{/if}}
 </aside>

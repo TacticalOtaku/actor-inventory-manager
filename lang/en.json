@@ -608,6 +608,61 @@
         "exhaustionHint": "Click +1, right click −1",
         "concentrationRoll": "Concentration saving throw",
         "concentrationEnd": "End concentration"
+      },
+      "inv": {
+        "search": "Find an item",
+        "sort": "Order",
+        "sorts": {
+          "name": "By name",
+          "weight": "By weight",
+          "price": "By price",
+          "rarity": "By rarity",
+          "manual": "By hand"
+        },
+        "filters": {
+          "equipped": "Equipped",
+          "attuned": "Attuned"
+        },
+        "view": "View",
+        "views": {
+          "list": "List",
+          "grid": "Cards",
+          "icons": "Icons only"
+        },
+        "sections": {
+          "weapon": "Weapons",
+          "equipment": "Equipment",
+          "consumable": "Consumables",
+          "tool": "Tools",
+          "loot": "Loot",
+          "container": "Containers"
+        },
+        "empty": "Empty",
+        "notFound": "Empty — nothing found",
+        "add": "Add: {type}",
+        "use": "Use: {name}",
+        "useShort": "Use",
+        "attuned": "Attuned",
+        "needsAttune": "Requires attunement",
+        "attune": "Attune",
+        "unattune": "End attunement",
+        "equip": "Equip",
+        "unequip": "Unequip",
+        "more": "More",
+        "less": "Less",
+        "plus": "More",
+        "charges": "Charges {value} / {max}: click spends, right click restores",
+        "charge": "Charge {n}",
+        "toChat": "To chat",
+        "coins": "Coins",
+        "coinEdit": "Change: {coin}",
+        "coinForms": "−5 spends · +10 adds · 20 sets",
+        "manage": "Convert and transfer coins",
+        "total": "Total",
+        "load": "Load",
+        "effects": "Effects",
+        "uses": "Uses",
+        "noDescription": "No description"
       }
     }
   }

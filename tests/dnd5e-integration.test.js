@@ -452,3 +452,48 @@ describe("actor window rail reads (dnd5e 5.3.3)", () => {
     assert.deepEqual(rail.slots.map((s) => [s.level, s.value, s.max]), [[1, 3, 4]]);
   });
 });
+
+describe("actor window inventory reads (dnd5e 5.3.3)", () => {
+  afterEach(() => { delete globalThis.CONFIG; });
+
+  const currencies = {
+    pp: { label: "Платина", abbreviation: "пм", conversion: 0.1 },
+    gp: { label: "Золото", abbreviation: "зм", conversion: 1 },
+    sp: { label: "Серебро", abbreviation: "см", conversion: 10 }
+  };
+
+  it("reads price per unit in gold, charges from uses.spent, the holding container and properties", async () => {
+    const { readInventory } = await import("../scripts/integrations/dnd5e.js");
+    globalThis.CONFIG = { DND5E: { currencies, itemProperties: { mgc: { label: "Магический" } } } };
+    const wand = {
+      id: "w", uuid: "Actor.a.Item.w", name: "Жезл", img: "wand.webp", type: "equipment", sort: 300,
+      system: {
+        quantity: 1, container: "bag", rarity: "rare", equipped: true, attunement: "required", attuned: true, identified: false,
+        price: { value: 50, denomination: "sp" }, weight: { value: 1, units: "lb" },
+        uses: { max: 7, spent: 2, value: 5, autoDestroy: false, recovery: [] }, properties: new Set(["mgc"])
+      }
+    };
+    const spell = { id: "s", name: "Огненный шар", type: "spell", system: {} };
+    const [entry, ...rest] = readInventory({ items: [wand, spell] });
+    assert.equal(rest.length, 0);
+    assert.equal(entry.price, 5);
+    assert.deepEqual(entry.charges, { value: 5, max: 7, spent: 2, autoDestroy: false });
+    assert.equal(entry.container, "bag");
+    assert.equal(entry.attunement, "attuned");
+    assert.equal(entry.attuned, true);
+    assert.equal(entry.identified, false);
+    assert.deepEqual(entry.tags, ["Магический"]);
+    assert.equal(entry.weight, 1);
+    assert.equal(entry.sort, 300);
+  });
+
+  it("reads coins in the system's order with their abbreviations", async () => {
+    const { readCoins } = await import("../scripts/integrations/dnd5e.js");
+    globalThis.CONFIG = { DND5E: { currencies } };
+    assert.deepEqual(readCoins({ system: { currency: { pp: 2, gp: 31, sp: 0 } } }), [
+      { key: "pp", label: "Платина", abbr: "пм", value: 2 },
+      { key: "gp", label: "Золото", abbr: "зм", value: 31 },
+      { key: "sp", label: "Серебро", abbr: "см", value: 0 }
+    ]);
+  });
+});

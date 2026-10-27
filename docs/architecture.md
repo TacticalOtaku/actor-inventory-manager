@@ -54,6 +54,8 @@ one place to update when it moves again. Never inline these reads at a call site
 | Carrying capacity | `getSystemEncumbrance`, `computeActorCapacity` | `core/weight-calculator.js` |
 | Abilities for the window header | `readAbilities` | `integrations/dnd5e.js` |
 | Level, experience, classes, species, background | `readIdentity` | `integrations/dnd5e.js` |
+| Inventory rows (price per unit in gold, charges from `uses.spent`, holding container) | `readInventory` | `integrations/dnd5e.js` |
+| Coins in the system's order | `readCoins` | `integrations/dnd5e.js` |
 
 Shapes handled (dnd5e 5.3.3):
 
@@ -232,6 +234,8 @@ slice from the map #28.
 | Window styles | `styles/window/*.css` |
 | Font faces (generated) | `styles/theme/fonts.css` |
 | FLIP glide (Web Animations) | `scripts/ui/motion.js` |
+| Equipment tab: lists, purse, load, details, inspector, item menu | `scripts/ui/equipment.js`, `templates/window/{equipment,tray,item-row,item-detail}.hbs` |
+| Pure inventory rules: sections, sort, filters, list preferences, charges, coin entry | `scripts/core/inventory.js` |
 
 ### Theme, accent, density, motion
 

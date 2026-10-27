@@ -1,0 +1,20 @@
+<div class="aim-detail-body">
+  <div class="aim-desc">{{#if description}}{{{description}}}{{else}}<p class="aim-hint">{{localize "AIM.window.inv.noDescription"}}</p>{{/if}}</div>
+  {{#if canEdit}}
+  <div class="aim-detail-acts">
+    {{#each activities}}<button type="button" class="aim-btn" data-action="useActivity" data-activity-id="{{id}}"><img src="{{img}}" alt="">{{name}}</button>{{/each}}
+    {{#if useOnly}}<button type="button" class="aim-btn" data-action="useItem"><i class="fa-light fa-hand-sparkles"></i>{{localize "AIM.window.inv.useShort"}}</button>{{/if}}
+    {{#if canEquip}}<button type="button" class="aim-btn" data-action="equipItem"><i class="fa-light fa-hand"></i>{{equipLabel}}</button>{{/if}}
+  </div>
+  {{/if}}
+  {{#if effects.length}}
+  <div class="aim-detail-effects">
+    <span class="aim-detail-k">{{localize "AIM.window.inv.effects"}}</span>
+    {{#each effects}}<label class="aim-detail-effect {{#if disabled}}is-off{{/if}}"><img src="{{img}}" alt=""><span>{{name}}</span><input type="checkbox" data-effect-toggle="{{id}}" {{#unless disabled}}checked{{/unless}} {{#unless ../canEdit}}disabled{{/unless}}></label>{{/each}}
+  </div>
+  {{/if}}
+  <div class="aim-detail-foot">
+    <button type="button" class="aim-btn is-quiet" data-action="itemToChat"><i class="fa-light fa-message"></i>{{localize "AIM.window.inv.toChat"}}</button>
+    <button type="button" class="aim-ibtn aim-mini" data-action="itemMenu" aria-haspopup="menu" aria-label="{{localize "AIM.window.inv.more"}}"><i class="fa-light fa-ellipsis"></i></button>
+  </div>
+</div>

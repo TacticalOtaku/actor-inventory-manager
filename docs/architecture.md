@@ -34,7 +34,7 @@ rather than reaching for `game` directly.
 
 `trade/service.js` is the runtime coordinator. Requests are serialized JSON in the requesting User's AIM flag; `updateUser` supplies the authenticated initiating user ID. No module socket payload authorizes writes. One active GM serializes requests and retains its persisted coordinator ID while connected, so another GM joining cannot take over mid-transfer. The coordinator rechecks actor ownership and both users' confirmations and persists the editing lock before taking snapshots. Complete inventory snapshots live only in a private JournalEntry, never in the public session state; their contents are revalidated before any debit. Transfer and recovery writes check coordinator ownership across asynchronous boundaries. Persisted executing/recovery sessions cannot be resubmitted as transfers. The GM's explicit recovery action restores the saved inventories; interrupted preparation without a saved transfer phase can simply be unlocked.
 
-The trade panel of the 1.9 window is gone; the actor window gets its own in the «Обмен в новой оболочке» slice (#36), on the same `trade/` service. `actor-inventory-manager.tradeState` fires when the saved session changes.
+The actor window's trade panel (`ui/trade.js`, `templates/window/trade.hbs`) is a client of this service only: it reads the saved session, sends requests through `requestTrade`, and keeps a local draft that leaves by itself after a pause (a stale revision is sent again; an unchanged draft is not sent). Besides the request actions the service adds `unconfirm` (a side withdraws only its own confirmation) and records `cancelledBy`; received items carry the `tradeNew` flag until their owner opens them. `actor-inventory-manager.tradeState` fires when the saved session changes.
 
 ## Data-model adapter rule
 
@@ -268,6 +268,8 @@ slice from the map #28.
 | Pure effect rules: dnd5e's categories, row kinds (concentration, condition, switch), change text, the grid | `scripts/core/effects.js` |
 | Overview (skills, saves, tools, defenses, senses, dnd5e's config dialogs) and biography (dnd5e's own fields, ProseMirror) | `scripts/ui/overview.js`, `templates/window/overview.hbs`, `templates/window/biography.hbs` |
 | Pure overview rules: proficiency marks, the dialogs behind each card, the biography fields | `scripts/core/overview.js` |
+| Trade panel on the `trade/` service: partner, offers with auto-send, coins or Item Piles currencies, confirmation, cancel, GM recovery, lock banner, offer buttons, «New» | `scripts/ui/trade.js`, `templates/window/trade.hbs` |
+| Pure trade-panel rules: what the trade waits for, offer edits, unchanged offers, partners, recovery action, Item Piles totals | `scripts/core/trade-panel.js` |
 
 ### Theme, accent, density, motion
 

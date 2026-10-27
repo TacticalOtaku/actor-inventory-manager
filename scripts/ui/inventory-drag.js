@@ -27,6 +27,9 @@ function sameList(a, b) {
  * otherwise a tray puts it in that container and a section takes it out of its container.
  */
 function dropTarget(node, event, manual, dragged, fromDoll) {
+  // A row dropped on the offer of an open trade offers the whole stack.
+  const offer = node.closest?.("[data-offer-drop]");
+  if (offer) return { kind: "offer", node: offer };
   // Anything dropped on the favorites list is starred there.
   const favorites = node.closest?.("[data-favorites]");
   if (favorites) return { kind: "favorite", node: favorites };
@@ -204,6 +207,7 @@ export async function moveInventoryItem(app, item, target) {
     return;
   }
   if (target.kind === "favorite") return app.addFavorite({ type: "item", id: item.getRelativeUUID(item.actor) });
+  if (target.kind === "offer") return app.offerItem(item, Number(item.system?.quantity ?? 1));
   if (target.kind === "attune") return isItemAttuned(item) ? undefined : app.attuneWithLimit(item, null);
   if (target.kind === "unequip") return item.system.equipped ? unequipItem(item.actor, item) : undefined;
   if (target.kind === "sort") {

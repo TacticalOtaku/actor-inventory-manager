@@ -1,4 +1,5 @@
 <div class="aim-equipment">
+  {{#if tradeLock}}<div class="aim-trade-lock" role="status"><i class="fa-light fa-lock"></i>{{localize "AIM.trade.panel.lock"}}</div>{{/if}}
   <div class="aim-toolbar">
     <label class="aim-search"><i class="fa-light fa-magnifying-glass"></i><input type="search" name="inventorySearch" value="{{inv.query}}" placeholder="{{localize "AIM.window.inv.search"}}" autocomplete="off" spellcheck="false" aria-label="{{localize "AIM.window.inv.search"}}"></label>
     <select class="aim-sort" name="inventorySort" aria-label="{{localize "AIM.window.inv.sort"}}">
@@ -7,6 +8,7 @@
     <div class="aim-filters">
       {{#each inv.filters}}<button type="button" class="aim-chip {{#if on}}is-on{{/if}}" data-action="listFilter" data-filter="{{id}}" aria-pressed="{{on}}">{{label}}</button>{{/each}}
     </div>
+    {{#if trade.button}}<button type="button" class="aim-btn aim-trade-btn {{#if trade.button.invited}}is-invited{{/if}}" data-action="toggleTrade" aria-expanded="{{#if trade.open}}true{{else}}false{{/if}}"><i class="fa-light fa-arrow-right-arrow-left"></i>{{localize "AIM.trade.panel.title"}}</button>{{/if}}
     <button type="button" class="aim-ibtn aim-doll-toggle {{#unless doll.hidden}}is-on{{/unless}}" data-action="toggleDoll" aria-pressed="{{#if doll.hidden}}false{{else}}true{{/if}}" aria-label="{{#if doll.hidden}}{{localize "AIM.window.doll.show"}}{{else}}{{localize "AIM.window.doll.hide"}}{{/if}}" data-tooltip="{{localize "AIM.window.doll.toggle"}}"><i class="fa-light fa-person"></i></button>
     <div class="aim-seg" role="group" aria-label="{{localize "AIM.window.inv.view"}}">
       {{#each inv.views}}<button type="button" data-action="listView" data-view="{{id}}" aria-pressed="{{active}}" aria-label="{{label}}" data-tooltip="{{label}}"><i class="fa-light {{icon}}"></i></button>{{/each}}

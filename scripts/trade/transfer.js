@@ -1,4 +1,4 @@
-import { MODULE_ID } from "../constants.js";
+import { FLAGS, MODULE_ID } from "../constants.js";
 import { currencyProfile, tradeError, transferMoney } from "./currencies.js";
 import { canonicalJSON, documentFingerprint, recoveryAttributes } from "./document-data.js";
 
@@ -57,7 +57,8 @@ export async function transferItems(source, target, items, guard = () => {}) {
     data.system.equipped = false;
     data.system.container = null;
     if ("attuned" in data.system) data.system.attuned = false;
-    if (data.flags) delete data.flags[MODULE_ID];
+    // The slot assignment stays behind; the item is marked «Новое» until its new owner opens it.
+    data.flags = { ...data.flags, [MODULE_ID]: { [FLAGS.TRADE_NEW]: true } };
     // Debit first; a failed credit is recovered from the persisted snapshot.
     if (quantity === entry.quantity) await source.deleteEmbeddedDocuments("Item", [item.id]);
     else await source.updateEmbeddedDocuments("Item", [{ _id: item.id, "system.quantity": quantity - entry.quantity }]);

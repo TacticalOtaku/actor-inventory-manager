@@ -14,7 +14,8 @@ export const FLAGS = {
   CUSTOM_TEMPLATE: "paperdollCustomTemplate",
   PAPERDOLL_COLLAPSED: "paperdollCollapsed",
   SPELLS_PANEL_OPEN: "spellsPanelOpen",
-  SPELLS_TAB: "spellsTab"
+  SPELLS_TAB: "spellsTab",
+  TRADE_NEW: "tradeNew"
 };
 
 /** Update option telling the enforcement hook the inventory window already validated an equip. */

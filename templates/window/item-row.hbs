@@ -7,6 +7,7 @@
       <div class="aim-row-name">{{name}}</div>
       <div class="aim-row-meta">
         {{#if weightText}}<span>{{weightText}}</span>{{/if}}{{#if priceText}}<span>{{priceText}}</span>{{/if}}
+        {{#if (lookup @root.newItems id)}}<span class="aim-tag is-new">{{localize "AIM.trade.panel.new"}}</span>{{/if}}
         {{#if attuneTag}}<span class="aim-tag is-att">{{attuneTag}}</span>{{/if}}
         {{#each tags}}<span class="aim-tag">{{this}}</span>{{/each}}
       </div>
@@ -24,6 +25,7 @@
     </span>
     {{/if}}
     <div class="aim-row-act">
+      {{#with (lookup @root.offerRows id)}}<button type="button" class="aim-ibtn aim-mini aim-offer-btn" data-action="tradeOffer" {{#if disabled}}disabled{{/if}} aria-label="{{reason}}" data-tooltip="{{reason}}"><i class="fa-light fa-arrow-right-arrow-left"></i></button>{{/with}}
       {{#if @root.canEdit}}
       {{#if attuneable}}<button type="button" class="aim-ibtn aim-mini {{#if attuned}}is-on{{/if}}" data-action="attuneItem" aria-pressed="{{attuned}}" aria-label="{{attuneLabel}}" data-tooltip="{{attuneLabel}}"><i class="fa-light fa-sparkle"></i></button>{{/if}}
       {{#if canEquip}}<button type="button" class="aim-ibtn aim-mini {{#if equipped}}is-on{{/if}}" data-action="equipItem" aria-pressed="{{equipped}}" aria-label="{{equipLabel}}" data-tooltip="{{equipLabel}}"><i class="fa-light fa-hand"></i></button>{{/if}}

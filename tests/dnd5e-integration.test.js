@@ -497,3 +497,16 @@ describe("actor window inventory reads (dnd5e 5.3.3)", () => {
     ]);
   });
 });
+
+describe("container capacity without Weighty Containers (dnd5e 5.3.3)", () => {
+  it("reads computeCapacity, keeping an infinite max for a container without capacity", async () => {
+    const { readContainerCapacity } = await import("../scripts/integrations/dnd5e.js");
+    const bag = { system: { capacity: { weight: { value: 30, units: "lb" } }, computeCapacity: async () => ({ value: 12.5, max: 30, pct: 41.6, units: "Pounds" }) } };
+    assert.deepEqual(await readContainerCapacity(bag), { value: 12.5, max: 30, kind: "weight", unit: "lb" });
+    const quiver = { system: { capacity: { count: 20, weight: { units: "lb" } }, computeCapacity: async () => ({ value: 12, max: 20, pct: 60, units: "Items" }) } };
+    assert.equal((await readContainerCapacity(quiver)).kind, "count");
+    const sack = { system: { capacity: { weight: { units: "kg" } }, computeCapacity: async () => ({ value: 0, max: Infinity, pct: 0 }) } };
+    assert.equal((await readContainerCapacity(sack)).max, Infinity);
+    assert.equal(await readContainerCapacity({ system: {} }), null);
+  });
+});

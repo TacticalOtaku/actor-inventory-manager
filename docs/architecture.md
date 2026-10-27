@@ -56,6 +56,7 @@ one place to update when it moves again. Never inline these reads at a call site
 | Level, experience, classes, species, background | `readIdentity` | `integrations/dnd5e.js` |
 | Inventory rows (price per unit in gold, charges from `uses.spent`, holding container) | `readInventory` | `integrations/dnd5e.js` |
 | Coins in the system's order | `readCoins` | `integrations/dnd5e.js` |
+| Container capacity without Weighty Containers (`computeCapacity`) | `readContainerCapacity` | `integrations/dnd5e.js` |
 
 Shapes handled (dnd5e 5.3.3):
 
@@ -235,7 +236,8 @@ slice from the map #28.
 | Font faces (generated) | `styles/theme/fonts.css` |
 | FLIP glide (Web Animations) | `scripts/ui/motion.js` |
 | Equipment tab: lists, purse, load, details, inspector, item menu | `scripts/ui/equipment.js`, `templates/window/{equipment,tray,item-row,item-detail}.hbs` |
-| Pure inventory rules: sections, sort, filters, list preferences, charges, coin entry | `scripts/core/inventory.js` |
+| Pure inventory rules: sections, sort, filters, list preferences, charges, coin entry, tray folding, drop refusals | `scripts/core/inventory.js` |
+| Dragging rows: into and out of containers (Weighty Containers checks first), manual order, out of the window | `scripts/ui/inventory-drag.js` |
 
 ### Theme, accent, density, motion
 

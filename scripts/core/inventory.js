@@ -112,3 +112,41 @@ export function goldParts(gp) {
   if (gp >= 0.1) return { amount: Math.round(gp * 10), denom: "sp" };
   return { amount: Math.max(1, Math.round(gp * 100)), denom: "cp" };
 }
+
+/** More containers than this start folded. */
+const UNFOLDED_TRAYS = 3;
+
+/** A tray is folded by the user's choice, else when the actor has more than three containers; search opens every tray it shows. */
+export function trayFolded(id, folds, total, searching) {
+  if (searching) return false;
+  return folds?.[id] ?? total > UNFOLDED_TRAYS;
+}
+
+/** A folded tray peeks at up to six tiles of its contents (items first, then nested containers) and counts the rest. */
+export function trayPeek(contents, trays, limit = 6) {
+  const all = [...contents, ...trays.map((tray) => tray.entry)];
+  return { tiles: all.slice(0, limit), more: Math.max(0, all.length - limit) };
+}
+
+/**
+ * Why an item cannot go into a container (null for the inventory root), or null when it can:
+ * "self" for the container itself, "inside" for one of its own nested containers, "same" when it is already there.
+ * @param {{id: string, container: string|null}[]} entries
+ */
+export function containerDropRefusal(entries, itemId, containerId) {
+  const parent = new Map(entries.map((e) => [e.id, e.container ?? null]));
+  if ((parent.get(itemId) ?? null) === (containerId ?? null)) return "same";
+  if (containerId === itemId) return "self";
+  const seen = new Set();
+  for (let at = containerId; at && !seen.has(at); at = parent.get(at)) {
+    if (at === itemId) return "inside";
+    seen.add(at);
+  }
+  return null;
+}
+
+/** The load band of a container: its filled share and whether it is over capacity; null without a capacity. */
+export function loadBand(load) {
+  if (!load || !(load.max > 0) || !Number.isFinite(load.max)) return null;
+  return { share: Math.min(1, Math.max(0, load.value / load.max)).toFixed(3), over: load.value > load.max };
+}

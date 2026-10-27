@@ -4,11 +4,15 @@ import { describe, it } from "node:test";
 import {
   applyCoinEntry,
   chargeChange,
+  containerDropRefusal,
   goldParts,
   groupInventory,
   listPrefsFor,
+  loadBand,
   parseCoinEntry,
   showsCharges,
+  trayFolded,
+  trayPeek,
   withListPref
 } from "../scripts/core/inventory.js";
 
@@ -136,5 +140,43 @@ describe("price in coins", () => {
     assert.deepEqual(goldParts(0.5), { amount: 5, denom: "sp" });
     assert.deepEqual(goldParts(0.02), { amount: 2, denom: "cp" });
     assert.equal(goldParts(0), null);
+  });
+});
+
+describe("container trays", () => {
+  it("start folded beyond three containers, keep what the user chose, and open while searching", () => {
+    assert.equal(trayFolded("a", {}, 3, false), false);
+    assert.equal(trayFolded("a", {}, 4, false), true);
+    assert.equal(trayFolded("a", { a: false }, 4, false), false);
+    assert.equal(trayFolded("a", { a: true }, 2, false), true);
+    assert.equal(trayFolded("a", { a: true }, 4, true), false);
+  });
+
+  it("peeks at up to six tiles and counts the rest", () => {
+    const list = (n, p) => Array.from({ length: n }, (_, i) => ({ id: `${p}${i}` }));
+    const peek = trayPeek(list(5, "c"), list(3, "t").map((entry) => ({ entry })));
+    assert.deepEqual(peek.tiles.map((e) => e.id), ["c0", "c1", "c2", "c3", "c4", "t0"]);
+    assert.equal(peek.more, 2);
+    assert.deepEqual(trayPeek([], []), { tiles: [], more: 0 });
+  });
+
+  it("refuses a container inside itself or its own contents, and a drop where the item already is", () => {
+    const entries = [
+      { id: "bag", container: null }, { id: "pouch", container: "bag" }, { id: "box", container: "pouch" }, { id: "gem", container: "pouch" }
+    ];
+    assert.equal(containerDropRefusal(entries, "bag", "bag"), "self");
+    assert.equal(containerDropRefusal(entries, "bag", "box"), "inside");
+    assert.equal(containerDropRefusal(entries, "gem", "pouch"), "same");
+    assert.equal(containerDropRefusal(entries, "gem", null), null);
+    assert.equal(containerDropRefusal(entries, "bag", null), "same");
+    assert.equal(containerDropRefusal(entries, "gem", "bag"), null);
+  });
+
+  it("turns a load into a band, over capacity marked, nothing without a capacity", () => {
+    assert.deepEqual(loadBand({ value: 15, max: 30 }), { share: "0.500", over: false });
+    assert.deepEqual(loadBand({ value: 45, max: 30 }), { share: "1.000", over: true });
+    assert.equal(loadBand({ value: 5, max: Infinity }), null);
+    assert.equal(loadBand({ value: 5, max: 0 }), null);
+    assert.equal(loadBand(null), null);
   });
 });

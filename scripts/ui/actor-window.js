@@ -39,7 +39,9 @@ import {
   openItemMenu,
   playEquipmentChanges
 } from "./equipment.js";
+import { bindInventoryDrag } from "./inventory-drag.js";
 import { toggleAttunement, toggleItemEquipped, useItem } from "./item-actions.js";
+import { WEIGHTY_CONTAINERS_MODULE_ID, openWeightyContainersDialog } from "../integrations/weighty-containers.js";
 import { SETTLE, glide } from "./motion.js";
 import { REST_HOOK, buildRailContext, openStatConfig, playLongRest, playRailChanges, railSnapshot, startRuneGlints } from "./rail.js";
 
@@ -128,7 +130,10 @@ export class ActorWindow extends WindowBase {
       itemMenu: ActorWindow.#onItemMenu,
       itemToChat: ActorWindow.#onItemToChat,
       manageCurrency: ActorWindow.#onManageCurrency,
-      editCoin: ActorWindow.#onEditCoin
+      editCoin: ActorWindow.#onEditCoin,
+      toggleTray: ActorWindow.#onToggleTray,
+      foldAllTrays: ActorWindow.#onFoldAllTrays,
+      containerRules: ActorWindow.#onContainerRules
     }
   };
 
@@ -202,7 +207,7 @@ export class ActorWindow extends WindowBase {
       settings: this.#settingsContext(),
       hpEditing: this.hpEditing,
       hpDraft: this.hpDraft,
-      inv: buildEquipmentContext(actor, {
+      inv: await buildEquipmentContext(actor, {
         prefs: getSetting("listPrefs"),
         query: this.query,
         collapsed: this.collapsed,
@@ -210,7 +215,8 @@ export class ActorWindow extends WindowBase {
         detail,
         coinEditing: this.coinEditing,
         coinDraft: this.coinDraft,
-        canEdit: this.canEdit
+        canEdit: this.canEdit,
+        folds: getSetting("trayFolds") ?? {}
       }),
       inspector: selected ? buildInspector(selected, detail) : null,
       ...buildRailContext(actor, { canEdit: this.canEdit, hasSpells: this.#hasSpells(), hiddenBlocks: getSetting("hiddenRailBlocks") ?? [] })
@@ -306,6 +312,8 @@ export class ActorWindow extends WindowBase {
       this.#hook(name, (doc) => mine(doc) && rerender());
     }
     this.#hook(REFRESH_HOOK, rerender);
+    // Weighty Containers announces a rules change on its own hook; the trays' bands and reductions follow.
+    this.#hook(`${WEIGHTY_CONTAINERS_MODULE_ID}.updateContainerRules`, rerender);
     this.#hook(REST_HOOK, (actor, result, config) => actor?.uuid === this.actorKey && config?.type === "long" && playLongRest(this.element));
     // Looping effects run only in the actor window in front.
     this.element.addEventListener("pointerdown", () => this.#bringFront(), { capture: true });
@@ -774,16 +782,7 @@ export class ActorWindow extends WindowBase {
       if (event.target.dataset?.coinInput && this.coinEditing) this.#cancelCoin();
       if (event.target.name === "inventorySearch" && event.relatedTarget) this._searching = false;
     });
-    // A row dragged out of the window carries the item's own drag data, so sheets, the canvas and Item Piles take it.
-    el.addEventListener("dragstart", (event) => {
-      const row = event.target.closest?.("[data-row]");
-      const item = row && this.#itemFrom(row);
-      if (!item || !this.canEdit) return;
-      event.dataTransfer.setData("text/plain", JSON.stringify({ ...item.toDragData(), aimActorUuid: this.actorKey, aimItemId: item.id }));
-      event.dataTransfer.effectAllowed = "copyMove";
-      row.classList.add("is-dragging");
-    });
-    el.addEventListener("dragend", (event) => event.target.closest?.("[data-row]")?.classList.remove("is-dragging"));
+    bindInventoryDrag(this);
   }
 
   /** Enter or Space selects a focused row and toggles a focused section header; the coin field reads Enter and Esc. */
@@ -971,6 +970,29 @@ export class ActorWindow extends WindowBase {
 
   static #onManageCurrency() {
     if (this.canEdit) return new dnd5e.applications.CurrencyManager({ document: this.actor }).render({ force: true });
+  }
+
+  /** The tray folds or unfolds at once; the choice is remembered per container. */
+  static async #onToggleTray(event, target) {
+    const tray = target.closest("[data-tray]");
+    const item = this.actor.items.get(tray?.dataset.tray);
+    if (!item) return;
+    const folded = !tray.classList.contains("is-folded");
+    tray.classList.toggle("is-folded", folded);
+    target.setAttribute("aria-expanded", String(!folded));
+    await game.settings.set(MODULE_ID, "trayFolds", { ...getSetting("trayFolds"), [item.uuid]: folded });
+  }
+
+  static async #onFoldAllTrays(event, target) {
+    const folded = target.dataset.fold === "fold";
+    const folds = { ...getSetting("trayFolds") };
+    for (const item of this.actor.items) if (item.type === "container") folds[item.uuid] = folded;
+    await game.settings.set(MODULE_ID, "trayFolds", folds);
+    this.render({ parts: ["main"] });
+  }
+
+  static #onContainerRules(event, target) {
+    if (game.user.isGM) return openWeightyContainersDialog(this.#itemFrom(target));
   }
 
   static #onEditCoin(event, target) {

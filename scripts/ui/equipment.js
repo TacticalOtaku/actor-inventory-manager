@@ -3,10 +3,11 @@
 // ─────────────────────────────────────────────────────────
 
 import { MODULE_ID } from "../constants.js";
-import { LIST_FILTERS, SORTS, VIEWS, goldParts, groupInventory, listPrefsFor, showsCharges } from "../core/inventory.js";
+import { LIST_FILTERS, SORTS, VIEWS, goldParts, groupInventory, listPrefsFor, loadBand, showsCharges, trayFolded, trayPeek } from "../core/inventory.js";
 import { computeActorEncumbrance, getSystemWeightUnit } from "../core/weight-calculator.js";
-import { getDnd5eConfig, readCoins, readInventory, resolveItemUses, unitAbbreviation } from "../integrations/dnd5e.js";
+import { getDnd5eConfig, readCoins, readContainerCapacity, readInventory, resolveItemUses, unitAbbreviation } from "../integrations/dnd5e.js";
 import { computeActorCurrency, readPilesCurrencies } from "../integrations/item-piles.js";
+import { getContainerLoad, getContainerWeightReductionPct, isWeightyContainersActive } from "../integrations/weighty-containers.js";
 import { escapeHTML } from "./html.js";
 
 const PARTIALS = `modules/${MODULE_ID}/templates/window`;
@@ -23,9 +24,9 @@ const typeLabel = (type) => t(CONFIG.Item.typeLabels?.[type] ?? type);
  * Everything the equipment tab draws.
  * @param {Actor} actor
  * @param {{prefs: object, query: string, collapsed: Set<string>, selected: string|null, detail: object|null,
- *   coinEditing: string|null, coinDraft: string, canEdit: boolean}} state
+ *   coinEditing: string|null, coinDraft: string, canEdit: boolean, folds: Record<string, boolean>}} state
  */
-export function buildEquipmentContext(actor, state) {
+export async function buildEquipmentContext(actor, state) {
   const prefs = listPrefsFor(state.prefs, "equipment");
   const entries = readInventory(actor);
   const coins = readCoins(actor);
@@ -58,7 +59,28 @@ export function buildEquipmentContext(actor, state) {
         : null
     };
   };
-  const tray = ({ entry, contents, trays }) => ({ entry: row(entry), contents: contents.map(row), trays: trays.map(tray) });
+  const wc = isWeightyContainersActive();
+  const narrowed = Boolean(state.query.trim() || prefs.filters.length);
+  const total = entries.filter((e) => e.type === "container").length;
+  const loads = new Map();
+  for (const entry of entries) if (entry.type === "container") loads.set(entry.id, await containerLoad(actor, actor.items.get(entry.id), wc, unitLabel));
+  let anyOpen = false;
+  const tray = ({ entry, contents, trays }) => {
+    const folded = trayFolded(entry.uuid, state.folds, total, narrowed);
+    if (!folded) anyOpen = true;
+    const peek = trayPeek(contents, trays);
+    return {
+      entry: row(entry),
+      folded,
+      toggleLabel: t(folded ? "AIM.window.inv.trayUnfold" : "AIM.window.inv.trayFold", { name: entry.name }),
+      ...loads.get(entry.id),
+      peek: peek.tiles,
+      more: peek.more,
+      contents: contents.map(row),
+      trays: trays.map(tray)
+    };
+  };
+  const trayList = containers.map(tray);
 
   return {
     prefs,
@@ -75,11 +97,32 @@ export function buildEquipmentContext(actor, state) {
       collapsed: state.collapsed.has(section.id),
       entries: section.entries.map(row)
     })),
-    containers: containers.map(tray),
+    containers: trayList,
+    foldAll: anyOpen ? "fold" : "unfold",
+    foldAllLabel: t(anyOpen ? "AIM.window.inv.foldAll" : "AIM.window.inv.unfoldAll"),
+    rulesButton: wc && game.user.isGM,
     containersCollapsed: state.collapsed.has("container"),
     ...purseContext(actor, coins, state),
     load: loadContext(actor, unitLabel)
   };
+}
+
+/** A tray's load band and weight reduction: Weighty Containers' load when it is active, else dnd5e's capacity. */
+async function containerLoad(actor, container, wc, unitLabel) {
+  if (wc) {
+    const load = getContainerLoad(actor, container.id);
+    const reduction = getContainerWeightReductionPct(container);
+    const byCount = load?.kind === "count";
+    const band = loadBand(byCount ? { value: load.count, max: load.capacityCount } : { value: load?.load, max: load?.capacity });
+    return {
+      band: band && { ...band, text: byCount ? `${load.count} / ${load.capacityCount} ${t("AIM.window.inv.pieces")}` : `${load.load} / ${load.capacity} ${unitLabel}`, hint: t("AIM.window.inv.loadByWc") },
+      reduction
+    };
+  }
+  const capacity = await readContainerCapacity(container);
+  const band = loadBand(capacity);
+  const unit = capacity?.kind === "count" ? t("AIM.window.inv.pieces") : unitAbbreviation("weightUnits", capacity?.unit);
+  return { band: band && { ...band, text: `${capacity.value} / ${capacity.max} ${unit}`, hint: t("AIM.window.inv.loadByDnd5e") }, reduction: 0 };
 }
 
 /** dnd5e coins, or Item Piles' currencies and total when it is active. */

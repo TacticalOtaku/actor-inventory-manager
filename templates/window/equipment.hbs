@@ -37,6 +37,7 @@
     <section class="aim-section {{#if inv.containersCollapsed}}is-collapsed{{/if}}" data-section="container" data-key="sec-container">
       <div class="aim-sec-head" data-action="toggleSection" data-section-id="container" role="button" tabindex="0" aria-expanded="{{#if inv.containersCollapsed}}false{{else}}true{{/if}}">
         <i class="fa-light fa-chevron-down aim-chev"></i><h3>{{localize "AIM.window.inv.sections.container"}}</h3><span class="aim-sec-n">{{inv.containers.length}}</span>
+        <button type="button" class="aim-linkbtn" data-action="foldAllTrays" data-fold="{{inv.foldAll}}">{{inv.foldAllLabel}}</button>
       </div>
       <div class="aim-sec-body"><div class="aim-sec-inner"><div class="aim-items" data-view="list">
         {{#each inv.containers}}{{> "modules/actor-inventory-manager/templates/window/tray.hbs"}}{{/each}}

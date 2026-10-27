@@ -40,6 +40,7 @@ import {
   setActorPaperdollTemplate
 } from "./core/paperdoll-templates.js";
 import { openActorWindow, toggleActorWindow } from "./ui/actor-window.js";
+import { openPresetEditor } from "./ui/preset-editor.js";
 import { equipItemToSlot, unequipItem, toggleItemEquipped, useItem, toggleAttunement } from "./ui/item-actions.js";
 import { isItemPilesActive, computeActorCurrency } from "./integrations/item-piles.js";
 import { SC_MODULE_ID, invalidateRarityColorCache } from "./integrations/sc-rarity-colors.js";
@@ -81,8 +82,7 @@ Hooks.once("ready", () => {
     toggleInventory: toggleActorWindow,
     openWindow: openActorWindow,
     toggleWindow: toggleActorWindow,
-    // The preset editor returns with the «Снаряжение, контейнеры и кукла» slice (#31).
-    openEditor: () => ui.notifications.info(game.i18n.localize("AIM.window.editorPending")),
+    openEditor: openPresetEditor,
     getActorPaperdollTemplate,
     getActorSlots,
     setActorPaperdollTemplate,

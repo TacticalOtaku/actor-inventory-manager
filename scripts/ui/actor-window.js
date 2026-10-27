@@ -40,11 +40,13 @@ import {
   playEquipmentChanges
 } from "./equipment.js";
 import { buildDollContext, firstItemFor } from "./doll.js";
+import { openPresetEditor } from "./preset-editor.js";
 import { bindInventoryDrag } from "./inventory-drag.js";
 import { equipItemToSlot, toggleAttunement, toggleItemEquipped, unequipItem, useItem } from "./item-actions.js";
 import { setActorPaperdollTemplate } from "../core/paperdoll-templates.js";
 import { WEIGHTY_CONTAINERS_MODULE_ID, openWeightyContainersDialog } from "../integrations/weighty-containers.js";
 import { SETTLE, glide } from "./motion.js";
+import { readMotionCaps, schemeIsLight, stampTheme } from "./theme-root.js";
 import { REST_HOOK, buildRailContext, openStatConfig, playLongRest, playRailChanges, railSnapshot, startRuneGlints } from "./rail.js";
 
 const TEMPLATES = `modules/${MODULE_ID}/templates/window`;
@@ -67,16 +69,6 @@ function windowIdFor(actor) {
 
 const getSetting = (key) => game.settings.get(MODULE_ID, key);
 
-/** Caps the OS and Foundry put on motion (#9). */
-function readMotionCaps() {
-  return {
-    reducedMotion: globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false,
-    performanceLow: document.body.classList.contains("performance-low")
-  };
-}
-
-/** Foundry resolves its application colour scheme (or the browser's) into a body class. */
-const schemeIsLight = () => document.body.classList.contains("theme-light");
 
 const WindowBase = foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2);
 
@@ -140,7 +132,8 @@ export class ActorWindow extends WindowBase {
       slotClick: ActorWindow.#onSlotClick,
       unequipSlot: ActorWindow.#onUnequipSlot,
       socketClick: ActorWindow.#onSocketClick,
-      endAttunement: ActorWindow.#onEndAttunement
+      endAttunement: ActorWindow.#onEndAttunement,
+      openPresetEditor: ActorWindow.#onOpenPresetEditor
     }
   };
 
@@ -481,11 +474,7 @@ export class ActorWindow extends WindowBase {
   #applyRootState() {
     const el = this.element;
     if (!el) return;
-    el.dataset.theme = resolveTheme(getSetting("windowTheme"), schemeIsLight());
-    el.dataset.accent = normalizeAccent(getSetting("windowAccent"));
-    el.dataset.density = getSetting("windowDensity");
-    el.dataset.motion = effectiveMotion(getSetting("motionLevel"), readMotionCaps());
-    el.dataset.fonts = this.fontsAtLoad ? "web" : "system";
+    stampTheme(el, { fonts: this.fontsAtLoad });
     el.dataset.role = this.canEdit ? (game.user.isGM ? "gm" : "owner") : "observer";
     el.dataset.actorType = this.actor.type;
     const { hp } = readRail(this.actor);
@@ -1075,6 +1064,10 @@ export class ActorWindow extends WindowBase {
     if (!item || !this.canEdit) return;
     this.#prepareFlight(item, holder.querySelector(".aim-tile"));
     await unequipItem(this.actor, item);
+  }
+
+  static #onOpenPresetEditor() {
+    return openPresetEditor(this.actor);
   }
 
   static #onSocketClick(event, target) {

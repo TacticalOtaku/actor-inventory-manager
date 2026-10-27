@@ -283,7 +283,7 @@
         "invalid": "Invalid template data.",
         "missingId": "The template needs an id.",
         "reservedId": "The id '{id}' is reserved by a built-in template.",
-        "noSlots": "The template has no slots.",
+        "noSlots": "The template has no slot list.",
         "slotMissingId": "Slot #{index} has no id.",
         "duplicateSlot": "Slot id '{id}' is used more than once.",
         "invalidJSON": "The text is not valid JSON.",
@@ -512,7 +512,6 @@
       "abilityHint": "Check; Shift for a saving throw",
       "panelPending": "This tab arrives in the next 2.0 implementation slices.",
       "inspectorEmpty": "Select an entry to see its details.",
-      "editorPending": "The doll preset editor returns with the Equipment tab.",
       "menu": {
         "openSheet": "Open character sheet",
         "traits": "Special traits",
@@ -736,6 +735,31 @@
         "nothingFits": "Nothing fits the “{slot}” slot.",
         "cargo": "Cargo: {value} {unit}",
         "noCargo": "No cargo capacity set"
+      },
+      "editor": {
+        "title": "Doll editor — {actor}",
+        "open": "Preset editor",
+        "source": "Preset",
+        "figure": "Figure",
+        "attunement": "Attunement limit",
+        "figures": {
+          "human": "Humanoid",
+          "beast": "Beast",
+          "wagon": "Wagon",
+          "ship": "Ship",
+          "airship": "Airship"
+        },
+        "preview": "Preview",
+        "slots": "Slots",
+        "noSlots": "No slots: the doll becomes a figure banner over the hold.",
+        "newSlot": "New slot",
+        "up": "Up",
+        "down": "Down",
+        "remove": "Remove slot",
+        "icon": "Icon",
+        "own": "Own doll: {actor}",
+        "changed": "Changed: «Apply» makes this doll the actor's own, «Save as new» makes it a world preset.",
+        "importHint": "Pick a JSON file with a preset: it is saved to the world and opens in the editor."
       }
     }
   }

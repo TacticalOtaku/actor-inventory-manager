@@ -19,6 +19,7 @@ const foundryGlobals = Object.fromEntries(
     "Roll",
     "Actor",
     "Item",
+    "Folder",
     "ActiveEffect",
     "socketlib",
     "dnd5e",

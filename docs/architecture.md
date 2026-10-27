@@ -71,6 +71,7 @@ one place to update when it moves again. Never inline these reads at a call site
 | Damage types (`CONFIG.DND5E.damageTypes[key]`: label, `color` as a Foundry `Color`, `reference` page) | `readDamageType` | `integrations/dnd5e.js` |
 | NPC kind and legendary pools (`details.cr`, `details.xp.value`, prepared `details.type.label`, `traits.size`, `resources.legact` / `legres` {max, spent}) | `readNpc` | `integrations/dnd5e.js` |
 | Vehicle window (`details.type`, `traits.keel` / `beam`, `hp.dt` / `mt`, `travel.speeds` in `travel.units`, hold load `attributes.encumbrance.value` against `capacity.cargo`, `crew` / `passengers` {max, value: UUIDs}, `draft.value`, legacy `cargo.crew` / `cargo.passengers`) | `readVehicle` | `integrations/dnd5e.js` |
+| Items dropped from outside (ADR 0004): `sheet._onDropCreateItems(event, items, "copy")`, `sheet._onDropItemContainer(event, item, container)`, fallback `createWithContents` + `createDocuments({ keepId: true })`; a spell kept a spell through `onDropCreate`; the sheet's `unsupportedItemTypes` | `createDroppedItems`, `createDroppedSpell`, `sheetUnsupportedTypes` | `integrations/dnd5e.js` |
 | Skills and tools (`prof.multiplier` in effect, total, passive) | `readSkills`, `readTools` | `integrations/dnd5e.js` |
 | Defenses (`traits.dr/di/dv/ci` with custom entries, `traits.dm.amount`) | `readDefenses` | `integrations/dnd5e.js` |
 | Passive scores, senses (`attributes.senses.ranges`, moved in 5.3), armor, weapons, languages (`labels`, telepathy) | `readSenses` | `integrations/dnd5e.js` |
@@ -283,6 +284,8 @@ slice from the map #28.
 | A vehicle's rail: thresholds and speed, the cargo meter, crew, passengers and draft animals with free places, «Неизвестный», rows without an actor; the line of type, size, keel and beam | `scripts/ui/vehicle.js` |
 | Pure vehicle rules: weight conversion, the cargo meter, crew places | `scripts/core/vehicle.js` |
 | Window menus: which entries show and where groups part (both entry shapes) | `scripts/core/menu.js`; item and activity menus with dnd5e's keys and hooks in `scripts/ui/equipment.js` |
+| Drops from outside the actor: resolve item, folder, effect or actor, `dropActorSheetData`, copy or move, spells by tab, refusals at the drop point, «Новое» and the landing flash | `scripts/ui/external-drop.js`, bound in `scripts/ui/inventory-drag.js` |
+| Pure drop rules: copy, move or refuse, unsupported types, spell or scroll, received before a move deletes | `scripts/core/external-drop.js` |
 | Pure scene rules: which type has a scene, multi-type parts, how a motion level plays it | `scripts/core/damage-scenes.js` |
 
 ### Theme, accent, density, motion

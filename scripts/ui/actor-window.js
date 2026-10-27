@@ -485,6 +485,7 @@ export class ActorWindow extends WindowBase {
     playRailChanges(this.element, this._railPrev, next);
     this._railPrev = next;
     this.#afterEquipmentRender();
+    this.#playLanding();
     // A reset of the confirmations (an offer changed) shakes the status once.
     const session = sessionFor(this.actor.id);
     const confirmed = Boolean(session?.confirmed.some(Boolean));
@@ -496,6 +497,23 @@ export class ActorWindow extends WindowBase {
       const field = this.element.querySelector(`[${this._tradeFocus.attr}="${CSS.escape(this._tradeFocus.key)}"]`);
       field?.focus();
       this._tradeFocus = null;
+    }
+  }
+
+  /** Rows of items just dropped in from outside land with a flash, once. */
+  landItems(ids) {
+    this._landed = new Set([...(this._landed ?? []), ...ids]);
+  }
+
+  #playLanding() {
+    if (!this._landed?.size) return;
+    for (const id of this._landed) {
+      const row = this.element.querySelector(`[data-panel="${this.tab}"] [data-item-id="${CSS.escape(id)}"] [data-row]`);
+      if (!row) continue;
+      this._landed.delete(id);
+      if (!this.motionOn) continue;
+      row.classList.add("is-landed");
+      row.addEventListener("animationend", () => row.classList.remove("is-landed"), { once: true });
     }
   }
 

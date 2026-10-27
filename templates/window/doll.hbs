@@ -35,8 +35,9 @@
   </div>
   {{else}}
   <div class="aim-doll-grid" style="--rows: {{doll.rows}}">
-    {{#if doll.backdrop}}<img class="aim-doll-backdrop" src="{{doll.backdrop}}" alt="" aria-hidden="true">{{/if}}
-    <svg class="aim-figure" style="grid-row: 1 / {{doll.figureEnd}}" viewBox="{{doll.figureView}}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="{{doll.figureHref}}"/></svg>
+    {{!-- The portrait takes the figure's place; drawn together they cover each other. --}}
+    {{#if doll.backdrop}}<img class="aim-doll-backdrop" style="grid-row: 1 / {{doll.figureEnd}}" src="{{doll.backdrop}}" alt="" aria-hidden="true">
+    {{else}}<svg class="aim-figure" style="grid-row: 1 / {{doll.figureEnd}}" viewBox="{{doll.figureView}}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="{{doll.figureHref}}"/></svg>{{/if}}
     {{#each doll.slots}}{{> aimSlot}}{{/each}}
     {{#if doll.socketsInGrid}}{{> aimSockets style=doll.socketGridStyle}}{{/if}}
   </div>

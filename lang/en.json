@@ -499,8 +499,8 @@
         "warn": "Warn Only (Show warning but permit invalid equipment)"
       },
       "showSheetButton": {
-        "name": "AIM button in the sheet header",
-        "hint": "Adds the AIM button to actor sheet headers; it opens the actor window."
+        "name": "AIM in the sheet menu",
+        "hint": "Adds AIM to the ⋮ menu of actor sheets; it opens the actor window. The I key opens it too."
       },
       "showActorPortraitBackdrop": {
         "name": "Show Actor Portrait Backdrop in Paperdoll",
@@ -840,7 +840,14 @@
         "icon": "Icon",
         "own": "Own doll: {actor}",
         "changed": "Changed: «Apply» makes this doll the actor's own, «Save as new» makes it a world preset.",
-        "importHint": "Pick a JSON file with a preset: it is saved to the world and opens in the editor."
+        "importHint": "Pick a JSON file with a preset: it is saved to the world and opens in the editor.",
+        "zone": "Place",
+        "zones": {
+          "order": "By order",
+          "left": "Left",
+          "right": "Right",
+          "under": "Under the doll"
+        }
       },
       "spells": {
         "search": "Find a spell",
@@ -1033,7 +1040,8 @@
         "notOwner": "Only its owner can hand an item over — through a trade",
         "pile": "Take the item through the Item Piles window",
         "type": "{type} can't go on this actor",
-        "root": "This sheet can't put items into a container — it landed in the inventory root"
+        "root": "This sheet can't put items into a container — it landed in the inventory root",
+        "moveFailed": "The item stayed with its owner; nothing was copied"
       }
     },
     "tips": {

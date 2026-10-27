@@ -83,48 +83,12 @@ export function addInventoryHeaderControl(app, controls) {
 }
 
 /**
- * Inject icon button into Actor Sheet Window Header Bar
- */
-function injectHeaderButton(app) {
-  if (!game.settings.get(MODULE_ID, "showSheetButton")) return;
-  if (!isPrimaryActorSheet(app)) return;
-
-  const actor = app.document ?? app.actor;
-  const header = app.window?.header;
-  if (!header || header.querySelector(".aim-window-header-btn")) return;
-
-  const headerBtn = document.createElement("button");
-  headerBtn.type = "button";
-  headerBtn.className = "header-control aim-window-header-btn";
-  headerBtn.title = game.i18n.localize("AIM.sheetButton.tooltip");
-  // «AIM» alone tells a screen reader nothing; the button says what it opens.
-  headerBtn.setAttribute("aria-label", game.i18n.localize("AIM.sheetButton.tooltip"));
-  headerBtn.innerHTML = `<i class="fa-light fa-shirt"></i><span>${game.i18n.localize("AIM.sheetButton.label")}</span>`;
-  headerBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    openActorWindow(actor);
-  });
-
-  const controlsBtn = header.querySelector(".controls-dropdown, [data-action='toggleControls'], .window-controls");
-  const closeBtn = header.querySelector(".close, [data-action='close'], .window-close");
-
-  if (controlsBtn) {
-    controlsBtn.before(headerBtn);
-  } else if (closeBtn) {
-    closeBtn.before(headerBtn);
-  } else {
-    header.appendChild(headerBtn);
-  }
-}
-
-/**
  * Register sheet hooks and keybinding
  */
 export function registerSheetInjectionHooks() {
-  // Every dnd5e actor sheet is an ActorSheetV2, so these hooks cover them all.
+  // Every dnd5e actor sheet is an ActorSheetV2, so this hook covers them all; the entry sits in the sheet's ⋮ menu,
+  // beside the I key, instead of a button of its own in the header.
   Hooks.on("getHeaderControlsActorSheetV2", addInventoryHeaderControl);
-  Hooks.on("renderActorSheetV2", app => injectHeaderButton(app));
 
   // NOTE: keybindings must be registered during "init" (Foundry throws otherwise).
   // The inventory hotkey lives in foundry/settings.js.

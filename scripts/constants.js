@@ -82,14 +82,3 @@ export const ITEM_RARITY_COLORS = {
   legendary: "#d35400",
   artifact: "#c0392b"
 };
-
-export const SPELL_SCHOOL_COLORS = {
-  abj: "#3498db", // Abjuration: Blue
-  con: "#f39c12", // Conjuration: Amber
-  div: "#9b59b6", // Divination: Purple
-  enc: "#e91e63", // Enchantment: Pink
-  evo: "#e74c3c", // Evocation: Red
-  ill: "#1abc9c", // Illusion: Teal
-  nec: "#2ecc71", // Necromancy: Green
-  trs: "#d35400"  // Transmutation: Dark Orange
-};

@@ -6,8 +6,9 @@ export const emptyOffer = () => ({ items: [], money: {} });
 
 export function transferableItems(actor) {
   const currencyIds = new Set(currencyProfile(actor).rows.map(r => r.itemId).filter(Boolean));
-  return Array.from(actor.items.values()).filter(item => isPhysicalItem(item) && !currencyIds.has(item.id)
-    && !Array.from(actor.items.values()).some(child => child.system?.container === item.id));
+  const items = Array.from(actor.items.values());
+  const filled = new Set(items.map(child => child.system?.container).filter(Boolean));
+  return items.filter(item => isPhysicalItem(item) && !currencyIds.has(item.id) && !filled.has(item.id));
 }
 
 export function itemFingerprint(item) {

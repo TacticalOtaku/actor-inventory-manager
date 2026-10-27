@@ -2,7 +2,7 @@
 // Actor Inventory Manager - SC - Item Rarity Colors Integration
 // ─────────────────────────────────────────────────────────
 
-import { ITEM_RARITY_COLORS, SPELL_SCHOOL_COLORS } from "../constants.js";
+import { ITEM_RARITY_COLORS } from "../constants.js";
 
 export const SC_MODULE_ID = "sc-item-rarity-colors";
 
@@ -245,43 +245,4 @@ export function scSchoolColor(school, level = 0) {
   if (!isScRarityColorsActive() || !school) return null;
   const profile = readScSpellProfile(school.toLowerCase().trim(), Number(level));
   return (profile && pickScColor((field) => profile[field])) || null;
-}
-
-/**
- * Get spell school color with SC - Item Rarity Colors & system config support
- * @param {string} school
- * @param {number} [level=0] Spell level, for SC's per-level variants.
- * @param {Object} [defaultColors={}]
- * @returns {string}
- */
-export function getSpellSchoolColor(school, level = 0, defaultColors = {}) {
-  if (!school) return "#3498db";
-  const s = school.toLowerCase().trim();
-
-  // 1. SC - Item Rarity Colors spell school styles (per level when the GM uses level variants)
-  if (isScRarityColorsActive()) {
-    const profile = readScSpellProfile(s, Number(level));
-    const scColor = profile && pickScColor(field => profile[field]);
-    if (scColor) return scColor;
-  }
-
-  const dndConfig = globalThis.CONFIG?.DND5E?.spellSchools;
-  if (dndConfig?.[s]?.color) return dndConfig[s].color;
-
-  const fallbackMap = defaultColors && Object.keys(defaultColors).length > 0 ? defaultColors : SPELL_SCHOOL_COLORS;
-  return fallbackMap[s] ?? "#3498db";
-}
-
-/**
- * Get spell school visuals with CSS variables for gradients and styling
- * @param {string} school
- * @param {number} [level=0] Spell level, for SC's per-level variants.
- * @param {Object} [defaultColors={}]
- * @returns {{ color: string, rgb: string, cssVars: string }}
- */
-export function getSpellSchoolVisuals(school, level = 0, defaultColors = {}) {
-  const color = getSpellSchoolColor(school, level, defaultColors);
-  const rgb = hexToRgb(color);
-  const cssVars = `--spell-school-color: ${color}; --spell-school-rgb: ${rgb};`;
-  return { color, rgb, cssVars };
 }

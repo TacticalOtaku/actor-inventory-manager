@@ -1,0 +1,21 @@
+<div class="aim-effwrap" data-effect-uuid="{{uuid}}" data-effect-id="{{id}}" {{#if itemId}}data-parent-id="{{itemId}}"{{/if}} data-effect-rel="{{relativeId}}" data-key="eff-{{where}}-{{uuid}}">
+  <div class="aim-effect is-{{kind}} {{#if disabled}}is-off{{/if}} {{#if suppressed}}is-supp{{/if}} {{#if open}}is-open{{/if}}" data-effect-row data-where="{{where}}" role="button" tabindex="0" aria-expanded="{{#if open}}true{{else}}false{{/if}}" {{#if draggable}}draggable="true" data-fav-effect="{{relativeId}}"{{/if}}>
+    <img src="{{img}}" alt="">
+    <span class="aim-effect-n"><span class="aim-effect-name">{{name}}</span>{{#if line}}<small>{{line}}</small>{{/if}}</span>
+    {{#if time}}<span class="aim-effect-time">{{time}}</span>{{/if}}
+    {{#if (eq kind "concentration")}}
+    <button type="button" class="aim-ibtn aim-mini" data-action="endConcentration" {{#unless @root.canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.chips.concentrationEnd"}}" data-tooltip="{{localize "AIM.window.chips.concentrationEnd"}}"><i class="fa-light fa-xmark"></i></button>
+    {{else if (eq kind "condition")}}
+    <button type="button" class="aim-ibtn aim-mini" data-action="removeCondition" data-status="{{status}}" {{#unless @root.canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.effects.remove" name=name}}" data-tooltip="{{localize "AIM.window.effects.remove" name=name}}"><i class="fa-light fa-xmark"></i></button>
+    {{else}}
+    <button type="button" class="aim-switch" role="switch" aria-checked="{{#if on}}true{{else}}false{{/if}}" data-action="toggleEffect" {{#if suppressed}}disabled data-tooltip="{{lockedLabel}}"{{else}}{{#unless @root.canEdit}}disabled{{/unless}}{{/if}} aria-label="{{switchLabel}}"></button>
+    {{/if}}
+  </div>
+  {{#if detail}}
+  <div class="aim-effect-detail" data-effect-detail>
+    {{#if detail.description}}<div class="aim-effect-desc">{{{detail.description}}}</div>{{/if}}
+    {{#if detail.changes.length}}<ul class="aim-effect-changes">{{#each detail.changes}}<li>{{this}}</li>{{/each}}</ul>{{/if}}
+    {{#unless detail.description}}{{#unless detail.changes.length}}<p class="aim-hint">{{localize "AIM.window.effects.noDetail"}}</p>{{/unless}}{{/unless}}
+  </div>
+  {{/if}}
+</div>

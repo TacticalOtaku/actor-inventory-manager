@@ -72,9 +72,9 @@ export function bindInventoryDrag(app) {
   const el = app.element;
   let dragged = null;
   let fromDoll = false;
-  // A favorite row being reordered, or a slot track dragged into the favorites.
+  // A favorite row being reordered, or a slot track or an effect dragged into the favorites ({type, id}).
   let draggedFav = null;
-  let draggedSlots = null;
+  let draggedNew = null;
   let lit = null;
   let spring = { tray: null, timer: null };
 
@@ -98,7 +98,7 @@ export function bindInventoryDrag(app) {
     dragged = null;
     fromDoll = false;
     draggedFav = null;
-    draggedSlots = null;
+    draggedNew = null;
   };
 
   /** Favorites take a dragged favorite (to reorder it before or after a row) or a slot track. */
@@ -110,17 +110,17 @@ export function bindInventoryDrag(app) {
       const box = row.getBoundingClientRect();
       return { kind: "reorder", node: row, id: row.dataset.favId, before: event.clientY < box.top + box.height / 2 };
     }
-    return draggedSlots ? { kind: "favorite", node: list } : null;
+    return draggedNew ? { kind: "favorite", node: list } : null;
   };
 
   // A row dragged out of the window carries the item's own drag data, so sheets, the canvas and Item Piles take it.
   el.addEventListener("dragstart", (event) => {
     const fav = event.target.closest?.("[data-fav-id]");
-    const track = event.target.closest?.("[data-fav-slots]");
+    const track = event.target.closest?.("[data-fav-slots], [data-fav-effect]");
     if ((fav || track) && app.canEdit) {
       draggedFav = fav?.dataset.favId ?? null;
-      draggedSlots = track?.dataset.favSlots ?? null;
-      event.dataTransfer.setData("text/plain", JSON.stringify({ aimActorUuid: app.actorKey, aimFavorite: draggedFav, aimSlots: draggedSlots }));
+      draggedNew = !track ? null : track.dataset.favSlots ? { type: "slots", id: track.dataset.favSlots } : { type: "effect", id: track.dataset.favEffect };
+      event.dataTransfer.setData("text/plain", JSON.stringify({ aimActorUuid: app.actorKey, aimFavorite: draggedFav, aimNew: draggedNew }));
       event.dataTransfer.effectAllowed = "link";
       (fav ?? track).classList.add("is-dragging");
       return;
@@ -140,7 +140,7 @@ export function bindInventoryDrag(app) {
   });
 
   el.addEventListener("dragover", (event) => {
-    if (draggedFav || draggedSlots) {
+    if (draggedFav || draggedNew) {
       const target = favoriteTarget(event);
       light(target?.kind === "reorder" ? { ...target, kind: "sort" } : target);
       if (target) { event.preventDefault(); event.dataTransfer.dropEffect = "link"; }
@@ -166,15 +166,15 @@ export function bindInventoryDrag(app) {
   });
 
   el.addEventListener("drop", (event) => {
-    if (draggedFav || draggedSlots) {
+    if (draggedFav || draggedNew) {
       const target = favoriteTarget(event);
       const fav = draggedFav;
-      const slots = draggedSlots;
+      const added = draggedNew;
       reset();
       if (!target) return;
       event.preventDefault();
       if (target.kind === "reorder") app.reorderFavorite(fav, target.id, target.before);
-      else if (slots) app.addFavorite({ type: "slots", id: slots });
+      else if (added) app.addFavorite(added);
       return;
     }
     if (!dragged) return;

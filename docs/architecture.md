@@ -64,6 +64,9 @@ one place to update when it moves again. Never inline these reads at a call site
 | Features by origin (`advancementRoot`/`advancementOrigin`), uses, recovery, recharge, attacks | `readFeatures` | `integrations/dnd5e.js` |
 | Activities a player picks (`canUse`, midi-qol automation-only left out) | `usableActivities` | `integrations/midi-qol.js` |
 | Favorites (`system.favorites`: relative UUIDs, slot keys, skill and tool keys) | `readFavorites` | `integrations/dnd5e.js` |
+| Effects as dnd5e's sheet lists them (`allApplicableEffects`, `isSuppressed` and why, time left, source) | `readEffects` | `integrations/dnd5e.js` |
+| Effect changes (Foundry 14 `system.changes` with `type`) and their field labels | `readEffectChanges` | `integrations/dnd5e.js` |
+| Statuses for the conditions grid (`CONFIG.statusEffects`, non-pseudo `conditionTypes`) | `readStatusEffects` | `integrations/dnd5e.js` |
 
 Shapes handled (dnd5e 5.3.3):
 
@@ -257,6 +260,8 @@ slice from the map #28.
 | Pure feature rules: origin and action groups, filters, uses entry, recharge label | `scripts/core/features.js` |
 | Favorites in the rail (dnd5e `system.favorites`): groups, use, open, stars, drag and reorder | `scripts/ui/favorites.js`, `templates/window/rail.hbs` |
 | Pure favorite rules: action-cost groups, manual order, the tab of an entry | `scripts/core/favorites.js` |
+| Effects: the rail's temporary ones, the effects tab with the conditions grid, switches, the effect menu | `scripts/ui/effects.js`, `templates/window/effects.hbs`, `templates/window/effect-row.hbs` |
+| Pure effect rules: dnd5e's categories, row kinds (concentration, condition, switch), change text, the grid | `scripts/core/effects.js` |
 
 ### Theme, accent, density, motion
 

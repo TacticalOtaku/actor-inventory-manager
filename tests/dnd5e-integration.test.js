@@ -611,7 +611,7 @@ describe("favorites reads (dnd5e 5.3.3)", () => {
     const { readFavorites } = await import("../scripts/integrations/dnd5e.js");
     globalThis.CONFIG = { DND5E: { skills: { ath: { label: "Атлетика", icon: "ath.svg" } }, spellcasting: { spell: { img: "slots-{id}.webp" } } } };
     const fireball = { id: "fb", type: "spell", name: "Огненный шар", img: "fb.webp",
-      system: { level: 3, activities: { contents: [{ activation: { type: "action" } }] }, getFavoriteData: async () => ({ title: "Огненный шар", subtitle: ["В, С, М", "1 действие"], save: { dc: 15 } }) } };
+      system: { level: 3, activities: { contents: [{ activation: { type: "action" } }] }, getFavoriteData: async () => ({ title: "Огненный шар", subtitle: ["В, С, М", "1 действие"], save: { ability: new Set(["dex"]), dc: { calculation: "spellcasting", formula: "", value: 15 } } }) } };
     const shield = { id: "sh", type: "spell", name: "Щит", system: { level: 1 } };
     const parry = { id: "act1", item: shield, activation: { type: "reaction" }, getFavoriteData: async () => ({ title: "Парирование" }) };
     const gone = null;
@@ -630,9 +630,53 @@ describe("favorites reads (dnd5e 5.3.3)", () => {
     } };
     const [fb, act, slots, skill, ...rest] = await readFavorites(actor);
     assert.equal(rest.length, 0, "a favorite whose document is gone is left out");
-    assert.deepEqual([fb.itemType, fb.itemId, fb.activation, fb.level, fb.save.dc, fb.title], ["spell", "fb", "action", 3, 15, "Огненный шар"]);
+    assert.deepEqual([fb.itemType, fb.itemId, fb.activation, fb.level, fb.saveDc, fb.title], ["spell", "fb", "action", 3, 15, "Огненный шар"]);
     assert.deepEqual([act.activityId, act.itemId, act.activation, act.title], ["act1", "sh", "reaction", "Парирование"]);
     assert.deepEqual([slots.level, slots.uses, slots.img], [3, { value: 1, max: 2 }, "slots-spell3.webp"]);
     assert.deepEqual([skill.title, skill.modifier, skill.img], ["Атлетика", 5, "ath.svg"]);
+  });
+});
+
+describe("effects reads (dnd5e 5.3.3, Foundry 14)", () => {
+  afterEach(() => { delete globalThis.CONFIG; delete globalThis.foundry; });
+
+  it("reads state, statuses, time, source and why dnd5e suppresses an effect, skipping hidden ones", async () => {
+    const { readEffects } = await import("../scripts/integrations/dnd5e.js");
+    globalThis.foundry = { utils: { fromUuidSync: (uuid) => ({ "Compendium.x.Item.mage": { name: "Доспехи мага" } })[uuid] ?? null } };
+    const actor = { documentName: "Actor" };
+    const cloak = { documentName: "Item", name: "Плащ защиты", system: { equipped: false, attunement: "required", attuned: true } };
+    const ring = { documentName: "Item", name: "Кольцо", system: { equipped: true, attunement: "required", attuned: false } };
+    const scroll = { documentName: "Item", name: "Свиток", system: { identified: false } };
+    const fx = (id, extra) => ({ id, uuid: `U.${id}`, name: id, img: `${id}.webp`, statuses: new Set(), duration: { remaining: Infinity, label: "Нет" },
+      getRelativeUUID: () => `.ActiveEffect.${id}`, parent: actor, ...extra });
+    actor.allApplicableEffects = function* () {
+      yield fx("mage", { origin: "Compendium.x.Item.mage", isTemporary: true, duration: { remaining: 28800, label: "8 ч" } });
+      yield fx("cloak", { parent: cloak, isSuppressed: true });
+      yield fx("ring", { parent: ring, isSuppressed: true });
+      yield fx("prone", { statuses: new Set(["prone"]) });
+      yield fx("hidden", { parent: scroll });
+      yield fx("rider", { dependentOrigin: { active: false } });
+    };
+    const byId = Object.fromEntries(readEffects(actor).map((e) => [e.id, e]));
+    assert.deepEqual(Object.keys(byId), ["mage", "cloak", "ring", "prone"]);
+    assert.deepEqual([byId.mage.time, byId.mage.source, byId.mage.temporary, byId.mage.onActor, byId.mage.relativeId], ["8 ч", "Доспехи мага", true, true, ".ActiveEffect.mage"]);
+    assert.deepEqual([byId.cloak.suppressedBy, byId.cloak.source, byId.cloak.onActor], ["unequipped", "Плащ защиты", false]);
+    assert.equal(byId.ring.suppressedBy, "unattuned");
+    assert.deepEqual([byId.prone.statuses, byId.prone.time, byId.prone.suppressedBy], [["prone"], "", null]);
+    assert.equal(readEffects(actor, { isGM: true }).some((e) => e.id === "hidden"), true);
+  });
+
+  it("reads changes from system.changes with field labels, and the HUD statuses without exhaustion and concentration", async () => {
+    const { readEffectChanges, readStatusEffects } = await import("../scripts/integrations/dnd5e.js");
+    const actor = { system: { schema: { getField: (path) => ({ "attributes.ac": { label: "КД" }, "attributes.ac.bonus": undefined })[path] } } };
+    const effect = { system: { changes: [{ key: "system.attributes.ac.bonus", type: "add", value: "1" }, { key: "flags.x", type: "override", value: "2" }] } };
+    assert.deepEqual(readEffectChanges(effect, actor).map((c) => [c.label, c.type, c.value]), [["КД", "add", "1"], ["flags.x", "override", "2"]]);
+    globalThis.CONFIG = {
+      specialStatusEffects: { CONCENTRATING: "concentrating" },
+      DND5E: { conditionTypes: { prone: {}, bleeding: { pseudo: true }, exhaustion: {} } },
+      statusEffects: [{ id: "prone", name: "Лежит" }, { id: "bleeding", name: "Кровотечение" }, { id: "dodging", name: "Уклоняется" },
+        { id: "exhaustion", name: "Истощение" }, { id: "concentrating", name: "Концентрация" }, { id: "encumbered", name: "Нагружен", hud: false }]
+    };
+    assert.deepEqual(readStatusEffects().map((s) => [s.id, s.condition]), [["prone", true], ["bleeding", false], ["dodging", false]]);
   });
 });

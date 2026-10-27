@@ -1,0 +1,22 @@
+{{#*inline "aimCond"}}<button type="button" class="aim-cond {{#if on}}is-on{{/if}}" data-action="toggleCondition" data-status="{{id}}" aria-pressed="{{#if on}}true{{else}}false{{/if}}" {{#unless @root.canEdit}}disabled{{/unless}} data-tooltip="{{name}}"><i></i><span>{{name}}</span></button>{{/inline}}
+<div class="aim-effectbook">
+  <div class="aim-conds">
+    <div class="aim-conds-h">{{localize "AIM.window.effects.conditions"}}</div>
+    <div class="aim-conds-grid">{{#each effects.grid.conditions}}{{> aimCond}}{{/each}}</div>
+    {{#if effects.grid.statuses.length}}
+    <div class="aim-conds-h">{{localize "AIM.window.effects.statuses"}}</div>
+    <div class="aim-conds-grid">{{#each effects.grid.statuses}}{{> aimCond}}{{/each}}</div>
+    {{/if}}
+    {{#if canEdit}}<button type="button" class="aim-btn aim-eff-new" data-action="createEffect"><i class="fa-light fa-plus"></i>{{localize "AIM.window.effects.new"}}</button>{{/if}}
+  </div>
+  <div class="aim-eff-cats">
+    {{#each effects.categories}}
+    <div class="aim-eff-cat" data-key="effc-{{key}}">
+      <div class="aim-eff-cat-h">{{label}}<span>{{entries.length}}</span></div>
+      {{#each entries}}{{> "modules/actor-inventory-manager/templates/window/effect-row.hbs"}}{{/each}}
+    </div>
+    {{else}}
+    <p class="aim-empty">{{localize "AIM.window.effects.empty"}}</p>
+    {{/each}}
+  </div>
+</div>

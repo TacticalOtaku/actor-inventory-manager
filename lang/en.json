@@ -640,7 +640,29 @@
       },
       "effects": {
         "all": "Conditions and all effects",
-        "none": "No temporary effects"
+        "none": "No temporary effects",
+        "conditions": "Conditions",
+        "statuses": "Statuses",
+        "new": "New effect",
+        "newName": "New Effect",
+        "empty": "No effects",
+        "noDetail": "No description or changes",
+        "from": "from: {source}",
+        "why": {
+          "unequipped": "item not equipped",
+          "unattuned": "needs attunement",
+          "other": "unavailable"
+        },
+        "locked": "Unavailable: {why}",
+        "enable": "Enable: {name}",
+        "disable": "Disable: {name}",
+        "remove": "Remove: {name}",
+        "categories": {
+          "temporary": "Temporary",
+          "passive": "Passive",
+          "inactive": "Inactive",
+          "suppressed": "Unavailable"
+        }
       },
       "chips": {
         "inspiration": "Inspiration",

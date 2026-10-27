@@ -131,6 +131,9 @@
 .aim-row-act { display: flex; align-items: center; gap: 2px; opacity: 0.55; transition: opacity var(--d-fast); }
 .aim-row:hover .aim-row-act, .aim-row.is-selected .aim-row-act, .aim-row-act:focus-within { opacity: 1; }
 .aim-row-act .aim-ibtn.is-on { color: var(--accent); }
+/* list columns line up whichever row buttons an item has */
+.aim-items[data-view="list"] .aim-row-act { min-width: 70px; justify-content: flex-end; }
+.aim-items[data-view="list"] .aim-qty { min-width: 64px; justify-content: center; }
 
 /* cards */
 .aim-items[data-view="grid"] { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--s2); }

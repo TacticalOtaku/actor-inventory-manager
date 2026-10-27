@@ -72,7 +72,17 @@ Run the whole list on set 1, then repeat it on each set after adding its modules
 23. Both themes, a narrow window and each motion level; with reduced motion on in the OS only «Выключены» is
     available.
 
+### Migration from 1.9 (ADR 0005)
+
+24. Prepare a copy of the test world on 1.9.1 with items in ordinary and quick slots, a custom template, an actor
+    with its own doll, an open trade, and a non-default theme and accent on one client.
+25. Update to 2.0: slots are where they were, quick-slot items are in favorites, presets exist (including «Своя
+    кукла: …»), the theme and accent carried over, the open trade is cancelled with a chat line, the GM gets the
+    report whisper.
+26. A second start changes nothing and sends no report.
+27. Going back to 1.9.1 opens the world with its 1.9 slots and templates.
+
 ### Release
 
-24. The name «AIM: Actor Window» is not taken: search the Foundry package list and GitHub for «AIM» and «Actor Window»
+28. The name «AIM: Actor Window» is not taken: search the Foundry package list and GitHub for «AIM» and «Actor Window»
     modules. If it is, fall back to «Actor Inventory Manager» (#27).

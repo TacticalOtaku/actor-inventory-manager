@@ -176,6 +176,20 @@ export function partsForActorChange(changes) {
   return keys.every((key) => RAIL_ONLY.some((path) => key === path || key.startsWith(`${path}.`))) ? ["rail"] : null;
 }
 
+// dnd5e sets Bloodied itself as HP crosses half; nothing derived reads it, only the effect lists show it.
+const MARKER_STATUSES = Object.freeze(["bloodied"]);
+
+/**
+ * What an effect created, changed or removed redraws: a marker status on the actor itself, without changes, redraws
+ * the rail (and the open effects tab); any other effect may change derived data, so everything (null).
+ * @param {{onActor: boolean, changes: Array, statuses: string[]}} effect
+ * @param {string} tab  the window's open tab
+ */
+export function partsForEffectChange({ onActor, changes, statuses }, tab) {
+  if (!onActor || changes.length || !statuses.length || !statuses.every((status) => MARKER_STATUSES.includes(status))) return null;
+  return tab === "effects" ? ["rail", "main"] : ["rail"];
+}
+
 /** Parts queued for one redraw add up; once any asks for every part (null), every part it is. */
 export function mergeParts(queued, parts) {
   if (queued === undefined) return parts;

@@ -248,7 +248,8 @@ slice from the map #28.
 | Part | Where |
 | --- | --- |
 | Window, its parts and actions | `scripts/ui/actor-window.js` |
-| Pure rules: layout by width, motion caps, theme, accents, tabs, rail blocks by actor type, challenge rating | `scripts/core/actor-window.js` |
+| The main part patched in place on a redraw (keyed by `data-key`, `data-item-id`, `id`): only changed nodes are restyled; custom elements are swapped whole | `scripts/ui/morph.js` |
+| Pure rules: layout by width, motion caps, theme, accents, tabs, rail blocks by actor type, challenge rating, which parts an actor or effect change redraws | `scripts/core/actor-window.js` |
 | Templates (rail, main with header and tabs, inspector, settings drawer) | `templates/window/*.hbs` |
 | Theme tokens | `styles/theme/tokens.css` |
 | Window styles | `styles/window/*.css` |

@@ -282,6 +282,7 @@ slice from the map #28.
 | Pure rail events: what changed between two renders, in the order its effects play | `railEvents` in `scripts/core/vitals.js` |
 | A vehicle's rail: thresholds and speed, the cargo meter, crew, passengers and draft animals with free places, «Неизвестный», rows without an actor; the line of type, size, keel and beam | `scripts/ui/vehicle.js` |
 | Pure vehicle rules: weight conversion, the cargo meter, crew places | `scripts/core/vehicle.js` |
+| Window menus: which entries show and where groups part (both entry shapes) | `scripts/core/menu.js`; item and activity menus with dnd5e's keys and hooks in `scripts/ui/equipment.js` |
 | Pure scene rules: which type has a scene, multi-type parts, how a motion level plays it | `scripts/core/damage-scenes.js` |
 
 ### Theme, accent, density, motion

@@ -39,6 +39,7 @@ import {
   buildItemDetail,
   closeItemMenu,
   equipmentSnapshot,
+  activityMenuEntries,
   itemMenuEntries,
   openItemMenu,
   playEquipmentChanges
@@ -1199,9 +1200,12 @@ export class ActorWindow extends WindowBase {
         event.preventDefault();
         return this.#openEffectMenu(effectRow, event);
       }
-      if (!event.target.closest("[data-charge]")) return;
-      event.preventDefault();
-      this.#changeCharge(this.#itemFrom(event.target), "restore");
+      if (event.target.closest("[data-charge]")) {
+        event.preventDefault();
+        return this.#changeCharge(this.#itemFrom(event.target), "restore");
+      }
+      if (event.target.closest("input, textarea, [contenteditable]")) return;
+      if (this.#openContextMenu(event)) event.preventDefault();
     });
     el.addEventListener("focusout", (event) => {
       if (event.target.dataset?.coinInput && this.coinEditing) this.#cancelCoin();
@@ -1431,7 +1435,43 @@ export class ActorWindow extends WindowBase {
 
   static #onItemMenu(event, target) {
     const item = this.#itemFrom(target);
-    if (item) openItemMenu(this.element, target, itemMenuEntries(item), target.closest("[data-item-id]"));
+    if (item) openItemMenu(this.element, target, itemMenuEntries(item, this.#menuActions(item, target)), target.closest("[data-item-id]"));
+  }
+
+  /** What the row menu's state entries do: the same paths as the row's own buttons. */
+  #menuActions(item, target) {
+    const holder = target.closest("[data-item-id]");
+    const id = hasFavorites(this.actor) ? favoriteIdFor(this.actor, item) : null;
+    return {
+      equip: async () => {
+        this.#prepareFlight(item, holder?.querySelector(".aim-tile"));
+        await toggleItemEquipped(this.actor, item);
+      },
+      attune: () => this.canEdit && this.attuneWithLimit(item, holder?.querySelector("[data-row]")),
+      prepare: async () => {
+        this._spellGlide = measure(this.element.querySelector('[data-panel="spells"]'), ".aim-rowwrap");
+        await toggleSpellPreparation(item);
+      },
+      favorite: id && this.canEdit ? async () => {
+        this.#measureFavorites();
+        if (this.actor.system.hasFavorite(id)) await this.actor.system.removeFavorite(id);
+        else await this.actor.system.addFavorite({ type: "item", id });
+      } : null,
+      isFavorite: Boolean(id && this.actor.system.hasFavorite(id))
+    };
+  }
+
+  /** A right click on an activity opens its menu; on a row, the row's menu; both at the pointer. */
+  #openContextMenu(event) {
+    const holder = event.target.closest("[data-item-id]");
+    const item = holder && this.#itemFrom(holder);
+    if (!item) return false;
+    const at = { getBoundingClientRect: () => new DOMRect(event.clientX, event.clientY, 0, 0) };
+    const activityTarget = event.target.closest("[data-activity-id]");
+    const activity = activityTarget && item.system.activities?.get(activityTarget.dataset.activityId);
+    const entries = activity ? activityMenuEntries(activity, activityTarget) : itemMenuEntries(item, this.#menuActions(item, holder));
+    openItemMenu(this.element, at, entries, activity ? activityTarget : holder);
+    return true;
   }
 
   static #onItemToChat(event, target) {

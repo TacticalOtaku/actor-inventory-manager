@@ -484,6 +484,8 @@ export async function readFavorites(actor) {
         activityId: type === "activity" ? doc.id : null,
         activation: type === "activity" ? doc.activation?.type ?? "" : item ? resolveItemActivation(item).type : "",
         level: item?.type === "spell" ? num(item.system?.level, 0) : null,
+        // dnd5e 5.3.3 gives the save DC as {value, formula, calculation}.
+        saveDc: num(data.save?.dc?.value ?? data.save?.dc, 0) || null,
         title: data.title ?? doc.name,
         img: data.img ?? doc.img
       });
@@ -501,6 +503,73 @@ export async function readFavorites(actor) {
     }
   }
   return entries;
+}
+
+/**
+ * The actor's effects as dnd5e's sheet lists them (`allApplicableEffects`, without those of an inactive origin and,
+ * for players, of an unidentified item): state, statuses, time left, source and why dnd5e suppresses one
+ * (`isSuppressed`: its item unequipped or unattuned). Foundry 14 reports a permanent effect's remainder as infinite.
+ */
+export function readEffects(actor, { isGM = false } = {}) {
+  const entries = [];
+  for (const effect of actor?.allApplicableEffects?.() ?? []) {
+    const item = effect.parent?.documentName === "Item" ? effect.parent : null;
+    if (effect.dependentOrigin?.active === false || (item?.system?.identified === false && !isGM)) continue;
+    const remaining = effect.duration?.remaining;
+    let source = item?.name ?? "";
+    if (!source && effect.origin) {
+      try { source = globalThis.foundry?.utils?.fromUuidSync?.(effect.origin, { relative: actor, strict: false })?.name ?? ""; }
+      catch { source = ""; }
+    }
+    const suppressed = Boolean(effect.isSuppressed);
+    entries.push({
+      id: effect.id,
+      uuid: effect.uuid,
+      itemId: item?.id ?? null,
+      relativeId: effect.getRelativeUUID?.(actor) ?? effect.uuid,
+      name: effect.name,
+      img: effect.img,
+      disabled: Boolean(effect.disabled),
+      suppressed,
+      suppressedBy: !suppressed ? null : item?.system?.equipped === false ? "unequipped"
+        : item?.system?.attunement === "required" && !item.system.attuned ? "unattuned" : "other",
+      temporary: Boolean(effect.isTemporary),
+      statuses: [...(effect.statuses ?? [])],
+      onActor: effect.parent === actor,
+      time: Number.isFinite(remaining) && remaining > 0 ? effect.duration.label ?? "" : "",
+      source: source === effect.name ? "" : source
+    });
+  }
+  return entries;
+}
+
+/**
+ * An effect's changes (Foundry 14 keeps them in `system.changes`, typed by `type` instead of `mode`), each labelled
+ * by the nearest labelled data field of the actor (a derived key such as `attributes.ac.bonus` takes «Armor Class»),
+ * otherwise by its key.
+ */
+export function readEffectChanges(effect, actor) {
+  return [...(effect?.system?.changes ?? effect?.changes ?? [])].map(({ key, type, value }) => {
+    const parts = String(key).replace(/^system\./, "").split(".");
+    let label = null;
+    for (let n = parts.length; n > 0 && !label; n--) {
+      try { label = actor?.system?.schema?.getField?.(parts.slice(0, n).join("."))?.label || null; }
+      catch { label = null; }
+    }
+    return { key, type, value, label: label ? localizeOr(label, label) : key };
+  });
+}
+
+/**
+ * The statuses the token HUD offers (`CONFIG.statusEffects` without `hud: false`), less exhaustion and
+ * concentration, which keep their rail chips; a condition is a non-pseudo entry of `DND5E.conditionTypes`.
+ */
+export function readStatusEffects() {
+  const conditions = getDnd5eConfig().conditionTypes ?? {};
+  const concentrating = globalThis.CONFIG?.specialStatusEffects?.CONCENTRATING ?? "concentrating";
+  return (globalThis.CONFIG?.statusEffects ?? [])
+    .filter((s) => s.hud !== false && s.id !== "exhaustion" && s.id !== concentrating)
+    .map((s) => ({ id: s.id, name: localizeOr(s.name, s.name ?? s.id), img: s.img, condition: Boolean(conditions[s.id] && !conditions[s.id].pseudo) }));
 }
 
 /** The actor's dnd5e coins in CONFIG.DND5E.currencies order (pp, gp, ep, sp, cp in 5.3.3). */

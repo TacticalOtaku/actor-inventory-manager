@@ -44,6 +44,7 @@ import {
 } from "./equipment.js";
 import { buildDollContext, firstItemFor } from "./doll.js";
 import { FEATURE_TEMPLATES, buildFeaturesContext, featureMode, hasFeatures } from "./features.js";
+import { EFFECT_TEMPLATES, buildEffectsContext, createActorEffect, effectMenuEntries } from "./effects.js";
 import { buildFavoritesContext, favoriteIdFor, favoriteItemIds, hasFavorites } from "./favorites.js";
 import { SPELL_TEMPLATES, buildSpellsContext, playSlotChanges, preparationWarning, slotSnapshot } from "./spells.js";
 import { openPresetEditor } from "./preset-editor.js";
@@ -118,7 +119,10 @@ export class ActorWindow extends WindowBase {
       shortRest: ActorWindow.#onShortRest,
       longRest: ActorWindow.#onLongRest,
       rollInitiative: ActorWindow.#onRollInitiative,
-      openEffect: ActorWindow.#onOpenEffect,
+      toggleEffect: ActorWindow.#onToggleEffect,
+      removeCondition: ActorWindow.#onRemoveCondition,
+      toggleCondition: ActorWindow.#onToggleCondition,
+      createEffect: ActorWindow.#onCreateEffect,
       toggleInspiration: ActorWindow.#onToggleInspiration,
       exhaustion: ActorWindow.#onExhaustion,
       rollConcentration: ActorWindow.#onRollConcentration,
@@ -161,8 +165,8 @@ export class ActorWindow extends WindowBase {
   };
 
   static PARTS = {
-    rail: { template: `${TEMPLATES}/rail.hbs` },
-    main: { template: `${TEMPLATES}/main.hbs`, templates: [...EQUIPMENT_TEMPLATES, ...SPELL_TEMPLATES, ...FEATURE_TEMPLATES], scrollable: [".aim-panel"] },
+    rail: { template: `${TEMPLATES}/rail.hbs`, templates: EFFECT_TEMPLATES },
+    main: { template: `${TEMPLATES}/main.hbs`, templates: [...EQUIPMENT_TEMPLATES, ...SPELL_TEMPLATES, ...FEATURE_TEMPLATES, ...EFFECT_TEMPLATES], scrollable: [".aim-panel"] },
     inspector: { template: `${TEMPLATES}/inspector.hbs`, templates: EQUIPMENT_TEMPLATES, scrollable: [""] },
     drawer: { template: `${TEMPLATES}/drawer.hbs`, scrollable: [".aim-drawer-body"] }
   };
@@ -188,6 +192,8 @@ export class ActorWindow extends WindowBase {
     this.featureQuery = "";
     this.usesEditing = null;
     this.usesDraft = "";
+    // «where:uuid» of the effect row whose details are open.
+    this.effectOpen = null;
     this.selectedKey = null;
     this.collapsed = new Set();
     this.selected = null;
@@ -272,6 +278,7 @@ export class ActorWindow extends WindowBase {
         usesEditing: this.usesEditing,
         usesDraft: this.usesDraft
       }),
+      effects: await buildEffectsContext(actor, { open: this.effectOpen, canFavorite: hasFavorites(actor) && this.canEdit }),
       doll: buildDollContext(actor, { canEdit: this.canEdit, selected: this.selected, hidden: Boolean(getSetting("dollHidden")) }),
       ...buildRailContext(actor, { canEdit: this.canEdit, hasSpells: this.#hasSpells(), hiddenBlocks: getSetting("hiddenRailBlocks") ?? [] })
     };
@@ -361,7 +368,8 @@ export class ActorWindow extends WindowBase {
     super._onFirstRender(context, options);
     OPEN_WINDOWS.set(this.actorKey, this);
     const rerender = () => this.#queueRender();
-    const mine = (doc) => doc?.uuid === this.actorKey || doc?.parent?.uuid === this.actorKey;
+    // An item's own effect is the actor's grandchild.
+    const mine = (doc) => [doc, doc?.parent, doc?.parent?.parent].some((d) => d?.uuid === this.actorKey);
     this.#hook("updateActor", (actor) => mine(actor) && rerender());
     // A transformed actor is deleted when it reverts; its window goes with it.
     this.#hook("deleteActor", (actor) => actor?.uuid === this.actorKey && this.close());
@@ -795,9 +803,6 @@ export class ActorWindow extends WindowBase {
     if (this.canEdit) return this.actor.rollInitiativeDialog();
   }
 
-  static async #onOpenEffect(event, target) {
-    (await fromUuid(target.dataset.effectUuid))?.sheet?.render({ force: true });
-  }
 
   static #onToggleInspiration() {
     if (this.canEdit) return this.actor.update({ "system.attributes.inspiration": !readRail(this.actor).inspiration });
@@ -811,8 +816,78 @@ export class ActorWindow extends WindowBase {
     if (this.canEdit) return this.actor.rollConcentration({ event });
   }
 
-  static #onEndConcentration() {
-    if (this.canEdit) return this.actor.endConcentration();
+  /** The chip ends every concentration; the × on a concentration effect row ends that one. */
+  static async #onEndConcentration(event, target) {
+    if (!this.canEdit) return;
+    const effect = await this.#effectFrom(target);
+    this.#measureEffects();
+    return this.actor.endConcentration(effect ?? undefined);
+  }
+
+  /* ─── Effects ─── */
+
+  async #effectFrom(node) {
+    const uuid = node?.closest("[data-effect-uuid]")?.dataset.effectUuid;
+    return uuid ? fromUuid(uuid) : null;
+  }
+
+  #measureEffects() {
+    this._effectGlide = measure(this.element, ".aim-effwrap, .aim-eff-cat");
+  }
+
+  /** The switch: effect.update({ disabled }); a suppressed effect stays locked until its item is equipped and attuned. */
+  static async #onToggleEffect(event, target) {
+    const effect = await this.#effectFrom(target);
+    if (!effect || !this.canEdit) return;
+    if (effect.isSuppressed) return this.#shake(target.closest("[data-effect-row]"));
+    this.#measureEffects();
+    await effect.update({ disabled: !effect.disabled });
+  }
+
+  /** The × on a condition and a lit cell of the grid: actor.toggleStatusEffect, which also clears its exclusive group. */
+  static #onRemoveCondition(event, target) {
+    if (!this.canEdit) return;
+    this.#measureEffects();
+    return this.actor.toggleStatusEffect(target.dataset.status, { active: false });
+  }
+
+  static #onToggleCondition(event, target) {
+    if (!this.canEdit) return;
+    this.#measureEffects();
+    return this.actor.toggleStatusEffect(target.dataset.status);
+  }
+
+  static #onCreateEffect() {
+    if (this.canEdit) return createActorEffect(this.actor);
+  }
+
+  /** A click on the row opens its description and changes under it; again closes them. */
+  #toggleEffectOpen(row) {
+    const key = `${row.dataset.where}:${row.closest("[data-effect-uuid]").dataset.effectUuid}`;
+    this.effectOpen = this.effectOpen === key ? null : key;
+    this.#measureEffects();
+    return this.render({ parts: ["rail", "main"] });
+  }
+
+  async #openEffectMenu(row, event) {
+    const effect = await this.#effectFrom(row);
+    if (!effect) return;
+    const wrap = row.closest("[data-effect-uuid]");
+    const entries = effectMenuEntries(this.actor, effect, { concentration: row.classList.contains("is-concentration") });
+    openItemMenu(this.element, { getBoundingClientRect: () => new DOMRect(event.clientX, event.clientY, 0, 0) }, entries, wrap);
+  }
+
+  /** A favorite effect opens the tab and highlights its row. */
+  #revealEffect(relativeId) {
+    this.#switchTo("effects");
+    const wrap = [...this.element.querySelectorAll('[data-panel="effects"] [data-effect-rel]')].find((el) => el.dataset.effectRel === relativeId);
+    if (!wrap) return;
+    wrap.scrollIntoView({ block: "nearest", behavior: this.motionOn ? "smooth" : "auto" });
+    const row = wrap.querySelector("[data-effect-row]");
+    row.classList.remove("is-found");
+    void row.offsetWidth;
+    row.classList.add("is-found");
+    row.addEventListener("animationend", () => row.classList.remove("is-found"), { once: true });
   }
 
   /* ─── Equipment tab ─── */
@@ -824,8 +899,11 @@ export class ActorWindow extends WindowBase {
       if (event.target.name !== this._searching) this._searching = null;
     });
     el.addEventListener("click", (event) => {
+      if (event.target.closest("button, input, a, label, select")) return;
       const row = event.target.closest("[data-row]");
-      if (row && !event.target.closest("button, input, a, label, select")) this.#selectRow(row);
+      if (row) this.#selectRow(row);
+      const effectRow = event.target.closest("[data-effect-row]");
+      if (effectRow) this.#toggleEffectOpen(effectRow);
     });
     el.addEventListener("input", (event) => {
       if (event.target.dataset.coinInput) this.coinDraft = event.target.value;
@@ -839,6 +917,11 @@ export class ActorWindow extends WindowBase {
       this._searchTimer = setTimeout(() => this.render({ parts: ["main"] }), 120);
     });
     el.addEventListener("contextmenu", (event) => {
+      const effectRow = event.target.closest("[data-effect-row]");
+      if (effectRow) {
+        event.preventDefault();
+        return this.#openEffectMenu(effectRow, event);
+      }
       if (!event.target.closest("[data-charge]")) return;
       event.preventDefault();
       this.#changeCharge(this.#itemFrom(event.target), "restore");
@@ -872,6 +955,11 @@ export class ActorWindow extends WindowBase {
       this.#selectRow(target);
       return true;
     }
+    if (target.matches?.("[data-effect-row]")) {
+      event.preventDefault();
+      this.#toggleEffectOpen(target);
+      return true;
+    }
     if (target.matches?.("[data-fav-id]")) {
       event.preventDefault();
       ActorWindow.#onFavOpen.call(this, event, target);
@@ -889,6 +977,10 @@ export class ActorWindow extends WindowBase {
     const el = this.element;
     this.#fly();
     playSlotChanges(el, this._slotsPrev, this._castSchool, el.dataset.motion);
+    if (this._effectGlide) {
+      if (this.motionOn) glideFrom(el, ".aim-effwrap, .aim-eff-cat", this._effectGlide);
+      this._effectGlide = null;
+    }
     if (this._favGlide) {
       if (this.motionOn) glideFrom(el.querySelector("[data-favorites]") ?? el, ".aim-fav", this._favGlide);
       this._favGlide = null;
@@ -1332,6 +1424,7 @@ export class ActorWindow extends WindowBase {
   static async #onFavOpen(event, target) {
     const favorite = this.#favoriteFrom(target);
     if (!favorite) return;
+    if (favorite.type === "effect") return this.#revealEffect(favorite.id);
     const doc = ["item", "activity"].includes(favorite.type) ? await fromUuid(favorite.id, { relative: this.actor }) : null;
     const item = favorite.type === "activity" ? doc?.item : doc;
     const tab = tabForFavorite({ type: favorite.type, itemType: item?.type });

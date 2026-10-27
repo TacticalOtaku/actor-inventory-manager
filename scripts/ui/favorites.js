@@ -35,7 +35,7 @@ function describe(entry) {
     const bonus = Number.isFinite(Number(entry.modifier)) ? signed(entry.modifier) : entry.modifier;
     line = [t("AIM.window.favorites.toHit", { bonus }), subtitle].filter(Boolean).join(" · ");
   }
-  else if (entry.save?.dc) line = [t("AIM.window.favorites.save", { dc: entry.save.dc }), subtitle].filter(Boolean).join(" · ");
+  else if (entry.saveDc) line = [t("AIM.window.favorites.save", { dc: entry.saveDc }), subtitle].filter(Boolean).join(" · ");
   const uses = entry.uses?.max ? { value: Math.round(entry.uses.value ?? 0), max: entry.uses.max } : null;
   return {
     line,

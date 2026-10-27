@@ -59,6 +59,7 @@
     <section class="aim-panel" data-panel="{{id}}" role="tabpanel" {{#unless active}}hidden{{/unless}}>
       {{#if (eq id "equipment")}}{{> "modules/actor-inventory-manager/templates/window/equipment.hbs" @root}}
       {{else if (eq id "features")}}{{> "modules/actor-inventory-manager/templates/window/features.hbs" @root}}
+      {{else if (eq id "effects")}}{{> "modules/actor-inventory-manager/templates/window/effects.hbs" @root}}
       {{else if (eq id "spells")}}{{#if @root.spells}}{{> "modules/actor-inventory-manager/templates/window/spells.hbs" @root}}{{/if}}
       {{else}}<p class="aim-empty">{{@root.pendingText}}</p>{{/if}}
     </section>

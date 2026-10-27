@@ -92,8 +92,7 @@
   {{#if blocks.effects}}
   <div class="aim-effects" data-block="effects" data-flip>
     <div class="aim-rail-title"><span>{{localize "AIM.window.rail.effects"}}</span><button type="button" class="aim-ibtn aim-mini" data-action="switchTab" data-tab="effects" aria-label="{{localize "AIM.window.effects.all"}}" data-tooltip="{{localize "AIM.window.effects.all"}}"><i class="fa-light fa-plus"></i></button></div>
-    {{#each rail.effects}}
-    <button type="button" class="aim-effect {{#if isCondition}}is-condition{{/if}}" data-action="openEffect" data-effect-uuid="{{uuid}}"><img src="{{img}}" alt=""><span class="aim-effect-name">{{name}}</span>{{#if time}}<span class="aim-effect-time">{{time}}</span>{{/if}}</button>
+    {{#each effects.rail}}{{> "modules/actor-inventory-manager/templates/window/effect-row.hbs"}}
     {{else}}
     <p class="aim-hint">{{localize "AIM.window.effects.none"}}</p>
     {{/each}}

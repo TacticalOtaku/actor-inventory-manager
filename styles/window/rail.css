@@ -116,12 +116,6 @@ button.aim-stat:disabled { cursor: default; }
 
 /* ── effects, chips ── */
 .aim-effects { display: grid; gap: 4px; }
-.aim-effect { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 3px 6px; border: 1px solid transparent; border-radius: var(--r-sm); background: transparent; color: var(--text); font: 12.5px var(--font-ui); text-align: left; cursor: pointer; }
-.aim-effect:hover { border-color: var(--line); background: var(--surface-1); }
-.aim-effect img { flex: none; width: 22px; height: 22px; border: 0; border-radius: 4px; }
-.aim-effect.is-condition .aim-effect-name { color: var(--warn); }
-.aim-effect-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.aim-effect-time { font: 500 11px var(--font-num); color: var(--text-3); }
 .aim-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .aim-chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface-1); color: var(--text-2); font: 500 12px var(--font-ui); cursor: pointer; position: relative; overflow: hidden; }
 .aim-chip:disabled { cursor: default; }

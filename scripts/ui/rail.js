@@ -11,26 +11,6 @@ const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localiz
 const signed = (n) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 const share = (part, whole) => (whole > 0 ? Math.max(0, Math.min(1, part / whole)).toFixed(4) : 0);
 
-/** Temporary effects for the rail: concentration and conditions first, then dnd5e's Временные category. */
-function temporaryEffects(actor) {
-  const statusIds = new Set((CONFIG.statusEffects ?? []).map((status) => status.id));
-  const concentrating = CONFIG.specialStatusEffects?.CONCENTRATING;
-  const rank = (effect) => (effect.statuses?.has(concentrating) ? 0 : [...(effect.statuses ?? [])].some((s) => statusIds.has(s)) ? 1 : 2);
-  // Foundry 14 counts only effects with a duration as temporary, so conditions are added by their status;
-  // exhaustion keeps its own chip.
-  return [...(actor.allApplicableEffects?.() ?? [])]
-    .filter((effect) => effect.active && !effect.statuses?.has("exhaustion") && (effect.isTemporary || rank(effect) < 2))
-    .sort((a, b) => rank(a) - rank(b))
-    .map((effect) => ({
-      uuid: effect.uuid,
-      name: effect.name,
-      img: effect.img,
-      // Permanent effects report an infinite remainder and the label «None»; only a real countdown shows.
-      time: Number.isFinite(effect.duration?.remaining) && effect.duration.remaining > 0 ? effect.duration.label : "",
-      isCondition: rank(effect) < 2
-    }));
-}
-
 /**
  * Everything the rail template needs.
  * @param {Object} actor
@@ -78,8 +58,7 @@ export function buildRailContext(actor, { canEdit, hasSpells, hiddenBlocks }) {
       initText: signed(rail.init),
       profText: signed(rail.prof),
       casting: rail.casting.map((c) => ({ ...c, attackText: signed(c.attack) })),
-      exhaustionPips: Array.from({ length: rail.exhaustion.max }, (_, i) => i < rail.exhaustion.value),
-      effects: temporaryEffects(actor)
+      exhaustionPips: Array.from({ length: rail.exhaustion.max }, (_, i) => i < rail.exhaustion.value)
     },
     blocks,
     isGM: game.user.isGM,

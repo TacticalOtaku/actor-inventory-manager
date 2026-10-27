@@ -12,7 +12,7 @@
         },
         {
           "text": "Picks its layout from its own width, never the screen: under 420 px compact (rail only), 420–759 px narrow (rail becomes a sideways widget strip), 760–1319 px standard (rail + content), 1320 px and wider (rail + content + inspector).",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "When the layout changes, every block glides from its old place to its new one (FLIP, 420 ms settle curve) instead of jumping; blocks that appear fade and scale in from 92%.",
@@ -20,7 +20,7 @@
         },
         {
           "text": "The window is resizable from its corner; the minimum is 300 × 520 px.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "Observer sees the same window with every control that changes data hidden or disabled and a «Только просмотр» badge; Owner and GM can change everything.",
@@ -44,15 +44,15 @@
         },
         {
           "text": "Rows show an accent edge on hover; their tile lifts and a sheen sweeps across it.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "Tabs preview their underline on hover.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "Starring an entry and casting a spell throw sparks: amber for the star, the spell school colour for a cast.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "Hover light, ripple and lift are reactive: they run at «Все» and «Сдержанно». Sparks are particles: «Все» only. Nothing here runs at «Выключены».",
@@ -60,15 +60,15 @@
         },
         {
           "text": "On open the window settles in from 12 px below and the rail blocks follow one after another.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "Switching tabs and expanding a section bring their entries in as a short cascade, 18 ms apart, at most 24 entries.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "A new accent flows through every colour over 600 ms; a theme change cross-fades the whole sheet.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "Hovering an item, spell, feature, effect, condition, doll slot, attunement socket, favorite, crew portrait or a link opens a card (tooltipCard); see tooltipLayer.",
@@ -80,7 +80,7 @@
         },
         {
           "text": "Once a panel is scrolled, the tab strip casts a soft shadow over it.",
-          "source": "assumption"
+          "source": "spec"
         },
         {
           "text": "One window for three actor types (#8): a character, an NPC with a player owner and a vehicle. The same rail, tabs, settings and effects; the type only decides which blocks and tabs show. A block whose notes have no «Виден» line shows for all three.",

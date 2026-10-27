@@ -20,6 +20,7 @@ import {
   mergeParts,
   normalizeAccent,
   partsForActorChange,
+  partsForEffectChange,
   railBlocksFor,
   orbAction,
   resolveTheme,
@@ -428,8 +429,13 @@ export class ActorWindow extends WindowBase {
     this.#hook("updateActor", (actor, changes) => mine(actor) && this.#queueRender(actor === this.actor ? partsForActorChange(changes) : null));
     // A transformed actor is deleted when it reverts; its window goes with it.
     this.#hook("deleteActor", (actor) => actor?.uuid === this.actorKey && this.close());
-    for (const name of ["createItem", "updateItem", "deleteItem", "createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) {
-      this.#hook(name, (doc) => mine(doc) && rerender());
+    for (const name of ["createItem", "updateItem", "deleteItem"]) this.#hook(name, (doc) => mine(doc) && rerender());
+    for (const name of ["createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) {
+      this.#hook(name, (effect) => mine(effect) && this.#queueRender(partsForEffectChange({
+        onActor: effect.parent === this.actor,
+        changes: effect.changes ?? [],
+        statuses: [...(effect.statuses ?? [])]
+      }, this.tab)));
     }
     this.#hook(REFRESH_HOOK, rerender);
     this.#hook(TRADE_HOOK, rerender);

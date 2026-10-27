@@ -14,6 +14,7 @@ import {
   mergeParts,
   orbAction,
   partsForActorChange,
+  partsForEffectChange,
   railBlocksFor,
   resolveTheme,
   sheetMenuEntries,
@@ -154,6 +155,19 @@ describe("what an actor change redraws (#9)", () => {
     assert.equal(partsForActorChange({ name: "Аот" }), null);
     assert.equal(partsForActorChange({ _id: "a" }), null);
     assert.equal(partsForActorChange(undefined), null);
+  });
+
+  it("redraws the rail alone for dnd5e's Bloodied marker, and the effects tab when it is open", () => {
+    const bloodied = { onActor: true, changes: [], statuses: ["bloodied"] };
+    assert.deepEqual(partsForEffectChange(bloodied, "equipment"), ["rail"]);
+    assert.deepEqual(partsForEffectChange(bloodied, "effects"), ["rail", "main"]);
+  });
+
+  it("redraws everything for an effect that may change derived data", () => {
+    assert.equal(partsForEffectChange({ onActor: true, changes: [], statuses: ["grappled"] }, "equipment"), null);
+    assert.equal(partsForEffectChange({ onActor: true, changes: [{ key: "system.attributes.ac.bonus" }], statuses: ["bloodied"] }, "equipment"), null);
+    assert.equal(partsForEffectChange({ onActor: true, changes: [], statuses: [] }, "equipment"), null);
+    assert.equal(partsForEffectChange({ onActor: false, changes: [], statuses: ["bloodied"] }, "equipment"), null);
   });
 
   it("adds up queued parts until one asks for all", () => {

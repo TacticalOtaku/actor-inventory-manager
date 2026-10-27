@@ -411,3 +411,44 @@ describe("actor window header reads (dnd5e 5.3.3)", () => {
     assert.equal(readIdentity(actor).xp.ready, true);
   });
 });
+
+describe("actor window rail reads (dnd5e 5.3.3)", () => {
+  afterEach(() => { delete globalThis.CONFIG; });
+
+  it("reads HP, AC, initiative, speed, proficiency, inspiration, exhaustion, death saves and hit dice", async () => {
+    const { readRail } = await import("../scripts/integrations/dnd5e.js");
+    globalThis.CONFIG = { DND5E: { conditionTypes: { exhaustion: { levels: 6 } }, abilities: { int: { label: "Интеллект" } }, movementUnits: { ft: { abbreviation: "фт" } } } };
+    const wizard = { name: "Волшебник", system: { hd: { denomination: "d6" } }, spellcasting: { ability: "int", attack: 7, save: 15, progression: "full" } };
+    const actor = {
+      classes: { wizard },
+      concentration: { items: new Set([{ name: "Обнаружение магии" }]), effects: new Set() },
+      system: {
+        abilities: { con: { mod: 2 } },
+        skills: { prc: { passive: 14 } },
+        spells: { spell1: { value: 3, max: 4 } },
+        attributes: {
+          hp: { value: 31, max: 38, temp: 5 },
+          ac: { value: 18 },
+          init: { total: 3 },
+          movement: { walk: 30, units: "ft" },
+          prof: 3,
+          inspiration: true,
+          exhaustion: 2,
+          death: { success: 1, failure: 0 },
+          hd: { value: 4, max: 6, largestAvailable: "d6" }
+        }
+      }
+    };
+    const rail = readRail(actor);
+    assert.deepEqual(rail.hp, { value: 31, max: 38, temp: 5 });
+    assert.deepEqual([rail.ac, rail.init, rail.speed, rail.speedUnit, rail.prof], [18, 3, 30, "фт", 3]);
+    assert.equal(rail.inspiration, true);
+    assert.deepEqual(rail.exhaustion, { value: 2, max: 6 });
+    assert.deepEqual(rail.death, { success: 1, failure: 0 });
+    assert.deepEqual(rail.hitDice, { value: 4, max: 6, formula: "d6 + 2" });
+    assert.deepEqual(rail.casting, [{ name: "Волшебник", ability: "Интеллект", dc: 15, attack: 7 }]);
+    assert.equal(rail.passivePerception, 14);
+    assert.deepEqual(rail.concentration, ["Обнаружение магии"]);
+    assert.deepEqual(rail.slots.map((s) => [s.level, s.value, s.max]), [[1, 3, 4]]);
+  });
+});

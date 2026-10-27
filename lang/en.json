@@ -35,6 +35,7 @@
       "errors": {
         "coordinator": "The trade coordinator disconnected or changed. Ask the active GM to inspect the trade state.",
         "provider": "Could not read currencies or the active Item Piles API. Check its configuration.",
+        "providerNoCurrencies": "Item Piles has no currencies for this system, so coins cannot be traded. Install and enable the «Item Piles: D&D 5e» module, or set up currencies in the Item Piles settings.",
         "providerChanged": "Currency providers or definitions changed or differ between participants. Cancel and start a new trade.",
         "amount": "Enter a valid nonnegative currency amount.",
         "funds": "Insufficient funds or an invalid coin quantity.",

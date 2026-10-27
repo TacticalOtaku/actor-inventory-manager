@@ -286,6 +286,8 @@ slice from the map #28.
 | Window menus: which entries show and where groups part (both entry shapes) | `scripts/core/menu.js`; item and activity menus with dnd5e's keys and hooks in `scripts/ui/equipment.js` |
 | Drops from outside the actor: resolve item, folder, effect or actor, `dropActorSheetData`, copy or move, spells by tab, refusals at the drop point, «Новое» and the landing flash | `scripts/ui/external-drop.js`, bound in `scripts/ui/inventory-drag.js` |
 | Pure drop rules: copy, move or refuse, unsupported types, spell or scroll, received before a move deletes | `scripts/core/external-drop.js` |
+| 1.9 → 2.0 world migration (ADR 0005): on the single active GM, world and unlinked token actors, world presets, open trades, the GM's report and «Повторить миграцию»; every client's 1.9 theme and accent | `scripts/foundry/migration.js` |
+| Pure migration tables: legacy slots, quick slots to favorites, presets and own dolls, trades to cancel, look, the report | `scripts/core/migration.js` |
 | Pure scene rules: which type has a scene, multi-type parts, how a motion level plays it | `scripts/core/damage-scenes.js` |
 
 ### Theme, accent, density, motion

@@ -1251,8 +1251,8 @@ button.cs-stat:active { transform: scale(0.95); }
 .cs-load .bar::before { left: var(--t1, 33%); }
 .cs-load .bar::after { left: var(--t2, 66%); }
 .cs-load b { color: var(--text-2); font-weight: 600; }
-[data-panel="equipment"].is-external-drop { outline: 2px dashed var(--accent-line); outline-offset: -6px; }
-[data-panel="equipment"].is-external-drop::after { content: "Отпустите, чтобы добавить"; position: absolute; left: 50%; top: 50%; translate: -50% -50%; padding: 8px 14px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); font: 600 12px var(--font-ui); pointer-events: none; z-index: 5; }
+.cs-panel.is-external-drop { outline: 2px dashed var(--accent-line); outline-offset: -6px; }
+.cs-panel.is-external-drop::after { content: "Отпустите, чтобы добавить"; position: absolute; left: 50%; top: 50%; translate: -50% -50%; padding: 8px 14px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); font: 600 12px var(--font-ui); pointer-events: none; z-index: 5; }
 /* Containers: load band, Weighty Containers reduction, drop target */
 .cs-bag-load { position: relative; display: inline-flex; align-items: center; min-width: 96px; height: 18px; padding: 0 7px; border-radius: 99px; background: var(--surface-0); overflow: hidden; font: 600 10.5px var(--font-num); color: var(--text-2); }
 .cs-bag-load i { position: absolute; inset: 0 auto 0 0; background: color-mix(in oklab, var(--heal) 35%, transparent); }
@@ -1510,6 +1510,7 @@ button.cs-stat:active { transform: scale(0.95); }
   <label class="mock-xp" data-ui="mockTradePreview">Обмен <select data-mock-trade aria-label="Сценарий обмена"><option value="">обычный</option><option value="invite">вас пригласили</option><option value="cancel">партнёр отменил</option><option value="recovery">сбой у мастера</option><option value="preparing">прервана подготовка</option></select></label>
   <label class="mock-xp"><input type="checkbox" data-mock-piles> Item Piles</label>
   <label class="mock-xp"><input type="checkbox" data-mock-nogm> Мастер не в сети</label>
+  <label class="mock-xp" data-ui="mockDropPreview">Бросок извне <select data-mock-drop aria-label="Что бросают в окно извне"><option value="compendium">предмет из компендиума</option><option value="own">предмет своего персонажа</option><option value="foreign">чужой предмет</option><option value="pile">кучка Item Piles</option><option value="class">класс с продвижением</option><option value="spell">заклинание</option><option value="actor">актор</option></select></label>
   <label class="mock-xp" data-ui="mockMotionCap">Ограничение <select data-mock-cap aria-label="Ограничение анимаций"><option value="">нет</option><option value="reduce">уменьшение движения</option><option value="perf">низкая производительность</option></select></label>
   <label class="mock-xp"><input type="checkbox" data-mock-nomagic> Без магии</label>
   <label class="mock-xp" data-ui="mockXpPreview">Опыт <input type="range" min="0" max="100" value="72" data-mock-xp aria-label="Прогресс к следующему уровню"></label>
@@ -3515,10 +3516,12 @@ button.cs-stat:active { transform: scale(0.95); }
   });
   root.addEventListener("dragover", (e) => {
     if (!dragId) {
-      // Something dragged in from outside the window (compendium, chat, another actor).
-      if (!canEdit() || !e.target.closest('[data-panel="equipment"]')) return;
+      // Something dragged in from outside the window (compendium, chat, another actor): any tab takes it (#24).
+      const panel = e.target.closest(".cs-panel");
+      if (!canEdit() || !panel) return;
       e.preventDefault();
-      $('[data-panel="equipment"]').classList.add("is-external-drop");
+      panel.classList.add("is-external-drop");
+      e.target.closest("[data-drop-bag]")?.classList.add("is-drop");
       return;
     }
     const bag = e.target.closest("[data-drop-bag]");
@@ -3536,7 +3539,7 @@ button.cs-stat:active { transform: scale(0.95); }
     (bag || sec)?.classList.add("is-drop");
   });
   root.addEventListener("dragleave", (e) => {
-    if (!dragId && !root.contains(e.relatedTarget)) $('[data-panel="equipment"]').classList.remove("is-external-drop");
+    if (!dragId && !root.contains(e.relatedTarget)) $$(".is-external-drop").forEach((p) => p.classList.remove("is-external-drop"));
   });
   const spring = { id: null, timer: 0 };
   // Weighty Containers validates a drop into a container; the mock checks capacity and cycles.
@@ -3546,13 +3549,47 @@ button.cs-stat:active { transform: scale(0.95); }
     if (rawLoad(bag.id) + add > bag.cap) return `Weighty Containers: не помещается (${+(rawLoad(bag.id) + add).toFixed(1)} / ${bag.cap} фнт)`;
     return null;
   }
+  // Items from outside (ADR 0004): the window picks copy or move and keeps a few rules; dnd5e's sheet creates the item.
+  // Mock: what was dropped comes from «Бросок извне» in the preview bar.
+  function externalDrop(panel, bagEl) {
+    const src = document.querySelector("[data-mock-drop]").value, tab = panel.dataset.panel;
+    if (S.trade.status === "open" || S.trade.status === "executing") return refuse(panel, "Идёт обмен — инвентарь закрыт");
+    if (src === "foreign") return refuse(panel, "Передать предмет может его владелец — через обмен");
+    if (src === "pile") return refuse(panel, "Заберите предмет через окно Item Piles");
+    if (src === "actor") return refuse(panel, "Превращение — в листе персонажа");
+    if (src === "class") {
+      if (S.actor === "vehicle") return refuse(panel, "Транспорт не может получить класс");
+      return chip(panel, "dnd5e: открывается менеджер продвижения (Волшебник 7)");
+    }
+    if (src === "spell") {
+      if (S.actor === "vehicle") return refuse(panel, "Транспорт не может знать заклинания");
+      // Spells follow the window's tab: on Снаряжение they become a scroll through dnd5e's own dialog.
+      if (tab === "equipment") return addExternal({ name: "Свиток: Обнаружение магии", group: "consumable", icon: "scroll", wt: 0, price: 25, tags: ["1 круг"], desc: "Свиток, созданный dnd5e из заклинания (Item5e.createScrollFromSpell)." }, bagEl, "dnd5e: диалог создания свитка — готово");
+      return chip(panel, "Заклинание добавлено: способ — первая прогрессия ячеек (dnd5e)");
+    }
+    const own = src === "own";
+    addExternal({ name: own ? "Серебряное зеркальце" : "Верёвка шёлковая, 50 фт", group: own ? "loot" : "consumable", icon: own ? "spark" : "rope", wt: own ? 0.5 : 5, price: own ? 10 : 10, tags: [], desc: own ? "Перенесено со второго персонажа: источник удалён после проверки." : "Копия из компендиума; dnd5e сбросил «надето» и «настроено»." }, bagEl, own ? "Перемещено: у второго персонажа предмет удалён" : "Скопировано из компендиума");
+  }
+  function addExternal(data, bagEl, note) {
+    const bag = bagEl ? byId[bagEl.dataset.dropBag] : null;
+    const it = { id: `ext${Date.now()}`, rarity: "common", qty: 1, ...data, fresh: true };
+    // Weighty Containers is asked first, for our own message; its preCreateItem still decides.
+    const why = bag && canHold(bag, it);
+    if (why) return refuse(bagEl, why);
+    if (bag) it.in = bag.id;
+    items.push(it); byId[it.id] = it;
+    if (S.tab !== "equipment") setTab("equipment");
+    rerender("equipment", renderInventory);
+    requestAnimationFrame(() => { const row = $(`[data-row="${it.id}"]`); if (row) { pulse(row, "is-landed"); chip(row, note); } });
+  }
   root.addEventListener("drop", (e) => {
-    $('[data-panel="equipment"]').classList.remove("is-external-drop");
+    $$(".is-external-drop").forEach((p) => p.classList.remove("is-external-drop"));
     if (!dragId) {
-      if (!canEdit() || !e.target.closest('[data-panel="equipment"]')) return;
+      const panel = e.target.closest(".cs-panel");
+      if (!canEdit() || !panel) return;
       e.preventDefault();
-      chip($('[data-ui="inventoryToolbar"]'), "Перенос извне: как именно — решает «Перенос предметов извне в окно актора»");
-      return;
+      $$(".is-drop").forEach((x) => x.classList.remove("is-drop"));
+      return externalDrop(panel, e.target.closest("[data-drop-bag]"));
     }
     e.preventDefault();
     const id = dragId, it = byId[id];

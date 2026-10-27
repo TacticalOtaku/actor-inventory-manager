@@ -43,19 +43,31 @@ Run the whole list on set 1, then repeat it on each set after adding its modules
 10. A recharge roll, a level up from the level orb, a short and a long rest each give dnd5e's result.
 11. Placing a spell template minimises the window; it comes back when the template is placed or cancelled.
 
+### Items from outside (ADR 0004)
+
+12. An item dragged from the sidebar is copied; the sidebar keeps it. A compendium item arrives with equipped and
+    attuned cleared.
+13. A class with advancement opens dnd5e's advancement manager; a second species or background is refused by dnd5e.
+14. A consumable from the same compendium entry raises the existing stack instead of adding a row.
+15. A spell dropped on Снаряжение opens the scroll dialog; dropped on Заклинания it stays a spell.
+16. An item from the player's own second character moves (gone there, here once). Someone else's item and an Item
+    Piles pile row are refused with the reason.
+17. On set 5, a drop into a full container is refused by Weighty Containers and nothing is created or deleted.
+18. On set 3, the same drops work with a Tidy sheet; a drop onto a tray lands in the inventory root with the note.
+
 ### Menus
 
-12. The item menu shows the same entries as the vanilla sheet. On set 4, Item Piles' «Give to character» entry
+19. The item menu shows the same entries as the vanilla sheet. On set 4, Item Piles' «Give to character» entry
     appears and works.
-13. The effect menu offers edit, duplicate, delete, enable or disable.
+20. The effect menu offers edit, duplicate, delete, enable or disable.
 
 ### Integrations
 
-14. On set 4, coins and Item Piles currencies show in the purse and the trade checks in `README.md` pass.
-15. On set 5, container load and restrictions match Weighty Containers, and rarity colours match SC - Item Rarity
+21. On set 4, coins and Item Piles currencies show in the purse and the trade checks in `README.md` pass.
+22. On set 5, container load and restrictions match Weighty Containers, and rarity colours match SC - Item Rarity
     Colors.
 
 ### Look
 
-16. Both themes, a narrow window and each motion level; with reduced motion on in the OS only «Выключены» is
+23. Both themes, a narrow window and each motion level; with reduced motion on in the OS only «Выключены» is
     available.

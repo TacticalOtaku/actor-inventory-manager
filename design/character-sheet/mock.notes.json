@@ -763,6 +763,10 @@
         {
           "text": "The row shows weight, price, «Настроено» or «Требует настройки» for items needing attunement, and the item's tags.",
           "source": "spec"
+        },
+        {
+          "text": "Dragging a row out of the window carries item.toDragData() plus our fields, so other sheets, the canvas and Item Piles take it; dnd5e treats it as a copy.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1751,6 +1755,10 @@
         {
           "text": "Searching unfolds only the containers with matches, down to the nested one, and hides the rest; clearing the search restores the folding.",
           "source": "spec"
+        },
+        {
+          "text": "An item dropped from outside onto a tray goes into that container: Weighty Containers is pre-checked for our message, then actor.sheet._onDropItemContainer; a sheet without it (Tidy) puts the item in the inventory root with a note.",
+          "source": "spec"
         }
       ],
       "comments": []
@@ -1767,7 +1775,35 @@
     "externalDrop": {
       "behaviour": [
         {
-          "text": "Something dragged in from outside the window (compendium, sidebar, chat, another actor) outlines the Снаряжение tab with «Отпустите, чтобы добавить»; what happens on the drop is settled in «Перенос предметов извне в окно актора: решение».",
+          "text": "Something dragged in from outside (sidebar, compendium, compendium browser, a chat or journal link, a bastion card, another actor) outlines the open tab's content with «Отпустите, чтобы добавить»; every tab takes it. Observers' windows take nothing.",
+          "source": "spec"
+        },
+        {
+          "text": "The item is created through actor.sheet._onDropCreateItems(event, items, \"copy\") (ADR 0004), so dnd5e's sheet rules hold: reset of equipped/attuned/prepared, consumable stacking, the advancement prompt and singleton check, class-level merge and subclass checks, the multi-advancement guard, NPC items to gear. Without that method: Item5e.createWithContents + createDocuments({ keepId: true }).",
+          "source": "spec"
+        },
+        {
+          "text": "Copy from the sidebar, a compendium, chat, a journal or a bastion card. From another actor the user owns: move — copied, checked on the actor, then the source is deleted. From an actor the user does not own, an Item Piles pile included: refused («Передать предмет может его владелец — через обмен» / «Заберите предмет через окно Item Piles»). The GM copies, Shift moves.",
+          "source": "spec"
+        },
+        {
+          "text": "dropActorSheetData(actor, actor.sheet, data) fires before creating; false cancels.",
+          "source": "spec"
+        },
+        {
+          "text": "Spells follow the window's tab: on Снаряжение they become a scroll through dnd5e's createScrollFromSpell dialog; on any other tab they stay spells, with dnd5e's default spellcasting method.",
+          "source": "spec"
+        },
+        {
+          "text": "The sheet's unsupported item types are refused before the call (a vehicle takes no class, species, background or spell). An item folder adds its items; an active effect is created on the actor; an actor is refused («Превращение — в листе персонажа»).",
+          "source": "spec"
+        },
+        {
+          "text": "A refusal shakes the drop area and names the reason at the drop point; dnd5e's own warnings (singleton, several advancements) come as its notifications. While a trade is running: «Идёт обмен — инвентарь закрыт».",
+          "source": "spec"
+        },
+        {
+          "text": "The new row gets the «Новое» tag and lands with a flash; the advancement manager and the scroll dialog open as dnd5e's own windows.",
           "source": "spec"
         }
       ],
@@ -2165,6 +2201,15 @@
         },
         {
           "text": "Motion (#9): at «Все» the scene loops while the card is open (an ambient effect: paused while the browser tab is hidden); at «Сдержанно» it plays one pass and settles on a still frame; at «Выключены» only the still frame is drawn.",
+          "source": "spec"
+        }
+      ],
+      "comments": []
+    },
+    "mockDropPreview": {
+      "behaviour": [
+        {
+          "text": "Mock only: picks what an outside drop carries — a compendium item, an item of your other character, someone else's item, an Item Piles pile, a class with advancement, a spell or an actor.",
           "source": "spec"
         }
       ],

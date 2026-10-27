@@ -31,7 +31,7 @@ vanilla sheet's own markup stays on that sheet, one click away.
   `actor.sheet`.
 - Sorting, levelling, favorites and the rest follow the public calls listed in §4 of `research/window-compat.md` on
   the `research/window-compat` branch (`performIntegerSort`, `AdvancementManager.forLevelChange`,
-  `system.addFavorite`, …). Drop-in from outside the actor is decided separately (#24).
+  `system.addFavorite`, …). Drop-in from outside the actor is ADR 0004.
 
 ## Considered Options
 

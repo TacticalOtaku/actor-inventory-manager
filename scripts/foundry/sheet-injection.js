@@ -97,8 +97,9 @@ function injectHeaderButton(app) {
   headerBtn.type = "button";
   headerBtn.className = "header-control aim-window-header-btn";
   headerBtn.title = game.i18n.localize("AIM.sheetButton.tooltip");
-  headerBtn.setAttribute("aria-label", game.i18n.localize("AIM.sheetButton.label"));
-  headerBtn.innerHTML = '<i class="fa-light fa-shirt"></i>';
+  // «AIM» alone tells a screen reader nothing; the button says what it opens.
+  headerBtn.setAttribute("aria-label", game.i18n.localize("AIM.sheetButton.tooltip"));
+  headerBtn.innerHTML = `<i class="fa-light fa-shirt"></i><span>${game.i18n.localize("AIM.sheetButton.label")}</span>`;
   headerBtn.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();

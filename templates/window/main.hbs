@@ -7,8 +7,10 @@
         <span class="aim-level-n">{{identity.level}}{{#if identity.xp.ready}}<small>→{{identity.nextLevel}}</small>{{/if}}</span>
       </button>
       {{/if}}
+      {{#if identity.cr}}<div class="aim-cr" data-tooltip="{{identity.cr.hint}}"><b>{{identity.cr.text}}</b><span>{{localize "AIM.window.stats.cr"}}</span></div>{{/if}}
       <div class="aim-title-text">
         <h2 class="aim-name">{{actor.name}}</h2>
+        {{#if identity.kind}}<div class="aim-kind">{{identity.kind}}</div>{{/if}}
         {{#if prepWarning}}<span class="aim-prep-warn" data-tooltip="{{localize "AIM.window.spells.warningHint"}}"><i class="fa-light fa-book-bookmark"></i>{{prepWarning}}</span>{{/if}}
         <div class="aim-links">
           {{#each identity.links}}{{#unless @first}}<span class="aim-dot" aria-hidden="true">·</span>{{/unless}}<button type="button" class="aim-link" data-action="openDocument" data-id="{{id}}">{{label}}</button>{{/each}}

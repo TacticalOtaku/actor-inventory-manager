@@ -51,6 +51,14 @@
       <span class="aim-runes">{{#each rail.slots}}<span class="aim-rune-group" data-tooltip="{{label}}">{{#each pips}}<i class="aim-rune {{#unless filled}}is-spent{{/unless}}" data-rune></i>{{/each}}</span>{{/each}}</span>
     </button>
     {{/if}}
+
+    {{#if blocks.legendary}}
+    <div class="aim-vrow aim-legendary" data-block="legendary" data-flip>
+      {{#each rail.legendary}}
+      <span class="aim-legendary-pool"><span class="aim-vlabel">{{label}} <b>{{value}}</b>/{{max}}</span><span class="aim-legendary-pips">{{#each pips}}<i class="{{#unless this}}is-spent{{/unless}}"></i>{{/each}}</span></span>
+      {{/each}}
+    </div>
+    {{/if}}
   </div>
 
   {{#if rail.down}}
@@ -76,6 +84,7 @@
     <div class="aim-stat is-ac" data-config="ac" data-tooltip="{{localize "AIM.window.stats.acHint"}}"><b>{{rail.ac}}</b><span>{{localize "AIM.window.stats.ac"}}</span></div>
     <button type="button" class="aim-stat" data-action="rollInitiative" data-config="init" {{#unless canEdit}}disabled{{/unless}} data-tooltip="{{localize "AIM.window.stats.initHint"}}"><b>{{rail.initText}}</b><span>{{localize "AIM.window.stats.init"}}</span></button>
     <div class="aim-stat" data-config="movement"><b>{{rail.speed}}</b><span>{{rail.speedUnit}}</span></div>
+    {{#if rail.cr}}<div class="aim-stat" data-tooltip="{{rail.cr.hint}}"><b>{{rail.cr.text}}</b><span>{{localize "AIM.window.stats.cr"}}</span></div>{{/if}}
     <div class="aim-stat"><b>{{rail.profText}}</b><span>{{localize "AIM.window.stats.prof"}}</span></div>
   </div>
   {{/if}}
@@ -101,7 +110,7 @@
 
   {{#if blocks.chips}}
   <div class="aim-chips" data-block="chips" data-flip>
-    <button type="button" class="aim-chip {{#if rail.inspiration}}is-on{{/if}}" data-action="toggleInspiration" aria-pressed="{{rail.inspiration}}" {{#unless canEdit}}disabled{{/unless}}><i class="fa-light fa-sparkles aim-chip-ico"></i>{{localize "AIM.window.chips.inspiration"}}</button>
+    {{#if rail.hasInspiration}}<button type="button" class="aim-chip {{#if rail.inspiration}}is-on{{/if}}" data-action="toggleInspiration" aria-pressed="{{rail.inspiration}}" {{#unless canEdit}}disabled{{/unless}}><i class="fa-light fa-sparkles aim-chip-ico"></i>{{localize "AIM.window.chips.inspiration"}}</button>{{/if}}
     <button type="button" class="aim-chip {{#if rail.exhaustion.value}}is-on{{/if}}" data-action="exhaustion" data-exhaustion {{#unless canEdit}}disabled{{/unless}} data-tooltip="{{localize "AIM.window.chips.exhaustionHint"}}">{{localize "AIM.window.chips.exhaustion"}} <span class="aim-pips">{{#each rail.exhaustionPips}}<i class="{{#if this}}is-on{{/if}}"></i>{{/each}}</span></button>
     {{#each rail.concentration}}
     <span class="aim-chip is-conc"><button type="button" data-action="rollConcentration" {{#unless ../canEdit}}disabled{{/unless}} data-tooltip="{{localize "AIM.window.chips.concentrationRoll"}}"><i class="fa-light fa-eye aim-blink aim-ambient"></i>{{this}}</button><button type="button" data-action="endConcentration" {{#unless ../canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.chips.concentrationEnd"}}" data-tooltip="{{localize "AIM.window.chips.concentrationEnd"}}"><i class="fa-light fa-xmark"></i></button></span>

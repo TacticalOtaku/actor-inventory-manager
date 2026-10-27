@@ -2,9 +2,9 @@
 // AIM: Actor Window - the rail: context and the effects that answer changes
 // ─────────────────────────────────────────────────────────
 
-import { RAIL_BLOCKS } from "../core/actor-window.js";
+import { crLabel, railBlocksFor } from "../core/actor-window.js";
 import { heartbeatFor, railEvents } from "../core/vitals.js";
-import { readRail } from "../integrations/dnd5e.js";
+import { readNpc, readRail } from "../integrations/dnd5e.js";
 import { playBurst } from "./bursts.js";
 import { SETTLE } from "./motion.js";
 
@@ -26,13 +26,14 @@ export function buildRailContext(actor, { canEdit, hasSpells, hiddenBlocks }) {
   const slotTotals = rail.slots.reduce((sum, slot) => ({ value: sum.value + slot.value, max: sum.max + slot.max }), { value: 0, max: 0 });
   const isVehicle = actor.type === "vehicle";
   const restAllowed = game.user.isGM || (canEdit && game.settings.get("dnd5e", "allowRests"));
-  const shown = (id) => !hiddenBlocks.includes(id);
-  const blocks = Object.fromEntries(RAIL_BLOCKS.map(({ id, needs }) => [id, shown(id) && (needs !== "magic" || hasSpells)]));
-  blocks.hitDice &&= actor.type === "character";
-  blocks.rest &&= actor.type === "character" && restAllowed && canEdit;
+  const npc = readNpc(actor);
+  const legendary = npc && [["actions", npc.legendary.actions], ["resistance", npc.legendary.resistance]]
+    .filter(([, pool]) => pool)
+    .map(([kind, pool]) => ({ label: t(`AIM.window.legendary.${kind}`), ...pool, pips: Array.from({ length: pool.max }, (_, i) => i < pool.value) }));
+  const blocks = Object.fromEntries(railBlocksFor(actor.type, { hasSpells, hasLegendary: Boolean(legendary?.length) }, hiddenBlocks).map(({ id, shown }) => [id, shown]));
+  blocks.rest &&= restAllowed && canEdit;
   blocks.spellcasting &&= rail.casting.length > 0;
   blocks.spellSlots &&= rail.slots.length > 0;
-  blocks.favorites &&= actor.type === "character";
   const info = [t("AIM.window.hp.max", { max })];
   if (temp) info.push(t("AIM.window.hp.tempInfo", { temp }));
   if (value < max) info.push(`−${max - value}`);
@@ -59,7 +60,11 @@ export function buildRailContext(actor, { canEdit, hasSpells, hiddenBlocks }) {
       initText: signed(rail.init),
       profText: signed(rail.prof),
       casting: rail.casting.map((c) => ({ ...c, attackText: signed(c.attack) })),
-      exhaustionPips: Array.from({ length: rail.exhaustion.max }, (_, i) => i < rail.exhaustion.value)
+      exhaustionPips: Array.from({ length: rail.exhaustion.max }, (_, i) => i < rail.exhaustion.value),
+      // Heroic inspiration is a character's; an NPC's chips are exhaustion and concentration.
+      hasInspiration: actor.type === "character",
+      cr: npc && { text: crLabel(npc.cr), hint: t("AIM.window.npc.xp", { xp: npc.xp.toLocaleString(game.i18n.lang) }) },
+      legendary
     },
     blocks,
     isGM: game.user.isGM,

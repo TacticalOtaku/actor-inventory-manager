@@ -9,15 +9,16 @@ import {
   ALWAYS_TAB,
   DENSITIES,
   MOTION_LEVELS,
-  RAIL_BLOCKS,
   SHEET_MENU_TABS,
   SHEET_TABS,
   THEMES,
+  crLabel,
   effectiveMotion,
   fallbackTab,
   layoutForWidth,
   motionCap,
   normalizeAccent,
+  railBlocksFor,
   orbAction,
   resolveTheme,
   sheetMenuEntries,
@@ -29,7 +30,7 @@ import { SPELL_FILTERS, pipTarget } from "../core/spellbook.js";
 import { FEATURE_FILTERS, applyUsesEntry } from "../core/features.js";
 import { reorderFavorites, tabForFavorite } from "../core/favorites.js";
 import { parseHpEntry, previewHp, vitalState } from "../core/vitals.js";
-import { readAbilities, readIdentity, readRail, toggleSpellPreparation } from "../integrations/dnd5e.js";
+import { readAbilities, readIdentity, readNpc, readRail, toggleSpellPreparation } from "../integrations/dnd5e.js";
 import { LOG } from "../foundry/logger.js";
 import {
   EQUIPMENT_TEMPLATES,
@@ -80,6 +81,9 @@ const TAB_FILTERS = { equipment: LIST_FILTERS, spells: SPELL_FILTERS, features: 
 const COLLAPSED_WIDTH = 320;
 
 const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
+const hasLegendary = (actor) => Object.values(readNpc(actor)?.legendary ?? {}).some(Boolean);
+/** The settings list names a block by what it holds for this actor type: an NPC's stats add its rating, its chips lack inspiration. */
+const railBlockLabel = (id, type) => t(type === "npc" && (id === "stats" || id === "chips") ? `AIM.window.rail.${id}Npc` : `AIM.window.rail.${id}`);
 const signed = (n) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 
 function windowIdFor(actor) {
@@ -323,6 +327,7 @@ export class ActorWindow extends WindowBase {
 
   #identity() {
     const id = readIdentity(this.actor);
+    const npc = readNpc(this.actor);
     const links = [];
     for (const cls of id.classes) {
       links.push({ id: cls.id, label: `${cls.name} ${cls.levels}` });
@@ -339,7 +344,12 @@ export class ActorWindow extends WindowBase {
       nextLevel: id.level + 1,
       xpShare: id.xp.ready ? 1 : share.toFixed(3),
       orbLabel: id.xp.ready ? t("AIM.window.xp.ready", { level: id.level + 1 }) : t("AIM.window.xp.orb", { value: id.xp.value, max: id.xp.max }),
-      summary: links.slice(0, 2).map((l) => l.label).join(" · ")
+      // An NPC's challenge rating sits in the level orb's place, its size and type under the name.
+      cr: npc && { text: crLabel(npc.cr), hint: t("AIM.window.npc.crHint", { xp: npc.xp.toLocaleString(game.i18n.lang) }) },
+      kind: npc && [npc.type, npc.size].filter(Boolean).join(" · "),
+      summary: npc
+        ? [t("AIM.window.npc.crShort", { cr: crLabel(npc.cr) }), npc.type].filter(Boolean).join(" · ")
+        : links.slice(0, 2).map((l) => l.label).join(" · ")
     };
   }
 
@@ -387,11 +397,9 @@ export class ActorWindow extends WindowBase {
         : `${capReason ? `${capReason} ` : ""}${t(`AIM.window.settings.motionAbout.${level}`)}`,
       webFonts: Boolean(getSetting("useWebFonts")),
       fontsPending: Boolean(getSetting("useWebFonts")) !== this.fontsAtLoad,
-      absentText: t("AIM.window.settings.absent"),
-      railBlocks: RAIL_BLOCKS.map(({ id, needs }) => {
-        const absent = needs === "magic" && !hasSpells;
-        return { id, label: t(`AIM.window.rail.${id}`), shown: !absent && !hiddenBlocks.includes(id), absent };
-      }),
+      absentText: t(this.actor.type === "npc" ? "AIM.window.settings.absentNpc" : "AIM.window.settings.absent"),
+      railBlocks: railBlocksFor(this.actor.type, { hasSpells, hasLegendary: hasLegendary(this.actor) }, hiddenBlocks)
+        .map(({ id, absent, shown }) => ({ id, absent, shown, label: railBlockLabel(id, this.actor.type) })),
       tabs: SHEET_TABS.map((id) => {
         const locked = id === ALWAYS_TAB || (id === "spells" && !hasSpells);
         const note = id === ALWAYS_TAB ? t("AIM.window.settings.always") : locked ? t("AIM.window.settings.absent") : "";

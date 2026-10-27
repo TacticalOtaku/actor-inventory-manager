@@ -217,6 +217,33 @@ export function readIdentity(actor) {
 }
 
 /**
+ * What an NPC's window shows of its kind and legendary pools. dnd5e 5.3.3: `details.cr` is a number (0.125 for 1/8),
+ * `details.xp.value` derives from it, `details.type.label` is prepared from type, subtype and swarm, size is
+ * `traits.size` (CONFIG.DND5E.actorSizes); legendary actions and resistances are `resources.legact` / `legres`
+ * {max, spent}, with `value` what is left. A pool without a maximum is null.
+ * @param {Object} actor
+ * @returns {{cr: number|null, xp: number, size: string, type: string, legendary: {actions: Object|null, resistance: Object|null}}|null}
+ */
+export function readNpc(actor) {
+  if (actor?.type !== "npc") return null;
+  const system = actor.system ?? {};
+  const details = system.details ?? {};
+  const size = getDnd5eConfig().actorSizes?.[system.traits?.size]?.label;
+  const pool = (resource) => {
+    const max = num(resource?.max, 0);
+    return max > 0 ? { max, value: Math.max(0, Math.min(max, max - num(resource.spent, 0))) } : null;
+  };
+  const cr = Number(details.cr);
+  return {
+    cr: details.cr === null || details.cr === undefined || !Number.isFinite(cr) ? null : cr,
+    xp: num(details.xp?.value, 0),
+    size: size ? localizeOr(size, size) : "",
+    type: details.type?.label ?? "",
+    legendary: { actions: pool(system.resources?.legact), resistance: pool(system.resources?.legres) }
+  };
+}
+
+/**
  * Everything the actor window's rail shows. dnd5e 5.3.3 shapes: `attributes.hd` is a HitDice object
  * (`value`, `max`, `largestAvailable`), each class carries its own `spellcasting` ({ability, attack, save}),
  * `actor.concentration.items` holds the items concentrated on, `attributes.exhaustion` is the level.

@@ -800,3 +800,25 @@ describe("damage type reads (dnd5e 5.3.3)", () => {
     assert.deepEqual([readDamageType("eldritch").color, readDamageType("nope")], [null, null]);
   });
 });
+
+describe("NPC reads (dnd5e 5.3.3)", () => {
+  afterEach(() => { delete globalThis.CONFIG; });
+
+  it("reads challenge rating, experience, size, prepared type label and legendary pools", async () => {
+    const { readNpc } = await import("../scripts/integrations/dnd5e.js");
+    globalThis.CONFIG = { DND5E: { actorSizes: { huge: { label: "Огромный" } } } };
+    const dragon = { type: "npc", system: {
+      details: { cr: 17, xp: { value: 18000 }, type: { value: "dragon", subtype: "", swarm: "", custom: "", label: "Дракон" } },
+      traits: { size: "huge" },
+      resources: { legact: { max: 3, spent: 1, value: 2 }, legres: { max: 3, spent: 0, value: 3 }, lair: { value: true } }
+    } };
+    assert.deepEqual(readNpc(dragon), { cr: 17, xp: 18000, size: "Огромный", type: "Дракон",
+      legendary: { actions: { max: 3, value: 2 }, resistance: { max: 3, value: 3 } } });
+    const guard = { type: "npc", system: { details: { cr: 0.125, xp: { value: 25 }, type: { label: "Гуманоид" } }, traits: { size: "med" },
+      resources: { legact: { max: 0, spent: 0 }, legres: { max: 0, spent: 0 } } } };
+    assert.deepEqual(readNpc(guard).legendary, { actions: null, resistance: null });
+    assert.equal(readNpc(guard).cr, 0.125);
+    assert.equal(readNpc({ type: "character", system: {} }), null);
+    assert.equal(readNpc({ type: "npc", system: { details: { cr: null } } }).cr, null);
+  });
+});

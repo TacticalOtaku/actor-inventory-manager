@@ -91,15 +91,39 @@ export function fallbackTab(current, visible) {
 
 /** Rail blocks the player can hide; hit points always show. `needs: "magic"` hides itself without spells. */
 export const RAIL_BLOCKS = Object.freeze([
-  { id: "hitDice" },
-  { id: "spellSlots", needs: "magic" },
+  { id: "hitDice", types: ["character"] },
+  { id: "spellSlots", needs: "magic", types: ["character", "npc"] },
   { id: "stats" },
-  { id: "spellcasting", needs: "magic" },
+  { id: "legendary", needs: "legendary", types: ["npc"] },
+  { id: "spellcasting", needs: "magic", types: ["character", "npc"] },
   { id: "effects" },
-  { id: "chips" },
-  { id: "rest" },
-  { id: "favorites" }
+  { id: "chips", types: ["character", "npc"] },
+  { id: "rest", types: ["character"] },
+  { id: "favorites", types: ["character"] }
 ].map(Object.freeze));
+
+/**
+ * The rail blocks an actor type lists (#20); a block whose part the actor lacks (spells, legendary actions) stays
+ * listed as absent, and absent or hidden blocks are not shown.
+ * @param {string} type  the actor type
+ * @param {{hasSpells: boolean, hasLegendary: boolean}} has
+ * @param {string[]} [hidden]  block ids the user hid
+ * @returns {{id: string, absent: boolean, shown: boolean}[]}
+ */
+export function railBlocksFor(type, { hasSpells, hasLegendary }, hidden = []) {
+  return RAIL_BLOCKS.filter((block) => !block.types || block.types.includes(type)).map(({ id, needs }) => {
+    const absent = (needs === "magic" && !hasSpells) || (needs === "legendary" && !hasLegendary);
+    return { id, absent, shown: !absent && !hidden.includes(id) };
+  });
+}
+
+const FRACTIONS = { 0.125: "1/8", 0.25: "1/4", 0.5: "1/2" };
+
+/** A challenge rating as the books write it: 1/8, 1/4, 1/2, then whole numbers; — when it has none. */
+export function crLabel(cr) {
+  if (cr === null || cr === undefined || cr === "" || !Number.isFinite(Number(cr))) return "—";
+  return FRACTIONS[Number(cr)] ?? String(Number(cr));
+}
 
 /**
  * What a click on the level orb does: the experience card until the orb is ready (and for observers or with

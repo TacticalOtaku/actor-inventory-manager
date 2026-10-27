@@ -8,6 +8,16 @@
 .aim-link { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; text-decoration: underline dotted transparent; text-underline-offset: 3px; transition: color var(--d-fast), text-decoration-color var(--d-fast); }
 .aim-link:hover { color: var(--accent); text-decoration-color: var(--accent-line); }
 .aim-dot { color: var(--text-3); }
+.aim-kind { margin-top: 3px; font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* an NPC's challenge rating, in the level orb's place */
+.aim-cr {
+  flex: none; display: grid; place-content: center; justify-items: center; gap: 1px;
+  width: 48px; height: 48px; border: 1.5px solid color-mix(in oklab, var(--hp) 55%, transparent); border-radius: 12px;
+  background: color-mix(in oklab, var(--hp) 10%, var(--surface-2));
+}
+.aim-cr b { font: 700 17px/1 var(--font-num); color: var(--text); }
+.aim-cr span { font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-2); }
 
 /* the level orb fills with experience; ready, it grows and shows the next level */
 .aim-level {

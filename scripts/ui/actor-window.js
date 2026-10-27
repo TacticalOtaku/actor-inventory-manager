@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { MODULE_ID, REFRESH_HOOK } from "../constants.js";
-import { canEditActor, isSupportedActor } from "../core/actor-scope.js";
+import { canEditActor, canViewActor, isSupportedActor } from "../core/actor-scope.js";
 import {
   ACCENTS,
   ALWAYS_TAB,
@@ -439,7 +439,13 @@ export class ActorWindow extends WindowBase {
       }, this.tab)));
     }
     this.#hook(REFRESH_HOOK, rerender);
-    this.#hook(TRADE_HOOK, rerender);
+    // A trade redraws only its own actors' windows, and any open panel (it shows who is busy).
+    this.#hook(TRADE_HOOK, (state) => {
+      const key = JSON.stringify((state?.sessions ?? []).filter((s) => s.actors?.includes(this.actor.id)));
+      if (key === this._tradeKey && !this.tradeOpen) return;
+      this._tradeKey = key;
+      this.renderTrade();
+    });
     // Weighty Containers announces a rules change on its own hook; the trays' bands and reductions follow.
     this.#hook(`${WEIGHTY_CONTAINERS_MODULE_ID}.updateContainerRules`, rerender);
     // Placing a spell template minimises the window; it comes back once the template is placed or cancelled.
@@ -1863,7 +1869,8 @@ async function chooseClass(classes) {
 }
 
 export function openActorWindow(actor) {
-  if (!isSupportedActor(actor)) return null;
+  // The API, macros included, honours Observer like the sheet button and the key.
+  if (!isSupportedActor(actor) || !canViewActor(actor, game.user)) return null;
   const key = actor.uuid ?? actor.id;
   const open = OPEN_WINDOWS.get(key);
   if (open) {

@@ -33,7 +33,7 @@ export function addSlot(slots, label) {
   }]);
 }
 
-/** The slot moved one place up (−1) or down (+1); the doll fills the left column first, so order is placement. */
+/** The slot moved one place up (−1) or down (+1); within its zone, and for slots placed by order, order is placement. */
 export function moveSlot(slots, id, delta) {
   const from = slots.findIndex((slot) => slot.id === id);
   const to = from + delta;
@@ -48,7 +48,7 @@ export function removeSlot(slots, id) {
 }
 
 const layoutOf = ({ figure, slots }) => JSON.stringify([figure ?? "human", workingFrom({ slots }).slots.map((slot) => [
-  slot.id, slot.label, slot.icon, slot.order, [...slot.itemTypes].sort(), [...slot.accepts].sort(),
+  slot.id, slot.label, slot.icon, slot.order, slot.zone ?? "", [...slot.itemTypes].sort(), [...slot.accepts].sort(),
   Boolean(slot.rules.singlePerActor), Boolean(slot.rules.locksOffHandOn2H), Boolean(slot.rules.isArmor), Boolean(slot.rules.isShield)
 ])]);
 

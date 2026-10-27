@@ -15,10 +15,11 @@
 .aim-drawer-body { flex: 1; overflow: auto; padding: var(--s2) var(--s4) var(--s4); display: grid; gap: var(--s4); align-content: start; }
 .aim-field { display: grid; gap: var(--s2); }
 .aim-field > span { font: 600 10.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
-.aim-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; gap: 2px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-0); }
-.aim-seg button { height: 28px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-2); font: 500 12.5px var(--font-ui); cursor: pointer; }
-.aim-seg button[aria-pressed="true"] { background: var(--surface-3); color: var(--text); }
-.aim-seg button:disabled { opacity: 0.4; cursor: not-allowed; }
+/* Text choices (theme, density, motion); the inventory's icon switcher is .aim-seg. */
+.aim-choice { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; gap: 2px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-0); }
+.aim-choice button { display: grid; place-items: center; min-width: 0; height: 28px; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-2); font: 500 12.5px var(--font-ui); cursor: pointer; }
+.aim-choice button[aria-pressed="true"] { background: var(--surface-3); color: var(--text); }
+.aim-choice button:disabled { opacity: 0.4; cursor: not-allowed; }
 .aim-swatches { display: flex; gap: var(--s2); }
 .aim-swatch { width: 28px; height: 28px; padding: 0; border-radius: 50%; border: 2px solid transparent; background: var(--sw); box-shadow: inset 0 0 0 2px var(--surface-1); cursor: pointer; transition: transform var(--d-fast) var(--ease-snap); }
 .aim-swatch:hover { transform: scale(1.1); }

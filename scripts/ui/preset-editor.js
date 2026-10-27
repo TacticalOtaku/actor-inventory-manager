@@ -6,7 +6,7 @@ import { FIGURES, MODULE_ID, REFRESH_HOOK } from "../constants.js";
 import { isSupportedActor } from "../core/actor-scope.js";
 import { getActorSourceAttunementMax } from "../core/attunement.js";
 import { PHYSICAL_ITEM_TYPES } from "../core/item-classifier.js";
-import { dollLayout } from "../core/paperdoll-layout.js";
+import { SLOT_ZONES, dollLayout } from "../core/paperdoll-layout.js";
 import {
   deleteWorldCustomTemplate,
   getActorPaperdollTemplate,
@@ -105,6 +105,7 @@ export class PresetEditor extends EditorBase {
         last: i === working.slots.length - 1,
         types: [...PHYSICAL_ITEM_TYPES].map((type) => ({ type, label: t(CONFIG.Item.typeLabels?.[type] ?? type), on: slot.itemTypes.includes(type) })),
         acceptsText: slot.accepts.join(", "),
+        zones: ["", ...SLOT_ZONES].map((zone) => ({ zone, label: t(`AIM.window.editor.zones.${zone || "order"}`), selected: (slot.zone ?? "") === zone })),
         rules: RULES.map((rule) => ({ rule, label: t(`AIM.editor.rules.${rule}`), on: Boolean(slot.rules[rule]) }))
       })),
       doll: this.#preview(),
@@ -173,6 +174,7 @@ export class PresetEditor extends EditorBase {
         input.closest(".aim-chip")?.classList.toggle("is-on", input.checked);
       }
       else if (field === "rule") slot.rules[input.value] = input.checked;
+      else if (field === "zone") { if (SLOT_ZONES.includes(input.value)) slot.zone = input.value; else delete slot.zone; }
       else return;
     }
     this.render({ parts: ["preview"] });

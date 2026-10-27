@@ -5,7 +5,7 @@
 import { MODULE_ID } from "../constants.js";
 import { LIST_FILTERS, SORTS, VIEWS, goldParts, groupInventory, listPrefsFor, loadBand, showsCharges, trayFolded, trayPeek } from "../core/inventory.js";
 import { computeActorEncumbrance, getSystemWeightUnit } from "../core/weight-calculator.js";
-import { getDnd5eConfig, readCoins, readContainerCapacity, readInventory, readSpellbook, resolveItemUses, unitAbbreviation } from "../integrations/dnd5e.js";
+import { getDnd5eConfig, hasPreparationToggle, readCoins, readContainerCapacity, readInventory, readSpellbook, resolveItemUses, unitAbbreviation } from "../integrations/dnd5e.js";
 import { castable, ready } from "../core/spellbook.js";
 import { usableActivities } from "../integrations/midi-qol.js";
 import { computeActorCurrency, readPilesCurrencies } from "../integrations/item-piles.js";
@@ -241,8 +241,6 @@ export function itemMenuEntries(item, actions) {
   const system = item.system ?? {};
   const owner = item.isOwner;
   const icon = (name) => `<i class="fa-light fa-${name}"></i>`;
-  const prepares = CONFIG.DND5E.spellcasting?.[system.method]?.prepares;
-  const always = system.prepared === CONFIG.DND5E.spellPreparationStates?.always?.value;
   const entries = [
     { name: "DND5E.ItemView", icon: icon("eye"), callback: () => item.sheet.render({ force: true, mode: sheetModes.PLAY }) },
     { name: "DND5E.ContextMenuActionEdit", icon: icon("pen"), condition: () => owner, callback: () => item.sheet.render({ force: true, mode: sheetModes.EDIT }) },
@@ -278,7 +276,7 @@ export function itemMenuEntries(item, actions) {
     },
     {
       name: `DND5E.ContextMenuAction${system.prepared ? "Unprepare" : "Prepare"}`, icon: icon("book-bookmark"), group: "state",
-      condition: () => item.type === "spell" && !item.hasRecharge && Boolean(prepares) && !always && owner && !item.getFlag("dnd5e", "cachedFor"),
+      condition: () => item.type === "spell" && !item.hasRecharge && hasPreparationToggle(item) && owner && !item.getFlag("dnd5e", "cachedFor"),
       callback: () => actions.prepare()
     },
     {

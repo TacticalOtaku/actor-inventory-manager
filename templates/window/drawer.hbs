@@ -4,17 +4,17 @@
   <div class="aim-drawer-head"><h3>{{localize "AIM.window.settings.title"}}</h3><button type="button" class="aim-ibtn" data-action="closeSettings" aria-label="{{localize "AIM.window.close"}}"><i class="fa-light fa-xmark"></i></button></div>
   <div class="aim-drawer-body">
     <div class="aim-field"><span>{{localize "AIM.window.settings.theme"}}</span>
-      <div class="aim-seg" role="group">{{#each settings.themes}}<button type="button" data-action="setSetting" data-key="windowTheme" data-value="{{id}}" aria-pressed="{{active}}">{{label}}</button>{{/each}}</div>
+      <div class="aim-choice" role="group">{{#each settings.themes}}<button type="button" data-action="setSetting" data-key="windowTheme" data-value="{{id}}" aria-pressed="{{active}}">{{label}}</button>{{/each}}</div>
       {{#if settings.themeHint}}<p class="aim-hint">{{settings.themeHint}}</p>{{/if}}
     </div>
     <div class="aim-field"><span>{{localize "AIM.window.settings.accent"}}</span>
       <div class="aim-swatches">{{#each settings.accents}}<button type="button" class="aim-swatch" style="--sw: var(--acc-{{id}})" data-action="setSetting" data-key="windowAccent" data-value="{{id}}" aria-pressed="{{active}}" aria-label="{{label}}" data-tooltip="{{label}}"></button>{{/each}}</div>
     </div>
     <div class="aim-field"><span>{{localize "AIM.window.settings.density"}}</span>
-      <div class="aim-seg" role="group">{{#each settings.densities}}<button type="button" data-action="setSetting" data-key="windowDensity" data-value="{{id}}" aria-pressed="{{active}}">{{label}}</button>{{/each}}</div>
+      <div class="aim-choice" role="group">{{#each settings.densities}}<button type="button" data-action="setSetting" data-key="windowDensity" data-value="{{id}}" aria-pressed="{{active}}">{{label}}</button>{{/each}}</div>
     </div>
     <div class="aim-field"><span>{{localize "AIM.window.settings.motion"}}</span>
-      <div class="aim-seg" role="group">{{#each settings.motions}}<button type="button" data-action="setSetting" data-key="motionLevel" data-value="{{id}}" aria-pressed="{{active}}" {{#if disabled}}disabled{{/if}}>{{label}}</button>{{/each}}</div>
+      <div class="aim-choice" role="group">{{#each settings.motions}}<button type="button" data-action="setSetting" data-key="motionLevel" data-value="{{id}}" aria-pressed="{{active}}" {{#if disabled}}disabled{{/if}}>{{label}}</button>{{/each}}</div>
       <p class="aim-hint">{{settings.motionHint}}</p>
     </div>
     <div class="aim-field"><span>{{localize "AIM.window.settings.fonts"}}</span>

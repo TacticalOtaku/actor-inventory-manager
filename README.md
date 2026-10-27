@@ -15,7 +15,7 @@ Foundry VTT 14, D&D 5e 5.3.3 or newer. Release notes: [CHANGELOG.md](CHANGELOG.m
 
 ## Features
 
-- **One window per actor**, opened from the **AIM** button in the sheet header or the `I` key. It picks its layout
+- **One window per actor**, opened from **AIM** in the sheet's ⋮ menu or the `I` key. It picks its layout
   from its own width: compact, narrow, standard, and wide with an inspector. Observers get a read-only window.
 - **The rail**: hit points (type −7, +5, or t8 for temporary HP), hit dice, spell slots, AC, initiative, speed, effects,
   inspiration, exhaustion, concentration, rests and dnd5e favorites. Each block can be hidden.

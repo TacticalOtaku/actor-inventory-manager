@@ -73,6 +73,16 @@ test("both confirmations transfer once and replay cannot spend again", async () 
   assert.equal(actors.get("a").system.currency.gp, 7);
   assert.equal(actors.get("b").system.currency.gp, 13);
 });
+test("a second confirmation that cannot settle leaves the trade open with both confirmations cleared", async () => {
+  const { users } = setup(); await start();
+  await command("offerRequest0001", "offer", "a", "p1", { revision: 0, offer: { items: [], money: { gp: 3 } } });
+  await command("confirmRequest01", "confirm", "a", "p1", { revision: 1 });
+  users.get("p1").active = false;
+  await command("confirmRequest02", "confirm", "b", "p2", { revision: 1 });
+  assert.equal(tradeState().sessions[0].status, "open");
+  assert.deepEqual(tradeState().sessions[0].confirmed, [false, false]);
+  assert.equal(tradeState().receipts.p2.error, "AIM.trade.errors.permission");
+});
 test("a failed credit restores the debit and closes the failed trade", async () => {
   const { actors } = setup(); await start();
   const target = actors.get("b");

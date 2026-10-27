@@ -48,6 +48,7 @@ one place to update when it moves again. Never inline these reads at a call site
 | Attunement cap | `getActorAttunementMax` (prepared), `getActorSourceAttunementMax` (stored) | `core/attunement.js` |
 | Container contents | `getContainerContentsCount` | `integrations/dnd5e.js` |
 | Spell preparation | `resolveSpellPreparation` | `integrations/dnd5e.js` |
+| Whether a spell has a prepare toggle (the menu and the spells tab) | `hasPreparationToggle` | `integrations/dnd5e.js` |
 | Spell slot maximum | `resolveSpellSlotMax` | `integrations/dnd5e.js` |
 | Item activation | `resolveItemActivation` | `integrations/dnd5e.js` |
 | Limited uses / recharge | `resolveItemUses` | `integrations/dnd5e.js` |
@@ -106,8 +107,7 @@ Shapes handled (dnd5e 5.3.3):
   weight. Weighty Containers patches dnd5e's `ContainerData#contentsWeight`
   getter, so this block already includes every container reduction;
   recomputing raw item weights discards them. Only without the block does the
-  window ask Weighty Containers for `computeActorCarriedLbs`, and only without
-  that does it sum raw weights (skipping `weightlessContents` bags).
+  window sum raw weights (skipping `weightlessContents` bags).
 - **Encumbrance rule** — the tiers follow dnd5e's `encumbrance` setting:
   `variant` shows encumbered / heavily encumbered, `normal` only the carrying
   capacity, `none` tracks nothing (`getEncumbranceRule`).
@@ -191,7 +191,6 @@ either here guarantees the two modules disagree.
 | Can this item go in? | `validateContainerDrop(container, item)` |
 | Open the rules window | `openWeightyContainersDialog(container)` |
 | React to a rules change | `watchContainerRules(callback)` |
-| Actor total without a system block | `getActorCarriedLbs(actor)` |
 
 `game.modules.get("weighty-containers").api` is the supported handle (3.4.0+);
 `globalThis.weightyCont` is accepted as a fallback for older builds. Every entry
@@ -241,7 +240,7 @@ hooks are coalesced so a batched change renders once.
 ## Actor window and theme
 
 Version 2.0 replaces the 1.9 inventory window with the actor window (ADR 0002): one ApplicationV2 window per actor
-UUID, opened from the header button of any `ActorSheetV2` and the `I` key. The approved mock
+UUID, opened from the ⋮ menu of any `ActorSheetV2` and the `I` key. The approved mock
 `design/character-sheet/mock.html` and its `mock.notes.json` are the behaviour spec; the window is built slice by
 slice from the map #28.
 
@@ -346,8 +345,8 @@ Two constraints, both learned the hard way:
 1. **Never transition the `background` shorthand or `all` on an element whose
    background comes from a custom property.** A transition started by a
    custom-property change never settles on the new value, leaving the panel
-   painted in the previous theme. The theme swap is wrapped in an
-   theme swap runs through a view transition instead.
+   painted in the previous theme. The theme swap runs through a view
+   transition instead.
 2. **Do not inline `color:` from rarity or spell-school values.** Those palettes
    are tuned for the dark background and drop to ~2:1 contrast on the light
    theme. Expose the colour as a custom property (`--rarity-color`,

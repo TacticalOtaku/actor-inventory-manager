@@ -10,6 +10,10 @@
   /* the --accent change flows through every colour */
   transition: --accent 600ms var(--ease-settle);
 }
+
+/* Foundry's core `button` rule fixes every button at --button-size (28px) high. Our buttons size to their content;
+   :where() keeps this below every class rule here, while still above Foundry's layered rule. */
+:where(.aim-root) button { height: auto; min-height: 0; line-height: inherit; }
 .aim-window > .window-header {
   background: var(--surface-1);
   border-bottom: 1px solid var(--line);

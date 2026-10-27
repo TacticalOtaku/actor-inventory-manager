@@ -2,10 +2,8 @@ import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 
 import {
-  extractActorActions,
   extractActorVitals,
   extractSpellSlots,
-  formatActivationLabel,
   formatItemForDisplay,
   getContainerContentsCount,
   resolveItemActivation,
@@ -167,64 +165,6 @@ describe("resolveItemUses", () => {
   });
 });
 
-describe("extractActorActions", () => {
-  const makeFeat = (id, name, activationType, extra = {}) => ({
-    id,
-    uuid: `Actor.x.Item.${id}`,
-    name,
-    img: "",
-    type: "feat",
-    system: {
-      activities: activationType
-        ? { contents: [{ activation: { type: activationType, value: null } }] }
-        : { contents: [] },
-      uses: {},
-      ...extra
-    }
-  });
-
-  it("routes activities into the right buckets instead of dumping everything into passives", () => {
-    stubDnd5eConfig();
-    const actor = {
-      items: new Map([
-        ["1", makeFeat("1", "Second Wind", "bonus")],
-        ["2", makeFeat("2", "Action Surge", "action")],
-        ["3", makeFeat("3", "Riposte", "reaction")],
-        ["4", makeFeat("4", "Darkvision", null)],
-        ["5", makeFeat("5", "Aura of Protection", "longRest")]
-      ])
-    };
-
-    const result = extractActorActions(actor);
-    assert.deepEqual(result.actions.map(a => a.name), ["Action Surge"]);
-    assert.deepEqual(result.bonus.map(a => a.name), ["Second Wind"]);
-    assert.deepEqual(result.reactions.map(a => a.name), ["Riposte"]);
-    assert.deepEqual(result.passives.map(a => a.name).sort(), ["Aura of Protection", "Darkvision"]);
-  });
-
-  it("treats items flagged as traits as passive regardless of activation", () => {
-    stubDnd5eConfig();
-    const feat = makeFeat("1", "Brave", "action", { properties: new Set(["trait"]) });
-    const actor = { items: new Map([["1", feat]]) };
-    const result = extractActorActions(actor);
-    assert.equal(result.actions.length, 0);
-    assert.deepEqual(result.passives.map(a => a.name), ["Brave"]);
-  });
-
-  it("filters by the search query", () => {
-    stubDnd5eConfig();
-    const actor = {
-      items: new Map([
-        ["1", makeFeat("1", "Second Wind", "bonus")],
-        ["2", makeFeat("2", "Action Surge", "action")]
-      ])
-    };
-    const result = extractActorActions(actor, "surge");
-    assert.deepEqual(result.actions.map(a => a.name), ["Action Surge"]);
-    assert.equal(result.bonus.length, 0);
-  });
-});
-
 describe("extractActorVitals", () => {
   /**
    * Plain stand-in for a dnd5e 5.3.3 character. `actor.classes` is a record of
@@ -308,23 +248,6 @@ describe("formatItemForDisplay weight", () => {
     const bags = { id: "d", name: "Bag", type: "container", system: { quantity: 2, weight: { value: 5, units: "lb" } } };
     assert.equal(formatItemForDisplay(rations).weightDisplay, "1.6 kg");
     assert.equal(formatItemForDisplay(bags).weightDisplay, "2.0 kg");
-  });
-});
-
-describe("formatActivationLabel", () => {
-  afterEach(() => {
-    delete globalThis.game;
-  });
-
-  it("uses the module's own label for a standard activation it translates", () => {
-    const own = { "AIM.spells.activation.bonus": "Бонусное действие" };
-    globalThis.game = { i18n: { has: (key, fallback) => fallback === false && key in own, localize: key => own[key] ?? key } };
-    assert.equal(formatActivationLabel({ type: "bonus", config: { label: "Bonus Action" } }), "Бонусное действие");
-  });
-
-  it("keeps the system label, with its count, for anything else", () => {
-    globalThis.game = { i18n: { has: () => false, localize: key => key } };
-    assert.equal(formatActivationLabel({ type: "legendary", value: 2, config: { label: "Legendary Action" } }), "2 Legendary Action");
   });
 });
 

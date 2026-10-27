@@ -45,8 +45,9 @@ export async function restoreInventory(actor, snapshot, guard = () => {}) {
 }
 
 export async function transferItems(source, target, items, guard = () => {}) {
+  guard();
+  const whole = [], partial = [], copies = [];
   for (const entry of items) {
-    guard();
     const item = source.items.get(entry.id);
     const quantity = Number(item?.system?.quantity ?? 1);
     if (!item || quantity < entry.quantity) throw tradeError("changed");
@@ -59,15 +60,19 @@ export async function transferItems(source, target, items, guard = () => {}) {
     if ("attuned" in data.system) data.system.attuned = false;
     // The slot assignment stays behind; the item is marked «Новое» until its new owner opens it.
     data.flags = { ...data.flags, [MODULE_ID]: { [FLAGS.TRADE_NEW]: true } };
-    // Debit first; a failed credit is recovered from the persisted snapshot.
-    if (quantity === entry.quantity) await source.deleteEmbeddedDocuments("Item", [item.id]);
-    else await source.updateEmbeddedDocuments("Item", [{ _id: item.id, "system.quantity": quantity - entry.quantity }]);
-    const remainder = source.items.get(item.id);
-    if (quantity === entry.quantity ? Boolean(remainder) : Number(remainder?.system?.quantity) !== quantity - entry.quantity) throw tradeError("transfer");
-    guard();
-    const created = await target.createEmbeddedDocuments("Item", [data], { keepId: true });
-    if (created?.length !== 1) throw tradeError("transfer");
+    copies.push(data);
+    if (quantity === entry.quantity) whole.push(item.id);
+    else partial.push({ _id: item.id, "system.quantity": quantity - entry.quantity, left: quantity - entry.quantity });
   }
+  if (!copies.length) return;
+  // Debit first, in one write per kind (a big offer must not run past the request timeout); a failed credit is
+  // recovered from the persisted snapshot.
+  if (partial.length) await source.updateEmbeddedDocuments("Item", partial.map(({ left, ...update }) => update));
+  if (whole.length) await source.deleteEmbeddedDocuments("Item", whole);
+  if (whole.some(id => source.items.has(id)) || partial.some(({ _id, left }) => Number(source.items.get(_id)?.system?.quantity) !== left)) throw tradeError("transfer");
+  guard();
+  const created = await target.createEmbeddedDocuments("Item", copies, { keepId: true });
+  if (created?.length !== copies.length) throw tradeError("transfer");
 }
 
 export async function executeTransfer(actors, session, guard = () => {}) {

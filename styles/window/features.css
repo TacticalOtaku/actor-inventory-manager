@@ -1,0 +1,17 @@
+/* AIM: Actor Window - the features tab: origin tints, passive features, uses counter, recharge */
+
+[data-origin="class"] { --tone: var(--accent); }
+[data-origin="species"] { --tone: var(--school-trs); }
+[data-origin="background"] { --tone: var(--school-con); }
+[data-origin="other"] { --tone: var(--text-3); }
+.aim-row.is-passive .aim-tile { opacity: 0.55; filter: saturate(0.6); }
+.aim-row.is-passive:hover .aim-tile { opacity: 0.8; }
+.aim-tag.is-passive { color: var(--text-3); background: transparent; border: 1px dashed var(--line-strong); }
+.aim-tag.is-roll { color: var(--text); background: color-mix(in oklab, var(--accent) 16%, transparent); font-family: var(--font-num); }
+.aim-sec-head h3 .aim-link, .aim-sec-meta .aim-link {
+  min-height: 0; height: auto; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer;
+}
+.aim-sec-head h3 .aim-link:hover, .aim-sec-meta .aim-link:hover { color: var(--accent); text-decoration: underline; }
+.aim-uses-input { width: 64px; height: 22px; padding: 0 6px; border: 1px solid var(--accent); border-radius: 99px; background: var(--surface-0); color: var(--text); font: 600 11.5px var(--font-num); box-shadow: none; outline: none; }
+.aim-uses-input.is-invalid { border-color: var(--hp); color: var(--hp); }
+.aim-charges .aim-recharge { color: var(--warn); }

@@ -532,7 +532,8 @@
         "spells": "Spells",
         "features": "Features",
         "effects": "Effects",
-        "biography": "Biography"
+        "biography": "Biography",
+        "actions": "Actions"
       },
       "rail": {
         "hp": "Hit points",
@@ -796,6 +797,43 @@
           "bonus": "Bonus",
           "reaction": "Reaction"
         }
+      },
+      "features": {
+        "search": "Find a feature",
+        "passive": "Passive",
+        "activation": {
+          "action": "Action",
+          "bonus": "Bonus",
+          "reaction": "Reaction"
+        },
+        "recharge": "Recharge {range}",
+        "rollRecharge": "Roll the recharge (d6)",
+        "usesEdit": "Change uses",
+        "usesForms": "−1 spends · +2 restores · 5 sets",
+        "level": "Level {level}",
+        "origins": {
+          "species": "Species",
+          "background": "Background",
+          "other": "Other"
+        },
+        "groups": {
+          "passive": "Traits",
+          "action": "Actions",
+          "bonus": "Bonus actions",
+          "reaction": "Reactions",
+          "legendary": "Legendary actions",
+          "lair": "Lair actions",
+          "other": "Other"
+        },
+        "filters": {
+          "action": "Action",
+          "bonus": "Bonus",
+          "reaction": "Reaction",
+          "passive": "Passive"
+        },
+        "add": "Add a feature",
+        "none": "No features",
+        "noActions": "No actions"
       }
     }
   }

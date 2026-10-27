@@ -7,6 +7,7 @@ import { LIST_FILTERS, SORTS, VIEWS, goldParts, groupInventory, listPrefsFor, lo
 import { computeActorEncumbrance, getSystemWeightUnit } from "../core/weight-calculator.js";
 import { getDnd5eConfig, readCoins, readContainerCapacity, readInventory, readSpellbook, resolveItemUses, unitAbbreviation } from "../integrations/dnd5e.js";
 import { castable, ready } from "../core/spellbook.js";
+import { usableActivities } from "../integrations/midi-qol.js";
 import { computeActorCurrency, readPilesCurrencies } from "../integrations/item-piles.js";
 import { getContainerLoad, getContainerWeightReductionPct, isWeightyContainersActive } from "../integrations/weighty-containers.js";
 import { escapeHTML } from "./html.js";
@@ -176,7 +177,8 @@ export async function buildItemDetail(item, { canEdit }) {
   const description = raw
     ? await foundry.applications.ux.TextEditor.implementation.enrichHTML(raw, { relativeTo: item, rollData: item.getRollData?.(), secrets: item.isOwner })
     : "";
-  const activities = [...(system.activities ?? [])];
+  // The player picks among the activities dnd5e allows; midi-qol's automation-only ones stay with midi.
+  const activities = usableActivities(item);
   const spell = item.type === "spell" ? readSpellbook({ items: [item] })[0] : null;
   return {
     description,

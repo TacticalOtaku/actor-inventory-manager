@@ -26,6 +26,7 @@ import {
 import { countAttunedItems, getActorAttunementMax, isItemAttuned } from "../core/attunement.js";
 import { LIST_FILTERS, applyCoinEntry, chargeChange, listPrefsFor, parseCoinEntry, withListPref } from "../core/inventory.js";
 import { SPELL_FILTERS, pipTarget } from "../core/spellbook.js";
+import { FEATURE_FILTERS, applyUsesEntry } from "../core/features.js";
 import { parseHpEntry, previewHp, vitalState } from "../core/vitals.js";
 import { readAbilities, readIdentity, readRail, toggleSpellPreparation } from "../integrations/dnd5e.js";
 import { LOG } from "../foundry/logger.js";
@@ -41,6 +42,7 @@ import {
   playEquipmentChanges
 } from "./equipment.js";
 import { buildDollContext, firstItemFor } from "./doll.js";
+import { FEATURE_TEMPLATES, buildFeaturesContext, featureMode, hasFeatures } from "./features.js";
 import { SPELL_TEMPLATES, buildSpellsContext, playSlotChanges, preparationWarning, slotSnapshot } from "./spells.js";
 import { openPresetEditor } from "./preset-editor.js";
 import { bindInventoryDrag } from "./inventory-drag.js";
@@ -60,10 +62,10 @@ const OPEN_WINDOWS = new Map();
 const RENDER_COALESCE_MS = 40;
 
 /** The search fields and the window state each one filters. */
-const SEARCH_FIELDS = { inventorySearch: "query", spellSearch: "spellQuery" };
+const SEARCH_FIELDS = { inventorySearch: "query", spellSearch: "spellQuery", featureSearch: "featureQuery" };
 
 /** The filters each tab knows. */
-const TAB_FILTERS = { equipment: LIST_FILTERS, spells: SPELL_FILTERS };
+const TAB_FILTERS = { equipment: LIST_FILTERS, spells: SPELL_FILTERS, features: FEATURE_FILTERS };
 
 /** Width the collapse button shrinks the window to: the compact layout, rail only. */
 const COLLAPSED_WIDTH = 320;
@@ -145,13 +147,17 @@ export class ActorWindow extends WindowBase {
       castSpell: ActorWindow.#onCastSpell,
       prepareSpell: ActorWindow.#onPrepareSpell,
       slotPip: ActorWindow.#onSlotPip,
-      spellUse: ActorWindow.#onSpellUse
+      usePip: ActorWindow.#onUsePip,
+      useFeature: ActorWindow.#onUseFeature,
+      editUses: ActorWindow.#onEditUses,
+      rechargeItem: ActorWindow.#onRechargeItem,
+      addFeature: ActorWindow.#onAddFeature
     }
   };
 
   static PARTS = {
     rail: { template: `${TEMPLATES}/rail.hbs` },
-    main: { template: `${TEMPLATES}/main.hbs`, templates: [...EQUIPMENT_TEMPLATES, ...SPELL_TEMPLATES], scrollable: [".aim-panel"] },
+    main: { template: `${TEMPLATES}/main.hbs`, templates: [...EQUIPMENT_TEMPLATES, ...SPELL_TEMPLATES, ...FEATURE_TEMPLATES], scrollable: [".aim-panel"] },
     inspector: { template: `${TEMPLATES}/inspector.hbs`, templates: EQUIPMENT_TEMPLATES, scrollable: [""] },
     drawer: { template: `${TEMPLATES}/drawer.hbs`, scrollable: [".aim-drawer-body"] }
   };
@@ -174,6 +180,9 @@ export class ActorWindow extends WindowBase {
     // The equipment tab: search, folded sections, the selected entry, the coin being edited.
     this.query = "";
     this.spellQuery = "";
+    this.featureQuery = "";
+    this.usesEditing = null;
+    this.usesDraft = "";
     this.selectedKey = null;
     this.collapsed = new Set();
     this.selected = null;
@@ -242,6 +251,16 @@ export class ActorWindow extends WindowBase {
         collapsed: this.collapsed
       }) : null,
       prepWarning: preparationWarning(actor),
+      features: buildFeaturesContext(actor, {
+        prefs: getSetting("listPrefs"),
+        query: this.featureQuery,
+        selectedKey: this.selectedKey,
+        detail,
+        canEdit: this.canEdit,
+        collapsed: this.collapsed,
+        usesEditing: this.usesEditing,
+        usesDraft: this.usesDraft
+      }),
       doll: buildDollContext(actor, { canEdit: this.canEdit, selected: this.selected, hidden: Boolean(getSetting("dollHidden")) }),
       ...buildRailContext(actor, { canEdit: this.canEdit, hasSpells: this.#hasSpells(), hiddenBlocks: getSetting("hiddenRailBlocks") ?? [] })
     };
@@ -272,8 +291,11 @@ export class ActorWindow extends WindowBase {
   #tabs() {
     const hidden = getSetting("hiddenTabs") ?? [];
     const missing = this.#hasSpells() ? [] : ["spells"];
+    // A vehicle shows «Действия» only when it has any (siege weapons, vehicle features).
+    if (this.actor.type === "vehicle" && !hasFeatures(this.actor)) missing.push("features");
     const shown = visibleTabs({ hidden, missing });
-    return SHEET_TABS.map((id) => ({ id, label: t(`AIM.window.tabs.${id}`), hidden: !shown.includes(id) }));
+    const label = (id) => t(id === "features" && featureMode(this.actor) === "action" ? "AIM.window.tabs.actions" : `AIM.window.tabs.${id}`);
+    return SHEET_TABS.map((id) => ({ id, label: label(id), hidden: !shown.includes(id) }));
   }
 
   #hasSpells() {
@@ -793,6 +815,7 @@ export class ActorWindow extends WindowBase {
     });
     el.addEventListener("input", (event) => {
       if (event.target.dataset.coinInput) this.coinDraft = event.target.value;
+      if (event.target.matches?.("[data-uses-input]")) this.usesDraft = event.target.value;
       const field = SEARCH_FIELDS[event.target.name];
       if (!field) return;
       this[field] = event.target.value;
@@ -808,6 +831,7 @@ export class ActorWindow extends WindowBase {
     });
     el.addEventListener("focusout", (event) => {
       if (event.target.dataset?.coinInput && this.coinEditing) this.#cancelCoin();
+      if (event.target.matches?.("[data-uses-input]") && this.usesEditing) this.#cancelUses();
       if (event.target.name === this._searching && event.relatedTarget) this._searching = null;
     });
     bindInventoryDrag(this);
@@ -816,6 +840,12 @@ export class ActorWindow extends WindowBase {
   /** Enter or Space selects a focused row and toggles a focused section header; the coin field reads Enter and Esc. */
   #onEquipmentKey(event) {
     const target = event.target;
+    if (target.dataset?.usesInput !== undefined && target.matches?.("[data-uses-input]")) {
+      if (event.key === "Enter") { event.preventDefault(); this.#applyUses(target.value); }
+      else if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); this.#cancelUses(); }
+      else return false;
+      return true;
+    }
     if (target.dataset?.coinInput) {
       if (event.key === "Enter") { event.preventDefault(); this.#applyCoin(target.value); }
       else if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); this.#cancelCoin(); }
@@ -848,7 +878,7 @@ export class ActorWindow extends WindowBase {
       this._spellGlide = null;
     }
     playEquipmentChanges(el, this._equipmentPrev, el.dataset.motion);
-    const coin = el.querySelector("[data-coin-input]");
+    const coin = el.querySelector("[data-coin-input], [data-uses-input]");
     if (coin) {
       coin.focus();
       coin.setSelectionRange(coin.value.length, coin.value.length);
@@ -1135,6 +1165,16 @@ export class ActorWindow extends WindowBase {
     this._castSchool = item.system.school;
     clearTimeout(this._castSchoolTimer);
     this._castSchoolTimer = setTimeout(() => { this._castSchool = null; }, 4000);
+    return this.#useWithRefusal(item, target, event);
+  }
+
+  /** The tile of an active feature uses it through dnd5e; with no uses left dnd5e refuses and the row shakes. */
+  static #onUseFeature(event, target) {
+    const item = this.#itemFrom(target);
+    if (item && this.canEdit) return this.#useWithRefusal(item, target, event);
+  }
+
+  async #useWithRefusal(item, target, event) {
     const notifications = ui.notifications;
     const { warn, error } = notifications;
     let refused = false;
@@ -1167,8 +1207,42 @@ export class ActorWindow extends WindowBase {
     if (next !== value) await this.actor.update({ [`system.spells.${key}.value`]: next });
   }
 
-  /** Innate uses work like slot gems, written as system.uses.spent. */
-  static async #onSpellUse(event, target) {
+  static #onEditUses(event, target) {
+    if (!this.canEdit) return;
+    this.usesEditing = target.closest("[data-item-id]").dataset.itemId;
+    this.usesDraft = "";
+    this.render({ parts: ["main"] });
+  }
+
+  async #applyUses(text) {
+    const item = this.actor.items.get(this.usesEditing);
+    const max = Number(item?.system.uses?.max) || 0;
+    const value = applyUsesEntry({ value: max - (Number(item?.system.uses?.spent) || 0), max }, text);
+    if (value === null) return this.element.querySelector("[data-uses-input]")?.classList.add("is-invalid");
+    this.usesEditing = null;
+    this.usesDraft = "";
+    if (this.canEdit && item) await item.update({ "system.uses.spent": max - value });
+    this.render({ parts: ["main"] });
+  }
+
+  #cancelUses() {
+    this.usesEditing = null;
+    this.usesDraft = "";
+    this.render({ parts: ["main"] });
+  }
+
+  /** A recharge feature rolls its d6 through dnd5e; a 5–6 (or its own threshold) refills it. */
+  static #onRechargeItem(event, target) {
+    const item = this.#itemFrom(target);
+    if (item && this.canEdit) return item.system.uses?.rollRecharge?.({ apply: true, event });
+  }
+
+  static #onAddFeature() {
+    if (this.canEdit) return Item.implementation.createDialog({ type: "feat" }, { parent: this.actor, types: ["feat"] });
+  }
+
+  /** Uses pips of spells and features work like slot gems, written as system.uses.spent. */
+  static async #onUsePip(event, target) {
     const item = this.#itemFrom(target);
     if (!item || !this.canEdit) return;
     const max = Number(item.system.uses?.max) || 0;

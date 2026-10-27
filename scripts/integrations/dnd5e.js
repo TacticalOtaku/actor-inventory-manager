@@ -459,6 +459,50 @@ function featureOrigin(root) {
   }
 }
 
+/**
+ * The actor's favorites as the rail shows them. dnd5e 5.3.3: `system.favorites` [{type, id, sort}] with a relative UUID
+ * for items, activities and effects (resolved with `fromUuid(id, {relative: actor})`, whose own `getFavoriteData()`
+ * describes them), a slot key ("spell3", "pact") for slots and a skill or tool key otherwise.
+ * @param {Object} actor
+ */
+export async function readFavorites(actor) {
+  const config = getDnd5eConfig();
+  const entries = [];
+  for (const { id, type, sort } of actor?.system?.favorites ?? []) {
+    const base = { id, type, sort: num(sort, 0), itemType: null, itemId: null, effectId: null, activityId: null, activation: "", level: null };
+    if (type === "item" || type === "effect" || type === "activity") {
+      const doc = await globalThis.fromUuid?.(id, { relative: actor });
+      if (!doc || doc.dependentOrigin?.active === false) continue;
+      const data = (type === "item" ? await doc.system?.getFavoriteData?.() : await doc.getFavoriteData?.()) ?? {};
+      const item = type === "activity" ? doc.item : type === "item" ? doc : null;
+      entries.push({
+        ...base,
+        ...data,
+        itemType: item?.type ?? null,
+        itemId: item?.id ?? null,
+        effectId: type === "effect" ? doc.id : null,
+        activityId: type === "activity" ? doc.id : null,
+        activation: type === "activity" ? doc.activation?.type ?? "" : item ? resolveItemActivation(item).type : "",
+        level: item?.type === "spell" ? num(item.system?.level, 0) : null,
+        title: data.title ?? doc.name,
+        img: data.img ?? doc.img
+      });
+    } else if (type === "slots") {
+      const slot = actor.system?.spells?.[id];
+      if (!slot) continue;
+      entries.push({ ...base, level: num(slot.level, 0), img: config.spellcasting?.[slot.type]?.img?.replace?.("{id}", id) ?? "",
+        uses: { value: num(slot.value, 0), max: resolveSpellSlotMax(slot) } });
+    } else if (type === "skill" || type === "tool") {
+      const data = actor.system?.[`${type}s`]?.[id];
+      if (!data) continue;
+      const skill = type === "skill" ? config.skills?.[id] : null;
+      const label = skill?.label ?? globalThis.dnd5e?.documents?.Trait?.keyLabel?.(`tool:${id}`) ?? id;
+      entries.push({ ...base, title: localizeOr(label, label), img: skill?.icon ?? "icons/svg/d20.svg", modifier: num(data.total, 0) });
+    }
+  }
+  return entries;
+}
+
 /** The actor's dnd5e coins in CONFIG.DND5E.currencies order (pp, gp, ep, sp, cp in 5.3.3). */
 export function readCoins(actor) {
   const currencies = getDnd5eConfig().currencies ?? {};

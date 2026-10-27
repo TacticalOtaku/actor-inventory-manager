@@ -28,6 +28,7 @@
       {{#if attuneable}}<button type="button" class="aim-ibtn aim-mini {{#if attuned}}is-on{{/if}}" data-action="attuneItem" aria-pressed="{{attuned}}" aria-label="{{attuneLabel}}" data-tooltip="{{attuneLabel}}"><i class="fa-light fa-sparkle"></i></button>{{/if}}
       {{#if canEquip}}<button type="button" class="aim-ibtn aim-mini {{#if equipped}}is-on{{/if}}" data-action="equipItem" aria-pressed="{{equipped}}" aria-label="{{equipLabel}}" data-tooltip="{{equipLabel}}"><i class="fa-light fa-hand"></i></button>{{/if}}
       {{/if}}
+      {{#if @root.canFavorite}}<button type="button" class="aim-ibtn aim-mini aim-star {{#if favorite}}is-on{{/if}}" data-action="toggleFavorite" aria-pressed="{{#if favorite}}true{{else}}false{{/if}}" aria-label="{{localize "AIM.window.favorites.star"}}" data-tooltip="{{localize "AIM.window.favorites.star"}}"><i class="fa-{{#if favorite}}solid{{else}}light{{/if}} fa-star"></i></button>{{/if}}
       <button type="button" class="aim-ibtn aim-mini" data-action="itemMenu" aria-haspopup="menu" aria-label="{{localize "AIM.window.inv.more"}}" data-tooltip="{{localize "AIM.window.inv.more"}}"><i class="fa-light fa-ellipsis"></i></button>
     </div>
   </div>

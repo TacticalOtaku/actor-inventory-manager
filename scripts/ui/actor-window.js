@@ -27,6 +27,7 @@ import { countAttunedItems, getActorAttunementMax, isItemAttuned } from "../core
 import { LIST_FILTERS, applyCoinEntry, chargeChange, listPrefsFor, parseCoinEntry, withListPref } from "../core/inventory.js";
 import { SPELL_FILTERS, pipTarget } from "../core/spellbook.js";
 import { FEATURE_FILTERS, applyUsesEntry } from "../core/features.js";
+import { reorderFavorites, tabForFavorite } from "../core/favorites.js";
 import { parseHpEntry, previewHp, vitalState } from "../core/vitals.js";
 import { readAbilities, readIdentity, readRail, toggleSpellPreparation } from "../integrations/dnd5e.js";
 import { LOG } from "../foundry/logger.js";
@@ -43,6 +44,7 @@ import {
 } from "./equipment.js";
 import { buildDollContext, firstItemFor } from "./doll.js";
 import { FEATURE_TEMPLATES, buildFeaturesContext, featureMode, hasFeatures } from "./features.js";
+import { buildFavoritesContext, favoriteIdFor, favoriteItemIds, hasFavorites } from "./favorites.js";
 import { SPELL_TEMPLATES, buildSpellsContext, playSlotChanges, preparationWarning, slotSnapshot } from "./spells.js";
 import { openPresetEditor } from "./preset-editor.js";
 import { bindInventoryDrag } from "./inventory-drag.js";
@@ -151,7 +153,10 @@ export class ActorWindow extends WindowBase {
       useFeature: ActorWindow.#onUseFeature,
       editUses: ActorWindow.#onEditUses,
       rechargeItem: ActorWindow.#onRechargeItem,
-      addFeature: ActorWindow.#onAddFeature
+      addFeature: ActorWindow.#onAddFeature,
+      toggleFavorite: ActorWindow.#onToggleFavorite,
+      favUse: ActorWindow.#onFavUse,
+      favOpen: ActorWindow.#onFavOpen
     }
   };
 
@@ -209,6 +214,7 @@ export class ActorWindow extends WindowBase {
     const selected = this.selected ? actor.items.get(this.selected) : null;
     if (!selected) this.selected = this.selectedKey = null;
     const detail = selected ? await buildItemDetail(selected, { canEdit: this.canEdit }) : null;
+    const favIds = favoriteItemIds(actor);
     return {
       ...(await super._prepareContext(options)),
       actor,
@@ -238,6 +244,7 @@ export class ActorWindow extends WindowBase {
         detail,
         coinEditing: this.coinEditing,
         coinDraft: this.coinDraft,
+        favIds,
         canEdit: this.canEdit,
         folds: getSetting("trayFolds") ?? {}
       }),
@@ -247,15 +254,19 @@ export class ActorWindow extends WindowBase {
         query: this.spellQuery,
         selectedKey: this.selectedKey,
         detail,
+        favIds,
         canEdit: this.canEdit,
         collapsed: this.collapsed
       }) : null,
       prepWarning: preparationWarning(actor),
+      favorites: await buildFavoritesContext(actor, { canEdit: this.canEdit }),
+      canFavorite: hasFavorites(actor) && this.canEdit,
       features: buildFeaturesContext(actor, {
         prefs: getSetting("listPrefs"),
         query: this.featureQuery,
         selectedKey: this.selectedKey,
         detail,
+        favIds,
         canEdit: this.canEdit,
         collapsed: this.collapsed,
         usesEditing: this.usesEditing,
@@ -606,7 +617,10 @@ export class ActorWindow extends WindowBase {
   /* ─── Actions ─── */
 
   static #onSwitchTab(event, target) {
-    const tab = target.dataset.tab;
+    this.#switchTo(target.dataset.tab);
+  }
+
+  #switchTo(tab) {
     if (!tab || tab === this.tab) return;
     this.tab = tab;
     for (const button of this.element.querySelectorAll(".aim-tab")) button.setAttribute("aria-selected", String(button.dataset.tab === tab));
@@ -858,6 +872,11 @@ export class ActorWindow extends WindowBase {
       this.#selectRow(target);
       return true;
     }
+    if (target.matches?.("[data-fav-id]")) {
+      event.preventDefault();
+      ActorWindow.#onFavOpen.call(this, event, target);
+      return true;
+    }
     if (target.matches?.('[data-action="toggleSection"]')) {
       event.preventDefault();
       this.#foldSection(target);
@@ -870,6 +889,10 @@ export class ActorWindow extends WindowBase {
     const el = this.element;
     this.#fly();
     playSlotChanges(el, this._slotsPrev, this._castSchool, el.dataset.motion);
+    if (this._favGlide) {
+      if (this.motionOn) glideFrom(el.querySelector("[data-favorites]") ?? el, ".aim-fav", this._favGlide);
+      this._favGlide = null;
+    }
     // Preparing past the class limit turns the counter red with one shake.
     const counter = el.querySelector("[data-prep-counter].is-over");
     if (counter && !this._prepOver && this.motionOn) this.#shake(counter);
@@ -1187,7 +1210,10 @@ export class ActorWindow extends WindowBase {
       notifications.warn = warn;
       notifications.error = error;
     }
-    if (!result && refused) this.#shake(this.element.querySelector(`.aim-rowwrap[data-key="${target.closest("[data-key]")?.dataset.key}"] [data-row]`));
+    if (!result && refused) {
+      const holder = this.element.querySelector(`[data-key="${target.closest("[data-key]")?.dataset.key}"]`);
+      this.#shake(holder?.querySelector("[data-row]") ?? holder);
+    }
   }
 
   /** The row glides into or out of the prepared list; past the class limit dnd5e only warns. */
@@ -1249,6 +1275,71 @@ export class ActorWindow extends WindowBase {
     const value = max - (Number(item.system.uses?.spent) || 0);
     const next = Math.min(max, pipTarget(value, Number(target.dataset.index)));
     if (next !== value) await item.update({ "system.uses.spent": max - next });
+  }
+
+  /* ─── Favorites ─── */
+
+  /** Stars or unstars an entry in dnd5e's system.favorites; the rail list glides to its new order. */
+  static async #onToggleFavorite(event, target) {
+    const item = this.#itemFrom(target);
+    if (!item || !this.canEdit || !hasFavorites(this.actor)) return;
+    const id = favoriteIdFor(this.actor, item);
+    this.#measureFavorites();
+    if (this.actor.system.hasFavorite(id)) await this.actor.system.removeFavorite(id);
+    else await this.actor.system.addFavorite({ type: "item", id });
+  }
+
+  #measureFavorites() {
+    const list = this.element.querySelector("[data-favorites]");
+    if (list) this._favGlide = measure(list, ".aim-fav");
+  }
+
+  /** Adds a favorite of any kind dnd5e allows; a new one goes to the end. */
+  async addFavorite(favorite) {
+    if (!this.canEdit || !hasFavorites(this.actor) || this.actor.system.hasFavorite(favorite.id)) return;
+    this.#measureFavorites();
+    await this.actor.system.addFavorite(favorite);
+  }
+
+  /** Moves a favorite before or after another, written to system.favorites sort. */
+  async reorderFavorite(id, targetId, before) {
+    if (!this.canEdit) return;
+    this.#measureFavorites();
+    await this.actor.update({ "system.favorites": reorderFavorites(this.actor.system.favorites, id, targetId, before) });
+  }
+
+  #favoriteFrom(target) {
+    const id = target.closest("[data-fav-id]")?.dataset.favId;
+    return this.actor.system.favorites?.find((f) => f.id === id) ?? null;
+  }
+
+  /** The tile acts like dnd5e's useFavorite: uses an item or activity, toggles an effect, rolls a skill or tool. */
+  static async #onFavUse(event, target) {
+    const favorite = this.#favoriteFrom(target);
+    if (!favorite || !this.canEdit) return;
+    if (favorite.type === "slots") return this.#switchTo("spells");
+    if (favorite.type === "skill") return this.actor.rollSkill({ event, skill: favorite.id });
+    if (favorite.type === "tool") return this.actor.rollToolCheck({ event, tool: favorite.id });
+    const doc = await fromUuid(favorite.id, { relative: this.actor });
+    if (!doc) return;
+    if (favorite.type === "effect") return doc.update({ disabled: !doc.disabled });
+    if (favorite.type === "activity") return doc.canUse === false ? undefined : doc.use({ event });
+    if (doc.type === "container") return doc.sheet.render({ force: true });
+    return this.#useWithRefusal(doc, target, event);
+  }
+
+  /** A click elsewhere on the row opens the entry's tab and selects it there. */
+  static async #onFavOpen(event, target) {
+    const favorite = this.#favoriteFrom(target);
+    if (!favorite) return;
+    const doc = ["item", "activity"].includes(favorite.type) ? await fromUuid(favorite.id, { relative: this.actor }) : null;
+    const item = favorite.type === "activity" ? doc?.item : doc;
+    const tab = tabForFavorite({ type: favorite.type, itemType: item?.type });
+    this.#switchTo(tab);
+    const row = item && this.element.querySelector(`[data-panel="${tab}"] .aim-rowwrap[data-item-id="${item.id}"] [data-row]`);
+    if (!row) return;
+    if (this.selected !== item.id) await this.#selectRow(row);
+    this.element.querySelector(`[data-panel="${tab}"] .aim-rowwrap[data-item-id="${item.id}"]`)?.scrollIntoView({ block: "nearest", behavior: this.motionOn ? "smooth" : "auto" });
   }
 
   static #onOpenPresetEditor() {

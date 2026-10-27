@@ -43,6 +43,7 @@ export async function buildEquipmentContext(actor, state) {
     const selected = entry.id === state.selected;
     return {
       ...entry,
+      favorite: Boolean(state.favIds?.has(entry.id)),
       selected,
       detail: selected ? state.detail : null,
       useLabel: t("AIM.window.inv.use", { name: entry.name }),

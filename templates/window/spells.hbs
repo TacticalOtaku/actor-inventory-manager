@@ -24,7 +24,7 @@
   {{#if spells.tracks.length}}
   <div class="aim-slot-tracks">
     {{#each spells.tracks}}
-    <div class="aim-slot-track {{#if pact}}is-pact{{/if}}">
+    <div class="aim-slot-track {{#if pact}}is-pact{{/if}}" {{#if @root.canFavorite}}draggable="true" data-fav-slots="{{key}}" data-tooltip="{{localize "AIM.window.favorites.dragSlots"}}"{{/if}}>
       <b>{{label}}</b>
       <span class="aim-gems">{{#each pips}}<button type="button" class="aim-gem {{#if lit}}is-lit{{/if}}" data-action="slotPip" data-slot-key="{{../key}}" data-index="{{index}}" {{#unless @root.canEdit}}disabled{{/unless}} aria-label="{{label}}"></button>{{/each}}</span>
     </div>

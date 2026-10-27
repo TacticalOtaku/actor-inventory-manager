@@ -51,7 +51,7 @@ export function buildRailContext(actor, { canEdit, hasSpells, hiddenBlocks }) {
   blocks.rest &&= actor.type === "character" && restAllowed && canEdit;
   blocks.spellcasting &&= rail.casting.length > 0;
   blocks.spellSlots &&= rail.slots.length > 0;
-  blocks.favorites = false; // favorites arrive with the features slice (#33)
+  blocks.favorites &&= actor.type === "character";
   const info = [t("AIM.window.hp.max", { max })];
   if (temp) info.push(t("AIM.window.hp.tempInfo", { temp }));
   if (value < max) info.push(`−${max - value}`);

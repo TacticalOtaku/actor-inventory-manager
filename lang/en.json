@@ -834,6 +834,27 @@
         "add": "Add a feature",
         "none": "No features",
         "noActions": "No actions"
+      },
+      "favorites": {
+        "star": "Favorite",
+        "empty": "Star a row ★ or drag an item, spell, feature or slot track here.",
+        "dragSlots": "Drag into Favorites",
+        "groups": {
+          "action": "Action",
+          "bonus": "Bonus action",
+          "reaction": "Reaction",
+          "other": "Other"
+        },
+        "check": "Check {bonus}",
+        "slotsLeft": "{value} of {max}",
+        "on": "on",
+        "off": "off",
+        "suppressed": "unavailable",
+        "toHit": "{bonus} to hit",
+        "save": "DC {dc}",
+        "slots": "Circle {level} slots",
+        "pactSlots": "Pact slots",
+        "use": "Use: {name}"
       }
     }
   }

@@ -60,6 +60,7 @@ export function buildSpellsContext(actor, state) {
     return {
       ...s,
       key,
+      favorite: Boolean(state.favIds?.has(s.id)),
       selected: key === state.selectedKey,
       detail: key === state.selectedKey ? state.detail : null,
       // SC Rarity Colors decides school colours when active (its per-level variants too), else the --school-* tokens.

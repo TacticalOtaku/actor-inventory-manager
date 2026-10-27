@@ -603,3 +603,36 @@ describe("features tab reads (dnd5e 5.3.3)", () => {
     assert.equal(readFeatures(actor).some((f) => f.id === "bite"), false);
   });
 });
+
+describe("favorites reads (dnd5e 5.3.3)", () => {
+  afterEach(() => { delete globalThis.CONFIG; delete globalThis.fromUuid; });
+
+  it("resolves items, activities and effects by relative UUID, slots by key and skills by key", async () => {
+    const { readFavorites } = await import("../scripts/integrations/dnd5e.js");
+    globalThis.CONFIG = { DND5E: { skills: { ath: { label: "Атлетика", icon: "ath.svg" } }, spellcasting: { spell: { img: "slots-{id}.webp" } } } };
+    const fireball = { id: "fb", type: "spell", name: "Огненный шар", img: "fb.webp",
+      system: { level: 3, activities: { contents: [{ activation: { type: "action" } }] }, getFavoriteData: async () => ({ title: "Огненный шар", subtitle: ["В, С, М", "1 действие"], save: { dc: 15 } }) } };
+    const shield = { id: "sh", type: "spell", name: "Щит", system: { level: 1 } };
+    const parry = { id: "act1", item: shield, activation: { type: "reaction" }, getFavoriteData: async () => ({ title: "Парирование" }) };
+    const gone = null;
+    const docs = { ".Item.fb": fireball, ".Item.sh.Activity.act1": parry, ".Item.missing": gone };
+    globalThis.fromUuid = async (id) => docs[id] ?? null;
+    const actor = { system: {
+      favorites: [
+        { type: "item", id: ".Item.fb", sort: 100 },
+        { type: "activity", id: ".Item.sh.Activity.act1", sort: 200 },
+        { type: "item", id: ".Item.missing", sort: 300 },
+        { type: "slots", id: "spell3", sort: 400 },
+        { type: "skill", id: "ath", sort: 500 }
+      ],
+      spells: { spell3: { value: 1, max: 2, level: 3, type: "spell" } },
+      skills: { ath: { total: 5 } }
+    } };
+    const [fb, act, slots, skill, ...rest] = await readFavorites(actor);
+    assert.equal(rest.length, 0, "a favorite whose document is gone is left out");
+    assert.deepEqual([fb.itemType, fb.itemId, fb.activation, fb.level, fb.save.dc, fb.title], ["spell", "fb", "action", 3, 15, "Огненный шар"]);
+    assert.deepEqual([act.activityId, act.itemId, act.activation, act.title], ["act1", "sh", "reaction", "Парирование"]);
+    assert.deepEqual([slots.level, slots.uses, slots.img], [3, { value: 1, max: 2 }, "slots-spell3.webp"]);
+    assert.deepEqual([skill.title, skill.modifier, skill.img], ["Атлетика", 5, "ath.svg"]);
+  });
+});

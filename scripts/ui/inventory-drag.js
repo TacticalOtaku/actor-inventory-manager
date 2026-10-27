@@ -27,6 +27,9 @@ function sameList(a, b) {
  * otherwise a tray puts it in that container and a section takes it out of its container.
  */
 function dropTarget(node, event, manual, dragged, fromDoll) {
+  // Anything dropped on the favorites list is starred there.
+  const favorites = node.closest?.("[data-favorites]");
+  if (favorites) return { kind: "favorite", node: favorites };
   const slot = node.closest?.(".aim-slot[data-slot]");
   if (slot) return { kind: "slot", node: slot, id: slot.dataset.slot };
   const attune = node.closest?.("[data-attune]");
@@ -69,6 +72,9 @@ export function bindInventoryDrag(app) {
   const el = app.element;
   let dragged = null;
   let fromDoll = false;
+  // A favorite row being reordered, or a slot track dragged into the favorites.
+  let draggedFav = null;
+  let draggedSlots = null;
   let lit = null;
   let spring = { tray: null, timer: null };
 
@@ -91,10 +97,34 @@ export function bindInventoryDrag(app) {
     for (const slot of el.querySelectorAll(".aim-slot.is-fit")) slot.classList.remove("is-fit");
     dragged = null;
     fromDoll = false;
+    draggedFav = null;
+    draggedSlots = null;
+  };
+
+  /** Favorites take a dragged favorite (to reorder it before or after a row) or a slot track. */
+  const favoriteTarget = (event) => {
+    const list = event.target.closest?.("[data-favorites]");
+    if (!list) return null;
+    const row = event.target.closest?.("[data-fav-id]");
+    if (draggedFav && row && row.dataset.favId !== draggedFav) {
+      const box = row.getBoundingClientRect();
+      return { kind: "reorder", node: row, id: row.dataset.favId, before: event.clientY < box.top + box.height / 2 };
+    }
+    return draggedSlots ? { kind: "favorite", node: list } : null;
   };
 
   // A row dragged out of the window carries the item's own drag data, so sheets, the canvas and Item Piles take it.
   el.addEventListener("dragstart", (event) => {
+    const fav = event.target.closest?.("[data-fav-id]");
+    const track = event.target.closest?.("[data-fav-slots]");
+    if ((fav || track) && app.canEdit) {
+      draggedFav = fav?.dataset.favId ?? null;
+      draggedSlots = track?.dataset.favSlots ?? null;
+      event.dataTransfer.setData("text/plain", JSON.stringify({ aimActorUuid: app.actorKey, aimFavorite: draggedFav, aimSlots: draggedSlots }));
+      event.dataTransfer.effectAllowed = "link";
+      (fav ?? track).classList.add("is-dragging");
+      return;
+    }
     const source = event.target.closest?.(DRAGGABLE);
     const item = source && app.actor.items.get(source.closest("[data-item-id]")?.dataset.itemId);
     if (!item || !app.canEdit) return;
@@ -110,6 +140,12 @@ export function bindInventoryDrag(app) {
   });
 
   el.addEventListener("dragover", (event) => {
+    if (draggedFav || draggedSlots) {
+      const target = favoriteTarget(event);
+      light(target?.kind === "reorder" ? { ...target, kind: "sort" } : target);
+      if (target) { event.preventDefault(); event.dataTransfer.dropEffect = "link"; }
+      return;
+    }
     if (!dragged) return;
     const manual = listPrefsFor(game.settings.get(MODULE_ID, "listPrefs"), "equipment").sort === "manual";
     const target = dropTarget(event.target, event, manual, dragged, fromDoll);
@@ -130,6 +166,17 @@ export function bindInventoryDrag(app) {
   });
 
   el.addEventListener("drop", (event) => {
+    if (draggedFav || draggedSlots) {
+      const target = favoriteTarget(event);
+      const fav = draggedFav;
+      const slots = draggedSlots;
+      reset();
+      if (!target) return;
+      event.preventDefault();
+      if (target.kind === "reorder") app.reorderFavorite(fav, target.id, target.before);
+      else if (slots) app.addFavorite({ type: "slots", id: slots });
+      return;
+    }
     if (!dragged) return;
     const manual = listPrefsFor(game.settings.get(MODULE_ID, "listPrefs"), "equipment").sort === "manual";
     const target = dropTarget(event.target, event, manual, dragged, fromDoll);
@@ -156,6 +203,7 @@ export async function moveInventoryItem(app, item, target) {
     if (!await equipItemToSlot(item.actor, item, target.id)) shake(app.element.querySelector(`.aim-slot[data-slot="${target.id}"]`));
     return;
   }
+  if (target.kind === "favorite") return app.addFavorite({ type: "item", id: item.getRelativeUUID(item.actor) });
   if (target.kind === "attune") return isItemAttuned(item) ? undefined : app.attuneWithLimit(item, null);
   if (target.kind === "unequip") return item.system.equipped ? unequipItem(item.actor, item) : undefined;
   if (target.kind === "sort") {

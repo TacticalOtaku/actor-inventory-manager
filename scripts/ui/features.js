@@ -43,6 +43,7 @@ export function buildFeaturesContext(actor, state) {
     return {
       ...e,
       key,
+      favorite: Boolean(state.favIds?.has(e.id)),
       selected: key === state.selectedKey,
       detail: key === state.selectedKey ? state.detail : null,
       // In «Действия» the section already names the action cost, so the row leaves it out.

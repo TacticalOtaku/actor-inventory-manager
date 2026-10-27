@@ -63,6 +63,7 @@ one place to update when it moves again. Never inline these reads at a call site
 | Prepared spells against each class limit (`spellcasting.preparation`) | `readSpellPreparation` | `integrations/dnd5e.js` |
 | Features by origin (`advancementRoot`/`advancementOrigin`), uses, recovery, recharge, attacks | `readFeatures` | `integrations/dnd5e.js` |
 | Activities a player picks (`canUse`, midi-qol automation-only left out) | `usableActivities` | `integrations/midi-qol.js` |
+| Favorites (`system.favorites`: relative UUIDs, slot keys, skill and tool keys) | `readFavorites` | `integrations/dnd5e.js` |
 
 Shapes handled (dnd5e 5.3.3):
 
@@ -254,6 +255,8 @@ slice from the map #28.
 | Pure spellbook rules: sections, filters, what can be cast, gem clicks, preparation state | `scripts/core/spellbook.js` |
 | Features tab: by origin for a character, «Действия» by action cost for an NPC or vehicle, uses, recharge | `scripts/ui/features.js`, `templates/window/features.hbs`, `templates/window/feature-row.hbs` |
 | Pure feature rules: origin and action groups, filters, uses entry, recharge label | `scripts/core/features.js` |
+| Favorites in the rail (dnd5e `system.favorites`): groups, use, open, stars, drag and reorder | `scripts/ui/favorites.js`, `templates/window/rail.hbs` |
+| Pure favorite rules: action-cost groups, manual order, the tab of an entry | `scripts/core/favorites.js` |
 
 ### Theme, accent, density, motion
 

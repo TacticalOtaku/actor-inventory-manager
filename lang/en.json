@@ -592,7 +592,10 @@
         "favorites": "Favorites",
         "rollHitDie": "Roll a hit die",
         "slots": "Slots",
-        "slotsLink": "Spell slots: open spells"
+        "slotsLink": "Spell slots: open spells",
+        "legendary": "Legendary actions",
+        "statsNpc": "AC, initiative, speed, CR",
+        "chipsNpc": "Exhaustion and concentration"
       },
       "settings": {
         "title": "Window settings",
@@ -642,7 +645,8 @@
           "full": "Responses to actions and ambient effects.",
           "reduced": "Responses to actions only, no ambient loops or particles.",
           "off": "Short fades only."
-        }
+        },
+        "absentNpc": "not on this NPC"
       },
       "hp": {
         "edit": "Hit points: change",
@@ -676,7 +680,8 @@
         "acHint": "Right click for dnd5e's armor class settings",
         "init": "Init",
         "initHint": "Roll initiative; right click for settings",
-        "prof": "Prof"
+        "prof": "Prof",
+        "cr": "CR"
       },
       "casting": {
         "dc": "DC",
@@ -990,6 +995,15 @@
           "flaw": "Flaws",
           "appearance": "Appearance"
         }
+      },
+      "legendary": {
+        "actions": "Legendary actions",
+        "resistance": "Legendary resistance"
+      },
+      "npc": {
+        "xp": "Challenge rating: {xp} XP",
+        "crHint": "Challenge rating · {xp} XP",
+        "crShort": "CR {cr}"
       }
     },
     "tips": {

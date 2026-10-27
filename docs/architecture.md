@@ -69,6 +69,7 @@ one place to update when it moves again. Never inline these reads at a call site
 | Statuses for the conditions grid (`CONFIG.statusEffects`, non-pseudo `conditionTypes`, immunities from `traits.ci`) | `readStatusEffects` | `integrations/dnd5e.js` |
 | Tooltip cards (`system.getCardData()` read into numbers, text and pills; `richTooltip()` of effects and rule pages) | `readCardData` | `integrations/dnd5e.js` |
 | Damage types (`CONFIG.DND5E.damageTypes[key]`: label, `color` as a Foundry `Color`, `reference` page) | `readDamageType` | `integrations/dnd5e.js` |
+| NPC kind and legendary pools (`details.cr`, `details.xp.value`, prepared `details.type.label`, `traits.size`, `resources.legact` / `legres` {max, spent}) | `readNpc` | `integrations/dnd5e.js` |
 | Skills and tools (`prof.multiplier` in effect, total, passive) | `readSkills`, `readTools` | `integrations/dnd5e.js` |
 | Defenses (`traits.dr/di/dv/ci` with custom entries, `traits.dm.amount`) | `readDefenses` | `integrations/dnd5e.js` |
 | Passive scores, senses (`attributes.senses.ranges`, moved in 5.3), armor, weapons, languages (`labels`, telepathy) | `readSenses` | `integrations/dnd5e.js` |
@@ -245,7 +246,7 @@ slice from the map #28.
 | Part | Where |
 | --- | --- |
 | Window, its parts and actions | `scripts/ui/actor-window.js` |
-| Pure rules: layout by width, motion caps, theme, accents, tabs, rail blocks | `scripts/core/actor-window.js` |
+| Pure rules: layout by width, motion caps, theme, accents, tabs, rail blocks by actor type, challenge rating | `scripts/core/actor-window.js` |
 | Templates (rail, main with header and tabs, inspector, settings drawer) | `templates/window/*.hbs` |
 | Theme tokens | `styles/theme/tokens.css` |
 | Window styles | `styles/window/*.css` |

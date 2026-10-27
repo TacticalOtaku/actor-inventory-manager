@@ -10,7 +10,9 @@ import {
   layoutForWidth,
   motionCap,
   normalizeAccent,
+  crLabel,
   orbAction,
+  railBlocksFor,
   resolveTheme,
   sheetMenuEntries,
   themeFromLegacy,
@@ -108,5 +110,32 @@ describe("sheet menu", () => {
     assert.deepEqual(sheetMenuEntries({ type: "character", bastion: true, polymorphed: false }), ["openSheet", "traits", "bastion"]);
     assert.deepEqual(sheetMenuEntries({ type: "character", bastion: false, polymorphed: true }), ["openSheet", "traits", "revert"]);
     assert.deepEqual(sheetMenuEntries({ type: "npc", bastion: true, polymorphed: false }), ["openSheet"]);
+  });
+});
+
+describe("rail blocks by actor type (#20)", () => {
+  const ids = (list) => list.map((b) => b.id);
+
+  it("list only what the actor type can show", () => {
+    const has = { hasSpells: true, hasLegendary: true };
+    assert.deepEqual(ids(railBlocksFor("character", has)), ["hitDice", "spellSlots", "stats", "spellcasting", "effects", "chips", "rest", "favorites"]);
+    assert.deepEqual(ids(railBlocksFor("npc", has)), ["spellSlots", "stats", "legendary", "spellcasting", "effects", "chips"]);
+    assert.deepEqual(ids(railBlocksFor("vehicle", has)), ["stats", "effects"]);
+  });
+
+  it("keep a block the actor lacks listed as absent, and hide it", () => {
+    const npc = railBlocksFor("npc", { hasSpells: false, hasLegendary: false }, ["effects"]);
+    const by = Object.fromEntries(npc.map((b) => [b.id, b]));
+    assert.deepEqual(by.legendary, { id: "legendary", absent: true, shown: false });
+    assert.deepEqual(by.spellSlots, { id: "spellSlots", absent: true, shown: false });
+    assert.deepEqual(by.effects, { id: "effects", absent: false, shown: false });
+    assert.deepEqual(by.stats, { id: "stats", absent: false, shown: true });
+  });
+});
+
+describe("challenge rating", () => {
+  it("is written as the books write it", () => {
+    assert.deepEqual([0.125, 0.25, 0.5, 0, 1, 17, "2"].map(crLabel), ["1/8", "1/4", "1/2", "0", "1", "17", "2"]);
+    assert.deepEqual([null, undefined, "", "x"].map(crLabel), ["—", "—", "—", "—"]);
   });
 });

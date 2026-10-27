@@ -2,8 +2,8 @@
   <div class="aim-row is-spell {{#if selected}}is-selected{{/if}} {{#if unprepared}}is-unprepared{{/if}}" data-row tabindex="0" aria-expanded="{{selected}}" {{#if (eq @root.spells.prefs.view "icons")}}data-tooltip="{{name}}"{{/if}}>
     <span class="aim-tile" data-school="{{school}}" {{#if toneStyle}}style="{{toneStyle}}"{{/if}}><img src="{{img}}" alt="" loading="lazy">{{#if level}}<span class="aim-lvl">{{level}}</span>{{/if}}</span>
     <div class="aim-row-main">
-      <div class="aim-row-name">{{name}}</div>
-      <div class="aim-row-meta">
+      <div class="aim-row-name item-name">{{name}}</div>
+      <div class="aim-row-meta item-detail">
         {{#if schoolLabel}}<span class="aim-school" data-school="{{school}}" {{#if toneStyle}}style="{{toneStyle}}"{{/if}}>{{schoolLabel}}</span>{{/if}}
         {{#if activationLabel}}<span>{{activationLabel}}</span>{{/if}}{{#if range}}<span>{{range}}</span>{{/if}}
         {{#if components}}<span class="aim-tag is-comp" {{#if materialsTip}}data-tooltip="{{materialsTip}}"{{/if}}>{{components}}</span>{{/if}}

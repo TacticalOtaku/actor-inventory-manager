@@ -28,6 +28,11 @@ describe("list preferences per tab", () => {
     assert.deepEqual(listPrefsFor({ equipment: { view: "tiles", sort: "?" } }, "equipment"), { view: "list", sort: "name", filters: [] });
   });
 
+  it("keeps only the filters the tab knows", () => {
+    assert.deepEqual(listPrefsFor({ spells: { filters: ["ritual", "equipped"] } }, "spells", ["ritual", "prepared"]).filters, ["ritual"]);
+    assert.deepEqual(withListPref({}, "spells", { filters: ["ritual"] }, ["ritual"]).spells.filters, ["ritual"]);
+  });
+
   it("changes one tab without touching another", () => {
     const all = { spells: { view: "grid", sort: "name", filters: [] } };
     const next = withListPref(all, "equipment", { view: "icons" });

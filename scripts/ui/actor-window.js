@@ -24,9 +24,10 @@ import {
   visibleTabs
 } from "../core/actor-window.js";
 import { countAttunedItems, getActorAttunementMax, isItemAttuned } from "../core/attunement.js";
-import { applyCoinEntry, chargeChange, listPrefsFor, parseCoinEntry, withListPref } from "../core/inventory.js";
+import { LIST_FILTERS, applyCoinEntry, chargeChange, listPrefsFor, parseCoinEntry, withListPref } from "../core/inventory.js";
+import { SPELL_FILTERS, pipTarget } from "../core/spellbook.js";
 import { parseHpEntry, previewHp, vitalState } from "../core/vitals.js";
-import { readAbilities, readIdentity, readRail } from "../integrations/dnd5e.js";
+import { readAbilities, readIdentity, readRail, toggleSpellPreparation } from "../integrations/dnd5e.js";
 import { LOG } from "../foundry/logger.js";
 import {
   EQUIPMENT_TEMPLATES,
@@ -40,12 +41,13 @@ import {
   playEquipmentChanges
 } from "./equipment.js";
 import { buildDollContext, firstItemFor } from "./doll.js";
+import { SPELL_TEMPLATES, buildSpellsContext, playSlotChanges, preparationWarning, slotSnapshot } from "./spells.js";
 import { openPresetEditor } from "./preset-editor.js";
 import { bindInventoryDrag } from "./inventory-drag.js";
 import { equipItemToSlot, toggleAttunement, toggleItemEquipped, unequipItem, useItem } from "./item-actions.js";
 import { setActorPaperdollTemplate } from "../core/paperdoll-templates.js";
 import { WEIGHTY_CONTAINERS_MODULE_ID, openWeightyContainersDialog } from "../integrations/weighty-containers.js";
-import { SETTLE, glide } from "./motion.js";
+import { SETTLE, glide, glideFrom, measure } from "./motion.js";
 import { readMotionCaps, schemeIsLight, stampTheme } from "./theme-root.js";
 import { REST_HOOK, buildRailContext, openStatConfig, playLongRest, playRailChanges, railSnapshot, startRuneGlints } from "./rail.js";
 
@@ -56,6 +58,12 @@ const OPEN_WINDOWS = new Map();
 
 /** Bursts of document hooks become one render. */
 const RENDER_COALESCE_MS = 40;
+
+/** The search fields and the window state each one filters. */
+const SEARCH_FIELDS = { inventorySearch: "query", spellSearch: "spellQuery" };
+
+/** The filters each tab knows. */
+const TAB_FILTERS = { equipment: LIST_FILTERS, spells: SPELL_FILTERS };
 
 /** Width the collapse button shrinks the window to: the compact layout, rail only. */
 const COLLAPSED_WIDTH = 320;
@@ -133,13 +141,17 @@ export class ActorWindow extends WindowBase {
       unequipSlot: ActorWindow.#onUnequipSlot,
       socketClick: ActorWindow.#onSocketClick,
       endAttunement: ActorWindow.#onEndAttunement,
-      openPresetEditor: ActorWindow.#onOpenPresetEditor
+      openPresetEditor: ActorWindow.#onOpenPresetEditor,
+      castSpell: ActorWindow.#onCastSpell,
+      prepareSpell: ActorWindow.#onPrepareSpell,
+      slotPip: ActorWindow.#onSlotPip,
+      spellUse: ActorWindow.#onSpellUse
     }
   };
 
   static PARTS = {
     rail: { template: `${TEMPLATES}/rail.hbs` },
-    main: { template: `${TEMPLATES}/main.hbs`, templates: EQUIPMENT_TEMPLATES, scrollable: [".aim-panel"] },
+    main: { template: `${TEMPLATES}/main.hbs`, templates: [...EQUIPMENT_TEMPLATES, ...SPELL_TEMPLATES], scrollable: [".aim-panel"] },
     inspector: { template: `${TEMPLATES}/inspector.hbs`, templates: EQUIPMENT_TEMPLATES, scrollable: [""] },
     drawer: { template: `${TEMPLATES}/drawer.hbs`, scrollable: [".aim-drawer-body"] }
   };
@@ -161,6 +173,8 @@ export class ActorWindow extends WindowBase {
     this._railPrev = null;
     // The equipment tab: search, folded sections, the selected entry, the coin being edited.
     this.query = "";
+    this.spellQuery = "";
+    this.selectedKey = null;
     this.collapsed = new Set();
     this.selected = null;
     this.coinEditing = null;
@@ -184,7 +198,7 @@ export class ActorWindow extends WindowBase {
     this.tab = fallbackTab(this.tab, tabs.filter((tab) => !tab.hidden).map((tab) => tab.id));
     for (const tab of tabs) tab.active = tab.id === this.tab;
     const selected = this.selected ? actor.items.get(this.selected) : null;
-    if (!selected) this.selected = null;
+    if (!selected) this.selected = this.selectedKey = null;
     const detail = selected ? await buildItemDetail(selected, { canEdit: this.canEdit }) : null;
     return {
       ...(await super._prepareContext(options)),
@@ -219,6 +233,15 @@ export class ActorWindow extends WindowBase {
         folds: getSetting("trayFolds") ?? {}
       }),
       inspector: selected ? buildInspector(selected, detail) : null,
+      spells: this.#hasSpells() ? buildSpellsContext(actor, {
+        prefs: getSetting("listPrefs"),
+        query: this.spellQuery,
+        selectedKey: this.selectedKey,
+        detail,
+        canEdit: this.canEdit,
+        collapsed: this.collapsed
+      }) : null,
+      prepWarning: preparationWarning(actor),
       doll: buildDollContext(actor, { canEdit: this.canEdit, selected: this.selected, hidden: Boolean(getSetting("dollHidden")) }),
       ...buildRailContext(actor, { canEdit: this.canEdit, hasSpells: this.#hasSpells(), hiddenBlocks: getSetting("hiddenRailBlocks") ?? [] })
     };
@@ -315,6 +338,8 @@ export class ActorWindow extends WindowBase {
     this.#hook(REFRESH_HOOK, rerender);
     // Weighty Containers announces a rules change on its own hook; the trays' bands and reductions follow.
     this.#hook(`${WEIGHTY_CONTAINERS_MODULE_ID}.updateContainerRules`, rerender);
+    // Placing a spell template minimises the window; it comes back once the template is placed or cancelled.
+    this.#hook("dnd5e.createActivityTemplate", (activity) => activity?.actor?.uuid === this.actorKey && this.#awaitTemplate());
     this.#hook(REST_HOOK, (actor, result, config) => actor?.uuid === this.actorKey && config?.type === "long" && playLongRest(this.element));
     // Looping effects run only in the actor window in front.
     this.element.addEventListener("pointerdown", () => this.#bringFront(), { capture: true });
@@ -339,6 +364,8 @@ export class ActorWindow extends WindowBase {
   async _preRender(context, options) {
     await super._preRender(context, options);
     this._equipmentPrev = this.element ? equipmentSnapshot(this.element) : null;
+    this._slotsPrev = this.element ? slotSnapshot(this.element) : null;
+    this._prepOver = Boolean(this.element?.querySelector("[data-prep-counter].is-over"));
   }
 
   _onRender(context, options) {
@@ -456,6 +483,8 @@ export class ActorWindow extends WindowBase {
     this._reducedMotion?.removeEventListener("change", this._onReducedMotion);
     clearTimeout(this._renderTimer);
     clearTimeout(this._searchTimer);
+    clearInterval(this._templateWatch);
+    clearTimeout(this._castSchoolTimer);
     clearInterval(this._glints);
     OPEN_WINDOWS.delete(this.actorKey);
     super._onClose(options);
@@ -756,18 +785,19 @@ export class ActorWindow extends WindowBase {
   #bindEquipment() {
     const el = this.element;
     el.addEventListener("pointerdown", (event) => {
-      if (!event.target.closest?.('[name="inventorySearch"]')) this._searching = false;
+      if (event.target.name !== this._searching) this._searching = null;
     });
     el.addEventListener("click", (event) => {
       const row = event.target.closest("[data-row]");
-      if (row && !event.target.closest("button, input, a, label, select")) this.#toggleSelect(row.closest("[data-item-id]").dataset.itemId);
+      if (row && !event.target.closest("button, input, a, label, select")) this.#selectRow(row);
     });
     el.addEventListener("input", (event) => {
       if (event.target.dataset.coinInput) this.coinDraft = event.target.value;
-      if (event.target.name !== "inventorySearch") return;
-      this.query = event.target.value;
+      const field = SEARCH_FIELDS[event.target.name];
+      if (!field) return;
+      this[field] = event.target.value;
       // The search field is redrawn while typing; it keeps the focus and the caret.
-      this._searching = true;
+      this._searching = event.target.name;
       clearTimeout(this._searchTimer);
       this._searchTimer = setTimeout(() => this.render({ parts: ["main"] }), 120);
     });
@@ -778,7 +808,7 @@ export class ActorWindow extends WindowBase {
     });
     el.addEventListener("focusout", (event) => {
       if (event.target.dataset?.coinInput && this.coinEditing) this.#cancelCoin();
-      if (event.target.name === "inventorySearch" && event.relatedTarget) this._searching = false;
+      if (event.target.name === this._searching && event.relatedTarget) this._searching = null;
     });
     bindInventoryDrag(this);
   }
@@ -795,7 +825,7 @@ export class ActorWindow extends WindowBase {
     if (event.key !== "Enter" && event.key !== " ") return false;
     if (target.matches?.("[data-row]")) {
       event.preventDefault();
-      this.#toggleSelect(target.closest("[data-item-id]").dataset.itemId);
+      this.#selectRow(target);
       return true;
     }
     if (target.matches?.('[data-action="toggleSection"]')) {
@@ -809,20 +839,28 @@ export class ActorWindow extends WindowBase {
   #afterEquipmentRender() {
     const el = this.element;
     this.#fly();
+    playSlotChanges(el, this._slotsPrev, this._castSchool, el.dataset.motion);
+    // Preparing past the class limit turns the counter red with one shake.
+    const counter = el.querySelector("[data-prep-counter].is-over");
+    if (counter && !this._prepOver && this.motionOn) this.#shake(counter);
+    if (this._spellGlide) {
+      if (this.motionOn) glideFrom(el.querySelector('[data-panel="spells"]'), ".aim-rowwrap", this._spellGlide);
+      this._spellGlide = null;
+    }
     playEquipmentChanges(el, this._equipmentPrev, el.dataset.motion);
     const coin = el.querySelector("[data-coin-input]");
     if (coin) {
       coin.focus();
       coin.setSelectionRange(coin.value.length, coin.value.length);
     }
-    const search = el.querySelector('[name="inventorySearch"]');
-    if (search && this._searching && !coin) {
+    const search = this._searching && el.querySelector(`[name="${this._searching}"]`);
+    if (search && !coin) {
       search.focus();
       search.setSelectionRange(search.value.length, search.value.length);
     }
     if (this._openDetail) {
       this._openDetail = false;
-      const detail = el.querySelector(`.aim-rowwrap[data-item-id="${this.selected}"] [data-detail]`);
+      const detail = el.querySelector(`.aim-rowwrap[data-key="${this.selectedKey}"] [data-detail]`);
       if (detail?.offsetHeight && this.motionOn) {
         detail.animate([{ height: "0px", opacity: 0 }, { height: `${detail.offsetHeight}px`, opacity: 1 }], { duration: 260, easing: SETTLE });
       }
@@ -833,18 +871,25 @@ export class ActorWindow extends WindowBase {
     return this.actor.items.get(node?.closest("[data-item-id]")?.dataset.itemId);
   }
 
-  async #savePrefs(patch) {
-    await game.settings.set(MODULE_ID, "listPrefs", withListPref(getSetting("listPrefs") ?? {}, "equipment", patch));
+  async #savePrefs(patch, tab = "equipment") {
+    await game.settings.set(MODULE_ID, "listPrefs", withListPref(getSetting("listPrefs") ?? {}, tab, patch, TAB_FILTERS[tab]));
+  }
+
+  /** A row selects its entry; the details open under that row, so a spell listed twice opens where it was clicked. */
+  #selectRow(row) {
+    const wrap = row.closest("[data-item-id]");
+    return this.#toggleSelect(wrap.dataset.itemId, wrap.dataset.key);
   }
 
   /** Click selects: the inspector shows it in the wide layout, otherwise its details open under the row; again deselects. */
-  async #toggleSelect(id) {
-    const closing = this.selected === id;
-    const open = this.selected && this.element.querySelector(`.aim-rowwrap[data-item-id="${this.selected}"] [data-detail]`);
+  async #toggleSelect(id, key = id) {
+    const closing = this.selectedKey === key;
+    const open = this.selectedKey && this.element.querySelector(`.aim-rowwrap[data-key="${this.selectedKey}"] [data-detail]`);
     if (open?.offsetHeight && this.motionOn) {
       await open.animate([{ height: `${open.offsetHeight}px`, opacity: 1 }, { height: "0px", opacity: 0 }], { duration: 200, easing: SETTLE }).finished;
     }
     this.selected = closing ? null : id;
+    this.selectedKey = closing ? null : key;
     this._openDetail = !closing;
     await this.render({ parts: ["main", "inspector"] });
   }
@@ -885,7 +930,8 @@ export class ActorWindow extends WindowBase {
   /** The lists glide from the old view to the new one; no redraw, the next render reads the saved choice. */
   static async #onListView(event, target) {
     const view = target.dataset.view;
-    const panel = this.element.querySelector('[data-panel="equipment"]');
+    const tab = target.dataset.tab ?? "equipment";
+    const panel = this.element.querySelector(`[data-panel="${tab}"]`);
     const apply = () => {
       for (const list of panel.querySelectorAll(".aim-section:not([data-section=container]) .aim-items")) list.dataset.view = view;
       for (const button of panel.querySelectorAll("[data-action=listView]")) button.setAttribute("aria-pressed", String(button.dataset.view === view));
@@ -895,13 +941,14 @@ export class ActorWindow extends WindowBase {
       }
     };
     if (this.motionOn) glide(panel, "[data-row]", apply); else apply();
-    await this.#savePrefs({ view });
+    await this.#savePrefs({ view }, tab);
   }
 
   static async #onListFilter(event, target) {
-    const { filters } = listPrefsFor(getSetting("listPrefs"), "equipment");
+    const tab = target.dataset.tab ?? "equipment";
+    const { filters } = listPrefsFor(getSetting("listPrefs"), tab, TAB_FILTERS[tab]);
     const id = target.dataset.filter;
-    await this.#savePrefs({ filters: filters.includes(id) ? filters.filter((f) => f !== id) : [...filters, id] });
+    await this.#savePrefs({ filters: filters.includes(id) ? filters.filter((f) => f !== id) : [...filters, id] }, tab);
     this.render({ parts: ["main"] });
   }
 
@@ -1064,6 +1111,70 @@ export class ActorWindow extends WindowBase {
     if (!item || !this.canEdit) return;
     this.#prepareFlight(item, holder.querySelector(".aim-tile"));
     await unequipItem(this.actor, item);
+  }
+
+  /* ─── Spells tab ─── */
+
+  #awaitTemplate() {
+    // Not awaited: the minimise animation must not hold up watching the placement.
+    if (!this.minimized) this.minimize();
+    clearInterval(this._templateWatch);
+    const started = Date.now();
+    this._templateWatch = setInterval(() => {
+      // dnd5e draws the template as a preview on the templates layer until it is placed or cancelled.
+      if (canvas?.templates?.preview?.children?.length && Date.now() - started < 120000) return;
+      clearInterval(this._templateWatch);
+      if (this.rendered) this.maximize();
+    }, 250);
+  }
+
+  /** item.use(): dnd5e chooses the slot, upcasting or ritual casting; a refusal shakes the row beside dnd5e's message. */
+  static async #onCastSpell(event, target) {
+    const item = this.#itemFrom(target);
+    if (!item || !this.canEdit) return;
+    this._castSchool = item.system.school;
+    clearTimeout(this._castSchoolTimer);
+    this._castSchoolTimer = setTimeout(() => { this._castSchool = null; }, 4000);
+    const notifications = ui.notifications;
+    const { warn, error } = notifications;
+    let refused = false;
+    notifications.warn = (...args) => { refused = true; return warn.apply(notifications, args); };
+    notifications.error = (...args) => { refused = true; return error.apply(notifications, args); };
+    let result;
+    try {
+      result = await item.use({ event });
+    } finally {
+      notifications.warn = warn;
+      notifications.error = error;
+    }
+    if (!result && refused) this.#shake(this.element.querySelector(`.aim-rowwrap[data-key="${target.closest("[data-key]")?.dataset.key}"] [data-row]`));
+  }
+
+  /** The row glides into or out of the prepared list; past the class limit dnd5e only warns. */
+  static async #onPrepareSpell(event, target) {
+    const item = this.#itemFrom(target);
+    if (!item || !this.canEdit) return;
+    this._spellGlide = measure(this.element.querySelector('[data-panel="spells"]'), ".aim-rowwrap");
+    await toggleSpellPreparation(item);
+  }
+
+  /** A lit gem spends slots down to it, a hollow one restores up to it. */
+  static async #onSlotPip(event, target) {
+    if (!this.canEdit) return;
+    const key = target.dataset.slotKey;
+    const value = Number(this.actor.system.spells?.[key]?.value) || 0;
+    const next = pipTarget(value, Number(target.dataset.index));
+    if (next !== value) await this.actor.update({ [`system.spells.${key}.value`]: next });
+  }
+
+  /** Innate uses work like slot gems, written as system.uses.spent. */
+  static async #onSpellUse(event, target) {
+    const item = this.#itemFrom(target);
+    if (!item || !this.canEdit) return;
+    const max = Number(item.system.uses?.max) || 0;
+    const value = max - (Number(item.system.uses?.spent) || 0);
+    const next = Math.min(max, pipTarget(value, Number(target.dataset.index)));
+    if (next !== value) await item.update({ "system.uses.spent": max - next });
   }
 
   static #onOpenPresetEditor() {

@@ -4,6 +4,10 @@
   <div class="aim-detail-acts">
     {{#each activities}}<button type="button" class="aim-btn" data-action="useActivity" data-activity-id="{{id}}"><img src="{{img}}" alt="">{{name}}</button>{{/each}}
     {{#if useOnly}}<button type="button" class="aim-btn" data-action="useItem"><i class="fa-light fa-hand-sparkles"></i>{{localize "AIM.window.inv.useShort"}}</button>{{/if}}
+    {{#if spell}}
+    {{#if spell.castable}}<button type="button" class="aim-btn" data-action="castSpell"><i class="fa-light fa-wand-sparkles"></i>{{spell.castLabel}}</button>{{/if}}
+    {{#if spell.canPrepare}}<button type="button" class="aim-btn {{#if spell.prepared}}is-on{{/if}}" data-action="prepareSpell"><i class="fa-light fa-book-bookmark"></i>{{spell.prepareLabel}}</button>{{/if}}
+    {{/if}}
     {{#if canEquip}}<button type="button" class="aim-btn" data-action="equipItem"><i class="fa-light fa-hand"></i>{{equipLabel}}</button>{{/if}}
   </div>
   {{/if}}

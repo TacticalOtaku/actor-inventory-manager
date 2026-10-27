@@ -1,0 +1,28 @@
+<div class="aim-rowwrap" data-item-id="{{id}}" data-key="{{key}}">
+  <div class="aim-row is-spell {{#if selected}}is-selected{{/if}} {{#if unprepared}}is-unprepared{{/if}}" data-row tabindex="0" aria-expanded="{{selected}}" {{#if (eq @root.spells.prefs.view "icons")}}data-tooltip="{{name}}"{{/if}}>
+    <span class="aim-tile" data-school="{{school}}" {{#if toneStyle}}style="{{toneStyle}}"{{/if}}><img src="{{img}}" alt="" loading="lazy">{{#if level}}<span class="aim-lvl">{{level}}</span>{{/if}}</span>
+    <div class="aim-row-main">
+      <div class="aim-row-name">{{name}}</div>
+      <div class="aim-row-meta">
+        {{#if schoolLabel}}<span class="aim-school" data-school="{{school}}" {{#if toneStyle}}style="{{toneStyle}}"{{/if}}>{{schoolLabel}}</span>{{/if}}
+        {{#if activationLabel}}<span>{{activationLabel}}</span>{{/if}}{{#if range}}<span>{{range}}</span>{{/if}}
+        {{#if components}}<span class="aim-tag is-comp" {{#if materialsTip}}data-tooltip="{{materialsTip}}"{{/if}}>{{components}}</span>{{/if}}
+        {{#if concentration}}<span class="aim-tag is-conc" data-tooltip="{{localize "AIM.window.spells.concentration"}}">{{localize "AIM.window.spells.concShort"}}</span>{{/if}}
+        {{#if ritual}}<span class="aim-tag is-rit" data-tooltip="{{localize "AIM.window.spells.ritual"}}">{{localize "AIM.window.spells.ritualShort"}}</span>{{/if}}
+        {{#if always}}<span class="aim-tag is-always">{{localize "AIM.window.spells.always"}}</span>{{/if}}
+      </div>
+    </div>
+    {{#if uses}}
+    <span class="aim-charges" data-tooltip="{{uses.value}} / {{uses.max}}">
+      {{#if usePips}}{{#each usePips}}<button type="button" class="aim-pip {{#unless lit}}is-spent{{/unless}}" data-action="spellUse" data-index="{{index}}" {{#unless @root.canEdit}}disabled{{/unless}} aria-label="{{label}}"></button>{{/each}}
+      {{else}}<span class="aim-charge-text">{{uses.value}}/{{uses.max}}</span>{{/if}}
+    </span>
+    {{/if}}
+    <div class="aim-row-act">
+      {{#if showPrepare}}<button type="button" class="aim-ibtn aim-mini {{#if prepared}}is-on{{/if}}" data-action="prepareSpell" aria-pressed="{{#if prepared}}true{{else}}false{{/if}}" aria-label="{{prepareLabel}}" data-tooltip="{{prepareLabel}}"><i class="fa-light fa-book-bookmark"></i></button>{{/if}}
+      {{#if @root.canEdit}}{{#if castable}}<button type="button" class="aim-ibtn aim-mini aim-cast {{#if ritualOnly}}is-ritual{{/if}}" data-action="castSpell" aria-label="{{castLabel}}" data-tooltip="{{castLabel}}"><i class="fa-light fa-wand-sparkles"></i></button>{{/if}}{{/if}}
+      <button type="button" class="aim-ibtn aim-mini" data-action="itemMenu" aria-haspopup="menu" aria-label="{{localize "AIM.window.inv.more"}}" data-tooltip="{{localize "AIM.window.inv.more"}}"><i class="fa-light fa-ellipsis"></i></button>
+    </div>
+  </div>
+  {{#if detail}}<div class="aim-detail" data-detail>{{#with detail}}{{> "modules/actor-inventory-manager/templates/window/item-detail.hbs"}}{{/with}}</div>{{/if}}
+</div>

@@ -5,13 +5,14 @@
 
 import { FLAGS, MODULE_ID } from "../constants.js";
 import { dropBehavior, received, refusedType, spellBecomes } from "../core/external-drop.js";
-import { createDroppedItems, createDroppedSpell, sheetUnsupportedTypes } from "../integrations/dnd5e.js";
+import { createDroppedItems, createDroppedSpell, sheetDropsIntoContainers, sheetUnsupportedTypes } from "../integrations/dnd5e.js";
 import { isItemPile } from "../integrations/item-piles.js";
 import { validateContainerDrop } from "../integrations/weighty-containers.js";
 import { sessionFor } from "../trade/service.js";
 
 const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 const NOTE_MS = 2400;
+const NONE = Object.freeze({ refusal: null, note: null });
 
 const quantities = (actor) => new Map(actor.items.map((item) => [item.id, Number(item.system?.quantity ?? 1)]));
 // A running exchange locks the inventory, as it locks the window's own drags.
@@ -24,15 +25,20 @@ export function showDropTarget(app, on) {
 
 /** A refusal shakes the open tab and names the reason where the drop was let go. */
 export function refuseDrop(app, event, text) {
-  const root = app.element;
-  const panel = root.querySelector(`[data-panel="${app.tab}"]`);
+  const panel = app.element.querySelector(`[data-panel="${app.tab}"]`);
   panel?.classList.remove("is-refused");
   void panel?.offsetWidth;
   panel?.classList.add("is-refused");
   panel?.addEventListener("animationend", () => panel.classList.remove("is-refused"), { once: true });
+  noteDrop(app, event, text, true);
+}
+
+/** A short line where the drop was let go: why it was refused, or where the item went instead. */
+export function noteDrop(app, event, text, refused = false) {
+  const root = app.element;
   const box = root.getBoundingClientRect();
   const note = document.createElement("div");
-  note.className = "aim-drop-note";
+  note.className = `aim-drop-note${refused ? "" : " is-info"}`;
   note.setAttribute("role", "status");
   note.textContent = text;
   note.style.left = `${Math.max(8, Math.min(event.clientX - box.left, box.width - 8))}px`;
@@ -76,30 +82,31 @@ async function create(app, event, items, container) {
 
 /**
  * Takes a drop from outside the actor: resolves it, fires `dropActorSheetData`, then copies, moves or refuses it
- * (ADR 0004). Returns the reason when it is refused, null otherwise.
+ * (ADR 0004). Returns the reason when it is refused, or a note about where the item went.
  * @param {ActorWindow} app
  * @param {DragEvent} event
  * @param {{tray: string|null}} where  the container tray it was dropped on
+ * @returns {Promise<{refusal: string|null, note: string|null, shakeTray?: boolean}>}
  */
 export async function dropFromOutside(app, event, { tray = null } = {}) {
   const actor = app.actor;
   const data = foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
-  if (!data?.type) return null;
-  if (tradeLocked(actor)) return t("AIM.window.drop.trade");
-  if (data.type === "Actor") return t("AIM.window.drop.actor");
+  if (!data?.type) return NONE;
+  if (tradeLocked(actor)) return { refusal: t("AIM.window.drop.trade"), note: null };
+  if (data.type === "Actor") return { refusal: t("AIM.window.drop.actor"), note: null };
   const dropped = await resolve(data);
-  if (!dropped) return null;
-  if (Hooks.call("dropActorSheetData", actor, actor.sheet, data) === false) return null;
+  if (!dropped) return NONE;
+  if (Hooks.call("dropActorSheetData", actor, actor.sheet, data) === false) return NONE;
 
   if (dropped.effect) {
     const effect = dropped.effect;
-    if ([effect.parent, effect.parent?.parent].includes(actor)) return null;
+    if ([effect.parent, effect.parent?.parent].includes(actor)) return NONE;
     await ActiveEffect.implementation.create(effect.toObject(), { parent: actor });
-    return null;
+    return NONE;
   }
 
   const items = dropped.items;
-  if (!items.length) return null;
+  if (!items.length) return NONE;
   const source = items[0].parent?.documentName === "Actor" ? items[0].parent : null;
   const { behavior, refusal } = dropBehavior({
     fromActor: Boolean(source),
@@ -109,14 +116,14 @@ export async function dropFromOutside(app, event, { tray = null } = {}) {
     isGM: game.user.isGM,
     shift: event.shiftKey
   });
-  if (refusal) return t(`AIM.window.drop.${refusal}`);
-  if (!behavior) return null;
+  if (refusal) return { refusal: t(`AIM.window.drop.${refusal}`), note: null };
+  if (!behavior) return NONE;
   const type = refusedType(items.map((item) => item.type), sheetUnsupportedTypes(actor));
-  if (type) return t("AIM.window.drop.type", { type: game.i18n.localize(CONFIG.Item.typeLabels[type] ?? type) });
+  if (type) return { refusal: t("AIM.window.drop.type", { type: game.i18n.localize(CONFIG.Item.typeLabels[type] ?? type) }), note: null };
   const container = tray ? actor.items.get(tray) : null;
   for (const item of container ? items : []) {
     const check = validateContainerDrop(container, item);
-    if (!check.ok) return check.reason;
+    if (!check.ok) return { refusal: check.reason, note: null };
   }
 
   const before = quantities(actor);
@@ -126,5 +133,8 @@ export async function dropFromOutside(app, event, { tray = null } = {}) {
   if (behavior === "move" && received(before, quantities(actor))) {
     for (const item of items) await item.delete({ deleteContents: true });
   }
-  return null;
+  // Weighty Containers refuses an overflowing container in its own words; the tray still shakes.
+  if (container && !received(before, quantities(actor))) return { refusal: null, note: null, shakeTray: true };
+  // A sheet that cannot put items into a container (Tidy) leaves them in the inventory root (ADR 0004).
+  return { refusal: null, note: container && created.length && !sheetDropsIntoContainers(actor) ? t("AIM.window.drop.root") : null };
 }

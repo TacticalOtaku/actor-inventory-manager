@@ -16,7 +16,8 @@ export function isMidiQolActive() {
  * @returns {Object[]}
  */
 export function usableActivities(item) {
-  const midi = isMidiQolActive();
-  return [...(item?.system?.activities ?? [])].filter((activity) => activity.canUse !== false
-    && !(midi && activity.midiProperties?.automationOnly));
+  return [...(item?.system?.activities ?? [])].filter((activity) => activity.canUse !== false && !automationOnly(activity));
 }
+
+/** Whether midi-qol runs this activity itself (`midiProperties.automationOnly`), so no list offers it to a player. */
+export const automationOnly = (activity) => isMidiQolActive() && Boolean(activity?.midiProperties?.automationOnly);

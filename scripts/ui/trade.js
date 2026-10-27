@@ -163,7 +163,8 @@ export function buildTradeContext(actor, state) {
         : session.cancelledBy === side ? t("AIM.trade.panel.youCancelled") : t("AIM.trade.panel.partnerCancelled", { partner }))
         : t("AIM.trade.status.failed");
     return {
-      ...base, view: "done", done, title, partner,
+      // A refusal from before the trade ended (an exhausted item, say) no longer applies to its result.
+      ...base, error: null, view: "done", done, title, partner,
       note: done === "complete" ? t("AIM.trade.panel.doneNote") : done === "failed" ? t(session.error ?? "AIM.trade.errors.transfer") : t("AIM.trade.panel.nothingMoved"),
       cols: [[t("AIM.trade.panel.gave"), session.offers[side]], [t("AIM.trade.panel.got"), session.offers[other]]].map(([title, offer]) => ({
         title, list: { items: listed(offer), coins: coinList(offer.money).filter((c) => c.value) }

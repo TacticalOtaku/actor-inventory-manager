@@ -4,6 +4,7 @@
 
 import { groupFavorites } from "../core/favorites.js";
 import { readFavorites } from "../integrations/dnd5e.js";
+import { automationOnly } from "../integrations/midi-qol.js";
 
 /** More uses than this show as a number. */
 const MAX_PIPS = 8;
@@ -49,7 +50,9 @@ function describe(entry) {
 /** The rail's favorites block: groups by action cost, the manual order inside each. */
 export async function buildFavoritesContext(actor, { canEdit }) {
   if (!hasFavorites(actor)) return { show: false };
-  const entries = (await readFavorites(actor)).map((entry) => {
+  // An activity midi-qol keeps for its automation is no favorite to use by hand (ADR 0003).
+  const shown = (await readFavorites(actor)).filter((entry) => entry.type !== "activity" || !automationOnly(fromUuidSync(entry.id, { relative: actor })));
+  const entries = shown.map((entry) => {
     const quick = entry.itemType === "spell" ? "cast" : (entry.type === "item" || entry.type === "activity") ? "use" : null;
     return {
       ...entry,

@@ -8,7 +8,7 @@ import { validateContainerDrop } from "../integrations/weighty-containers.js";
 import { isItemCompatibleWithSlot } from "../core/item-classifier.js";
 import { equipItemToSlot, setItemContainer, unequipItem } from "./item-actions.js";
 import { MODULE_ID } from "../constants.js";
-import { dropFromOutside, refuseDrop, showDropTarget } from "./external-drop.js";
+import { dropFromOutside, noteDrop, refuseDrop, showDropTarget } from "./external-drop.js";
 
 /** Hovering a folded tray this long while dragging unfolds it. */
 const SPRING_MS = 500;
@@ -199,7 +199,11 @@ export function bindInventoryDrag(app) {
       event.stopPropagation();
       const tray = app.tab === "equipment" ? event.target.closest?.("[data-tray]")?.dataset.tray ?? null : null;
       dropFromOutside(app, event, { tray })
-        .then((refusal) => refusal && refuseDrop(app, event, refusal))
+        .then(({ refusal, note, shakeTray }) => {
+          if (refusal) refuseDrop(app, event, refusal);
+          else if (note) noteDrop(app, event, note);
+          if (shakeTray) shake(app.element.querySelector(`[data-tray="${tray}"]`));
+        })
         .catch((error) => console.error("AIM | drop from outside failed", error));
       return;
     }

@@ -443,7 +443,7 @@ export async function createDroppedItems(actor, event, items, { container = null
     return created;
   }
   if (typeof sheet?._onDropCreateItems === "function") return [await sheet._onDropCreateItems(event, items, "copy")].flat().filter(Boolean);
-  console.warn(`AIM | ${sheet?.constructor?.name ?? "The actor's sheet"} has no _onDropCreateItems: dnd5e's drop rules (data reset, consumable stacking, advancement, NPC gear) are skipped`);
+  console.info(`AIM | ${sheet?.constructor?.name ?? "The actor's sheet"} has no _onDropCreateItems: dnd5e's drop rules (data reset, consumable stacking, advancement, NPC gear) are skipped`);
   const Item5e = CONFIG.Item.documentClass;
   const toCreate = await Item5e.createWithContents(items, container ? { container } : {});
   return Item5e.createDocuments(toCreate, { parent: actor, keepId: true });
@@ -464,6 +464,9 @@ export async function createDroppedSpell(actor, event, spell) {
   CONFIG.Item.dataModels.spell?.onDropCreate?.(event, actor, data);
   return [await CONFIG.Item.documentClass.create(data, { parent: actor })].filter(Boolean);
 }
+
+/** Whether the actor's sheet puts a dropped item into a container (dnd5e's `_onDropItemContainer`; Tidy has none). */
+export const sheetDropsIntoContainers = (actor) => typeof actor?.sheet?._onDropItemContainer === "function";
 
 /** The item types the actor's sheet does not take (dnd5e 5.3.3: `unsupportedItemTypes` on the sheet class). */
 export const sheetUnsupportedTypes = (actor) => actor?.sheet?.constructor?.unsupportedItemTypes ?? new Set();

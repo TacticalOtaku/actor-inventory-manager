@@ -1032,7 +1032,8 @@
         "actor": "Transformation is on the character sheet",
         "notOwner": "Only its owner can hand an item over — through a trade",
         "pile": "Take the item through the Item Piles window",
-        "type": "{type} can't go on this actor"
+        "type": "{type} can't go on this actor",
+        "root": "This sheet can't put items into a container — it landed in the inventory root"
       }
     },
     "tips": {

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 
-import { usableActivities } from "../scripts/integrations/midi-qol.js";
+import { automationOnly, usableActivities } from "../scripts/integrations/midi-qol.js";
 
 afterEach(() => { delete globalThis.game; });
 
@@ -20,5 +20,13 @@ describe("activities offered to the player", () => {
   it("keep automation-only activities when midi-qol is off", () => {
     globalThis.game = { modules: new Map() };
     assert.deepEqual(usableActivities(item).map((a) => a.id), ["use", "auto"]);
+  });
+
+  it("tell an automation-only activity (for favorites) only while midi-qol is active", () => {
+    const [, auto] = item.system.activities;
+    globalThis.game = { modules: new Map([["midi-qol", { active: true }]]) };
+    assert.deepEqual([automationOnly(auto), automationOnly(item.system.activities[0]), automationOnly(null)], [true, false, false]);
+    globalThis.game = { modules: new Map() };
+    assert.equal(automationOnly(auto), false);
   });
 });

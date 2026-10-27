@@ -46,7 +46,7 @@ export async function buildEffectsContext(actor, { open, canFavorite }) {
     // Exhaustion keeps its own chip in the rail.
     rail: temporary.filter((e) => !e.statuses.includes("exhaustion")).map(row("rail")),
     categories: groups.map((g) => ({ key: g.key, label: t(`AIM.window.effects.categories.${g.key}`), entries: g.entries.map(row("tab")) })),
-    grid: conditionGrid(readStatusEffects(), actor.statuses ?? new Set(), game.i18n.lang)
+    grid: conditionGrid(readStatusEffects(actor), actor.statuses ?? new Set(), game.i18n.lang)
   };
 }
 

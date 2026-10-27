@@ -669,14 +669,20 @@ describe("effects reads (dnd5e 5.3.3, Foundry 14)", () => {
   it("reads changes from system.changes with field labels, and the HUD statuses without exhaustion and concentration", async () => {
     const { readEffectChanges, readStatusEffects } = await import("../scripts/integrations/dnd5e.js");
     const actor = { system: { schema: { getField: (path) => ({ "attributes.ac": { label: "КД" }, "attributes.ac.bonus": undefined })[path] } } };
-    const effect = { system: { changes: [{ key: "system.attributes.ac.bonus", type: "add", value: "1" }, { key: "flags.x", type: "override", value: "2" }] } };
-    assert.deepEqual(readEffectChanges(effect, actor).map((c) => [c.label, c.type, c.value]), [["КД", "add", "1"], ["flags.x", "override", "2"]]);
+    globalThis.CONFIG = { DND5E: { abilities: { con: { label: "Телосложение" } }, skills: { prc: { label: "Внимательность" } } } };
+    const effect = { system: { changes: [
+      { key: "system.attributes.ac.bonus", type: "add", value: "1" }, { key: "flags.x", type: "override", value: "2" },
+      { key: "system.abilities.con.value", type: "override", value: "19" }, { key: "system.skills.prc.bonuses.check", type: "add", value: "2" }
+    ] } };
+    assert.deepEqual(readEffectChanges(effect, actor).map((c) => [c.label, c.type, c.value]),
+      [["КД", "add", "1"], ["flags.x", "override", "2"], ["Телосложение", "override", "19"], ["Внимательность: system.skills.prc.bonuses.check", "add", "2"]]);
     globalThis.CONFIG = {
       specialStatusEffects: { CONCENTRATING: "concentrating" },
       DND5E: { conditionTypes: { prone: {}, bleeding: { pseudo: true }, exhaustion: {} } },
       statusEffects: [{ id: "prone", name: "Лежит" }, { id: "bleeding", name: "Кровотечение" }, { id: "dodging", name: "Уклоняется" },
         { id: "exhaustion", name: "Истощение" }, { id: "concentrating", name: "Концентрация" }, { id: "encumbered", name: "Нагружен", hud: false }]
     };
-    assert.deepEqual(readStatusEffects().map((s) => [s.id, s.condition]), [["prone", true], ["bleeding", false], ["dodging", false]]);
+    const galley = { system: { traits: { ci: { value: new Set(["prone"]) } } } };
+    assert.deepEqual(readStatusEffects(galley).map((s) => [s.id, s.condition, s.immune]), [["prone", true, true], ["bleeding", false, false], ["dodging", false, false]]);
   });
 });

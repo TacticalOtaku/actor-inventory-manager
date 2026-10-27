@@ -831,8 +831,12 @@ export class ActorWindow extends WindowBase {
     return uuid ? fromUuid(uuid) : null;
   }
 
+  /** Before an effect change: rows glide to their new places and the focused control keeps the focus. */
   #measureEffects() {
     this._effectGlide = measure(this.element, ".aim-effwrap, .aim-eff-cat");
+    const focused = document.activeElement;
+    const wrap = this.element.contains(focused) ? focused.closest("[data-effect-uuid]") : null;
+    this._effectFocus = wrap ? { key: wrap.dataset.key, action: focused.dataset.action ?? null } : null;
   }
 
   /** The switch: effect.update({ disabled }); a suppressed effect stays locked until its item is equipped and attuned. */
@@ -980,6 +984,12 @@ export class ActorWindow extends WindowBase {
     if (this._effectGlide) {
       if (this.motionOn) glideFrom(el, ".aim-effwrap, .aim-eff-cat", this._effectGlide);
       this._effectGlide = null;
+    }
+    if (this._effectFocus) {
+      const wrap = el.querySelector(`.aim-effwrap[data-key="${CSS.escape(this._effectFocus.key)}"]`);
+      const action = this._effectFocus.action && wrap?.querySelector(`[data-action="${this._effectFocus.action}"]`);
+      (action ?? wrap?.querySelector("[data-effect-row]"))?.focus({ preventScroll: true });
+      this._effectFocus = null;
     }
     if (this._favGlide) {
       if (this.motionOn) glideFrom(el.querySelector("[data-favorites]") ?? el, ".aim-fav", this._favGlide);
@@ -1414,7 +1424,8 @@ export class ActorWindow extends WindowBase {
     if (favorite.type === "tool") return this.actor.rollToolCheck({ event, tool: favorite.id });
     const doc = await fromUuid(favorite.id, { relative: this.actor });
     if (!doc) return;
-    if (favorite.type === "effect") return doc.update({ disabled: !doc.disabled });
+    // A suppressed effect stays locked here as on its row: its item must be equipped and attuned first.
+    if (favorite.type === "effect") return doc.isSuppressed ? this.#shake(target.closest("[data-fav-id]")) : doc.update({ disabled: !doc.disabled });
     if (favorite.type === "activity") return doc.canUse === false ? undefined : doc.use({ event });
     if (doc.type === "container") return doc.sheet.render({ force: true });
     return this.#useWithRefusal(doc, target, event);

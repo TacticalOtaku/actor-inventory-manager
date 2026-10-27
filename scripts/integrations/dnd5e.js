@@ -546,9 +546,10 @@ export function readEffects(actor, { isGM = false } = {}) {
 /**
  * An effect's changes (Foundry 14 keeps them in `system.changes`, typed by `type` instead of `mode`), each labelled
  * by the nearest labelled data field of the actor (a derived key such as `attributes.ac.bonus` takes «Armor Class»),
- * otherwise by its key.
+ * otherwise by its key. An ability or skill key names it: `abilities.con.value` reads «Constitution».
  */
 export function readEffectChanges(effect, actor) {
+  const config = getDnd5eConfig();
   return [...(effect?.system?.changes ?? effect?.changes ?? [])].map(({ key, type, value }) => {
     const parts = String(key).replace(/^system\./, "").split(".");
     let label = null;
@@ -556,20 +557,25 @@ export function readEffectChanges(effect, actor) {
       try { label = actor?.system?.schema?.getField?.(parts.slice(0, n).join("."))?.label || null; }
       catch { label = null; }
     }
-    return { key, type, value, label: label ? localizeOr(label, label) : key };
+    label = label ? localizeOr(label, label) : key;
+    const own = { abilities: config.abilities, skills: config.skills }[parts[0]]?.[parts[1]]?.label;
+    if (own) label = parts[2] === "value" || parts.length === 2 ? localizeOr(own, own) : `${localizeOr(own, own)}: ${label}`;
+    return { key, type, value, label };
   });
 }
 
 /**
  * The statuses the token HUD offers (`CONFIG.statusEffects` without `hud: false`), less exhaustion and
- * concentration, which keep their rail chips; a condition is a non-pseudo entry of `DND5E.conditionTypes`.
+ * concentration, which keep their rail chips; a condition is a non-pseudo entry of `DND5E.conditionTypes`. An
+ * actor's condition immunities (`traits.ci`) are marked: such a condition is removed as soon as it is applied.
  */
-export function readStatusEffects() {
+export function readStatusEffects(actor) {
   const conditions = getDnd5eConfig().conditionTypes ?? {};
+  const immune = new Set(actor?.system?.traits?.ci?.value ?? []);
   const concentrating = globalThis.CONFIG?.specialStatusEffects?.CONCENTRATING ?? "concentrating";
   return (globalThis.CONFIG?.statusEffects ?? [])
     .filter((s) => s.hud !== false && s.id !== "exhaustion" && s.id !== concentrating)
-    .map((s) => ({ id: s.id, name: localizeOr(s.name, s.name ?? s.id), img: s.img, condition: Boolean(conditions[s.id] && !conditions[s.id].pseudo) }));
+    .map((s) => ({ id: s.id, name: localizeOr(s.name, s.name ?? s.id), img: s.img, condition: Boolean(conditions[s.id] && !conditions[s.id].pseudo), immune: immune.has(s.id) }));
 }
 
 /** The actor's dnd5e coins in CONFIG.DND5E.currencies order (pp, gp, ep, sp, cp in 5.3.3). */

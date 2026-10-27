@@ -662,7 +662,8 @@
           "passive": "Пассивные",
           "inactive": "Выключенные",
           "suppressed": "Недоступные"
-        }
+        },
+        "immune": "{name}: иммунитет"
       },
       "chips": {
         "inspiration": "Вдохновение",

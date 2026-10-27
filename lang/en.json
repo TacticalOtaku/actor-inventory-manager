@@ -662,7 +662,8 @@
           "passive": "Passive",
           "inactive": "Inactive",
           "suppressed": "Unavailable"
-        }
+        },
+        "immune": "{name}: immune"
       },
       "chips": {
         "inspiration": "Inspiration",

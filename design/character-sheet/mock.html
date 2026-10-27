@@ -33,17 +33,23 @@ body {
   /* text */
   --text: #ece6da;
   --text-2: #aaa499;
-  --text-3: #6e6a63;
-  /* accent (user-selectable) */
-  --accent: #d4a55a;
+  --text-3: #96928a;
+  /* accent (user-selectable, by name: each theme has its own value for each of the six) */
+  --acc-brass: #d4a55a;
+  --acc-embers: #e2734a;
+  --acc-arcane: #9d7eff;
+  --acc-forest: #5fbf8f;
+  --acc-frost: #6fb7e8;
+  --acc-rose: #e07aa0;
+  --accent: var(--acc-brass);
   --accent-ink: #1b1206;
   --accent-soft: color-mix(in oklab, var(--accent) 16%, transparent);
   --accent-line: color-mix(in oklab, var(--accent) 45%, transparent);
   /* meaning */
-  --hp: #e0564f;
+  --hp: #e56f69;
   --heal: #5fc28a;
   --temp: #5aa9e6;
-  --arcane: #9b7bff;
+  --arcane: #9d7eff;
   --warn: #e7b04a;
   /* rarity (custom properties, never inline color) */
   --rarity-common: #b8b2a7;
@@ -51,7 +57,7 @@ body {
   --rarity-rare: #5aa9e6;
   --rarity-veryRare: #a77bff;
   --rarity-legendary: #f0a24a;
-  --rarity-artifact: #e0564f;
+  --rarity-artifact: #e56f69;
   /* spell schools */
   --school-abj: #6fb7e8;
   --school-con: #e7b04a;
@@ -89,22 +95,55 @@ body {
   --shadow-1: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 8px 24px rgb(0 0 0 / 0.35);
   --shadow-lift: 0 18px 40px rgb(0 0 0 / 0.5);
 }
+/* «Пергамент» (#26): every colour token has a light value; text, meaning, rarity, school and accent colours reach 4.5:1 on all four surfaces */
 .cs-root[data-theme="parchment"], .cs-layer[data-theme="parchment"] {
-  --surface-0: #f3eee3;
-  --surface-1: #ebe4d6;
-  --surface-2: #e2d9c7;
-  --surface-3: #d6cbb5;
-  --line: rgb(60 40 10 / 0.1);
-  --line-strong: rgb(60 40 10 / 0.2);
-  --scrim: rgb(40 30 15 / 0.25);
-  --text: #2a2419;
-  --text-2: #6a5e4b;
-  --text-3: #988b75;
-  --accent: #9a6420;
-  --accent-ink: #fff8ec;
-  --shadow-1: 0 1px 0 rgb(255 255 255 / 0.6) inset, 0 8px 24px rgb(60 40 10 / 0.15);
-  --shadow-lift: 0 18px 40px rgb(60 40 10 / 0.25);
+  --surface-0: #f4eedf;
+  --surface-1: #ece3cf;
+  --surface-2: #e3d8c0;
+  --surface-3: #d8cbae;
+  --line: rgb(70 45 15 / 0.13);
+  --line-strong: rgb(70 45 15 / 0.26);
+  --scrim: rgb(40 28 12 / 0.32);
+  --text: #1f180e;
+  --text-2: #43392d;
+  --text-3: #605544;
+  --accent-ink: #fffaf0;
+  --hp: #a4241d;
+  --heal: #1f613c;
+  --temp: #195a8c;
+  --arcane: #592fda;
+  --warn: #725114;
+  --rarity-common: #5d5548;
+  --rarity-uncommon: #1f613c;
+  --rarity-rare: #195a8c;
+  --rarity-veryRare: #6429d9;
+  --rarity-legendary: #7c4c16;
+  --rarity-artifact: #a4241d;
+  --school-abj: #185a87;
+  --school-con: #725114;
+  --school-div: #3d5684;
+  --school-enc: #a41d4f;
+  --school-evo: #933a1a;
+  --school-ill: #6429d9;
+  --school-nec: #3e5f2f;
+  --school-trs: #1e5f59;
+  --acc-brass: #745017;
+  --acc-embers: #933a1a;
+  --acc-arcane: #592fda;
+  --acc-forest: #216141;
+  --acc-frost: #185a87;
+  --acc-rose: #a41d4f;
+  --shadow-1: 0 1px 0 rgb(255 255 255 / 0.55) inset, 0 6px 18px rgb(70 45 15 / 0.14);
+  --shadow-lift: 0 16px 36px rgb(70 45 15 / 0.22);
 }
+.cs-root[data-accent="brass"], .cs-layer[data-accent="brass"] { --accent: var(--acc-brass); }
+.cs-root[data-accent="embers"], .cs-layer[data-accent="embers"] { --accent: var(--acc-embers); }
+.cs-root[data-accent="arcane"], .cs-layer[data-accent="arcane"] { --accent: var(--acc-arcane); }
+.cs-root[data-accent="forest"], .cs-layer[data-accent="forest"] { --accent: var(--acc-forest); }
+.cs-root[data-accent="frost"], .cs-layer[data-accent="frost"] { --accent: var(--acc-frost); }
+.cs-root[data-accent="rose"], .cs-layer[data-accent="rose"] { --accent: var(--acc-rose); }
+/* chips of damage types keep their colour but darker text on paper */
+.cs-layer[data-theme="parchment"] .cs-dmg-chip, .cs-root[data-theme="parchment"] .cs-dmg-chip { color: color-mix(in oklab, var(--c) 45%, var(--text)); background: color-mix(in oklab, var(--c) 18%, transparent); }
 .cs-root[data-density="compact"] { --row-h: 34px; --tile: 28px; }
 .cs-root[data-motion="off"] *, .cs-root[data-motion="off"] *::before, .cs-root[data-motion="off"] *::after, .cs-layer[data-motion="off"] *, .cs-layer[data-motion="off"] *::after {
   transition-duration: 0ms !important;
@@ -1569,7 +1608,7 @@ button.cs-stat:active { transform: scale(0.95); }
   <symbol id="i-figure" viewBox="0 0 120 260"><path d="M60 8c11 0 19 9 19 21s-8 22-19 22-19-10-19-22S49 8 60 8zM38 58h44c12 0 20 8 22 20l8 62c1 6-8 8-10 2l-12-50v64l6 84c1 8-12 9-14 1L68 172h-16l-14 69c-2 8-15 7-14-1l6-84V92l-12 50c-2 6-11 4-10-2l8-62c2-12 10-20 22-20z" fill="currentColor" stroke="none" opacity=".35"/></symbol>
 </svg>
 
-<section class="cs-root" data-ui="CharacterSheet" data-layout="standard" data-theme="night" data-density="comfortable" data-motion="full" data-role="player" data-actor="character" aria-label="Лист персонажа">
+<section class="cs-root" data-ui="CharacterSheet" data-layout="standard" data-theme="night" data-density="comfortable" data-motion="full" data-role="player" data-actor="character" data-accent="brass" aria-label="Лист персонажа">
 
   <!-- ═══════════ Rail ═══════════ -->
   <aside class="cs-rail" data-ui="sheetRail" data-flip>
@@ -1824,12 +1863,12 @@ button.cs-stat:active { transform: scale(0.95); }
       </div>
       <div class="cs-field"><span>Акцент</span>
         <div class="cs-swatches" data-ui="accentSwatch" data-accent>
-          <button type="button" class="cs-swatch" style="--sw:#d4a55a" data-value="#d4a55a" aria-label="Латунь" title="Латунь" aria-pressed="true"></button>
-          <button type="button" class="cs-swatch" style="--sw:#e2734a" data-value="#e2734a" aria-label="Угли" title="Угли" aria-pressed="false"></button>
-          <button type="button" class="cs-swatch" style="--sw:#9b7bff" data-value="#9b7bff" aria-label="Аркана" title="Аркана" aria-pressed="false"></button>
-          <button type="button" class="cs-swatch" style="--sw:#5fbf8f" data-value="#5fbf8f" aria-label="Лес" title="Лес" aria-pressed="false"></button>
-          <button type="button" class="cs-swatch" style="--sw:#6fb7e8" data-value="#6fb7e8" aria-label="Иней" title="Иней" aria-pressed="false"></button>
-          <button type="button" class="cs-swatch" style="--sw:#e07aa0" data-value="#e07aa0" aria-label="Роза" title="Роза" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:var(--acc-brass)" data-value="brass" aria-label="Латунь" title="Латунь" aria-pressed="true"></button>
+          <button type="button" class="cs-swatch" style="--sw:var(--acc-embers)" data-value="embers" aria-label="Угли" title="Угли" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:var(--acc-arcane)" data-value="arcane" aria-label="Аркана" title="Аркана" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:var(--acc-forest)" data-value="forest" aria-label="Лес" title="Лес" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:var(--acc-frost)" data-value="frost" aria-label="Иней" title="Иней" aria-pressed="false"></button>
+          <button type="button" class="cs-swatch" style="--sw:var(--acc-rose)" data-value="rose" aria-label="Роза" title="Роза" aria-pressed="false"></button>
         </div>
       </div>
       <div class="cs-field"><span>Плотность</span>
@@ -3265,7 +3304,7 @@ button.cs-stat:active { transform: scale(0.95); }
     S.hiddenBlocks.clear(); S.hiddenTabs.clear();
     root.dataset.density = "comfortable";
     $$('[data-set="density"] button').forEach((b) => b.setAttribute("aria-pressed", b.dataset.value === "comfortable"));
-    root.style.removeProperty("--accent");
+    root.dataset.accent = "brass";
     $$("[data-accent] button").forEach((b, i) => b.setAttribute("aria-pressed", i === 0));
     applyTheme(); applyMotion(); applyFonts(); renderSettingsLists(); applyVisibility(); renderReset();
   }
@@ -3400,7 +3439,7 @@ button.cs-stat:active { transform: scale(0.95); }
     if (t.closest("[data-motion-set]") && t.dataset.value) { S.motion = t.dataset.value; return applyMotion(); }
     if (t.closest('[data-set="theme"]') && t.dataset.value) { S.theme = t.dataset.value; return applyTheme(); }
     if (t.closest("[data-set]") && t.dataset.value) { root.dataset[t.closest("[data-set]").dataset.set] = t.dataset.value; t.parentElement.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b === t)); return; }
-    if (t.closest("[data-accent]")) { root.style.setProperty("--accent", t.dataset.value); $$("[data-accent] button").forEach((b) => b.setAttribute("aria-pressed", b === t)); return; }
+    if (t.closest("[data-accent] .cs-swatch")) { root.dataset.accent = t.dataset.value; $$("[data-accent] button").forEach((b) => b.setAttribute("aria-pressed", b === t)); return; }
     if (t.matches("[data-crew-open]")) { if (t.dataset.crewOpen) return setActor(t.dataset.crewOpen); return chip(t, "Открывает окно этого актора, а без поддержки — его лист"); }
     if (t.matches("[data-fonts-reload]")) { S.fontsApplied = S.fonts; applyFonts(); return chip(t, "Мок: окно перезагружено"); }
     if (t.matches("[data-settings-reset]")) { S.askReset = true; return renderReset(); }
@@ -3738,11 +3777,9 @@ button.cs-stat:active { transform: scale(0.95); }
   // The layer carries the window's theme tokens (it is a module root of its own) and follows the window's settings.
   const layer = document.querySelector('[data-ui="tooltipLayer"]');
   const syncLayer = () => {
-    layer.dataset.theme = root.dataset.theme; layer.dataset.motion = root.dataset.motion;
-    const acc = root.style.getPropertyValue("--accent");
-    if (acc) layer.style.setProperty("--accent", acc); else layer.style.removeProperty("--accent");
+    for (const k of ["theme", "motion", "accent"]) layer.dataset[k] = root.dataset[k];
   };
-  new MutationObserver(syncLayer).observe(root, { attributes: true, attributeFilter: ["data-theme", "data-motion", "style"] });
+  new MutationObserver(syncLayer).observe(root, { attributes: true, attributeFilter: ["data-theme", "data-motion", "data-accent"] });
   syncLayer();
   /* ═══════════ Damage type scenes (#22): particles on a canvas, one effect per type ═══════════ */
   // Ambient at «Все» (loops while the card is open), one pass at «Сдержанно», a still frame at «Выключены».

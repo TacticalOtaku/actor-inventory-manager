@@ -1012,7 +1012,23 @@
           "source": "spec"
         },
         {
-          "text": "A theme change cross-fades through a view transition when motion is above «Выключены». Polishing Пергамент is the separate «Светлая тема» item on the map.",
+          "text": "A theme change cross-fades through a view transition when motion is above «Выключены».",
+          "source": "spec"
+        },
+        {
+          "text": "«Пергамент» (#26) is warm yellowish paper with brown lines and text, on the same tokens as «Ночь»: every colour token has a light value — surfaces, lines, text, meaning (HP, healing, temporary HP, warning, arcane), rarity, spell schools, the six accents, shadows and scrim. No texture images; paper comes from the surface tones. Variants B («Велень») and C («Карта») are on the prototype/light-theme branch.",
+          "source": "spec"
+        },
+        {
+          "text": "Contrast (WCAG AA): text of all three levels and every meaning, rarity, school and accent colour reach 4.5:1 on all four surfaces in both themes; fills, borders and icons at least 3:1. Lowest pairs: «Ночь» 4.56:1 (third text), «Пергамент» 4.5:1 (warning, legendary, conjuration, brass). The implementation keeps a test in scripts/core over the same token pairs.",
+          "source": "spec"
+        },
+        {
+          "text": "Glows are built from the same tokens, so in «Пергамент» they read as soft coloured shadows; the cursor spotlight stays white; damage type scenes keep their dark stage (#22); damage chips get darker text on paper.",
+          "source": "spec"
+        },
+        {
+          "text": "The window always carries its own tokens; Foundry's light or dark scheme only feeds «Авто». The tooltip layer follows the window's theme and accent.",
           "source": "spec"
         }
       ],
@@ -1026,6 +1042,10 @@
         },
         {
           "text": "Migration from 1.x: amber→латунь, peach→угли, rose and orchid→роза, lavender and periwinkle→аркана, sage and mint→лес, azure and steel→иней.",
+          "source": "spec"
+        },
+        {
+          "text": "A swatch sets the accent by name (data-accent: brass, embers, arcane, forest, frost, rose), never a colour in style; each theme has its own value for each name, and the stored setting is the name.",
           "source": "spec"
         }
       ],

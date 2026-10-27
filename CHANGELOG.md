@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.1
 
 ### Added
 - The preset editor places each slot again: left, right, under the doll, or by order as before. Presets without a

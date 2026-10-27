@@ -896,7 +896,7 @@ export class ActorWindow extends WindowBase {
         else delete row.dataset.tooltip;
       }
     };
-    if (this.motionOn) glide(panel, ".aim-rowwrap", apply); else apply();
+    if (this.motionOn) glide(panel, "[data-row]", apply); else apply();
     await this.#savePrefs({ view });
   }
 

@@ -140,7 +140,8 @@ export async function buildItemDetail(item, { canEdit }) {
     useOnly: activities.length === 1,
     canEquip: "equipped" in system,
     equipLabel: t(system.equipped ? "AIM.window.inv.unequip" : "AIM.window.inv.equip"),
-    effects: item.effects.map((e) => ({ id: e.id, name: e.name, img: e.img, disabled: e.disabled }))
+    // An unidentified item does not give its effects away to players.
+    effects: unidentified ? [] : item.effects.map((e) => ({ id: e.id, name: e.name, img: e.img, disabled: e.disabled }))
   };
 }
 

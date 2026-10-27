@@ -173,6 +173,50 @@ export function extractActorVitals(actor) {
 }
 
 /**
+ * The six abilities for the window header. dnd5e 5.3.3 keeps the save as `abilities.<key>.save.value`
+ * and its proficiency as the number `proficient`.
+ * @param {Object} actor
+ * @returns {{key: string, abbr: string, label: string, value: number, mod: number, save: number, proficient: boolean}[]}
+ */
+export function readAbilities(actor) {
+  const config = globalThis.CONFIG?.DND5E?.abilities ?? {};
+  return Object.entries(actor?.system?.abilities ?? {}).map(([key, ab]) => {
+    const mod = num(ab?.mod, 0);
+    return {
+      key,
+      abbr: config[key]?.abbreviation ?? key,
+      label: config[key]?.label ?? key,
+      value: num(ab?.value, 10),
+      mod,
+      save: num(ab?.save?.value ?? ab?.save, mod),
+      proficient: num(ab?.proficient, 0) > 0
+    };
+  });
+}
+
+/**
+ * Level, experience and the documents the header links to: classes with their subclasses, species and background.
+ * dnd5e 5.3.3 prepares `details.race` and `details.background` as the item documents.
+ * @param {Object} actor
+ */
+export function readIdentity(actor) {
+  const details = actor?.system?.details ?? {};
+  const xp = details.xp ?? {};
+  const link = (doc) => (doc && typeof doc === "object" ? { id: doc.id, name: doc.name } : null);
+  const classes = Object.values(actor?.classes ?? {})
+    .map((cls) => ({ id: cls.id, name: cls.name, levels: num(cls.system?.levels, 0), subclass: link(cls.subclass) }))
+    .sort((a, b) => b.levels - a.levels);
+  const max = num(xp.max, 0);
+  return {
+    level: num(details.level, 0),
+    xp: { value: num(xp.value, 0), min: num(xp.min, 0), max, pct: num(xp.pct, 0), ready: max > 0 && num(xp.value, 0) >= max },
+    classes,
+    species: link(details.race),
+    background: link(details.background)
+  };
+}
+
+/**
  * Format item details for rendering in inventory list and tooltips
  * @param {Object} item
  * @returns {Object}

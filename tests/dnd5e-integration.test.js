@@ -366,3 +366,48 @@ describe("container contents count", () => {
     assert.equal(await getContainerContentsCount(null), 0);
   });
 });
+
+describe("actor window header reads (dnd5e 5.3.3)", () => {
+  afterEach(() => { delete globalThis.CONFIG; });
+
+  it("reads abilities with the save as an object, not the modifier", async () => {
+    const { readAbilities } = await import("../scripts/integrations/dnd5e.js");
+    globalThis.CONFIG = { DND5E: { abilities: { str: { abbreviation: "Сил", label: "Сила" }, int: { abbreviation: "Инт", label: "Интеллект" } } } };
+    const actor = { system: { abilities: {
+      str: { value: 8, mod: -1, proficient: 0, save: { value: -1 } },
+      int: { value: 18, mod: 4, proficient: 1, save: { value: 7 } }
+    } } };
+    assert.deepEqual(readAbilities(actor), [
+      { key: "str", abbr: "Сил", label: "Сила", value: 8, mod: -1, save: -1, proficient: false },
+      { key: "int", abbr: "Инт", label: "Интеллект", value: 18, mod: 4, save: 7, proficient: true }
+    ]);
+  });
+
+  it("reads level, experience, classes with subclasses, species and background", async () => {
+    const { readIdentity } = await import("../scripts/integrations/dnd5e.js");
+    const wizard = { id: "w1", name: "Волшебник", system: { levels: 6 }, subclass: { id: "s1", name: "Школа Воплощения" } };
+    const fighter = { id: "f1", name: "Воин", system: { levels: 1 }, subclass: null };
+    const actor = {
+      type: "character",
+      classes: { wizard, fighter },
+      system: { details: {
+        level: 7,
+        xp: { value: 20500, min: 14000, max: 23000, pct: 72 },
+        race: { id: "r1", name: "Высший эльф" },
+        background: { id: "b1", name: "Мудрец" }
+      } }
+    };
+    assert.deepEqual(readIdentity(actor), {
+      level: 7,
+      xp: { value: 20500, min: 14000, max: 23000, pct: 72, ready: false },
+      classes: [
+        { id: "w1", name: "Волшебник", levels: 6, subclass: { id: "s1", name: "Школа Воплощения" } },
+        { id: "f1", name: "Воин", levels: 1, subclass: null }
+      ],
+      species: { id: "r1", name: "Высший эльф" },
+      background: { id: "b1", name: "Мудрец" }
+    });
+    actor.system.details.xp.value = 23000;
+    assert.equal(readIdentity(actor).xp.ready, true);
+  });
+});

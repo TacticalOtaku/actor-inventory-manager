@@ -39,8 +39,7 @@ import {
   saveWorldCustomTemplate,
   setActorPaperdollTemplate
 } from "./core/paperdoll-templates.js";
-import { openPaperdollEditor } from "./ui/paperdoll-editor.js";
-import { openActorInventory, toggleActorInventory, preloadTemplates } from "./ui/inventory-app.js";
+import { openActorWindow, toggleActorWindow } from "./ui/actor-window.js";
 import { equipItemToSlot, unequipItem, toggleItemEquipped, useItem, toggleAttunement } from "./ui/item-actions.js";
 import { isItemPilesActive, computeActorCurrency } from "./integrations/item-piles.js";
 import { SC_MODULE_ID, invalidateRarityColorCache } from "./integrations/sc-rarity-colors.js";
@@ -68,7 +67,6 @@ registerModuleSettings();
 
 Hooks.once("init", () => {
   registerTradeSettings();
-  preloadTemplates();
 });
 
 Hooks.once("ready", () => {
@@ -79,9 +77,12 @@ Hooks.once("ready", () => {
 
   // Create and expose Public API
   const api = {
-    openInventory: openActorInventory,
-    toggleInventory: toggleActorInventory,
-    openEditor: openPaperdollEditor,
+    openInventory: openActorWindow,
+    toggleInventory: toggleActorWindow,
+    openWindow: openActorWindow,
+    toggleWindow: toggleActorWindow,
+    // The preset editor returns with the «Снаряжение, контейнеры и кукла» slice (#31).
+    openEditor: () => ui.notifications.info(game.i18n.localize("AIM.window.editorPending")),
     getActorPaperdollTemplate,
     getActorSlots,
     setActorPaperdollTemplate,

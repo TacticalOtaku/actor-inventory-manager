@@ -1,0 +1,80 @@
+/* AIM: Actor Window - header: level orb, name and links, tools, menu, experience card, abilities */
+.aim-head { position: relative; display: grid; gap: var(--s3); padding: var(--s4) var(--s4) var(--s3); }
+.aim-head:has(.aim-xp-card) { padding-bottom: var(--s3); }
+.aim-title { display: flex; align-items: center; gap: var(--s3); min-width: 0; padding-right: 150px; }
+.aim-title-text { min-width: 0; }
+.aim-name { margin: 0; border: 0; font: 600 22px/1.1 var(--font-display); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aim-links { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; margin-top: 3px; font-size: 12px; color: var(--text-2); }
+.aim-link { padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; text-decoration: underline dotted transparent; text-underline-offset: 3px; transition: color var(--d-fast), text-decoration-color var(--d-fast); }
+.aim-link:hover { color: var(--accent); text-decoration-color: var(--accent-line); }
+.aim-dot { color: var(--text-3); }
+
+/* the level orb fills with experience; ready, it grows and shows the next level */
+.aim-level {
+  --xp: 0;
+  position: relative; flex: none; isolation: isolate; overflow: hidden;
+  display: grid; place-items: center;
+  width: 48px; height: 48px; padding: 0;
+  border: 1.5px solid var(--accent-line); border-radius: 50%;
+  background: var(--surface-2); cursor: pointer;
+  transition: transform var(--d-base) var(--ease-snap), width var(--d-base), height var(--d-base);
+}
+.aim-level:hover { transform: scale(1.05); }
+.aim-level-fill {
+  position: absolute; inset: auto 0 0; height: calc(var(--xp) * 100%); z-index: -1;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 80%, #fff), var(--accent) 40%, color-mix(in oklab, var(--accent) 70%, #000));
+  transition: height var(--d-slow) var(--ease-settle);
+}
+.aim-level-n { font: 700 17px/1 var(--font-num); color: var(--text); text-shadow: 0 1px 2px rgb(0 0 0 / 0.35); }
+.aim-level-n small { font-size: 10px; margin-left: 1px; }
+.aim-level.is-ready { width: 54px; height: 54px; border-color: var(--warn); box-shadow: 0 0 20px 2px color-mix(in oklab, var(--warn) 45%, transparent); }
+.aim-level.is-ready .aim-level-fill { animation: aim-orb-near 2.4s ease-in-out infinite; }
+@keyframes aim-orb-near { 50% { filter: brightness(1.2); } }
+
+.aim-tools { position: absolute; top: var(--s4); right: var(--s4); display: flex; align-items: center; gap: var(--s1); }
+.aim-readonly { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 99px; background: var(--surface-2); color: var(--text-2); font-size: 11.5px; }
+.aim-menu-wrap { position: relative; }
+.aim-menu {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 30;
+  display: grid; min-width: 210px; padding: 4px;
+  background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: var(--r-md); box-shadow: var(--shadow-lift);
+}
+.aim-menu[hidden] { display: none; }
+.aim-menu button { padding: 8px 10px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text); font: 13px var(--font-ui); text-align: left; cursor: pointer; }
+.aim-menu button:hover { background: var(--surface-3); }
+
+.aim-xp-card {
+  display: grid; gap: 6px; max-width: 320px; padding: var(--s3);
+  background: var(--surface-1); border: 1px solid var(--line-strong); border-radius: var(--r-md);
+}
+.aim-xp-line { font-size: 13px; }
+.aim-xp-line b { font: 700 15px var(--font-num); }
+.aim-xp-line span { color: var(--text-3); margin-left: 4px; }
+.aim-xp-bar { height: 6px; border-radius: 4px; background: var(--line-strong); overflow: hidden; }
+.aim-xp-bar i { display: block; height: 100%; background: var(--accent); }
+.aim-xp-add { display: flex; align-items: center; gap: var(--s2); font-size: 12px; color: var(--text-2); }
+.aim-xp-add input { width: 90px; height: 28px; padding: 0 8px; border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--surface-0); color: var(--text); font: 13px var(--font-num); }
+
+.aim-abilities { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s2); }
+.aim-ability {
+  position: relative; overflow: hidden;
+  display: grid; justify-items: center; align-content: center; gap: 1px;
+  height: 66px; padding: 6px 4px;
+  border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--surface-1); color: var(--text); cursor: pointer;
+  transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-snap);
+}
+.aim-ability:hover:not(:disabled) { border-color: var(--accent-line); transform: translateY(-1px); }
+.aim-ability:disabled { cursor: default; }
+.aim-ability-k { font: 600 10px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
+.aim-ability-m { font: 700 20px/1 var(--font-num); }
+.aim-ability-v, .aim-ability-s { font: 500 11px var(--font-num); color: var(--text-2); transition: transform var(--d-base) var(--ease-snap), opacity var(--d-fast); }
+.aim-ability-s { position: absolute; bottom: 7px; inset-inline: 0; text-align: center; color: var(--accent); opacity: 0; transform: translateY(6px); }
+.aim-ability:hover .aim-ability-v { opacity: 0; transform: translateY(-6px); }
+.aim-ability:hover .aim-ability-s { opacity: 1; transform: none; }
+.aim-ability-save { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--line-strong); }
+.aim-ability-save.is-prof { background: var(--accent); border-color: var(--accent); }
+
+.aim-window[data-layout="narrow"] .aim-abilities { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.aim-window[data-layout="narrow"] .aim-title { padding-right: 0; }
+.aim-window[data-layout="narrow"] .aim-tools { position: static; justify-self: end; grid-row: 1; }

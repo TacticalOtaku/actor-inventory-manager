@@ -100,3 +100,30 @@ export const RAIL_BLOCKS = Object.freeze([
   { id: "rest" },
   { id: "favorites" }
 ].map(Object.freeze));
+
+/**
+ * What a click on the level orb does: the experience card until the orb is ready (and for observers or with
+ * Shift); ready, it levels up the only class or asks which class first.
+ * @param {{ready: boolean, canEdit: boolean, shift: boolean, classCount: number}} state
+ * @returns {"card"|"level"|"choose"}
+ */
+export function orbAction({ ready, canEdit, shift, classCount }) {
+  if (!ready || !canEdit || shift || classCount < 1) return "card";
+  return classCount === 1 ? "level" : "choose";
+}
+
+/**
+ * Entries of the window's «⋯» menu. dnd5e 5.3.3 has no standalone special traits or bastion dialog, so those open
+ * the actor's own sheet on that tab.
+ * @param {{type: string, bastion: boolean, polymorphed: boolean}} actor
+ */
+export function sheetMenuEntries({ type, bastion, polymorphed }) {
+  const entries = ["openSheet"];
+  if (type === "character") entries.push("traits");
+  if (type === "character" && bastion) entries.push("bastion");
+  if (polymorphed) entries.push("revert");
+  return entries;
+}
+
+/** The actor sheet tab each menu entry opens (dnd5e 5.3.3 tab ids). */
+export const SHEET_MENU_TABS = Object.freeze({ traits: "specialTraits", bastion: "bastion" });

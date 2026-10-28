@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.5
+
+### Fixed
+- Hover cards no longer show unrevealed secret blocks to anyone, owners and the GM included, as dnd5e's own
+  tooltips do. The details, effects and biography keep Foundry's rule (owners see secrets) and mark them as a
+  dashed block.
+- Secret blocks lose Foundry's «Reveal» button in the window: it only works on document sheets and did nothing here.
+
 ## 2.0.4
 
 ### Fixed

@@ -5,6 +5,7 @@
 import { MODULE_ID } from "../constants.js";
 import { categorizeEffects, changeText, conditionGrid } from "../core/effects.js";
 import { readEffectChanges, readEffects, readStatusEffects } from "../integrations/dnd5e.js";
+import { unwrapSecrets } from "./html.js";
 
 const PARTIALS = `modules/${MODULE_ID}/templates/window`;
 export const EFFECT_TEMPLATES = ["effects", "effect-row"].map((name) => `${PARTIALS}/${name}.hbs`);
@@ -55,7 +56,7 @@ async function effectDetail(actor, uuid) {
   const effect = await fromUuid(uuid);
   if (!effect) return null;
   const description = effect.description
-    ? await foundry.applications.ux.TextEditor.implementation.enrichHTML(effect.description, { relativeTo: effect, secrets: effect.isOwner })
+    ? unwrapSecrets(await foundry.applications.ux.TextEditor.implementation.enrichHTML(effect.description, { relativeTo: effect, secrets: effect.isOwner }))
     : "";
   return { description, changes: readEffectChanges(effect, actor).map((c) => changeText(c, c.label)) };
 }

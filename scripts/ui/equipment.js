@@ -10,7 +10,7 @@ import { castable, ready } from "../core/spellbook.js";
 import { usableActivities } from "../integrations/midi-qol.js";
 import { computeActorCurrency, readPilesCurrencies } from "../integrations/item-piles.js";
 import { getContainerLoad, getContainerWeightReductionPct, isWeightyContainersActive } from "../integrations/weighty-containers.js";
-import { escapeHTML } from "./html.js";
+import { escapeHTML, unwrapSecrets } from "./html.js";
 import { playBurst } from "./bursts.js";
 import { menuLayout } from "../core/menu.js";
 
@@ -178,7 +178,7 @@ export async function buildItemDetail(item, { canEdit }) {
   const unidentified = system.identified === false && !game.user.isGM;
   const raw = unidentified ? system.unidentified?.description : system.description?.value;
   const description = raw
-    ? await foundry.applications.ux.TextEditor.implementation.enrichHTML(raw, { relativeTo: item, rollData: item.getRollData?.(), secrets: item.isOwner })
+    ? unwrapSecrets(await foundry.applications.ux.TextEditor.implementation.enrichHTML(raw, { relativeTo: item, rollData: item.getRollData?.(), secrets: item.isOwner }))
     : "";
   // The player picks among the activities dnd5e allows; midi-qol's automation-only ones stay with midi.
   const activities = usableActivities(item);

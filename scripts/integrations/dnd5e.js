@@ -723,7 +723,8 @@ export async function readCardData(doc) {
   if (!doc) return null;
   const config = getDnd5eConfig();
   if (doc.documentName === "Item" && typeof doc.system?.getCardData === "function") {
-    const data = await doc.system.getCardData({ secrets: doc.isOwner });
+    // Unrevealed secrets stay out of hover cards for everyone, as in dnd5e's own tooltips; the sheet shows them.
+    const data = await doc.system.getCardData({ secrets: false });
     const labels = data.labels ?? {};
     const stat = (key, value) => (value !== undefined && value !== null && String(value).trim() !== "" ? { key, value: String(value) } : null);
     const damages = (labels.damages ?? []).map((d) => ({ label: d.label ?? d.formula ?? "", formula: d.formula ?? "", types: String(d.damageType ?? "").split("|").filter(Boolean) }));

@@ -187,6 +187,15 @@ describe("toggleAttunement result", () => {
     assert.equal(actor.writes.length, 0);
   });
 
+  it("lets only one of two quick attunements take the last place", async () => {
+    const actor = makeActor({ attunementMax: 1 });
+    const ring = addItem(actor, { id: "ring", system: { attunement: "required", attuned: false } });
+    const amulet = addItem(actor, { id: "amulet", system: { attunement: "required", attuned: false } });
+    // Neither reply has come back when the second is asked, as with two clicks in one round-trip.
+    const results = await Promise.all([toggleAttunement(ring), toggleAttunement(amulet)]);
+    assert.deepEqual(results, [true, false]);
+  });
+
   it("is false when attunement is not needed, without permission, or without an item", async () => {
     const actor = makeActor();
     const rope = addItem(actor, { id: "rope", system: { attunement: "", attuned: false } });

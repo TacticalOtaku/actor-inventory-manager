@@ -14,7 +14,6 @@ import {
   isShield,
   isBodyArmor
 } from "./core/item-classifier.js";
-import { slotRegistry } from "./core/slot-definitions.js";
 import { computeActorEncumbrance, computeActorCapacity } from "./core/weight-calculator.js";
 import { registerEnforcementHooks } from "./foundry/enforcement-hooks.js";
 import { LOG } from "./foundry/logger.js";
@@ -117,7 +116,6 @@ Hooks.once("ready", () => {
     toggleItemEquipped,
     useItem,
     toggleAttunement,
-    slotRegistry,
     equipmentRuleEngine,
     SLOTS,
     FLAGS,
@@ -138,8 +136,7 @@ Hooks.once("ready", () => {
 
   /**
    * Fired once the public API is available.
-   * Register custom slots (`api.slotRegistry.register`) and equipment rules
-   * (`api.equipmentRuleEngine.registerRule`) from here.
+   * Register equipment rules (`api.equipmentRuleEngine.registerRule`) from here; slots come from the doll presets.
    * @event actorInventoryManager.ready
    * @param {Object} api
    */

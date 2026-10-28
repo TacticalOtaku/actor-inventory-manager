@@ -278,3 +278,72 @@ test("a cancelled trade records which side cancelled it", async () => {
   await command("cancelRequest001", "cancel", "b", "p2");
   assert.deepEqual([tradeState().sessions[0].status, tradeState().sessions[0].cancelledBy], ["cancelled", 1]);
 });
+
+function sword(actor, data = {}) {
+  const item = { id: "sword", name: "Sword", type: "weapon", system: { quantity: 1, equipped: false }, flags: {}, ...data,
+    toObject() { const { id, toObject, ...source } = this; return { _id: id, ...structuredClone(source) }; } };
+  actor.items.set(item.id, item);
+  return item;
+}
+const offerSword = () => command("offerRequest0001", "offer", "a", "p1", { revision: 0, offer: { items: [{ id: "sword", quantity: 1 }], money: {} } });
+
+test("an offered item changed after the partner looked cannot be traded", async () => {
+  const { actors } = setup(); await start();
+  const item = sword(actors.get("a"));
+  await offerSword();
+  await command("confirmRequest01", "confirm", "a", "p1", { revision: 1 });
+  item.name = "Rusty Sword";
+  await command("confirmRequest02", "confirm", "b", "p2", { revision: 1 });
+  assert.equal(tradeState().sessions[0].status, "open");
+  assert.deepEqual(tradeState().sessions[0].confirmed, [false, false]);
+  assert.equal(tradeState().receipts.p2.error, "AIM.trade.errors.changed");
+  assert(actors.get("a").items.has("sword"));
+});
+test("wearing or opening an offered item keeps the offer, and the session holds a digest, not the item", async () => {
+  const { actors } = setup(); await start();
+  const item = sword(actors.get("a"), { system: { quantity: 1, equipped: false, unidentified: { description: "<p>Vorpal</p>" } } });
+  await offerSword();
+  assert.match(tradeState().sessions[0].offers[0].items[0].fingerprint, /^[0-9a-f]{64}$/);
+  assert(!JSON.stringify(tradeState()).includes("Vorpal"));
+  item.system.equipped = true;
+  item.flags = { "actor-inventory-manager": { tradeNew: false } };
+  await command("confirmRequest01", "confirm", "a", "p1", { revision: 1 });
+  await command("confirmRequest02", "confirm", "b", "p2", { revision: 1 });
+  assert.equal(tradeState().sessions[0].status, "complete");
+  assert(!JSON.stringify(tradeState()).includes("fingerprint"));
+  assert(actors.get("b").items.size === 1);
+});
+test("an offer saved before 2.0.6 with the item's JSON still confirms", async () => {
+  const { actors } = setup(); await start();
+  const item = sword(actors.get("a"));
+  await offerSword();
+  const state = tradeState();
+  state.sessions[0].offers[0].items[0].fingerprint = JSON.stringify(item.toObject());
+  await game.settings.set("actor-inventory-manager", "tradeState", state);
+  await command("confirmRequest01", "confirm", "a", "p1", { revision: 1 });
+  await command("confirmRequest02", "confirm", "b", "p2", { revision: 1 });
+  assert.equal(tradeState().sessions[0].status, "complete");
+});
+test("GM recovery skips a participant deleted since and unlocks the trade", async () => {
+  const { actors } = setup(); await start();
+  const target = actors.get("b");
+  target.update = async () => { throw new Error("database unavailable"); };
+  await command("offerRequest0001", "offer", "a", "p1", { revision: 0, offer: { items: [], money: { gp: 3 } } });
+  await command("confirmRequest01", "confirm", "a", "p1", { revision: 1 });
+  await command("confirmRequest02", "confirm", "b", "p2", { revision: 1 });
+  assert.equal(tradeState().sessions[0].status, "recovery");
+  actors.delete("b");
+  await command("recoverRequest01", "recover", "a", "gm");
+  assert.equal(tradeState().sessions[0].status, "failed");
+  assert.equal(actors.get("a").system.currency.gp, 10);
+});
+test("a failed GM restore returns the trade to recovery instead of leaving it executing", async () => {
+  const { actors } = setup(); await start();
+  const target = actors.get("b");
+  target.update = async () => { throw new Error("database unavailable"); };
+  await command("offerRequest0001", "offer", "a", "p1", { revision: 0, offer: { items: [], money: { gp: 3 } } });
+  await command("confirmRequest01", "confirm", "a", "p1", { revision: 1 });
+  await command("confirmRequest02", "confirm", "b", "p2", { revision: 1 });
+  await command("recoverRequest01", "recover", "a", "gm");
+  assert.equal(tradeState().sessions[0].status, "recovery");
+});

@@ -15,6 +15,7 @@ const NOTE_MS = 2400;
 const NONE = Object.freeze({ refusal: null, note: null });
 
 const quantities = (actor) => new Map(actor.items.map((item) => [item.id, Number(item.system?.quantity ?? 1)]));
+const STACK_WAIT_MS = 3000;
 // A running exchange locks the inventory, as it locks the window's own drags.
 const tradeLocked = (actor) => ["executing", "recovery"].includes(sessionFor(actor.id)?.status);
 
@@ -60,6 +61,19 @@ async function resolve(data) {
   return null;
 }
 
+/**
+ * Whether the actor got the drop. dnd5e stacks an identical consumable onto the actor's own without awaiting that
+ * update, so a drop that created nothing waits for the stack to grow (a refused drop waits out the timeout).
+ */
+function arrival(actor, before, created) {
+  if (created.length || received(before, quantities(actor))) return Promise.resolve(received(before, quantities(actor)));
+  return new Promise((resolve) => {
+    const done = (value) => { Hooks.off("updateItem", hook); clearTimeout(timer); resolve(value); };
+    const hook = Hooks.on("updateItem", (item) => item.parent === actor && received(before, quantities(actor)) && done(true));
+    const timer = setTimeout(() => done(false), STACK_WAIT_MS);
+  });
+}
+
 /** Spells follow the window's tab: a scroll through dnd5e's dialog on the equipment tab, a spell elsewhere. */
 async function create(app, event, items, container) {
   const actor = app.actor;
@@ -75,7 +89,8 @@ async function create(app, event, items, container) {
     }
   }
   // The copies carry «Новое» from the start; keepId keeps a container's contents with it.
-  const marked = rest.map((item) => item.clone({ [`flags.${MODULE_ID}.${FLAGS.TRADE_NEW}`]: true }, { keepId: true }));
+  // The source actor's slot stays behind, as in a trade: on this actor it would steer the next equip.
+  const marked = rest.map((item) => item.clone({ [`flags.${MODULE_ID}.${FLAGS.TRADE_NEW}`]: true, [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: null }, { keepId: true }));
   if (marked.length) created.push(...await createDroppedItems(actor, event, marked, { container }));
   return created;
 }
@@ -107,7 +122,9 @@ export async function dropFromOutside(app, event, { tray = null } = {}) {
 
   const items = dropped.items;
   if (!items.length) return NONE;
-  const source = items[0].parent?.documentName === "Actor" ? items[0].parent : null;
+  // An actor in a compendium is a source to copy from, as the dnd5e sheet does, never one to move out of.
+  const parent = items[0].parent;
+  const source = parent?.documentName === "Actor" && !parent.pack ? parent : null;
   // A move would delete from an actor whose exchange is running; its preDeleteItem refuses and the item would double.
   if (source && source.uuid !== actor.uuid && tradeLocked(source)) return { refusal: t("AIM.window.drop.trade"), note: null };
   const { behavior, refusal } = dropBehavior({
@@ -131,9 +148,10 @@ export async function dropFromOutside(app, event, { tray = null } = {}) {
   const before = quantities(actor);
   const created = await create(app, event, items, container);
   app.landItems(created.map((item) => item.id).filter(Boolean));
+  const arrived = await arrival(actor, before, created);
   // A move finishes only once the actor has it: then the source goes, with its contents. If the source keeps an item
   // (a hook refused the delete), the copies go instead, so nothing exists twice.
-  if (behavior === "move" && received(before, quantities(actor))) {
+  if (behavior === "move" && arrived) {
     for (const item of items) await item.delete({ deleteContents: true });
     if (items.some((item) => source.items.has(item.id))) {
       const copies = created.map((item) => item.id).filter((id) => actor.items.has(id));
@@ -142,7 +160,7 @@ export async function dropFromOutside(app, event, { tray = null } = {}) {
     }
   }
   // Weighty Containers refuses an overflowing container in its own words; the tray still shakes.
-  if (container && !received(before, quantities(actor))) return { refusal: null, note: null, shakeTray: true };
+  if (container && !arrived) return { refusal: null, note: null, shakeTray: true };
   // A sheet that cannot put items into a container (Tidy) leaves them in the inventory root (ADR 0004).
   const outside = container && landedOutside(created.map((item) => item.system?.container), container.id);
   return { refusal: null, note: outside ? t("AIM.window.drop.root") : null };

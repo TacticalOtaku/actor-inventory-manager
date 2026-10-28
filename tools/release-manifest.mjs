@@ -41,6 +41,7 @@ export function validateManifest(manifest, { version, repository, exists }) {
     ...(manifest.scripts ?? []),
     ...(manifest.styles ?? []),
     ...(manifest.languages ?? []).map((language) => language.path),
+    ...(manifest.packs ?? []).map((pack) => pack.path),
   ];
   expect((manifest.esmodules ?? []).length > 0, "esmodules must list the module entry");
   for (const file of files) expect(exists(file), `listed file is missing from the build: ${file}`);

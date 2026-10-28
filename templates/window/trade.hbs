@@ -70,7 +70,7 @@
   {{else}}
   <div class="aim-trade-foot">
     <button type="button" class="aim-btn" data-action="tradeCancel" {{#unless trade.canCancel}}disabled{{/unless}}>{{localize "AIM.trade.cancel"}}</button>
-    <button type="button" class="aim-btn is-primary" data-action="tradeConfirm" {{#unless trade.canConfirm}}disabled{{/unless}}>{{trade.confirmLabel}}</button>
+    <button type="button" class="aim-btn is-primary" data-action="tradeConfirm" data-revision="{{trade.session.revision}}" {{#unless trade.canConfirm}}disabled{{/unless}}>{{trade.confirmLabel}}</button>
   </div>
   {{/if}}
 {{/if}}

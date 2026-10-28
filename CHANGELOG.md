@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.4
 
 ### Fixed
 - The rail fits its column again: the rest buttons stack one per row at equal width; «Продолжительный отдых»

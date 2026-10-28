@@ -48,7 +48,7 @@
   border-right: 1px solid var(--line);
 }
 .aim-window[data-layout="narrow"] .aim-rail {
-  flex-direction: row; align-items: flex-start; gap: var(--s2);
+  flex-direction: row; align-items: stretch; gap: var(--s2);
   overflow: auto hidden; padding: 10px 12px 8px;
   border-right: 0; border-bottom: 1px solid var(--line);
 }

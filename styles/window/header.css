@@ -88,7 +88,5 @@
 .aim-ability-save.is-prof { background: var(--accent); border-color: var(--accent); }
 
 .aim-window[data-layout="narrow"] .aim-abilities { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.aim-window[data-layout="narrow"] .aim-title { padding-right: 0; }
-.aim-window[data-layout="narrow"] .aim-tools { position: static; justify-self: end; grid-row: 1; }
 
 /* the AIM button in another sheet's header: Foundry's header control with a short label; no theme tokens here */

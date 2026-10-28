@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.4
+
+### Fixed
+- The rail fits its column again: the rest buttons stack one per row at equal width; «Продолжительный отдых»
+  widened its half and pushed the rail into a sideways scroll.
+- A narrowing window keeps its controls tidy: the inventory filters, doll toggle and view switch wrap under the
+  search as one group, and the narrow layout keeps ⋯ ⚙ ⤢ beside the name instead of on a row of their own.
+- Above the inventory, the doll is a full-width card like the sections; in the narrow strip every card takes the
+  strip's height.
+
 ## 2.0.3
 
 ### Fixed

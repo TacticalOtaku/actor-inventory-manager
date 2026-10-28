@@ -9,3 +9,12 @@ const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "
 export function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, character => HTML_ESCAPES[character]);
 }
+
+/**
+ * Drop the `<secret-block>` wrappers enrichHTML puts around each secret: the element draws a «Reveal» button that
+ * only document sheets wire up, so in our window it would do nothing. The secret section itself stays.
+ * @param {string} html  enriched HTML
+ */
+export function unwrapSecrets(html) {
+  return String(html ?? "").replace(/<\/?secret-block\b[^>]*>/g, "");
+}

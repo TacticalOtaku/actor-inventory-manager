@@ -5,6 +5,7 @@
 import { MODULE_ID } from "../constants.js";
 import { CARD_CONFIGS, CHARACTERISTICS, DEFENSES, PERSONALITY, profMark, signed } from "../core/overview.js";
 import { readAbilities, readBiography, readDefenses, readSenses, readSkills, readTools } from "../integrations/dnd5e.js";
+import { unwrapSecrets } from "./html.js";
 import { damageChip } from "./tooltips.js";
 
 const PARTIALS = `modules/${MODULE_ID}/templates/window`;
@@ -55,9 +56,9 @@ export async function buildBiographyContext(actor) {
     characteristics: full ? CHARACTERISTICS.map(field) : null,
     personality: full ? PERSONALITY.map((key) => ({ ...field(key), wide: key === "appearance" })) : null,
     biography,
-    enriched: await foundry.applications.ux.TextEditor.implementation.enrichHTML(biography, {
+    enriched: unwrapSecrets(await foundry.applications.ux.TextEditor.implementation.enrichHTML(biography, {
       relativeTo: actor, secrets: actor.isOwner, rollData: actor.getRollData?.()
-    })
+    }))
   };
 }
 

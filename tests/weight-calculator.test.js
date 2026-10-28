@@ -65,6 +65,21 @@ describe("computeActorCapacity", () => {
       flags: { dnd5e: { powerfulBuild: true } }
     };
     assert.equal(computeActorCapacity(powerful, "lb").max, 300);
+    // One size up from Small is Medium, which carries the same.
+    powerful.system.traits.size = "sm";
+    assert.equal(computeActorCapacity(powerful, "lb").max, 150);
+  });
+
+  it("reports dnd5e's metric block in the unit asked for", () => {
+    globalThis.game = { settings: { get: (scope, key) => key === "metricWeightUnits" } };
+    try {
+      const actor = { system: { attributes: { encumbrance: { value: 30, max: 112.5 } } }, items: new Map() };
+      const enc = computeActorEncumbrance(actor, { unit: "lb" });
+      assert.equal(enc.max, Number(convertWeight(112.5, "kg", "lb").toFixed(1)));
+      assert.equal(enc.value, Number(convertWeight(30, "kg", "lb").toFixed(1)));
+    } finally {
+      delete globalThis.game;
+    }
   });
 
   it("prefers the encumbrance block dnd5e derives", () => {

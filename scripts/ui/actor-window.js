@@ -62,7 +62,7 @@ import { bindInventoryDrag } from "./inventory-drag.js";
 import { morph } from "./morph.js";
 import { equipItemToSlot, toggleAttunement, toggleItemEquipped, unequipItem, useItem } from "./item-actions.js";
 import { setActorPaperdollTemplate } from "../core/paperdoll-templates.js";
-import { WEIGHTY_CONTAINERS_MODULE_ID, openWeightyContainersDialog } from "../integrations/weighty-containers.js";
+import { CONTAINER_RULES_HOOK, openWeightyContainersDialog } from "../integrations/weighty-containers.js";
 import { styleScItemRows } from "../integrations/sc-rarity-colors.js";
 import { SETTLE, glide, glideFrom, measure } from "./motion.js";
 import { readMotionCaps, schemeIsLight, stampTheme } from "./theme-root.js";
@@ -74,6 +74,33 @@ const TEMPLATES = `modules/${MODULE_ID}/templates/window`;
 
 /** Open windows, keyed by actor UUID (a token actor gets its own window). */
 const OPEN_WINDOWS = new Map();
+
+// Uses waiting on dnd5e, whose dialog may stay open: a warning or error meanwhile marks each one refused. One wrapper
+// for all of them, so two uses closed in either order leave the real methods in place.
+const watchedUses = new Set();
+let realNotices = null;
+
+function watchNotices(use) {
+  if (!watchedUses.size) {
+    const notifications = ui.notifications;
+    realNotices = { warn: notifications.warn, error: notifications.error };
+    for (const kind of ["warn", "error"]) {
+      notifications[kind] = (...args) => {
+        for (const watched of watchedUses) watched.refused = true;
+        return realNotices[kind].apply(notifications, args);
+      };
+    }
+  }
+  watchedUses.add(use);
+}
+
+function unwatchNotices(use) {
+  watchedUses.delete(use);
+  if (!watchedUses.size && realNotices) {
+    Object.assign(ui.notifications, realNotices);
+    realNotices = null;
+  }
+}
 
 /** Bursts of document hooks become one render. */
 const RENDER_COALESCE_MS = 40;
@@ -263,7 +290,9 @@ export class ActorWindow extends WindowBase {
     for (const tab of tabs) tab.active = tab.id === this.tab;
     const selected = this.selected ? actor.items.get(this.selected) : null;
     if (!selected) this.selected = this.selectedKey = null;
-    const detail = selected ? await buildItemDetail(selected, { canEdit: this.canEdit }) : null;
+    // A redraw without the tabs or the inspector (an HP tick) skips their rows, the details and the biography.
+    const body = options.parts?.some((part) => part === "main" || part === "inspector") ?? true;
+    const detail = body && selected ? await buildItemDetail(selected, { canEdit: this.canEdit }) : null;
     const favIds = favoriteItemIds(actor);
     const trade = buildTradeContext(actor, { canEdit: this.canEdit, open: this.tradeOpen, draft: this.tradeDraft,
       askRestore: this.tradeAskRestore, dismissed: this.tradeDismissed, seen: this.tradeSeen, error: this.tradeError });
@@ -271,8 +300,8 @@ export class ActorWindow extends WindowBase {
     return {
       trade,
       tradeLock: ["executing", "recovery"].includes(sessionFor(actor.id)?.status),
-      offerRows: Object.fromEntries(actor.items.map((item) => [item.id, offerButton(trade, item)]).filter(([, state]) => state)),
-      newItems: Object.fromEntries(actor.items.filter(isNewItem).map((item) => [item.id, true])),
+      offerRows: body ? Object.fromEntries(actor.items.map((item) => [item.id, offerButton(trade, item)]).filter(([, state]) => state)) : {},
+      newItems: body ? Object.fromEntries(actor.items.filter(isNewItem).map((item) => [item.id, true])) : {},
       ...(await super._prepareContext(options)),
       actor,
       canEdit: this.canEdit,
@@ -293,7 +322,7 @@ export class ActorWindow extends WindowBase {
       settings: this.#settingsContext(),
       hpEditing: this.hpEditing,
       hpDraft: this.hpDraft,
-      inv: await buildEquipmentContext(actor, {
+      inv: body && await buildEquipmentContext(actor, {
         prefs: getSetting("listPrefs"),
         query: this.query,
         collapsed: this.collapsed,
@@ -305,8 +334,8 @@ export class ActorWindow extends WindowBase {
         canEdit: this.canEdit,
         folds: getSetting("trayFolds") ?? {}
       }),
-      inspector: selected ? buildInspector(selected, detail) : null,
-      spells: this.#hasSpells() ? buildSpellsContext(actor, {
+      inspector: body && selected ? buildInspector(selected, detail) : null,
+      spells: body && this.#hasSpells() ? buildSpellsContext(actor, {
         prefs: getSetting("listPrefs"),
         query: this.spellQuery,
         selectedKey: this.selectedKey,
@@ -318,7 +347,7 @@ export class ActorWindow extends WindowBase {
       prepWarning: preparationWarning(actor),
       favorites: await buildFavoritesContext(actor, { canEdit: this.canEdit }),
       canFavorite: hasFavorites(actor) && this.canEdit,
-      features: buildFeaturesContext(actor, {
+      features: body && buildFeaturesContext(actor, {
         prefs: getSetting("listPrefs"),
         query: this.featureQuery,
         selectedKey: this.selectedKey,
@@ -330,9 +359,9 @@ export class ActorWindow extends WindowBase {
         usesDraft: this.usesDraft
       }),
       effects: await buildEffectsContext(actor, { open: this.effectOpen, canFavorite: hasFavorites(actor) && this.canEdit }),
-      overview: hasOverview(actor) ? buildOverviewContext(actor, { canFavorite: hasFavorites(actor) && this.canEdit }) : null,
-      bio: await buildBiographyContext(actor),
-      doll: buildDollContext(actor, { canEdit: this.canEdit, selected: this.selected, hidden: Boolean(getSetting("dollHidden")) }),
+      overview: body && hasOverview(actor) ? buildOverviewContext(actor, { canFavorite: hasFavorites(actor) && this.canEdit }) : null,
+      bio: body && await buildBiographyContext(actor),
+      doll: body && buildDollContext(actor, { canEdit: this.canEdit, selected: this.selected, hidden: Boolean(getSetting("dollHidden")) }),
       ...buildRailContext(actor, { canEdit: this.canEdit, hasSpells: this.#hasSpells(), hiddenBlocks: getSetting("hiddenRailBlocks") ?? [] })
     };
   }
@@ -431,6 +460,8 @@ export class ActorWindow extends WindowBase {
     this.#hook("updateActor", (actor, changes) => mine(actor) && this.#queueRender(actor === this.actor ? partsForActorChange(changes) : null));
     // A transformed actor is deleted when it reverts; its window goes with it.
     this.#hook("deleteActor", (actor) => actor?.uuid === this.actorKey && this.close());
+    // An unlinked token's actor goes with its token, and no deleteActor says so.
+    this.#hook("deleteToken", (token) => this.actorKey.startsWith(`${token.uuid}.`) && this.close());
     for (const name of ["createItem", "updateItem", "deleteItem"]) this.#hook(name, (doc) => mine(doc) && rerender());
     for (const name of ["createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) {
       this.#hook(name, (effect) => mine(effect) && this.#queueRender(partsForEffectChange({
@@ -448,7 +479,7 @@ export class ActorWindow extends WindowBase {
       this.renderTrade();
     });
     // Weighty Containers announces a rules change on its own hook; the trays' bands and reductions follow.
-    this.#hook(`${WEIGHTY_CONTAINERS_MODULE_ID}.updateContainerRules`, rerender);
+    this.#hook(CONTAINER_RULES_HOOK, rerender);
     // Placing a spell template minimises the window; it comes back once the template is placed or cancelled.
     this.#hook("dnd5e.createActivityTemplate", (activity) => activity?.actor?.uuid === this.actorKey && this.#awaitTemplate());
     this.#hook(REST_HOOK, (actor, result, config) => actor?.uuid === this.actorKey && config?.type === "long" && playLongRest(this.element));
@@ -560,7 +591,8 @@ export class ActorWindow extends WindowBase {
         if (event.key === "Enter") { event.preventDefault(); this.#applyHp(input.value); }
         else if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); this.#cancelHp(); }
       });
-      input.addEventListener("blur", () => this.hpEditing && this.#cancelHp());
+      // A rail redraw from another client takes the field away; only leaving it cancels the entry.
+      input.addEventListener("blur", () => input.isConnected && this.hpEditing && this.#cancelHp());
     }
     el.querySelector('[data-action="editHp"]')?.addEventListener("contextmenu", (event) => {
       event.preventDefault();
@@ -645,7 +677,8 @@ export class ActorWindow extends WindowBase {
     clearInterval(this._templateWatch);
     clearTimeout(this._castSchoolTimer);
     clearInterval(this._glints);
-    OPEN_WINDOWS.delete(this.actorKey);
+    // A window opened twice in a row must not drop the entry of the one that stays.
+    if (OPEN_WINDOWS.get(this.actorKey) === this) OPEN_WINDOWS.delete(this.actorKey);
     super._onClose(options);
   }
 
@@ -659,13 +692,16 @@ export class ActorWindow extends WindowBase {
     this._renderTimer = setTimeout(() => {
       const queued = this._queuedParts;
       this._queuedParts = undefined;
-      if (!this.rendered) return;
-      if (queued) return this.render({ parts: queued });
-      // A biography field being typed in, or the open editor, would be redrawn away: the main part waits for it.
-      if (!this.#editingBio()) return this.render();
-      this._mainStale = true;
-      this.render({ parts: ["rail", "inspector", "drawer"] });
+      if (this.rendered) this.#renderAroundBio(queued);
     }, RENDER_COALESCE_MS);
+  }
+
+  /** Renders these parts, all when none are named; a biography being typed in holds the main part back. */
+  #renderAroundBio(parts) {
+    if (!this.#editingBio()) return this.render(parts ? { parts } : undefined);
+    this._mainStale = true;
+    const rest = (parts ?? ["rail", "inspector", "drawer"]).filter((part) => part !== "main");
+    if (rest.length) this.render({ parts: rest });
   }
 
   #editingBio() {
@@ -984,7 +1020,7 @@ export class ActorWindow extends WindowBase {
 
   /** Redraws the panel and the rows whose offer buttons follow the draft. */
   renderTrade() {
-    if (this.rendered) this.render({ parts: ["trade", "main"] });
+    if (this.rendered) this.#renderAroundBio(["trade", "main"]);
   }
 
   #tradeSession() {
@@ -1015,12 +1051,13 @@ export class ActorWindow extends WindowBase {
   }
 
   /** Toggles this side's confirmation; confirming is accepting, the coordinator moves the assets once both did. */
-  static #onTradeConfirm() {
+  static #onTradeConfirm(event, target) {
     const session = this.#tradeSession();
     if (!session || this.tradeDraft.pending) return;
     const side = session.actors.indexOf(this.actor.id);
     if (session.confirmed[side]) return this.#tradeRequest("unconfirm", { sessionId: session.id });
-    return this.#tradeRequest("confirm", { sessionId: session.id, revision: session.revision });
+    // The revision drawn on the button: an offer changed a moment ago and not yet redrawn is not what was accepted.
+    return this.#tradeRequest("confirm", { sessionId: session.id, revision: Number(target.dataset.revision) });
   }
 
   /** Nothing has moved yet, so both sides leave at once without a dialog. */
@@ -1031,8 +1068,19 @@ export class ActorWindow extends WindowBase {
 
   static #onTradeQty(event, target) {
     const id = target.dataset.id;
+    const item = this.actor.items.get(id);
+    if (!item) return this.#dropFromOffer(id);
     const current = this.tradeDraft.offer.items.find((e) => e.id === id)?.quantity ?? 0;
-    this.offerItem(this.actor.items.get(id), current + Number(target.dataset.step), { absolute: true });
+    this.offerItem(item, current + Number(target.dataset.step), { absolute: true });
+  }
+
+  /** An item used up or deleted since it was offered can only leave the offer. */
+  #dropFromOffer(id) {
+    const session = this.#tradeSession();
+    if (!session || session.status !== "open" || game.user.isGM || !this.canEdit) return;
+    this.tradeDraft.sync(session, session.actors.indexOf(this.actor.id));
+    this.tradeDraft.change(offerWithQuantity(this.tradeDraft.offer, id, 0, 0));
+    this.renderTrade();
   }
 
   /** The row's button offers one more of the item; the tile flies into the panel. */
@@ -1048,6 +1096,7 @@ export class ActorWindow extends WindowBase {
   offerItem(item, quantity, { absolute = false } = {}) {
     const session = this.#tradeSession();
     if (!item || !session || session.status !== "open" || game.user.isGM || !this.canEdit) return;
+    if (session.users[session.actors.indexOf(this.actor.id)] !== game.user.id) return;
     // The draft follows this trade before it changes, or the first redraw after a start would drop the edit.
     this.tradeDraft.sync(session, session.actors.indexOf(this.actor.id));
     const draft = this.tradeDraft.offer;
@@ -1066,6 +1115,7 @@ export class ActorWindow extends WindowBase {
       // A field cleared to type a new number is not yet a 0 that takes the item out.
       if (input.value === "") return;
       const item = this.actor.items.get(input.dataset.offerQty);
+      if (!item) return this.#dropFromOffer(input.dataset.offerQty);
       this.tradeDraft.change(offerWithQuantity(draft, item.id, input.value, Number(item.system?.quantity ?? 1)));
       return this.render({ parts: ["trade"] });
     }
@@ -1264,7 +1314,9 @@ export class ActorWindow extends WindowBase {
     el.addEventListener("focusout", (event) => {
       if (event.target.dataset?.coinInput && this.coinEditing) this.#cancelCoin();
       if (event.target.matches?.("[data-uses-input]") && this.usesEditing) this.#cancelUses();
-      if (event.target.name === this._searching && event.relatedTarget) this._searching = null;
+      // Focus left for another control or for the canvas (the field is still there); only a redraw that took the
+      // field away keeps the search to give it back.
+      if (event.target.name === this._searching && (event.relatedTarget || event.target.isConnected)) this._searching = null;
       if (event.target.matches?.("[data-bio-field]")) this.#catchUpBio();
     });
     el.addEventListener("close", (event) => event.target.matches?.("[data-bio-editor]") && this.#catchUpBio(), { capture: true });
@@ -1673,19 +1725,15 @@ export class ActorWindow extends WindowBase {
   }
 
   async #useWithRefusal(item, target, event) {
-    const notifications = ui.notifications;
-    const { warn, error } = notifications;
-    let refused = false;
-    notifications.warn = (...args) => { refused = true; return warn.apply(notifications, args); };
-    notifications.error = (...args) => { refused = true; return error.apply(notifications, args); };
+    const use = { refused: false };
+    watchNotices(use);
     let result;
     try {
       result = await item.use({ event });
     } finally {
-      notifications.warn = warn;
-      notifications.error = error;
+      unwatchNotices(use);
     }
-    if (!result && refused) {
+    if (!result && use.refused) {
       const holder = this.element.querySelector(`[data-key="${target.closest("[data-key]")?.dataset.key}"]`);
       this.#shake(holder?.querySelector("[data-row]") ?? holder);
     }
@@ -1875,19 +1923,34 @@ export function openActorWindow(actor) {
   // The API, macros included, honours Observer like the sheet button and the key.
   if (!isSupportedActor(actor) || !canViewActor(actor, game.user)) return null;
   const key = actor.uuid ?? actor.id;
-  const open = OPEN_WINDOWS.get(key);
+  const open = liveWindow(key);
   if (open) {
-    open.bringToFront?.();
-    open.maximize?.();
+    // One still preparing its first render comes up by itself.
+    if (open.rendered) {
+      open.bringToFront?.();
+      open.maximize?.();
+    }
     return open;
   }
   const app = new ActorWindow(actor);
+  // Registered before the first render: a second click while it prepares finds this window, not a new one.
+  OPEN_WINDOWS.set(key, app);
   app.render({ force: true });
   return app;
 }
 
 export function toggleActorWindow(actor) {
-  const open = OPEN_WINDOWS.get(actor?.uuid ?? actor?.id);
-  if (open) return open.close();
+  const open = liveWindow(actor?.uuid ?? actor?.id);
+  // A second press while the first window is still preparing leaves it be.
+  if (open) return open.rendered ? open.close() : open;
   return openActorWindow(actor);
+}
+
+/** The registered window, unless its first render failed or it closed without saying so. */
+function liveWindow(key) {
+  const open = OPEN_WINDOWS.get(key);
+  // ApplicationV2 states: NONE 0, RENDERING 1, RENDERED 2; closing, closed and failed ones are negative.
+  if (open && !(open.state < 0)) return open;
+  OPEN_WINDOWS.delete(key);
+  return null;
 }

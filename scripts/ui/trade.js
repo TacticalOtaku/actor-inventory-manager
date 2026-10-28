@@ -173,7 +173,8 @@ export function buildTradeContext(actor, state) {
   }
 
   state.draft.sync(session, side);
-  const editable = !isGM && session.status === "open" && ownsActor(actor, game.user);
+  // A co-owner of the actor sees the trade, but only the player who joined it with this actor acts in it.
+  const editable = !isGM && session.status === "open" && ownsActor(actor, game.user) && session.users[side] === game.user.id;
   const draft = editable ? state.draft.offer : session.offers[side];
   const status = tradeStatus(session, side, { sending: editable && state.draft.pending });
   const { allowed, reasons } = offerability(actor);

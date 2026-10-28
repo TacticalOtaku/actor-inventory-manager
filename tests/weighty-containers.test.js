@@ -9,8 +9,7 @@ import {
   getWeightyContainersApi,
   isWeightyContainersActive,
   parseTokenList,
-  validateContainerDrop,
-  watchContainerRules
+  validateContainerDrop
 } from "../scripts/integrations/weighty-containers.js";
 
 /**
@@ -198,19 +197,5 @@ describe("rules config", () => {
   it("returns null for a container the module never touched", () => {
     stubRuntime({ api: {} });
     assert.equal(getContainerRulesConfig({ flags: {} }), null);
-  });
-});
-
-describe("watchContainerRules", () => {
-  it("subscribes to the module's own hook", () => {
-    const registered = [];
-    globalThis.Hooks = { on: (name, fn) => { registered.push([name, fn]); return 7; } };
-    const fn = () => {};
-    assert.equal(watchContainerRules(fn), 7);
-    assert.deepEqual(registered, [[`${WEIGHTY_CONTAINERS_MODULE_ID}.updateContainerRules`, fn]]);
-  });
-
-  it("is a no-op outside Foundry", () => {
-    assert.equal(watchContainerRules(() => {}), null);
   });
 });

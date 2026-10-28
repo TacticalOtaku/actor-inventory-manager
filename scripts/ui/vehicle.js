@@ -10,7 +10,7 @@ const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localiz
 // shortcut: free places draw at most this many placeholders; a galleon's hundred deckhands show as a count instead.
 const MAX_FREE_DRAWN = 12;
 
-export const readVehicleOf = (actor) => readVehicle(actor, { metric: Boolean(game.settings.get("dnd5e", "metricWeightUnits")) });
+export const readVehicleOf = (actor) => readVehicle(actor);
 
 /** One aboard: a portrait to open, or «Неизвестный» for an actor the viewer may not see (or one that is gone). */
 function member(uuid) {

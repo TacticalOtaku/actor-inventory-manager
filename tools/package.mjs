@@ -6,7 +6,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
-import { presentEntries, readJson, root } from "./package-files.mjs";
+import { PACKAGE_ENTRIES, presentEntries, readJson, root } from "./package-files.mjs";
 import { archiveName, validateManifest } from "./release-manifest.mjs";
 import { createZip } from "./zip.mjs";
 
@@ -15,7 +15,8 @@ const manifest = await readJson("module.json");
 const problems = validateManifest(manifest, {
   version: pkg.version,
   repository: manifest.url ?? "",
-  exists: (file) => existsSync(join(root, file)),
+  // A listed file must exist and be one the archive takes: a path outside the package entries would be missing.
+  exists: (file) => PACKAGE_ENTRIES.some((entry) => file === entry || file.startsWith(`${entry}/`)) && existsSync(join(root, file)),
 });
 if (problems.length) {
   console.error(`module.json is not releasable:\n  - ${problems.join("\n  - ")}`);
@@ -25,7 +26,8 @@ if (problems.length) {
 async function listFiles(path) {
   const entries = await readdir(path, { withFileTypes: true }).catch(() => null);
   if (!entries) return [path];
-  const nested = await Promise.all(entries.map((entry) => listFiles(join(path, entry.name))));
+  // Dotfiles (a Finder .DS_Store) are never part of the module.
+  const nested = await Promise.all(entries.filter((entry) => !entry.name.startsWith(".")).map((entry) => listFiles(join(path, entry.name))));
   return nested.flat();
 }
 

@@ -92,16 +92,20 @@ async function save(state) {
   // Keep sessions in start order (the drawer shows an actor's last one); drop only the oldest finished ones.
   const expired = new Set(state.sessions.filter(s => !ACTIVE.has(s.status)).slice(0, -30));
   state.sessions = state.sessions.filter(s => !expired.has(s));
+  // A finished offer needs no fingerprints; older ones hold whole items, unidentified names and texts included.
+  for (const session of state.sessions.filter(s => !ACTIVE.has(s.status))) {
+    for (const offer of session.offers ?? []) for (const item of offer.items ?? []) delete item.fingerprint;
+  }
   await game.settings.set(MODULE_ID, TRADE_STATE, state);
 }
 
 async function settle(state, session) {
   const actors = session.actors.map(id => game.actors.get(id));
-  actors.forEach((actor, side) => {
+  for (const [side, actor] of actors.entries()) {
     const user = game.users.get(session.users[side]);
     if (!user?.active || !isTradeActor(actor) || !ownsActor(actor, user)) throw tradeError("permission");
-    validateStoredOffer(actor, session.offers[side], session.signature);
-  });
+    await validateStoredOffer(actor, session.offers[side], session.signature);
+  }
   if (session.offers.every(o => !o.items.length && !Object.keys(o.money).length)) throw tradeError("empty");
   // Publish the lock before capturing the baseline. A stopped preparation has no debits.
   session.status = "executing";
@@ -140,7 +144,7 @@ async function settle(state, session) {
       LOG.warn("Trade snapshot differs before transfer", { tradeId: session.id, changes });
       throw tradeError("changed");
     }
-    actors.forEach((actor, side) => validateStoredOffer(actor, session.offers[side], session.signature));
+    for (const [side, actor] of actors.entries()) await validateStoredOffer(actor, session.offers[side], session.signature);
     transferStarted = true;
     await executeTransfer(actors, session, assertCoordinator);
     session.status = "complete";
@@ -230,10 +234,19 @@ export async function processTradeRequest(request, userId) {
         session.status = "executing";
         session.gmId = game.user.id;
         await save(state);
-        for (const snapshot of recovery.snapshots) {
-          const participant = game.actors.get(snapshot.actorId);
-          if (!isTradeActor(participant)) throw tradeError("permission");
-          await restoreInventory(participant, snapshot, assertCoordinator);
+        try {
+          // The GM confirmed the restore: an actor deleted since is skipped, one no longer player-owned is restored too.
+          for (const snapshot of recovery.snapshots) {
+            const participant = game.actors.get(snapshot.actorId);
+            if (participant) await restoreInventory(participant, snapshot, assertCoordinator);
+          }
+        } catch (restoreError) {
+          // The lock must not outlive a failed restore: back to «recovery», so the GM may try again.
+          if (isCoordinator()) {
+            session.status = "recovery";
+            await save(state);
+          }
+          throw restoreError;
         }
         session.status = "failed";
         session.error = "AIM.trade.errors.rolledBack";
@@ -245,9 +258,9 @@ export async function processTradeRequest(request, userId) {
         if (request.action === "cancel") Object.assign(session, { status: "cancelled", cancelledBy: side });
         else if (request.action === "offer") {
           if (request.revision !== session.revision) throw tradeError("stale");
-          changeOffer(session, side, normalizeOffer(actor, request.offer, session.signature));
+          changeOffer(session, side, await normalizeOffer(actor, request.offer, session.signature));
         } else if (request.action === "confirm") {
-          validateStoredOffer(actor, session.offers[side], session.signature);
+          await validateStoredOffer(actor, session.offers[side], session.signature);
           if (confirmOffer(session, side, request.revision)) await settle(state, session);
         } else if (request.action === "unconfirm") session.confirmed[side] = false;
         else throw tradeError("request");

@@ -43,7 +43,8 @@ const CHANGE_MARKS = { multiply: " ×", upgrade: " ≥ ", downgrade: " ≤ " };
 /** «КД +1», «Вес ×2», «Телосложение: 19»: a change as its label and what it does by its type. */
 export function changeText({ type, value }, label) {
   const text = String(value ?? "").trim();
-  if (type === "add") return `${label} ${text.startsWith("-") ? `−${text.slice(1)}` : `+${text}`}`;
+  // A formula may carry its own sign («+1d4»); it gets one sign, not two.
+  if (type === "add") return `${label} ${text.startsWith("-") ? `−${text.slice(1)}` : `+${text.replace(/^\+/, "")}`}`;
   if (CHANGE_MARKS[type]) return `${label}${CHANGE_MARKS[type]}${text}`;
   return `${label}: ${text}`;
 }

@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { MODULE_ID } from "../constants.js";
-import { VIEWS, listPrefsFor } from "../core/inventory.js";
+import { VIEWS, VIEW_ICONS, listPrefsFor } from "../core/inventory.js";
 import { SPELL_FILTERS, castable, groupSpellbook, preparationState, ready as isReady } from "../core/spellbook.js";
 import { extractSpellSlots, readSpellPreparation, readSpellbook } from "../integrations/dnd5e.js";
 import { scSchoolColor } from "../integrations/sc-rarity-colors.js";
@@ -14,7 +14,6 @@ export const SPELL_TEMPLATES = ["spells", "spell-row"].map((name) => `${PARTIALS
 
 /** More uses than this show as a counter instead of pips. */
 const MAX_USE_PIPS = 8;
-const VIEW_ICONS = { list: "fa-list", grid: "fa-grid-2", icons: "fa-grid" };
 
 const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 
@@ -72,7 +71,7 @@ export function buildSpellsContext(actor, state) {
       ritualOnly: !ready && s.ritual,
       castLabel: t(!ready && s.ritual ? "AIM.window.spells.castRitual" : "AIM.window.spells.cast"),
       unprepared: section !== "prep" && s.level > 0 && !ready && !["innate", "atwill"].includes(s.method),
-      showPrepare: state.canEdit && s.canPrepare && s.prepared < 2,
+      showPrepare: state.canEdit && s.canPrepare,
       prepareLabel: t(s.prepared >= 1 ? "AIM.window.spells.unprepare" : "AIM.window.spells.prepare"),
       always: s.prepared >= 2,
       materialsTip: s.materials ? (s.materials.cost ? t("AIM.window.spells.materialsCost", { text: s.materials.text, cost: s.materials.cost }) : s.materials.text) : "",

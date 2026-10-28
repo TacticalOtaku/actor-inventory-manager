@@ -1,9 +1,12 @@
 /* AIM: Actor Window - the paperdoll: figure, slots, attunement sockets, slotless strip, hold banner */
 
-/* the doll sits left of the inventory from 700 px of tab width, otherwise centred above it */
+/* the doll sits left of the inventory from 700 px of tab width; narrower, it is a full-width card above it like
+   the sections, its content centred at the figure's width */
 .aim-equipment { container: equip / inline-size; }
 .aim-equip { display: grid; gap: var(--s4); align-items: start; }
-.aim-equip.has-doll > .aim-doll { justify-self: center; }
+@container equip (width < 700px) {
+  .aim-equip.has-doll > .aim-doll { width: auto; padding-inline: max(var(--s3), calc(50% - 140px)); }
+}
 @container equip (min-width: 700px) {
   .aim-equip.has-doll { grid-template-columns: max-content minmax(0, 1fr); }
   .aim-equip.has-doll > .aim-doll { position: sticky; top: 0; justify-self: start; }

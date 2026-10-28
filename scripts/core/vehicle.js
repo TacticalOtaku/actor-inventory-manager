@@ -3,19 +3,6 @@
 // ─────────────────────────────────────────────────────────
 
 /**
- * A weight from one unit to another by dnd5e's factors (how many pounds a unit holds); null without both factors.
- * @param {number} value
- * @param {string} from
- * @param {string} to
- * @param {Record<string, number>} factors
- */
-export function convertWeight(value, from, to, factors) {
-  const a = Number(factors?.[from]);
-  const b = Number(factors?.[to]);
-  return a > 0 && b > 0 ? (Number(value) || 0) * a / b : null;
-}
-
-/**
  * The cargo meter: load against capacity, the bar's share (0…1) and whether the load is over; without a capacity
  * there is no bar to fill.
  * @param {number} load

@@ -3,10 +3,9 @@
 // ─────────────────────────────────────────────────────────
 
 // (rarity + school colours are resolved through the sc-rarity-colors adapter)
-import { countAttunedItems, getActorAttunementMax, getAttunementStatus } from "../core/attunement.js";
+import { countAttunedItems, getActorAttunementMax, getAttunementStatus, isItemAttuned } from "../core/attunement.js";
 import { PHYSICAL_ITEM_TYPES, canItemBeEquipped } from "../core/item-classifier.js";
-import { convertWeight } from "../core/vehicle.js";
-import { getItemWeightInUnit, getSystemWeightUnit, num } from "../core/weight-calculator.js";
+import { convertWeight, getItemWeightInUnit, getSystemWeightUnit, num } from "../core/weight-calculator.js";
 import { computeActorCurrency } from "./item-piles.js";
 import { getItemRarityVisuals } from "./sc-rarity-colors.js";
 
@@ -94,7 +93,8 @@ export function extractActorVitals(actor) {
   for (const k of abilityKeys) {
     const ab = system.abilities?.[k] ?? {};
     const mod = num(ab.mod, 0);
-    const save = num(ab.save, mod);
+    // 5.3.3 keeps the save as { value }.
+    const save = num(ab.save?.value ?? ab.save, mod);
     abilities[k] = {
       value: num(ab.value, 10),
       mod: mod >= 0 ? `+${mod}` : `${mod}`,
@@ -380,9 +380,8 @@ export function readVehicleHold(actor) {
  * `passengers` are {max, value: actor UUIDs}, `draft.value` actor UUIDs without a maximum; older worlds keep
  * `cargo.crew` / `cargo.passengers` as {name, quantity} rows.
  * @param {Object} actor
- * @param {{metric?: boolean}} [options]  whether dnd5e weighs in metric units
  */
-export function readVehicle(actor, { metric = false } = {}) {
+export function readVehicle(actor) {
   if (actor?.type !== "vehicle") return null;
   const config = getDnd5eConfig();
   const system = actor.system ?? {};
@@ -396,7 +395,6 @@ export function readVehicle(actor, { metric = false } = {}) {
   const units = travel.units ?? "mph";
   const capacity = attributes.capacity?.cargo ?? {};
   const capUnit = capacity.units || "tn";
-  const factors = Object.fromEntries(Object.entries(config.weightUnits ?? {}).map(([key, unit]) => [key, unit?.conversion]));
   const loadRaw = num(attributes.encumbrance?.value, 0);
   const group = (part) => ({ max: num(part?.max, 0) || null, uuids: [...(part?.value ?? [])].filter(Boolean) });
   const legacy = (kind) => [...(system.cargo?.[kind] ?? [])].filter((row) => row?.name).map((row) => ({ kind, name: row.name, quantity: num(row.quantity, 1) }));
@@ -411,7 +409,7 @@ export function readVehicle(actor, { metric = false } = {}) {
     mt: num(attributes.hp?.mt, 0) || null,
     speed: { value: num(travel.speeds?.[type], 0), unit: abbreviation ? localizeOr(abbreviation, abbreviation) : units },
     cargo: {
-      load: convertWeight(loadRaw, metric ? "kg" : "lb", capUnit, factors) ?? loadRaw,
+      load: convertWeight(loadRaw, getSystemWeightUnit(), capUnit),
       capacity: Number.isFinite(Number(capacity.value)) && capacity.value !== null ? Number(capacity.value) : null,
       unit: unitAbbreviation("weightUnits", capUnit)
     },
@@ -493,7 +491,7 @@ export function readSpellbook(actor) {
       prepared: num(system.prepared, 0),
       // A class without a preparation limit (no formula, a 2014 warlock or sorcerer) knows its spells instead.
       known: knownByClass(actor, system.classIdentifier),
-      canPrepare: resolveSpellPreparation(item).canPrepare && !knownByClass(actor, system.classIdentifier),
+      canPrepare: hasPreparationToggle(item, actor),
       ritual: properties.has("ritual"),
       concentration: properties.has("concentration"),
       activation: system.activation?.type ?? "",
@@ -512,10 +510,11 @@ export function readSpellbook(actor) {
  * that prepares (dnd5e 5.3.3 `CONFIG.DND5E.spellcasting[method].prepares`), not always prepared (`prepared` 2), and
  * of a class with a preparation limit.
  * @param {Object} item
+ * @param {Object} [actor]  the spell's owner, its parent by default
  */
-export function hasPreparationToggle(item) {
+export function hasPreparationToggle(item, actor = item?.actor) {
   const preparation = resolveSpellPreparation(item);
-  return preparation.canPrepare && !preparation.isAlways && !knownByClass(item?.actor, item?.system?.classIdentifier);
+  return preparation.canPrepare && !preparation.isAlways && !knownByClass(actor, item?.system?.classIdentifier);
 }
 
 /** Whether the spell's class has no preparation limit, so its spells are known rather than prepared. */
@@ -666,7 +665,7 @@ export function readEffects(actor, { isGM = false } = {}) {
       disabled: Boolean(effect.disabled),
       suppressed,
       suppressedBy: !suppressed ? null : item?.system?.equipped === false ? "unequipped"
-        : item?.system?.attunement === "required" && !item.system.attuned ? "unattuned" : "other",
+        : item?.system?.attunement === "required" && !isItemAttuned(item) ? "unattuned" : "other",
       temporary: Boolean(effect.isTemporary),
       statuses: [...(effect.statuses ?? [])],
       onActor: effect.parent === actor,
@@ -736,7 +735,8 @@ export async function readCardData(doc) {
       stat("save", labels.save),
       doc.system?.armor?.value ? stat("armor", doc.system.armor.value) : null,
       data.uses?.max ? stat("uses", `${num(data.uses.value, 0)} / ${num(data.uses.max, 0)}`) : null,
-      num(data.weight?.value, 0) ? stat("weight", `${data.weight.value} ${unitAbbreviation("weightUnits", data.weight.units || "lb")}`) : null,
+      // One item's weight, in the world's unit like the rows (dnd5e's card keeps the item's own unit).
+      num(data.weight?.value, 0) ? stat("weight", `${Number(convertWeight(data.weight.value, data.weight.units || "lb", getSystemWeightUnit()).toFixed(2))} ${unitAbbreviation("weightUnits", getSystemWeightUnit())}`) : null,
       num(data.price?.value, 0) ? stat("price", `${data.price.value} ${localizeOr(currency?.abbreviation, currency?.abbreviation ?? data.price.denomination ?? "")}`) : null,
       attunement ? stat("attunement", attunement) : null
     ].filter(Boolean);
@@ -749,7 +749,7 @@ export async function readCardData(doc) {
       properties: [...(data.tags ?? []), ...(data.properties ?? [])].filter((p) => typeof p === "string" && p),
       stats,
       damages,
-      attuned: Boolean(doc.system?.attuned),
+      attuned: isItemAttuned(doc),
       school: doc.type === "spell" ? data.school ?? doc.system?.school ?? null : null,
       rarity: doc.type === "spell" ? null : doc.system?.rarity || "common"
     };
@@ -1058,9 +1058,9 @@ export function resolveItemActivation(item) {
 }
 
 /**
- * Resolve limited-use and recharge state. Recharge is a `uses.recovery` entry.
+ * Resolve limited-use state from dnd5e's max/spent pair.
  * @param {Object} item
- * @returns {{ hasUses: boolean, usesDisplay: string, hasRecharge: boolean, rechargeDisplay: string, isCharged: boolean }}
+ * @returns {{ hasUses: boolean, usesDisplay: string }}
  */
 export function resolveItemUses(item) {
   const system = item?.system ?? {};
@@ -1068,20 +1068,7 @@ export function resolveItemUses(item) {
   const max = num(uses.max, 0);
   const value = num(uses.value, Math.max(0, max - num(uses.spent, 0)));
   const hasUses = max > 0;
-
-  const recovery = Array.isArray(uses.recovery) ? uses.recovery : [];
-  const rechargeFormula = recovery.find(entry => entry?.period === "recharge")?.formula;
-  const hasRecharge = Boolean(rechargeFormula);
-  const threshold = num(rechargeFormula, 6);
-
-  return {
-    hasUses,
-    usesDisplay: hasUses ? `${value} / ${max}` : "",
-    hasRecharge,
-    rechargeDisplay: hasRecharge ? `${threshold}${threshold < 6 ? "+" : ""}` : "",
-    // A recharging item is "spent" when it has no uses left.
-    isCharged: value > 0
-  };
+  return { hasUses, usesDisplay: hasUses ? `${value} / ${max}` : "" };
 }
 
 /**
@@ -1097,17 +1084,4 @@ export async function toggleSpellPreparation(spellItem) {
   if (!prep.canPrepare) return;
 
   return spellItem.update({ "system.prepared": prep.prepared >= 1 ? 0 : 1 });
-}
-
-/**
- * How many items a container holds, nested containers and stack quantities included.
- * dnd5e 5.3.3 exposes `system.contentsCount`, a promise for items inside a compendium. Deleting a
- * container with `{ deleteContents: true }` makes dnd5e delete them too; otherwise they stay behind.
- * @param {Object} item
- * @returns {Promise<number>}
- */
-export async function getContainerContentsCount(item) {
-  if (item?.type !== "container") return 0;
-  const count = Number(await item.system?.contentsCount);
-  return Number.isFinite(count) ? count : 0;
 }

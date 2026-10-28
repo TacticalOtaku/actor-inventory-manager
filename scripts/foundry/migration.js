@@ -14,7 +14,7 @@ import {
   quickSlotFavorites,
   worthReporting
 } from "../core/migration.js";
-import { cancelOpenTrades } from "../trade/service.js";
+import { activeGM, cancelOpenTrades } from "../trade/service.js";
 import { LOG } from "./logger.js";
 
 const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
@@ -87,7 +87,8 @@ async function migrateActor(actor, templates) {
  * @param {{force?: boolean}} [options]
  */
 export async function runMigration({ force = false } = {}) {
-  if (!game.user.isGM || game.users.activeGM?.id !== game.user.id) return null;
+  // The trade coordinator, as cancelling the open trades needs it: core's activeGM may be another GM.
+  if (!game.user.isGM || activeGM()?.id !== game.user.id) return null;
   if (!force && !needsMigration(game.settings.get(MODULE_ID, VERSION_KEY))) return null;
   const counts = { actors: 0, items: 0, presets: 0, trades: 0, failures: 0 };
   const templates = foundry.utils.deepClone(game.settings.get(MODULE_ID, "customTemplates") ?? {});

@@ -1,17 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { cargoMeter, convertWeight, seats, weightText } from "../scripts/core/vehicle.js";
-
-const FACTORS = { lb: 1, tn: 2000, kg: 2.5, Mg: 2500 };
+import { cargoMeter, seats, weightText } from "../scripts/core/vehicle.js";
 
 describe("vehicle cargo", () => {
-  it("converts the hold's load into its capacity unit", () => {
-    assert.equal(convertWeight(4000, "lb", "tn", FACTORS), 2);
-    assert.equal(convertWeight(2500, "kg", "Mg", FACTORS), 2.5);
-    assert.equal(convertWeight(10, "lb", "stone", FACTORS), null);
-  });
-
   it("fills the bar against capacity and turns it over capacity", () => {
     assert.deepEqual(cargoMeter(25, 100), { value: 25, max: 100, share: 0.25, over: false });
     assert.deepEqual(cargoMeter(120, 100), { value: 120, max: 100, share: 1, over: true });

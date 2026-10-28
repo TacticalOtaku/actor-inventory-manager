@@ -4,7 +4,7 @@
 
 import { MODULE_ID } from "../constants.js";
 import { FEATURE_FILTERS, groupByAction, groupByOrigin, rechargeLabel } from "../core/features.js";
-import { VIEWS, listPrefsFor } from "../core/inventory.js";
+import { VIEWS, VIEW_ICONS, listPrefsFor } from "../core/inventory.js";
 import { readFeatures, readIdentity } from "../integrations/dnd5e.js";
 
 const PARTIALS = `modules/${MODULE_ID}/templates/window`;
@@ -12,7 +12,6 @@ export const FEATURE_TEMPLATES = ["features", "feature-row"].map((name) => `${PA
 
 /** More uses than this show as a counter instead of pips. */
 const MAX_USE_PIPS = 8;
-const VIEW_ICONS = { list: "fa-list", grid: "fa-grid-2", icons: "fa-grid" };
 const ACTIVATION_KEYS = { action: "action", bonus: "bonus", reaction: "reaction" };
 
 const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));

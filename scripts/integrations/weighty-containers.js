@@ -280,14 +280,5 @@ export async function openWeightyContainersDialog(containerItem) {
   }
 }
 
-/**
- * Re-render open inventory windows when a container's rules change.
- * Weighty Containers announces saves on its own hook; without it the reduction
- * badge and the load meter would only refresh on the next unrelated update.
- * @param {() => void} onChange
- * @returns {number|null} hook id
- */
-export function watchContainerRules(onChange) {
-  if (typeof globalThis.Hooks?.on !== "function") return null;
-  return globalThis.Hooks.on(`${WEIGHTY_CONTAINERS_MODULE_ID}.updateContainerRules`, onChange);
-}
+/** Weighty Containers announces a container's rules change on its own hook. */
+export const CONTAINER_RULES_HOOK = `${WEIGHTY_CONTAINERS_MODULE_ID}.updateContainerRules`;

@@ -42,6 +42,7 @@ describe("effect changes", () => {
   it("read as the label and the change by its type", () => {
     assert.equal(changeText({ type: "add", value: "1" }, "КД"), "КД +1");
     assert.equal(changeText({ type: "add", value: -2 }, "Скорость"), "Скорость −2");
+    assert.equal(changeText({ type: "add", value: "+1d4" }, "Атака"), "Атака +1d4");
     assert.equal(changeText({ type: "multiply", value: "2" }, "Вес"), "Вес ×2");
     assert.equal(changeText({ type: "override", value: "19" }, "Телосложение"), "Телосложение: 19");
     assert.equal(changeText({ type: "upgrade", value: "60" }, "Тёмное зрение"), "Тёмное зрение ≥ 60");

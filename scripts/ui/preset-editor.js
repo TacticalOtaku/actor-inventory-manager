@@ -149,7 +149,7 @@ export class PresetEditor extends EditorBase {
   }
 
   _onClose(options) {
-    OPEN_EDITORS.delete(this.actorKey);
+    if (OPEN_EDITORS.get(this.actorKey) === this) OPEN_EDITORS.delete(this.actorKey);
     Hooks.off(REFRESH_HOOK, this._refreshHook);
     super._onClose(options);
   }
@@ -314,10 +314,12 @@ export function openPresetEditor(actor) {
   if (!isSupportedActor(actor)) return null;
   const open = OPEN_EDITORS.get(actor.uuid ?? actor.id);
   if (open) {
-    open.bringToFront?.();
+    if (open.rendered) open.bringToFront?.();
     return open;
   }
   const editor = new PresetEditor(actor);
+  // Registered before the first render, so a second click finds it.
+  OPEN_EDITORS.set(actor.uuid ?? actor.id, editor);
   editor.render({ force: true });
   return editor;
 }

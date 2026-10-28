@@ -62,6 +62,17 @@ describe("sheet equip enforcement", () => {
     assert.equal(handlePreUpdateItem(item, { "system.equipped": true }, { aimEquip: true }, "p1"), true);
   });
 
+  it("ignores a slot flag left on an unequipped copy from another actor", () => {
+    const ring = id => ({ id, name: id, type: "equipment", flags: {}, system: { equipped: false, type: { value: "ring" } } });
+    const worn = { ...ring("worn"), flags: { "actor-inventory-manager": { slot: "ring2" } }, system: { equipped: true, type: { value: "ring" } } };
+    const copy = { ...ring("copy"), flags: { "actor-inventory-manager": { slot: "ring2" } } };
+    makeActor([worn, copy]);
+    const changes = { "system.equipped": true };
+    assert.equal(handlePreUpdateItem(copy, changes, {}, "p1"), true);
+    assert.equal(changes["flags.actor-inventory-manager.slot"] ?? changes.flags?.["actor-inventory-manager"]?.slot, "ring1");
+    assert.equal(warnings.length, 0);
+  });
+
   it("blocks a shield next to a two-handed weapon in block mode", () => {
     const item = shield();
     makeActor([greataxe(), item]);

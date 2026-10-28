@@ -46,7 +46,6 @@ one place to update when it moves again. Never inline these reads at a call site
 | --- | --- | --- |
 | Attunement state | `isItemAttuned`, `itemRequiresAttunement`, `getAttunementStatus` | `core/attunement.js` |
 | Attunement cap | `getActorAttunementMax` (prepared), `getActorSourceAttunementMax` (stored) | `core/attunement.js` |
-| Container contents | `getContainerContentsCount` | `integrations/dnd5e.js` |
 | Spell preparation | `resolveSpellPreparation` | `integrations/dnd5e.js` |
 | Whether a spell has a prepare toggle (the menu and the spells tab) | `hasPreparationToggle` | `integrations/dnd5e.js` |
 | Spell slot maximum | `resolveSpellSlotMax` | `integrations/dnd5e.js` |
@@ -129,29 +128,13 @@ when it was refused (permission, slot rules, attunement limit) or vetoed by a
 
 | Hook | Arguments | Use |
 | --- | --- | --- |
-| `actor-inventory-manager.ready` | `(api)` | Register slots and rules |
+| `actor-inventory-manager.ready` | `(api)` | Register equipment rules |
 | `actor-inventory-manager.prepareContext` | `(app, context, actor)` | Read or augment render data (mutate `context`) |
 | `actor-inventory-manager.renderInventory` | `(app, element, context)` | Decorate the rendered DOM |
 | `actor-inventory-manager.refresh` | `()` | Ask every open window to re-render |
 
-### Adding an equipment slot
-
-```js
-Hooks.on("actor-inventory-manager.ready", api => {
-  api.slotRegistry.register({
-    id: "tattoo",
-    labelKey: "MYMOD.slots.tattoo",
-    icon: "fa-solid fa-fingerprint",
-    category: "equipment",
-    accepts: ["tattoo"],
-    itemTypes: ["equipment"],
-    order: 120
-  });
-});
-```
-
-Slots supplied this way are the default set. A per-actor paperdoll template
-(built in the GM editor) overrides them; see `core/paperdoll-templates.js`.
+Slots come from the doll presets: the built-in ones and the world presets the GM builds in the preset editor
+(`core/paperdoll-templates.js`). A module adds a slot by shipping a preset, not through the API.
 
 ### Adding an equipment rule
 
@@ -190,7 +173,7 @@ either here guarantees the two modules disagree.
 | Weight reduction | `getContainerWeightReductionPct(container)` |
 | Can this item go in? | `validateContainerDrop(container, item)` |
 | Open the rules window | `openWeightyContainersDialog(container)` |
-| React to a rules change | `watchContainerRules(callback)` |
+| React to a rules change | `Hooks.on(CONTAINER_RULES_HOOK, callback)` |
 
 `game.modules.get("weighty-containers").api` is the supported handle (3.4.0+);
 `globalThis.weightyCont` is accepted as a fallback for older builds. Every entry

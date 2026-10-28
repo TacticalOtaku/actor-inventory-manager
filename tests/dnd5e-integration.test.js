@@ -5,10 +5,10 @@ import {
   extractActorVitals,
   extractSpellSlots,
   formatItemForDisplay,
-  getContainerContentsCount,
   resolveItemActivation,
   resolveItemUses,
   resolveSpellPreparation,
+  hasPreparationToggle,
   resolveSpellSlotMax
 } from "../scripts/integrations/dnd5e.js";
 
@@ -120,6 +120,17 @@ describe("resolveSpellPreparation", () => {
     assert.equal(resolveSpellPreparation({ system: { level: 0, method: "spell", prepared: 0 } }).isPrepared, true);
     assert.equal(resolveSpellPreparation({ system: { level: 2, method: "innate", prepared: 0 } }).canPrepare, false);
   });
+
+  it("offers the prepare toggle only for a preparing spell that is not always prepared, of a class with a limit", () => {
+    stubDnd5eConfig();
+    const wizard = { spellcastingClasses: { wizard: { system: { spellcasting: { preparation: { max: 6 } } } } } };
+    const sorcerer = { spellcastingClasses: { sorcerer: { system: { spellcasting: { preparation: { max: 0 } } } } } };
+    const spell = (prepared, classIdentifier = "wizard") => ({ system: { level: 1, method: "spell", prepared, classIdentifier } });
+    assert.equal(hasPreparationToggle(spell(0), wizard), true);
+    assert.equal(hasPreparationToggle(spell(2), wizard), false);
+    assert.equal(hasPreparationToggle(spell(0, "sorcerer"), sorcerer), false);
+    assert.equal(hasPreparationToggle({ ...spell(1), actor: wizard }), true);
+  });
 });
 
 describe("resolveItemActivation", () => {
@@ -145,23 +156,6 @@ describe("resolveItemUses", () => {
     const uses = resolveItemUses({ system: { uses: { max: 3, spent: 1, value: 2, recovery: [] } } });
     assert.equal(uses.hasUses, true);
     assert.equal(uses.usesDisplay, "2 / 3");
-    assert.equal(uses.hasRecharge, false);
-  });
-
-  it("reads recharge from uses.recovery", () => {
-    const uses = resolveItemUses({
-      system: { uses: { max: 1, spent: 0, value: 1, recovery: [{ period: "recharge", formula: "5" }] } }
-    });
-    assert.equal(uses.hasRecharge, true);
-    assert.equal(uses.rechargeDisplay, "5+");
-  });
-
-  it("marks a recharging item without uses left as spent", () => {
-    const uses = resolveItemUses({
-      system: { uses: { max: 1, spent: 1, value: 0, recovery: [{ period: "recharge", formula: "6" }] } }
-    });
-    assert.equal(uses.rechargeDisplay, "6");
-    assert.equal(uses.isCharged, false);
   });
 });
 
@@ -193,6 +187,12 @@ describe("extractActorVitals", () => {
     assert.equal(vitals.speedUnit, "ft");
     assert.equal(vitals.hp.tempPct, 98);
     assert.equal(vitals.className, "Паладин");
+  });
+
+  it("reads the save bonus from 5.3.3's { value } shape", () => {
+    const actor = makeActor();
+    actor.system.abilities = { str: { value: 16, mod: 3, save: { value: 5 }, proficient: 1 } };
+    assert.equal(extractActorVitals(actor).abilities.str.save, "+5");
   });
 
   it("clamps the temp-hp share to 0..100 and is 0 without a maximum", () => {
@@ -275,18 +275,6 @@ describe("formatItemForDisplay rarity label", () => {
     const relic = { id: "c", name: "Relic", type: "loot", system: { rarity: "mythic", quantity: 1 } };
     assert.equal(formatItemForDisplay(rope).rarityLabel, "");
     assert.equal(formatItemForDisplay(relic).rarityLabel, "");
-  });
-});
-
-describe("container contents count", () => {
-  it("reads dnd5e 5.3.3's count, a number or a promise for compendium items", async () => {
-    assert.equal(await getContainerContentsCount({ type: "container", system: { contentsCount: 11 } }), 11);
-    assert.equal(await getContainerContentsCount({ type: "container", system: { contentsCount: Promise.resolve(2) } }), 2);
-  });
-
-  it("is zero for anything that is not a container", async () => {
-    assert.equal(await getContainerContentsCount({ type: "weapon", system: {} }), 0);
-    assert.equal(await getContainerContentsCount(null), 0);
   });
 });
 
@@ -772,7 +760,16 @@ describe("vehicle reads (dnd5e 5.3.3)", () => {
     assert.deepEqual(v.crew, { max: 4, uuids: ["Actor.a", "Actor.b"] });
     assert.deepEqual(v.draft, { max: null, uuids: [] });
     assert.deepEqual(v.legacy, [{ kind: "crew", name: "Матросы", quantity: 10 }]);
-    assert.equal(readVehicle(ship, { metric: true }).cargo.load, 5);
+    globalThis.game = { settings: { get: (scope, key) => key === "metricWeightUnits" } };
+    try {
+      assert.equal(readVehicle(ship).cargo.load, 5);
+      // A metric hold in megagrams: dnd5e's key is «Mg», not «mg».
+      CONFIG.DND5E.weightUnits.Mg = { abbreviation: "Мг", conversion: 2500 };
+      ship.system.attributes.capacity.cargo.units = "Mg";
+      assert.equal(readVehicle(ship).cargo.load, 4);
+    } finally {
+      delete globalThis.game;
+    }
     assert.equal(readVehicle({ type: "npc", system: {} }), null);
   });
 });

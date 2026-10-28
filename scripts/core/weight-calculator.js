@@ -59,8 +59,11 @@ export function getSystemWeightUnit() {
  * @returns {number}
  */
 export function lbsPerUnit(unit) {
-  const key = String(unit || "lb").toLowerCase().trim();
-  const entry = globalThis.CONFIG?.DND5E?.weightUnits?.[key];
+  const raw = String(unit || "lb").trim();
+  const key = raw.toLowerCase();
+  // dnd5e's keys are case-sensitive: «Mg» (megagram) is not «mg».
+  const units = globalThis.CONFIG?.DND5E?.weightUnits;
+  const entry = units?.[raw] ?? units?.[key];
   const fromSystem = Number(entry?.conversion);
   if (Number.isFinite(fromSystem) && fromSystem > 0) return fromSystem;
   return DEFAULT_LBS_PER_UNIT[key] ?? 1;
@@ -163,10 +166,12 @@ export function computeActorCapacity(actor, unit = "lb") {
   // Prefer the system's own derived thresholds when available.
   const systemEnc = getSystemEncumbrance(actor);
   if (systemEnc) {
+    // dnd5e derives its block in the world's unit; the caller asked for `unit`.
+    const inUnit = (value) => convertWeight(value, getSystemWeightUnit(), unit);
     const thresholds = systemEnc.thresholds ?? {};
-    const maxVal = num(systemEnc.max, 0);
-    const encumberedVal = num(thresholds.encumbered, maxVal / 3);
-    const heavyVal = num(thresholds.heavilyEncumbered, (maxVal / 3) * 2);
+    const maxVal = inUnit(num(systemEnc.max, 0));
+    const encumberedVal = inUnit(num(thresholds.encumbered, num(systemEnc.max, 0) / 3));
+    const heavyVal = inUnit(num(thresholds.heavilyEncumbered, (num(systemEnc.max, 0) / 3) * 2));
     return {
       max: Number(maxVal.toFixed(1)),
       encumbered: Number(encumberedVal.toFixed(1)),
@@ -192,7 +197,11 @@ export function computeActorCapacity(actor, unit = "lb") {
     actor?.system?.traits?.traits?.powerfulBuild ||
     actor?.flags?.dnd5e?.powerfulBuild
   );
-  const effectiveSizeMult = powerfulBuild ? sizeMult * 2 : sizeMult;
+  // One size up: a Small creature carries as a Medium one (the same), a Medium one as a Large one.
+  const sizes = Object.keys(SIZE_MULTIPLIERS);
+  const effectiveSizeMult = powerfulBuild
+    ? SIZE_MULTIPLIERS[sizes[Math.min(sizes.indexOf(size in SIZE_MULTIPLIERS ? size : "med") + 1, sizes.length - 1)]]
+    : sizeMult;
 
   // Fallback tiers computed directly in the display unit, matching the
   // per-STR thresholds the system uses for that unit system.
@@ -269,7 +278,7 @@ export function computeActorEncumbrance(actor, options = {}) {
   let totalValueDisplay;
 
   if (systemEnc) {
-    totalValueDisplay = Number(num(systemEnc.value, 0).toFixed(1));
+    totalValueDisplay = Number(convertWeight(num(systemEnc.value, 0), getSystemWeightUnit(), unit).toFixed(1));
   } else {
     // Recalculate raw item weights from actor.items
     let totalLbs = 0;

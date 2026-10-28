@@ -85,6 +85,27 @@ describe("world templates", () => {
     assert.equal(writes.some(change => change["system.attributes.attunement.max"] === 3), true);
   });
 
+  it("use the world preset a migrated own doll was linked to, not the 1.9 backup", async () => {
+    let stored = { "own-wolf": { id: "own-wolf", name: "Wolf", slots: [slot("jaw")] } };
+    configurePaperdollRuntime({ isGM: () => true, getCustomTemplates: () => stored, setCustomTemplates: async value => { stored = value; } });
+    const flags = { paperdollCustomTemplate: { slots: [slot("old")] }, paperdollTemplateId: "own-wolf" };
+    assert.deepEqual(getActorPaperdollTemplate({ flags: { "actor-inventory-manager": flags } }).slots.map(s => s.id), ["jaw"]);
+    // 1.9 wrote "custom" with its own doll: the flag still counts there.
+    flags.paperdollTemplateId = "custom";
+    assert.deepEqual(getActorPaperdollTemplate({ flags: { "actor-inventory-manager": flags } }).slots.map(s => s.id), ["old"]);
+  });
+
+  it("import a file over neither a built-in nor an existing preset", async () => {
+    let stored = { bandit: { id: "bandit", name: "Bandit", slots: [slot("edited")] } };
+    configurePaperdollRuntime({ isGM: () => true, getCustomTemplates: () => stored, setCustomTemplates: async value => { stored = value; } });
+    const old = await importTemplateJSON(JSON.stringify({ id: "bandit", name: "Bandit", slots: [slot("old")] }));
+    assert.equal(old.id, "bandit-2");
+    assert.deepEqual(stored.bandit.slots.map(s => s.id), ["edited"]);
+    const builtIn = await importTemplateJSON(JSON.stringify({ id: "dnd2024", name: "Standard 2024", slots: [slot("head")] }));
+    assert.notEqual(builtIn.id, "dnd2024");
+    assert.ok(stored[builtIn.id]);
+  });
+
   it("marks an actor-only layout as custom", () => {
     const actor = { flags: { "actor-inventory-manager": { paperdollCustomTemplate: { slots: [slot("x")] } } } };
     const context = getActorPaperdollTemplate(actor);

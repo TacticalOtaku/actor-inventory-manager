@@ -5,6 +5,8 @@
 /** Inventory sections by dnd5e item type, in order; containers have their own section. */
 export const INVENTORY_SECTIONS = ["weapon", "equipment", "consumable", "tool", "loot"];
 export const VIEWS = ["list", "grid", "icons"];
+/** The icon of each list view, the same on every tab. */
+export const VIEW_ICONS = Object.freeze({ list: "fa-list", grid: "fa-grid-2", icons: "fa-grid" });
 export const SORTS = ["name", "weight", "price", "rarity", "manual"];
 export const LIST_FILTERS = ["equipped", "attuned"];
 export const RARITY_ORDER = Object.freeze(["", "common", "uncommon", "rare", "veryRare", "legendary", "artifact"]);
@@ -106,12 +108,13 @@ export function applyCoinEntry(current, { kind, amount }) {
   return amount;
 }
 
-/** A gold value in the coin that reads best: gold, silver below 1 gp, copper below 1 sp. */
+/** A gold value in the coin that reads best: gold from 1 gp, silver when it is whole silver, copper otherwise. */
 export function goldParts(gp) {
   if (!(gp > 0)) return null;
-  if (gp >= 1) return { amount: Math.round(gp * 10) / 10, denom: "gp" };
-  if (gp >= 0.1) return { amount: Math.round(gp * 10), denom: "sp" };
-  return { amount: Math.max(1, Math.round(gp * 100)), denom: "cp" };
+  const cp = Math.round(gp * 100);
+  if (cp >= 100) return { amount: Math.round(gp * 10) / 10, denom: "gp" };
+  if (cp >= 10 && cp % 10 === 0) return { amount: cp / 10, denom: "sp" };
+  return { amount: Math.max(1, cp), denom: "cp" };
 }
 
 /** More containers than this start folded. */

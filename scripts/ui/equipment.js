@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { MODULE_ID } from "../constants.js";
-import { LIST_FILTERS, SORTS, VIEWS, goldParts, groupInventory, listPrefsFor, loadBand, showsCharges, trayFolded, trayPeek } from "../core/inventory.js";
+import { LIST_FILTERS, SORTS, VIEWS, VIEW_ICONS, goldParts, groupInventory, listPrefsFor, loadBand, showsCharges, trayFolded, trayPeek } from "../core/inventory.js";
 import { computeActorEncumbrance, getSystemWeightUnit } from "../core/weight-calculator.js";
 import { getDnd5eConfig, hasPreparationToggle, readCoins, readContainerCapacity, readInventory, readSpellbook, resolveItemUses, unitAbbreviation } from "../integrations/dnd5e.js";
 import { castable, ready } from "../core/spellbook.js";
@@ -19,7 +19,6 @@ export const EQUIPMENT_TEMPLATES = ["equipment", "doll", "tray", "item-row", "it
 
 /** More charges than this show as a number instead of pips. */
 const MAX_PIPS = 10;
-const VIEW_ICONS = { list: "fa-list", grid: "fa-grid-2", icons: "fa-grid" };
 
 const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 const typeLabel = (type) => t(CONFIG.Item.typeLabels?.[type] ?? type);
@@ -192,7 +191,7 @@ export async function buildItemDetail(item, { canEdit }) {
     spell: spell && {
       castable: castable(spell),
       castLabel: t(castable(spell) && !ready(spell) ? "AIM.window.spells.castRitual" : "AIM.window.spells.cast"),
-      canPrepare: spell.canPrepare && spell.prepared < 2,
+      canPrepare: spell.canPrepare,
       prepared: spell.prepared >= 1,
       prepareLabel: t(spell.prepared >= 1 ? "AIM.window.spells.unprepare" : "AIM.window.spells.prepare")
     },

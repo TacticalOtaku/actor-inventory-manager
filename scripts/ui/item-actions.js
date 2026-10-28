@@ -9,6 +9,9 @@ import { findEquipSlot, getActorEquippedMap, resolveEquipValidation } from "../c
 import { canItemBeEquipped } from "../core/item-classifier.js";
 import { LOG } from "../foundry/logger.js";
 
+// Attunements sent and not yet back, per actor: two quick ones must not both take the last place.
+const attuning = new Map();
+
 export { getActorAttunementMax };
 
 /**
@@ -184,8 +187,10 @@ export async function toggleAttunement(item) {
     }
 
     const maxAttunement = getActorAttunementMax(actor);
+    const pending = attuning.get(actor.uuid) ?? new Set();
     const currentlyAttuned = Array.from(actor.items.values())
-      .filter(i => i.id !== item.id && isItemAttuned(i)).length;
+      .filter(i => i.id !== item.id && isItemAttuned(i)).length
+      + [...pending].filter(id => id !== item.id).length;
 
     if (currentlyAttuned >= maxAttunement) {
       ui.notifications?.warn(
@@ -194,7 +199,14 @@ export async function toggleAttunement(item) {
       return false;
     }
 
-    if (!await item.update({ "system.attuned": true })) return false;
+    // shortcut: this guards one client; a GM and a player taking the last place at the same moment can both succeed,
+    // since modules have no server-side check. Upgrade if tables report it.
+    attuning.set(actor.uuid, pending.add(item.id));
+    try {
+      if (!await item.update({ "system.attuned": true })) return false;
+    } finally {
+      pending.delete(item.id);
+    }
     ui.notifications?.info(game.i18n.format("AIM.notifications.attunedSuccess", { item: item.name }));
     return true;
   }

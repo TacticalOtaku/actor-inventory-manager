@@ -144,6 +144,10 @@ describe("price in coins", () => {
     assert.deepEqual(goldParts(2.54), { amount: 2.5, denom: "gp" });
     assert.deepEqual(goldParts(0.5), { amount: 5, denom: "sp" });
     assert.deepEqual(goldParts(0.02), { amount: 2, denom: "cp" });
+    // Silver only when it is whole silver: 3 chalk at 5 cp is 15 cp, not «2 sp».
+    assert.deepEqual(goldParts(0.15), { amount: 15, denom: "cp" });
+    assert.deepEqual(goldParts(0.75), { amount: 75, denom: "cp" });
+    assert.deepEqual(goldParts(0.999), { amount: 1, denom: "gp" });
     assert.equal(goldParts(0), null);
   });
 });

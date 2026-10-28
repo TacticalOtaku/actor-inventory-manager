@@ -1,5 +1,48 @@
 # Changelog
 
+## 2.0.6
+
+### Fixed
+- Moving a consumable onto an identical stack of another actor no longer duplicates it: dnd5e grows the stack
+  without waiting, and the source used to stay.
+- Trading:
+  - An offer stores a digest of each item instead of the item itself. The trade state is a world setting every
+    client reads, and it held an unidentified item's real name and description. Finished trades drop their
+    fingerprints.
+  - Wearing, unequipping or opening an offered item no longer makes the offer impossible to confirm.
+  - Confirm sends the revision drawn on the button, so an offer changed a moment before is not accepted unseen.
+  - An offered item that was used up or deleted can be taken out of the offer; typing in its field no longer fails.
+  - The GM's restore skips an actor deleted since and returns the trade to recovery when it fails, instead of
+    locking both inventories for good.
+  - A co-owner of the actor sees the trade but no longer gets controls that every action refuses.
+- The actor window:
+  - A trade no longer redraws away a biography being typed.
+  - Clicking the canvas after a search no longer sends every later keystroke back into the search field.
+  - Opening a window twice in quick succession no longer makes two windows (the same for the preset editor).
+  - A redraw from another client no longer closes the HP entry being typed.
+  - The window of an unlinked token closes with its token.
+  - Two uses waiting on dnd5e's dialog at once no longer leave `ui.notifications` wrapped.
+  - An HP change redraws the rail without rebuilding every tab's rows, the details and the biography.
+- Equipping from the dnd5e sheet ignores the slot a copied item remembered from its old actor.
+- Two quick attunements from one client can no longer both take the last place.
+- An item of an actor inside a compendium is copied, as on the dnd5e sheet, instead of being refused.
+- A 1.9 own doll migrated to a world preset uses that preset, so editing it shows on the doll.
+- Importing a preset file whose id is built in or already taken adds a new preset instead of overwriting one.
+- With two GMs online the migration runs on the trade coordinator and no longer fails on every start.
+- Prices below 1 gp read in copper unless they are whole silver (15 cp, not «2 sp»).
+- Hover cards show an item's weight in the world's unit.
+- An «add» effect change with its own sign reads «+1d4», not «++1d4».
+- Powerful Build carries one size up (a Small creature as a Medium one) in the fallback capacity.
+- Public API:
+  - `extractActorVitals` reads the save bonus.
+  - `computeActorEncumbrance` and `computeActorCapacity` convert dnd5e's numbers into the unit asked for.
+  - A vehicle's hold in megagrams converts.
+
+### Removed
+- `api.slotRegistry`: slots it registered never reached a doll. Slots come from the doll presets.
+- Unused helpers: `getContainerContentsCount`, `watchContainerRules` (the hook name is `CONTAINER_RULES_HOOK`),
+  and the recharge fields of `resolveItemUses`.
+
 ## 2.0.5
 
 ### Fixed

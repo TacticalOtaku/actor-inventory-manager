@@ -73,12 +73,12 @@ test("editing offers invalidates both confirmations and stale confirmations are 
   assert.equal(confirmOffer(session, 0, 2), false);
   assert.equal(confirmOffer(session, 1, 2), true);
 });
-test("offers reject missing items, duplicate IDs and nonempty containers", () => {
+test("offers reject missing items, duplicate IDs and nonempty containers", async () => {
   setup();
   const a = actor();
   a.items.set("bag", { id: "bag", name: "Bag", type: "container", system: { quantity: 1 }, toObject() { return { _id: this.id, type: this.type, system: this.system }; } });
   a.items.set("potion", { id: "potion", type: "consumable", system: { container: "bag", quantity: 2 } });
   for (const items of [[{ id: "missing", quantity: 1 }], [{ id: "bag", quantity: 1 }], [{ id: "potion", quantity: 1 }, { id: "potion", quantity: 1 }]]) {
-    assert.throws(() => normalizeOffer(a, { items, money: {} }));
+    await assert.rejects(() => normalizeOffer(a, { items, money: {} }));
   }
 });

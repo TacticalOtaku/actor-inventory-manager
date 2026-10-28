@@ -6,6 +6,7 @@ import { FIGURES, FLAGS, MODULE_ID, SLOTS, TEMPLATE_PRESETS } from "../constants
 import { getPaperdollRuntime } from "./paperdoll-runtime.js";
 import { isSupportedActor } from "./actor-scope.js";
 import { SLOT_ZONES } from "./paperdoll-layout.js";
+import { presetIdFor } from "./preset-editor.js";
 
 /**
  * Built-in Preset: D&D 2024 Rules (Default)
@@ -431,10 +432,12 @@ export function getActorPaperdollTemplate(actor) {
 
   const flags = actor.flags?.[MODULE_ID] ?? {};
 
-  // 1. Per-actor template stored directly on the actor
+  // 1. Per-actor template stored directly on the actor. 1.9 named it "custom"; once the 2.0 migration made it a world
+  // preset and linked that, the kept flag (ADR 0005) is only a backup.
   const customTemplateData = flags[FLAGS.CUSTOM_TEMPLATE];
+  const linked = flags[FLAGS.TEMPLATE_ID];
   // A preset without slots (a vehicle's figure) is still the actor's own.
-  if (customTemplateData && Array.isArray(customTemplateData.slots)) {
+  if (customTemplateData && Array.isArray(customTemplateData.slots) && (!linked || linked === "custom")) {
     return { ...formatTemplateContext({ ...customTemplateData, id: "custom" }), isActorCustom: true };
   }
 
@@ -692,6 +695,10 @@ export async function importTemplateJSON(jsonString) {
     const runtime = getPaperdollRuntime();
     throw new Error(runtime.localize("AIM.editor.errors.invalidJSON", "The text is not valid JSON."));
   }
+  // A file of a built-in or of an existing preset comes in as a new preset beside it, never over it.
+  const taken = Object.keys(getWorldCustomTemplates());
+  const id = typeof data?.id === "string" ? data.id.trim() : "";
+  if (id && (isReservedTemplateId(id) || taken.includes(id))) data.id = presetIdFor(data.name || id, taken);
   const template = normalizeTemplateData(data);
   await saveWorldCustomTemplate(template);
   return template;

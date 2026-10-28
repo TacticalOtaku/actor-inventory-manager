@@ -10,7 +10,6 @@ import {
   resolveEquipValidation
 } from "../core/equipment-rules.js";
 import { getActorSlots } from "../core/paperdoll-templates.js";
-import { getItemAssignedSlot } from "../core/item-classifier.js";
 import { LOG } from "./logger.js";
 
 /**
@@ -41,11 +40,11 @@ export function handlePreUpdateItem(item, changes, options, _userId) {
     return true;
   }
 
-  // Equipping item: determine target slot. A leftover flag only counts while
-  // the actor's template still has that slot.
+  // Equipping item: determine target slot. Only a slot named in this change counts: an unequipped item's
+  // leftover flag (a copy from another actor) names that actor's slot, not a place on this doll.
   const currentSlotMap = getActorEquippedMap(actor);
   const knownSlotIds = new Set(getActorSlots(actor).map(slot => slot.id));
-  const requestedSlot = foundry.utils.getProperty(changes, `flags.${MODULE_ID}.${FLAGS.SLOT}`) ?? getItemAssignedSlot(item);
+  const requestedSlot = foundry.utils.getProperty(changes, `flags.${MODULE_ID}.${FLAGS.SLOT}`);
   const targetSlotId = knownSlotIds.has(requestedSlot)
     ? requestedSlot
     : findEquipSlot(actor, item, currentSlotMap);

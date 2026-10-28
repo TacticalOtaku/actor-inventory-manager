@@ -104,7 +104,8 @@
 .aim-death.is-refused { animation: aim-shake 360ms var(--ease-settle); }
 
 /* ── rest ── */
-.aim-rest { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+/* one button per row: "Продолжительный" is wider than half the rail */
+.aim-rest { display: grid; gap: var(--s2); }
 .aim-rest-btn { display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-1); color: var(--text); font: 600 12.5px var(--font-ui); text-align: left; cursor: pointer; transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-snap); }
 .aim-rest-btn:hover { border-color: var(--accent-line); transform: translateY(-1px); }
 .aim-rest-btn > i { flex: none; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-3); color: var(--warn); }
@@ -166,9 +167,14 @@ button.aim-stat:disabled { cursor: default; }
 /* ── narrow: one row of fixed-width widgets that scrolls sideways and snaps ── */
 .aim-window[data-layout="narrow"] .aim-rail { scroll-snap-type: x proximity; }
 .aim-window[data-layout="narrow"] .aim-rail > * { flex: 0 0 auto; scroll-snap-align: start; }
-.aim-window[data-layout="narrow"] .aim-vitals { display: grid; grid-template-columns: 236px 200px; grid-auto-rows: min-content; gap: 6px; }
+.aim-window[data-layout="narrow"] .aim-vitals { display: grid; grid-template-columns: 236px 200px; grid-auto-rows: 1fr; gap: 6px; }
+/* the strip stretches every widget to its height, so the row reads as one band of even cards */
+.aim-window[data-layout="narrow"] .aim-stat { align-content: center; }
 .aim-window[data-layout="narrow"] .aim-hpcard { grid-row: span 2; }
-.aim-window[data-layout="narrow"] .aim-rest { width: 220px; grid-template-columns: 1fr; }
+/* a single row beside the HP card fills its height; with none, the card stands alone */
+.aim-window[data-layout="narrow"] .aim-vitals > :nth-child(2):last-child { grid-row: span 2; }
+.aim-window[data-layout="narrow"] .aim-vitals:has(> :only-child) { grid-template-columns: 236px; }
+.aim-window[data-layout="narrow"] .aim-rest { width: 220px; }
 .aim-window[data-layout="narrow"] .aim-stats { width: 236px; }
 .aim-window[data-layout="narrow"] .aim-casting { width: 220px; }
 .aim-window[data-layout="narrow"] .aim-effects { width: 230px; }

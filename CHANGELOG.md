@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.6
 
 ### Fixed
 - Moving a consumable onto an identical stack of another actor no longer duplicates it: dnd5e grows the stack

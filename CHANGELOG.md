@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.5
 
 ### Fixed
 - Hover cards no longer show unrevealed secret blocks to anyone, owners and the GM included, as dnd5e's own

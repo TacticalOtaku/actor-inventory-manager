@@ -8,6 +8,7 @@ import { TIP_TIMING, TIP_MAX_DEPTH, cardsToSweep, openDelay, planClose, planOpen
 import { damageParts } from "../core/damage-scenes.js";
 import { readCardData, readDamageType } from "../integrations/dnd5e.js";
 import { startScene } from "./damage-scenes.js";
+import { unwrapSecrets } from "./html.js";
 import { scRarityColor, scSchoolColor } from "../integrations/sc-rarity-colors.js";
 import { stampTheme } from "./theme-root.js";
 
@@ -269,6 +270,8 @@ function cardContext(card, depth) {
   return {
     ...card,
     depth,
+    description: unwrapSecrets(card.description),
+    html: unwrapSecrets(card.html),
     stats: (card.stats ?? []).map((s) => ({
       label: t(`AIM.tips.stats.${s.key}`),
       value: s.key === "attunement" ? `${t(`AIM.tips.attunement.${s.value}`)}${card.attuned ? " ✓" : ""}` : s.value,

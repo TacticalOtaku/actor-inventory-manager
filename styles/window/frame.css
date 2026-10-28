@@ -116,3 +116,8 @@
 
 /* observer: every control that changes data is hidden or disabled */
 .aim-window[data-role="observer"] .aim-editonly { display: none !important; }
+
+/* a secret only the document's owners see (Foundry's rule): marked, without core's Reveal button */
+.aim-root section.secret:not(.revealed) { margin: 8px 0; padding: 6px 10px; border: 1px dashed var(--accent-line); border-radius: var(--r-sm); background: var(--accent-soft); }
+/* a revealed secret is ordinary text for everyone; core's grey rules around it read as foreign */
+.aim-root section.secret.revealed { margin: 0; padding: 0; border: 0; }

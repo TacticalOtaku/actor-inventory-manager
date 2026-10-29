@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.7
 
 ### Fixed
 - Unidentified items no longer tell players their price, rarity, properties or charges, in rows, the doll, the

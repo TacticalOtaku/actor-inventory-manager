@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.9
 
 ### Added
 - Gift: «Подарить» starts a one-way trade. Only the giver offers items or coins, the receiver accepts or declines;

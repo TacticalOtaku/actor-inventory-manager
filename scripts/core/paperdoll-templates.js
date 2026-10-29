@@ -124,7 +124,7 @@ export const DND_2024_TEMPLATE = {
       icon: "fa-light fa-ring",
       column: "right",
       category: "ring",
-      accepts: ["ring", "band", "signet"],
+      accepts: ["ring", "signet"],
       itemTypes: ["equipment", "loot"],
       order: 50,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false }
@@ -136,7 +136,7 @@ export const DND_2024_TEMPLATE = {
       icon: "fa-light fa-ring",
       column: "right",
       category: "ring",
-      accepts: ["ring", "band", "signet"],
+      accepts: ["ring", "signet"],
       itemTypes: ["equipment", "loot"],
       order: 100,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false }
@@ -270,7 +270,7 @@ export const DND_2014_TEMPLATE = {
       icon: "fa-light fa-ring",
       column: "right",
       category: "ring",
-      accepts: ["ring", "band"],
+      accepts: ["ring"],
       itemTypes: ["equipment", "loot"],
       order: 50,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false }
@@ -282,7 +282,7 @@ export const DND_2014_TEMPLATE = {
       icon: "fa-light fa-ring",
       column: "right",
       category: "ring",
-      accepts: ["ring", "band"],
+      accepts: ["ring"],
       itemTypes: ["equipment", "loot"],
       order: 100,
       rules: { singlePerActor: false, locksOffHandOn2H: false, isArmor: false, isShield: false }

@@ -183,3 +183,25 @@ describe("consumables and natural weapons", () => {
     assert.equal(isItemCompatibleWithSlot(claws, "mainHand", actor), false);
   });
 });
+
+describe("clothes, shields and bands", () => {
+  const mk = (name, value) => ({ name, type: "equipment", flags: {}, system: { type: { value }, properties: new Set() } });
+
+  it("wear clothes and robes under armor, with no slot, while armor typed as clothing stays armor", () => {
+    for (const name of ["Traveler's Clothes", "Одежда путешественника", "Robe of the Archmagi"]) {
+      assert.deepEqual(getValidSlotsForItem(mk(name, "clothing"), actor), [], name);
+      assert.equal(isBodyArmor(mk(name, "clothing")), false, name);
+    }
+    assert.deepEqual(getValidSlotsForItem(mk("Кольчуга", "clothing"), actor), ["armor"]);
+    assert.deepEqual(getValidSlotsForItem(mk("Boots of Elvenkind", "clothing"), actor), ["feet"]);
+  });
+
+  it("offer a shield the off hand first", () => {
+    assert.deepEqual(getValidSlotsForItem(mk("Shield", "shield"), actor), ["offHand", "mainHand"]);
+  });
+
+  it("do not read «Bands» as a ring", () => {
+    assert.deepEqual(getValidSlotsForItem(mk("Iron Bands of Bilarro", "trinket"), actor), []);
+    assert.deepEqual(getValidSlotsForItem(mk("Ring of Protection", "trinket"), actor), ["ring1", "ring2"]);
+  });
+});

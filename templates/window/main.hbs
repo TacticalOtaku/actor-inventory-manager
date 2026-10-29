@@ -32,11 +32,11 @@
       <button type="button" class="aim-ibtn" data-action="collapseWindow" aria-label="{{localize "AIM.window.collapse"}}" data-tooltip="{{localize "AIM.window.collapse"}}"><i class="fa-light fa-down-left-and-up-right-to-center"></i></button>
     </div>
     {{#if xpOpen}}
-    <form class="aim-xp-card" data-xp-form>
+    <div class="aim-xp-card" data-xp-form>
       <div class="aim-xp-line"><b>{{identity.xp.value}}</b> / {{identity.xp.max}} <span>{{localize "AIM.window.xp.label"}}</span></div>
       <div class="aim-xp-bar"><i style="width: {{identity.xp.pct}}%"></i></div>
       {{#if canEdit}}<label class="aim-xp-add"><span>{{localize "AIM.window.xp.add"}}</span><input type="number" name="xp" step="1" inputmode="numeric" placeholder="0"></label>{{/if}}
-    </form>
+    </div>
     {{/if}}
     <div class="aim-abilities">
       {{#each abilities}}

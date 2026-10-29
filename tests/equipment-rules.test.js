@@ -60,6 +60,20 @@ describe("two-handed weapons", () => {
     assert.equal(findEquipSlot(actor, actor.items.get("longsword")), "mainHand");
   });
 
+  it("put a shield in the off hand when both hands are free", () => {
+    const actor = makeActor([shield("shield")]);
+    assert.equal(findEquipSlot(actor, actor.items.get("shield")), "offHand");
+  });
+
+  it("let armor go on over clothes, even clothes an older doll left in the armor slot", () => {
+    const clothes = { id: "clothes", name: "Traveler's Clothes", type: "equipment", flags: { "actor-inventory-manager": { slot: "armor" } }, system: { equipped: true, type: { value: "clothing" } } };
+    const mail = { id: "mail", name: "Chain Mail", type: "equipment", flags: {}, system: { equipped: false, type: { value: "heavy" } } };
+    const actor = makeActor([clothes, mail]);
+    assert.equal(getActorEquippedMap(actor).has("armor"), false);
+    assert.equal(findEquipSlot(actor, mail), "armor");
+    assert.equal(equipmentRuleEngine.validateEquip(actor, mail, "armor").valid, true);
+  });
+
   it("never push a held weapon out for a potion, and leave hands free of claws", () => {
     const potion = { id: "potion", name: "Potion of Healing", type: "consumable", flags: {}, system: { equipped: false, type: { value: "potion" } } };
     const claws = { ...weapon("claws"), system: { equipped: false, properties: new Set(), type: { value: "natural" } } };

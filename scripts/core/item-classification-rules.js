@@ -114,7 +114,7 @@ const WEARABLE_RULES = [
     category: "ring",
     systemTypes: ["ring"],
     subTypes: ["ring"],
-    nameIncludes: ["ring", "band", "signet", "кольц", "перстень", "перстн"]
+    nameIncludes: ["ring", "signet", "кольц", "перстень", "перстн"]
   }
 ];
 

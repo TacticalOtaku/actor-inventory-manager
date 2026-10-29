@@ -112,9 +112,6 @@
 .aim-window ::-webkit-scrollbar-thumb { min-height: 40px; background: var(--line-strong); background-clip: padding-box; border: 3px solid transparent; border-radius: 99px; }
 .aim-window ::-webkit-scrollbar-thumb:hover { background: var(--accent-line); background-clip: padding-box; border-width: 2px; }
 
-/* observer: every control that changes data is hidden or disabled */
-.aim-window[data-role="observer"] .aim-editonly { display: none !important; }
-
 /* a secret only the document's owners see (Foundry's rule): marked, without core's Reveal button */
 .aim-root section.secret:not(.revealed) { margin: 8px 0; padding: 6px 10px; border: 1px dashed var(--accent-line); border-radius: var(--r-sm); background: var(--accent-soft); }
 /* a revealed secret is ordinary text for everyone; core's grey rules around it read as foreign */

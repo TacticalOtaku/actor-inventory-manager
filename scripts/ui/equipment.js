@@ -3,14 +3,15 @@
 // ─────────────────────────────────────────────────────────
 
 import { MODULE_ID } from "../constants.js";
+import { isItemAttuned, itemRequiresAttunement } from "../core/attunement.js";
 import { LIST_FILTERS, SORTS, VIEWS, VIEW_ICONS, goldParts, groupInventory, listPrefsFor, loadBand, showsCharges, trayFolded, trayPeek } from "../core/inventory.js";
 import { computeActorEncumbrance, getSystemWeightUnit } from "../core/weight-calculator.js";
-import { getDnd5eConfig, hasPreparationToggle, readCoins, readContainerCapacity, readInventory, readSpellbook, resolveItemUses, unitAbbreviation } from "../integrations/dnd5e.js";
+import { concealsDetails, getDnd5eConfig, hasPreparationToggle, readCoins, readContainerCapacity, readInventory, readSpellbook, resolveItemUses, unitAbbreviation } from "../integrations/dnd5e.js";
 import { castable, ready } from "../core/spellbook.js";
 import { usableActivities } from "../integrations/midi-qol.js";
 import { computeActorCurrency, readPilesCurrencies } from "../integrations/item-piles.js";
 import { getContainerLoad, getContainerWeightReductionPct, isWeightyContainersActive } from "../integrations/weighty-containers.js";
-import { escapeHTML, unwrapSecrets } from "./html.js";
+import { escapeHTML, t, unwrapSecrets } from "./html.js";
 import { playBurst } from "./bursts.js";
 import { menuLayout } from "../core/menu.js";
 
@@ -20,7 +21,6 @@ export const EQUIPMENT_TEMPLATES = ["equipment", "doll", "tray", "item-row", "it
 /** More charges than this show as a number instead of pips. */
 const MAX_PIPS = 10;
 
-const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 const typeLabel = (type) => t(CONFIG.Item.typeLabels?.[type] ?? type);
 
 /**
@@ -174,7 +174,7 @@ function loadContext(actor, unitLabel) {
  */
 export async function buildItemDetail(item, { canEdit }) {
   const system = item.system ?? {};
-  const unidentified = system.identified === false && !game.user.isGM;
+  const unidentified = concealsDetails(item);
   const raw = unidentified ? system.unidentified?.description : system.description?.value;
   const description = raw
     ? unwrapSecrets(await foundry.applications.ux.TextEditor.implementation.enrichHTML(raw, { relativeTo: item, rollData: item.getRollData?.(), secrets: item.isOwner }))
@@ -209,7 +209,8 @@ export function buildInspector(item, detail) {
     .map((r) => getDnd5eConfig().limitedUsePeriods?.[r.period]?.label ?? r.period)
     .filter(Boolean)
     .map((label) => game.i18n.localize(label));
-  const rarity = item.system.rarity ?? "";
+  const concealed = concealsDetails(item);
+  const rarity = concealed ? "" : item.system.rarity ?? "";
   return {
     id: item.id,
     name: item.name,
@@ -221,7 +222,7 @@ export function buildInspector(item, detail) {
       ? [item.system.level ? t("AIM.window.spells.circle", { level: item.system.level }) : t("AIM.window.spells.cantrips"), item.labels?.school].filter(Boolean).join(" · ")
       : typeLabel(item.type),
     tags: readInventory({ items: [item] })[0]?.tags ?? [],
-    usesText: uses.usesDisplay,
+    usesText: concealed ? "" : uses.usesDisplay,
     recovery: recovery.join(", "),
     detail
   };
@@ -262,8 +263,8 @@ export function itemMenuEntries(item, actions) {
       condition: () => Boolean(actor?.concentration?.items?.has(item)), callback: () => actor.endConcentration(item)
     },
     {
-      name: `DND5E.ContextMenuAction${system.attuned ? "Unattune" : "Attune"}`, icon: icon("sun"), group: "state",
-      condition: () => Boolean(system.attunement) && owner, callback: () => actions.attune()
+      name: `DND5E.ContextMenuAction${isItemAttuned(item) ? "Unattune" : "Attune"}`, icon: icon("sun"), group: "state",
+      condition: () => itemRequiresAttunement(item) && owner, callback: () => actions.attune()
     },
     {
       name: `DND5E.ContextMenuAction${system.equipped ? "Unequip" : "Equip"}`, icon: icon("shield-halved"), group: "state",

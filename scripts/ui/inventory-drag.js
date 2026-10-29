@@ -9,11 +9,11 @@ import { isItemCompatibleWithSlot } from "../core/item-classifier.js";
 import { equipItemToSlot, setItemContainer, unequipItem } from "./item-actions.js";
 import { MODULE_ID } from "../constants.js";
 import { dropFromOutside, noteDrop, refuseDrop, showDropTarget } from "./external-drop.js";
+import { t } from "./html.js";
 
 /** Hovering a folded tray this long while dragging unfolds it. */
 const SPRING_MS = 500;
 
-const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 
 /** Rows of one list: the same parent, and the same type at the root (sections) or any non-container inside a tray. */
 function sameList(a, b) {
@@ -209,9 +209,10 @@ export function bindInventoryDrag(app) {
     }
     const manual = listPrefsFor(game.settings.get(MODULE_ID, "listPrefs"), "equipment").sort === "manual";
     const target = dropTarget(event.target, event, manual, dragged, fromDoll);
-    const item = dragged;
+    // Another client may have deleted the item mid-drag.
+    const item = app.actor.items.get(dragged.id);
     reset();
-    if (!target) return;
+    if (!target || !item) return;
     event.preventDefault();
     event.stopPropagation();
     moveInventoryItem(app, item, target);

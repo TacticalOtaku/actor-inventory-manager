@@ -10,8 +10,7 @@ import {
   nameHasAnyToken,
   nameHasToken
 } from "./item-classification-rules.js";
-import { getActorSlots } from "./paperdoll-templates.js";
-import { slotRegistry } from "./slot-definitions.js";
+import { DND_2024_TEMPLATE, getActorSlots } from "./paperdoll-templates.js";
 
 /**
  * Standard physical inventory item types in dnd5e
@@ -103,6 +102,11 @@ function hasArmorCategory(item) {
   return ARMOR_TYPES.includes(armorType) || ARMOR_TYPES.includes(subType);
 }
 
+/** Claws, a bite or a tail are part of the body: they are equipped without taking a hand. */
+function isNaturalWeapon(item) {
+  return item.type === "weapon" && item.system?.type?.value === "natural";
+}
+
 /**
  * Check if item is a body armor
  */
@@ -147,6 +151,11 @@ export function classifyItem(item) {
     return "armor";
   }
 
+  // Before the name rules: «Spell Scroll: Crown of Madness» is no helmet, «Шип мантикоры» no cloak.
+  if (type === "consumable") {
+    return "consumable";
+  }
+
   const descriptor = { systemType, subType, name };
   const preArmorClassification = matchPreArmorClassification(descriptor);
   if (preArmorClassification) return preArmorClassification;
@@ -162,11 +171,6 @@ export function classifyItem(item) {
   // Containers
   if (type === "container") {
     return "container";
-  }
-
-  // Consumables
-  if (type === "consumable") {
-    return "consumable";
   }
 
   if (matchesFocusClassification(descriptor)) return "focus";
@@ -407,13 +411,12 @@ export function getDefaultSlotsForClassification(classification) {
 }
 
 /**
- * The slots an actor actually has: its paperdoll template, or the registry.
+ * The slots an actor actually has: its preset's (none for a vehicle without slots), or the D&D 2024 preset's.
  * @param {Object|null} actor
  * @returns {Array<Object>}
  */
-// An actor's preset decides its slots, none at all for a vehicle without slots; without an actor, every known slot.
 function resolveKnownSlots(actor) {
-  return actor ? getActorSlots(actor) ?? [] : slotRegistry.getAll();
+  return actor ? getActorSlots(actor) ?? [] : DND_2024_TEMPLATE.slots;
 }
 
 function resolveEffectiveActor(item, actor) {
@@ -483,7 +486,7 @@ function resolveSlotMatches(item, slots) {
  * @returns {Array<string>}
  */
 export function getValidSlotsForItem(item, actor = null) {
-  if (!item) return [];
+  if (!item || isNaturalWeapon(item)) return [];
 
   const slots = resolveKnownSlots(resolveEffectiveActor(item, actor));
   const { primary, generic } = resolveSlotMatches(item, slots);
@@ -503,7 +506,7 @@ export function getValidSlotsForItem(item, actor = null) {
  * @returns {boolean}
  */
 export function isItemCompatibleWithSlot(item, slotId, actor = null) {
-  if (!item || !slotId) return false;
+  if (!item || !slotId || isNaturalWeapon(item)) return false;
 
   const slots = resolveKnownSlots(resolveEffectiveActor(item, actor));
   const targetSlot = slots.find(slot => slot.id === slotId);

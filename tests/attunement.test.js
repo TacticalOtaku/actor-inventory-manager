@@ -5,6 +5,7 @@ import {
   countAttunedItems,
   getActorAttunementMax,
   getActorSourceAttunementMax,
+  attunementRequirement,
   getAttunementStatus,
   isItemAttuned,
   itemRequiresAttunement
@@ -21,6 +22,11 @@ describe("attunement", () => {
     assert.equal(itemRequiresAttunement({ system: { attunement: "required", attuned: false } }), true);
     assert.equal(itemRequiresAttunement({ system: { attunement: "optional", attuned: false } }), true);
     assert.equal(itemRequiresAttunement({ system: { attunement: "", attuned: false } }), false);
+  });
+
+  it("reads the 5.3.3 requirement string, empty when the item has none", () => {
+    assert.equal(attunementRequirement({ system: { attunement: "optional" } }), "optional");
+    assert.equal(attunementRequirement({ system: {} }), "");
   });
 
   it("reports a compact status", () => {

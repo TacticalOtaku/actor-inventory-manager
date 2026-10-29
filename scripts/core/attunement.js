@@ -20,12 +20,21 @@ export function isItemAttuned(item) {
 }
 
 /**
+ * The item's attunement requirement: "" | "required" | "optional".
+ * @param {Object} item
+ * @returns {string}
+ */
+export function attunementRequirement(item) {
+  return item?.system?.attunement ?? "";
+}
+
+/**
  * Does the item need attunement at all (whether or not it is attuned)?
  * @param {Object} item
  * @returns {boolean}
  */
 export function itemRequiresAttunement(item) {
-  const value = item?.system?.attunement;
+  const value = attunementRequirement(item);
   return value === "required" || value === "optional";
 }
 

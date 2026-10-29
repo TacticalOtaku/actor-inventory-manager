@@ -34,8 +34,9 @@ test("fallback never credits the target when a source hook blocks the debit", as
 });
 test("active Item Piles uses custom payment and transfer API without standard conversion", async () => {
   const calls = [];
+  let asked;
   setup({
-    getActorCurrencies: () => [{ name: "Crowns", abbreviation: "{#}cr", type: "attribute", data: { path: "system.currency.gp" }, quantity: 10, exchangeRate: 7 }],
+    getActorCurrencies: (actor, options) => { asked = options; return [{ name: "Crowns", abbreviation: "{#}cr", type: "attribute", data: { path: "system.currency.gp" }, quantity: 10, exchangeRate: 7 }]; },
     getPaymentData: price => ({ canBuy: price === "3cr" }),
     transferCurrencies: async (a, b, price, options) => { calls.push({ price, options }); return {}; }
   });
@@ -44,6 +45,8 @@ test("active Item Piles uses custom payment and transfer API without standard co
   assert.equal(calls[0].price, "3cr");
   assert.equal(calls[0].options.interactionId, "deal");
   assert.equal(a.system.currency.gp, 10);
+  // Item Piles' payment strings skip secondary currencies, so the trade never offers them as money.
+  assert.equal(asked.secondary, false);
 });
 test("active but broken Item Piles never falls back", () => {
   setup({});

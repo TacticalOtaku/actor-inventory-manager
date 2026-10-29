@@ -385,6 +385,7 @@ describe("actor window inventory reads (dnd5e 5.3.3)", () => {
       }
     };
     const spell = { id: "s", name: "Огненный шар", type: "spell", system: {} };
+    globalThis.game = { user: { isGM: true } };
     const [entry, ...rest] = readInventory({ items: [wand, spell] });
     assert.equal(rest.length, 0);
     assert.equal(entry.price, 5);
@@ -396,6 +397,12 @@ describe("actor window inventory reads (dnd5e 5.3.3)", () => {
     assert.deepEqual(entry.tags, ["Магический"]);
     assert.equal(entry.weight, 1);
     assert.equal(entry.sort, 300);
+
+    // A player sees the unidentified wand's price, rarity, properties and charges as unknown, as in dnd5e.
+    globalThis.game = { user: { isGM: false } };
+    const [hidden] = readInventory({ items: [wand] });
+    assert.deepEqual([hidden.price, hidden.rarity, hidden.tags, hidden.charges, hidden.name], [0, "", [], null, "Жезл"]);
+    delete globalThis.game;
   });
 
   it("reads coins in the system's order with their abbreviations", async () => {
@@ -685,6 +692,22 @@ describe("tooltip card reads (dnd5e 5.3.3)", () => {
     assert.deepEqual([card.kind, card.subtitle, card.properties, card.rarity, card.school], ["item", "Простое рукопашное • Подсечка", ["Ритуал", "Действие", "Владение"], "common", null]);
   });
 
+  it("keeps an unidentified item's bonuses and rarity off a player's card", async () => {
+    const { readCardData } = await import("../scripts/integrations/dnd5e.js");
+    globalThis.CONFIG = { DND5E: { currencies: {}, weightUnits: {} } };
+    globalThis.game = { user: { isGM: false } };
+    const sword = {
+      documentName: "Item", type: "weapon", name: "Странный меч", img: "sword.webp",
+      system: {
+        identified: false, rarity: "rare", attunement: "", armor: { value: null },
+        getCardData: async () => ({ name: "Странный меч", labels: { toHit: "+7", damages: [{ label: "1d8 + 2 Рубящий", damageType: "slashing" }], save: "СЛ 15" }, price: null, uses: null })
+      }
+    };
+    const card = await readCardData(sword);
+    delete globalThis.game;
+    assert.deepEqual([card.stats, card.damages, card.rarity], [[], [], "common"]);
+  });
+
   it("wraps an effect's or a rule page's rich tooltip, and names anything else", async () => {
     const { readCardData } = await import("../scripts/integrations/dnd5e.js");
     const effect = { documentName: "ActiveEffect", name: "Ускорение", img: "haste.webp", richTooltip: async () => ({ content: "<section>Скорость ×2</section>" }) };
@@ -771,6 +794,8 @@ describe("vehicle reads (dnd5e 5.3.3)", () => {
       delete globalThis.game;
     }
     assert.equal(readVehicle({ type: "npc", system: {} }), null);
+    const spaceship = { type: "vehicle", system: { details: { type: "space" }, traits: {}, attributes: { travel: { speeds: { land: 0.5, water: 0, air: 60 }, units: "mph" } } } };
+    assert.equal(readVehicle(spaceship).speed.value, 60);
   });
 });
 

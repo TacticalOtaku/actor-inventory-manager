@@ -2,8 +2,13 @@
   <header class="aim-head">
     <div class="aim-title">
       {{#if identity.hasLevel}}
-      <button type="button" class="aim-level {{#if identity.xp.ready}}is-ready{{/if}}" data-action="levelOrb" style="--xp: {{identity.xpShare}}" aria-label="{{identity.orbLabel}}" data-tooltip="{{identity.orbLabel}}">
-        <span class="aim-level-fill aim-ambient"></span>
+      <button type="button" class="aim-level {{#if identity.xp.ready}}is-ready{{else if identity.xpNear}}is-near{{/if}}" data-action="levelOrb" style="--xp: {{identity.xpShare}}" aria-label="{{identity.orbLabel}}" data-tooltip="{{identity.orbLabel}}">
+        <span class="aim-level-pool"><span class="aim-level-fill aim-ambient">
+          <svg class="aim-wave is-back aim-ambient" viewBox="0 0 120 14" preserveAspectRatio="none" aria-hidden="true"><path d="M0 6 Q15 0 30 6 T60 6 T90 6 T120 6 V14 H0z"/></svg>
+          <svg class="aim-wave aim-ambient" viewBox="0 0 120 14" preserveAspectRatio="none" aria-hidden="true"><path d="M0 6 Q15 0 30 6 T60 6 T90 6 T120 6 V14 H0z"/></svg>
+          <i class="aim-bubble aim-ambient" style="left: 28%"></i><i class="aim-bubble aim-ambient" style="left: 58%; animation-delay: 1.1s"></i><i class="aim-bubble aim-ambient" style="left: 44%; animation-delay: 1.9s"></i>
+        </span></span>
+        <span class="aim-level-glow aim-ambient" aria-hidden="true"></span>
         <span class="aim-level-n">{{identity.level}}{{#if identity.xp.ready}}<small>→{{identity.nextLevel}}</small>{{/if}}</span>
       </button>
       {{/if}}
@@ -22,7 +27,7 @@
       <div class="aim-menu-wrap">
         <button type="button" class="aim-ibtn" data-action="toggleMenu" aria-haspopup="menu" aria-expanded="{{menuOpen}}" aria-label="{{localize "AIM.window.more"}}" data-tooltip="{{localize "AIM.window.more"}}"><i class="fa-light fa-ellipsis"></i></button>
         <div class="aim-menu" role="menu" {{#unless menuOpen}}hidden{{/unless}}>
-          <button type="button" role="menuitem" data-action="openSheet">{{localize "AIM.window.menu.openSheet"}}</button>
+          <button type="button" role="menuitem" data-action="openSheet">{{sheetLabel}}</button>
           {{#if menu.traits}}<button type="button" role="menuitem" data-action="openTraits">{{localize "AIM.window.menu.traits"}}</button>{{/if}}
           {{#if menu.bastion}}<button type="button" role="menuitem" data-action="openBastion">{{localize "AIM.window.menu.bastion"}}</button>{{/if}}
           {{#if menu.revert}}<button type="button" role="menuitem" data-action="revertForm">{{localize "AIM.window.menu.revert"}}</button>{{/if}}
@@ -34,8 +39,16 @@
     {{#if xpOpen}}
     <div class="aim-xp-card" data-xp-form>
       <div class="aim-xp-line"><b>{{identity.xp.value}}</b> / {{identity.xp.max}} <span>{{localize "AIM.window.xp.label"}}</span></div>
-      <div class="aim-xp-bar"><i style="width: {{identity.xp.pct}}%"></i></div>
-      {{#if canEdit}}<label class="aim-xp-add"><span>{{localize "AIM.window.xp.add"}}</span><input type="number" name="xp" step="1" inputmode="numeric" placeholder="0"></label>{{/if}}
+      <div class="aim-xp-bar"><i style="transform: scaleX({{identity.xpShare}})"></i></div>
+      {{#if identity.xp.ready}}<p class="aim-xp-ready">{{localize "AIM.window.xp.readyHint" level=identity.nextLevel}}</p>{{/if}}
+      {{#if canEdit}}
+      <div class="aim-xp-quick">{{#each xpSteps}}<button type="button" class="aim-btn" data-action="xpAdd" data-amount="{{this}}">+{{this}}</button>{{/each}}</div>
+      <div class="aim-xp-add">
+        <input type="number" name="xp" step="1" inputmode="numeric" placeholder="0" aria-label="{{localize "AIM.window.xp.add"}}">
+        <button type="button" class="aim-btn is-primary" data-action="xpAdd">{{localize "AIM.window.xp.addButton"}}</button>
+        <button type="button" class="aim-btn" data-action="xpSet">{{localize "AIM.window.xp.set"}}</button>
+      </div>
+      {{/if}}
     </div>
     {{/if}}
     <div class="aim-abilities">
@@ -52,7 +65,7 @@
   </header>
   <nav class="aim-tabs" role="tablist">
     {{#each tabs}}
-    <button type="button" class="aim-tab" role="tab" data-action="switchTab" data-tab="{{id}}" aria-selected="{{active}}" {{#if hidden}}hidden{{/if}}>{{label}}</button>
+    <button type="button" class="aim-tab" role="tab" data-action="switchTab" data-tab="{{id}}" aria-selected="{{active}}" {{#if hidden}}hidden{{/if}}>{{label}}{{#if count}}<span class="aim-tab-n">{{count}}</span>{{/if}}</button>
     {{/each}}
     <span class="aim-tab-ink" aria-hidden="true"></span>
   </nav>

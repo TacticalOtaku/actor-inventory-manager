@@ -33,9 +33,9 @@
   position: relative; display: grid; place-items: center; align-content: center; gap: 2px;
   width: 56px; height: 62px; padding: 4px 2px; border: 1px dashed var(--line-strong); border-radius: var(--r-md);
   background: var(--surface-2); color: var(--text-3); cursor: pointer;
-  transition: border-color var(--d-fast), box-shadow var(--d-fast), color var(--d-fast);
+  transition: border-color var(--d-fast), box-shadow var(--d-fast), color var(--d-fast), transform var(--d-fast) var(--ease-snap);
 }
-.aim-slot:hover { border-color: var(--accent-line); color: var(--text-2); }
+.aim-slot:hover { border-color: var(--accent-line); color: var(--text-2); transform: translateY(-1px); }
 .aim-slot:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .aim-slot.is-filled { border-style: solid; border-color: var(--line); }
 .aim-slot.is-selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
@@ -87,12 +87,22 @@
 
 /* a preset without slots is a low banner over the hold */
 .aim-doll.is-banner { width: 100%; }
-.aim-doll-banner { display: flex; align-items: center; gap: var(--s4); }
-.aim-doll-banner .aim-figure { flex: none; width: 160px; height: 100px; }
+.aim-doll-banner {
+  position: relative; overflow: hidden; display: flex; align-items: flex-end; min-height: 120px; padding: var(--s3) var(--s4);
+  border: 1px solid var(--line); border-radius: var(--r-lg, 14px);
+  background: radial-gradient(ellipse at 70% 60%, var(--accent-soft), transparent 65%), var(--surface-1);
+}
+/* the figure stands on the right, large and clear; the text sits over the glow on the left */
+.aim-doll-banner .aim-figure { position: absolute; inset: 6% 3% 0 auto; width: min(46%, 340px); height: auto; max-height: none; opacity: 0.75; }
+.aim-doll-banner-text { position: relative; }
 .aim-doll-banner-text { display: grid; gap: 2px; color: var(--text-2); font-size: 12px; }
-.aim-doll-banner-text b { color: var(--text); font: 600 15px var(--font-display); }
+.aim-doll-banner-text b { color: var(--text); font: 600 17px var(--font-display); }
 
 /* the tile flying between a row and the doll */
 .aim-flight { position: fixed; z-index: 1000; border: 0; border-radius: var(--r-sm, 6px); box-shadow: 0 8px 24px rgb(0 0 0 / 0.45); pointer-events: none; }
 
 .aim-window[data-motion="off"] .aim-slot { transition: none; }
+
+/* a newly attuned item's socket lands with a bounce */
+.aim-socket.is-new { animation: aim-socket-land 460ms var(--ease-settle); }
+@keyframes aim-socket-land { 0% { opacity: 0; transform: translateY(-8px) scale(0.6); } 60% { opacity: 1; transform: scale(1.12); } }

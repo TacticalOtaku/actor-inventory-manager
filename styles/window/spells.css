@@ -19,6 +19,8 @@
 .aim-slot-track.is-pact .aim-gem.is-lit { background: var(--arcane); box-shadow: 0 0 8px color-mix(in oklab, var(--arcane) 45%, transparent); }
 .aim-gem:disabled { cursor: default; }
 .aim-gem:not(:disabled):hover { transform: rotate(45deg) scale(1.15); }
+.aim-gem.is-glint { animation: aim-gem-glint 700ms ease-out; }
+@keyframes aim-gem-glint { 40% { transform: rotate(45deg) scale(1.4); } }
 .aim-gem.is-burst { animation: aim-gem-burst 520ms var(--ease-settle); }
 .aim-gem.is-pop { animation: aim-gem-pop 360ms var(--ease-snap); }
 @keyframes aim-gem-burst { 30% { transform: rotate(45deg) scale(1.5); } }

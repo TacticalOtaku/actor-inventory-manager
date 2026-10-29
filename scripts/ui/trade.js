@@ -5,8 +5,10 @@
 import { FLAGS, MODULE_ID } from "../constants.js";
 import { isTradeActor, ownsActor } from "../core/actor-scope.js";
 import { isPhysicalItem } from "../core/item-classifier.js";
-import { OFFER_SEND_DELAY, offerWithQuantity, offersEmpty, partnerChoices, pilesTotals, recoveryAction, sameOffer, tradeStatus } from "../core/trade-panel.js";
-import { readCoins } from "../integrations/dnd5e.js";
+import { OFFER_SEND_DELAY, loadAfterTrade, offerWithQuantity, offeredWeight, offersEmpty, partnerChoices, pilesTotals, recoveryAction, sameOffer, tradeStatus } from "../core/trade-panel.js";
+import { getSystemWeightUnit } from "../core/weight-calculator.js";
+import { concealsDetails, readCoins, unitAbbreviation } from "../integrations/dnd5e.js";
+import { getContainerWeightReductionPct, isWeightyContainersActive } from "../integrations/weighty-containers.js";
 import { currencyProfile } from "../trade/currencies.js";
 import { emptyOffer, transferableItems } from "../trade/offers.js";
 import { activeGM, requestTrade, sessionFor, tradeState } from "../trade/service.js";
@@ -17,6 +19,8 @@ const errorText = (error) => {
   return key.startsWith("AIM.trade.errors.") ? t(key) : t("AIM.trade.errors.transfer");
 };
 const FINISHED = new Set(["complete", "cancelled", "failed"]);
+// What a gift waits for reads differently for its giver and its receiver; the rest is said as for a trade.
+const GIFT_STATUS = new Set(["waitOffer", "review", "partnerConfirmed", "waitPartner"]);
 
 /** The actor's trade the panel shows: an active one, or the last finished one until it is dismissed. */
 function shownSession(actor, dismissed) {
@@ -100,8 +104,10 @@ export class OfferDraft {
     this.app.renderTrade();
   }
 
+  /** The window closes: an edit still waiting for its pause leaves now instead of being lost. */
   close() {
     clearTimeout(this.timer);
+    if (this.dirty) this.send();
   }
 }
 
@@ -116,6 +122,49 @@ function offerability(actor) {
   return { allowed, reasons };
 }
 
+/** How much of an item's weight its actor carries: none in a weightless bag, less in a Weighty Containers one. */
+function carriedShare(actor, item) {
+  let share = 1;
+  for (let id = item?.system?.container, seen = new Set(); id && !seen.has(id); id = actor.items.get(id)?.system?.container) {
+    seen.add(id);
+    const container = actor.items.get(id);
+    if (container?.system?.properties?.has?.("weightlessContents")) return 0;
+    if (container && isWeightyContainersActive()) share *= 1 - getContainerWeightReductionPct(container) / 100;
+  }
+  return share;
+}
+
+/** dnd5e's coins weigh only under its currency-weight rule: so many to the pound (or the kilogram). */
+function coinWeight(count) {
+  try {
+    if (!count || !game.settings.get("dnd5e", "currencyWeight")) return 0;
+  } catch { return 0; }
+  const perUnit = Number(CONFIG.DND5E?.encumbrance?.currencyPerWeight?.[getSystemWeightUnit() === "kg" ? "metric" : "imperial"]);
+  return perUnit > 0 ? count / perUnit : 0;
+}
+
+/** The viewer's load after the trade: what leaves from its places, what arrives loose, and the coins. */
+function weightAfter(actor, session, side, draft) {
+  const partner = game.actors.get(session.actors[1 - side]);
+  const theirs = session.offers[1 - side];
+  const leaving = draft.items.reduce((sum, e) => {
+    const item = actor.items.get(e.id);
+    return sum + offeredWeight(item, e.quantity) * carriedShare(actor, item);
+  }, 0);
+  // Every world actor reaches every client, so the partner's offered items are read where they lie.
+  const arriving = theirs.items.reduce((sum, e) => sum + offeredWeight(partner?.items.get(e.id), e.quantity), 0);
+  const coins = (money) => Object.values(money ?? {}).reduce((sum, n) => sum + (Number(n) || 0), 0);
+  // shortcut: Item Piles pays with change, so its coins are left out; count them if its payment becomes predictable.
+  const net = session.mode === "item-piles" ? 0 : coins(theirs.money) - coins(draft.money);
+  const load = loadAfterTrade(actor, arriving - leaving + coinWeight(net));
+  if (!load) return null;
+  const format = (n) => n.toLocaleString(game.i18n.lang);
+  return {
+    text: t("AIM.trade.panel.weightAfter", { value: format(load.value), max: format(load.max), unit: unitAbbreviation("weightUnits", getSystemWeightUnit()) }),
+    tier: load.tierChanged ? load.tier : null
+  };
+}
+
 function moneyRows(session, actor) {
   if (session.mode !== "item-piles") {
     const coins = new Map(readCoins(actor).map((c) => [c.key, c]));
@@ -128,7 +177,7 @@ function moneyRows(session, actor) {
  * Everything the trade panel and the inventory rows need.
  * @param {Actor} actor
  * @param {{canEdit: boolean, open: boolean, draft: OfferDraft, askRestore: boolean, dismissed: Set<string>,
- *   seen: Set<string>, error: string|null}} state
+ *   seen: Set<string>, error: string|null, partner: string|null}} state
  */
 export function buildTradeContext(actor, state) {
   const button = tradeButtonState(actor, state);
@@ -144,30 +193,39 @@ export function buildTradeContext(actor, state) {
     }));
     const busy = new Set(tradeState().sessions.filter((s) => ["open", "executing", "recovery"].includes(s.status)).flatMap((s) => s.actors));
     const partners = partnerChoices({ actors, users: [...game.users], actorId: actor.id, userId: game.user.id, busy, locale: game.i18n.lang })
-      .map((p) => ({ ...p, label: `${p.name} · ${p.owner}${p.busy ? ` — ${t("AIM.trade.panel.busy")}` : ""}` }));
+      .map((p) => ({ ...p, selected: !p.busy && p.actorId === state.partner, label: `${p.name} · ${p.owner}${p.busy ? ` — ${t("AIM.trade.panel.busy")}` : ""}` }));
     return { ...base, view: "idle", partners, canStart: gmOnline && partners.some((p) => !p.busy) };
   }
 
   const side = Math.max(0, session.actors.indexOf(actor.id));
   const other = 1 - side;
   const partner = session.names[other];
+  const gift = session.kind === "gift";
+  const role = side === 0 ? "giver" : "receiver";
+  const heading = t(gift ? "AIM.trade.gift.title" : "AIM.trade.panel.title");
   const money = moneyRows(session, actor);
   const coinList = (values) => money.map((m) => ({ ...m, value: Number(values?.[m.key]) || 0 }));
-  const listed = (offer) => offer.items.map((e) => ({ ...e, quantityText: `×${e.quantity}` }));
+  // An offered item shows in its rarity's frame, read from its owner (offers store no rarity); never an unidentified one's.
+  const rarityOf = (owner, id) => {
+    const item = owner?.items.get(id);
+    return item && !concealsDetails(item) ? item.system.rarity ?? "" : "";
+  };
+  const listed = (offer, ownerId) => offer.items.map((e) => ({ ...e, rarity: rarityOf(game.actors.get(ownerId), e.id), quantityText: `×${e.quantity}` }));
 
   if (FINISHED.has(session.status)) {
     const done = session.status === "complete" ? "complete" : session.status === "cancelled" ? "cancelled" : "failed";
-    const title = done === "complete" ? t("AIM.trade.panel.done")
+    const said = gift ? `AIM.trade.gift.${role}` : "AIM.trade.panel";
+    const title = done === "complete" ? t(gift ? `AIM.trade.gift.${role}.done` : "AIM.trade.panel.done")
       // A trade the GM unlocked was cancelled by neither side.
       : done === "cancelled" ? (session.cancelledBy === undefined ? t("AIM.trade.status.cancelled")
-        : session.cancelledBy === side ? t("AIM.trade.panel.youCancelled") : t("AIM.trade.panel.partnerCancelled", { partner }))
+        : session.cancelledBy === side ? t(`${said}.youCancelled`) : t(`${said}.partnerCancelled`, { partner }))
         : t("AIM.trade.status.failed");
     return {
       // A refusal from before the trade ended (an exhausted item, say) no longer applies to its result.
-      ...base, error: null, view: "done", done, title, partner,
+      ...base, error: null, view: "done", done, title, partner, heading,
       note: done === "complete" ? t("AIM.trade.panel.doneNote") : done === "failed" ? t(session.error ?? "AIM.trade.errors.transfer") : t("AIM.trade.panel.nothingMoved"),
       cols: [[t("AIM.trade.panel.gave"), session.offers[side]], [t("AIM.trade.panel.got"), session.offers[other]]].map(([title, offer]) => ({
-        title, list: { items: listed(offer), coins: coinList(offer.money).filter((c) => c.value) }
+        title, list: { items: listed(offer, session.actors[offer === session.offers[side] ? side : other]), coins: coinList(offer.money).filter((c) => c.value) }
       }))
     };
   }
@@ -181,7 +239,7 @@ export function buildTradeContext(actor, state) {
   const mine = draft.items.map((e) => {
     const item = actor.items.get(e.id);
     const stored = session.offers[side].items.find((s) => s.id === e.id);
-    return { id: e.id, quantity: e.quantity, max: Number(item?.system?.quantity ?? e.quantity), name: item?.name ?? stored?.name ?? e.id, img: item?.img ?? stored?.img };
+    return { id: e.id, quantity: e.quantity, max: Number(item?.system?.quantity ?? e.quantity), name: item?.name ?? stored?.name ?? e.id, img: item?.img ?? stored?.img, rarity: rarityOf(actor, e.id) };
   });
   let piles = null;
   if (editable && session.mode === "item-piles") {
@@ -192,23 +250,29 @@ export function buildTradeContext(actor, state) {
   }
   const recovery = isGM ? recoveryAction(session) : null;
   const confirmed = session.confirmed[side];
+  // In a gift only the giver offers; the receiver sees the gift alone and accepts or declines it.
+  const canOffer = editable && (!gift || side === 0);
   return {
-    ...base, view: "trade", session, partner, side, editable,
+    ...base, view: "trade", session, partner, side, editable, heading,
+    showMine: !gift || side === 0, showTheirs: !gift || side === 1,
     statusKey: status,
-    statusText: t(`AIM.trade.panel.status.${status}`, { partner }),
-    mineTitle: isGM ? t("AIM.trade.panel.gives", { name: session.names[side] }) : t("AIM.trade.panel.youGive"),
-    theirsTitle: isGM ? t("AIM.trade.panel.gives", { name: partner }) : t("AIM.trade.panel.youGet"),
+    statusText: gift && GIFT_STATUS.has(status) ? t(`AIM.trade.gift.${role}.${status}`, { partner })
+      : t(gift && status === "executing" ? "AIM.trade.gift.executing" : `AIM.trade.panel.status.${status}`, { partner }),
+    mineTitle: isGM ? t("AIM.trade.panel.gives", { name: session.names[side] }) : t(gift ? "AIM.trade.gift.yourGift" : "AIM.trade.panel.youGive"),
+    theirsTitle: isGM ? t("AIM.trade.panel.gives", { name: partner }) : t(gift ? "AIM.trade.gift.givesYou" : "AIM.trade.panel.youGet", { partner }),
     confirmed: [confirmed, session.confirmed[other]],
     mine, mineCoins: coinList(draft.money), piles,
-    theirs: listed(session.offers[other]), theirsCoins: coinList(session.offers[other].money),
-    confirmLabel: t(confirmed ? "AIM.trade.panel.unconfirm" : "AIM.trade.confirm"),
+    theirs: listed(session.offers[other], session.actors[other]), theirsCoins: coinList(session.offers[other].money),
+    weight: weightAfter(actor, session, side, draft),
+    confirmLabel: t(confirmed ? "AIM.trade.panel.unconfirm" : !gift ? "AIM.trade.confirm" : side === 0 ? "AIM.trade.gift.send" : "AIM.trade.gift.accept"),
+    cancelLabel: t(gift && side === 1 ? "AIM.trade.gift.decline" : "AIM.trade.cancel"),
     canConfirm: editable && gmOnline && !state.draft.pending && (confirmed || !offersEmpty({ offers: [draft, session.offers[other]] })),
     // The GM may close an open trade too, for when a player left it.
     canCancel: editable || (isGM && session.status === "open"),
     recovery, askRestore: Boolean(recovery && state.askRestore),
     gmNote: isGM && session.status === "open",
     // Inventory rows: what may go into the offer and how many are left.
-    offer: editable ? { allowed, reasons, remaining: Object.fromEntries(draft.items.map((e) => [e.id, e.quantity])) } : null
+    offer: canOffer ? { allowed, reasons, remaining: Object.fromEntries(draft.items.map((e) => [e.id, e.quantity])) } : null
   };
 }
 

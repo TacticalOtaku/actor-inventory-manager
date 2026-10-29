@@ -3,6 +3,7 @@ import { afterEach, describe, it } from "node:test";
 
 import { configurePaperdollRuntime, resetPaperdollRuntime } from "../scripts/core/paperdoll-runtime.js";
 import {
+  deleteWorldCustomTemplate,
   getActorPaperdollTemplate,
   importTemplateJSON,
   isWorldCustomTemplate,
@@ -93,6 +94,16 @@ describe("world templates", () => {
     // 1.9 wrote "custom" with its own doll: the flag still counts there.
     flags.paperdollTemplateId = "custom";
     assert.deepEqual(getActorPaperdollTemplate({ flags: { "actor-inventory-manager": flags } }).slots.map(s => s.id), ["old"]);
+  });
+
+  it("fall back to the actor type's default when the linked preset was deleted", async () => {
+    let stored = { "longship": { id: "longship", name: "Longship", figure: "ship", slots: [slot("oars")] } };
+    configurePaperdollRuntime({ isGM: () => true, vehicleType: () => "water", getCustomTemplates: () => stored, setCustomTemplates: async value => { stored = value; } });
+    const ship = { type: "vehicle", flags: { "actor-inventory-manager": { paperdollTemplateId: "longship" } } };
+    assert.equal(getActorPaperdollTemplate(ship).templateId, "longship");
+    await deleteWorldCustomTemplate("longship");
+    assert.equal(getActorPaperdollTemplate(ship).templateId, "ship");
+    assert.equal(getActorPaperdollTemplate({ type: "npc", flags: { "actor-inventory-manager": { paperdollTemplateId: "longship" } } }).templateId, "dnd2024");
   });
 
   it("import a file over neither a built-in nor an existing preset", async () => {

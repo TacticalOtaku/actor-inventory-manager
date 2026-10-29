@@ -6,7 +6,7 @@ import { isItemAttuned } from "../core/attunement.js";
 import { containerDropRefusal, listPrefsFor } from "../core/inventory.js";
 import { validateContainerDrop } from "../integrations/weighty-containers.js";
 import { isItemCompatibleWithSlot } from "../core/item-classifier.js";
-import { equipItemToSlot, setItemContainer, unequipItem } from "./item-actions.js";
+import { equipItemToSlot, setItemContainer, toggleAttunement, unequipItem } from "./item-actions.js";
 import { MODULE_ID } from "../constants.js";
 import { dropFromOutside, noteDrop, refuseDrop, showDropTarget } from "./external-drop.js";
 import { t } from "./html.js";
@@ -76,6 +76,9 @@ export function bindInventoryDrag(app) {
   const el = app.element;
   let dragged = null;
   let fromDoll = false;
+  let fromSocket = false;
+  // Trays that sprang open under the drag stay open after it.
+  const sprung = new Set();
   // A favorite row being reordered, or a slot track, an effect, a skill or a tool dragged into the favorites.
   let draggedFav = null;
   let draggedNew = null;
@@ -100,7 +103,16 @@ export function bindInventoryDrag(app) {
     el.querySelector(".is-dragging")?.classList.remove("is-dragging");
     for (const slot of el.querySelectorAll(".aim-slot.is-fit")) slot.classList.remove("is-fit");
     dragged = null;
-    fromDoll = false;
+    fromDoll = fromSocket = false;
+    if (sprung.size) {
+      const folds = { ...game.settings.get(MODULE_ID, "trayFolds") };
+      for (const id of sprung) {
+        const tray = app.actor.items.get(id);
+        if (tray) folds[tray.uuid] = false;
+      }
+      sprung.clear();
+      game.settings.set(MODULE_ID, "trayFolds", folds);
+    }
     draggedFav = null;
     draggedNew = null;
   };
@@ -137,6 +149,7 @@ export function bindInventoryDrag(app) {
     source.classList.add("is-dragging");
     dragged = item;
     fromDoll = !source.matches("[data-row]");
+    fromSocket = source.matches(".aim-socket");
     // The slots the item fits glow while it is dragged.
     for (const slot of el.querySelectorAll(".aim-slot[data-slot]")) {
       slot.classList.toggle("is-fit", isItemCompatibleWithSlot(item, slot.dataset.slot, app.actor));
@@ -168,7 +181,11 @@ export function bindInventoryDrag(app) {
     const folded = event.target.closest?.(".aim-tray.is-folded > .aim-tray-head")?.parentElement ?? null;
     if (folded !== spring.tray) {
       stopSpring();
-      if (folded) spring = { tray: folded, timer: setTimeout(() => folded.classList.remove("is-folded"), SPRING_MS) };
+      if (folded) spring = { tray: folded, timer: setTimeout(() => {
+        folded.classList.remove("is-folded");
+        folded.querySelector(".aim-tray-toggle")?.setAttribute("aria-expanded", "true");
+        sprung.add(folded.dataset.tray);
+      }, SPRING_MS) };
     }
   });
 
@@ -209,6 +226,8 @@ export function bindInventoryDrag(app) {
     }
     const manual = listPrefsFor(game.settings.get(MODULE_ID, "listPrefs"), "equipment").sort === "manual";
     const target = dropTarget(event.target, event, manual, dragged, fromDoll);
+    // A socket dragged out of the doll ends the attunement; the item stays worn.
+    if (target?.kind === "unequip" && fromSocket) target.kind = "unattune";
     // Another client may have deleted the item mid-drag.
     const item = app.actor.items.get(dragged.id);
     reset();
@@ -237,6 +256,7 @@ export async function moveInventoryItem(app, item, target) {
   if (target.kind === "offer") return app.offerItem(item, Number(item.system?.quantity ?? 1));
   if (target.kind === "attune") return isItemAttuned(item) ? undefined : app.attuneWithLimit(item, null);
   if (target.kind === "unequip") return item.system.equipped ? unequipItem(item.actor, item) : undefined;
+  if (target.kind === "unattune") return isItemAttuned(item) ? toggleAttunement(item) : undefined;
   if (target.kind === "sort") {
     // Siblings go in the order the list shows (sort, then name), so equal sort values keep their visible order.
     const siblings = item.actor.items.filter((i) => i.id !== item.id && sameList(i, item))

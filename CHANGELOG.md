@@ -1,5 +1,62 @@
 # Changelog
 
+## 2.0.9
+
+### Added
+- Gift: «Подарить» starts a one-way trade. Only the giver offers items or coins, the receiver accepts or declines;
+  a payment is a gift of coins.
+- The trade panel shows your carried weight after the trade, coloured when the load tier would change.
+- «Бросить на землю» in an item's menu turns it into an Item Piles pile at the actor's token (Item Piles active, a
+  token on the scene, not a container).
+- The level orb is a liquid with a moving surface and bubbles; its glow grows with the experience, from 90% it pulses,
+  and when the level is ready it throws golden stars and shows an arrow. The XP card has +50/+100/+250/+1000, «Задать»
+  and the ready hint.
+- Tabs show how many items, spells and features they hold.
+- The armor class shows its breakdown (armor, Dexterity, shield, bonuses, cover) on hover.
+- Hit die, death save and concentration rolls show their result beside the button.
+- An item, feature, spell or activity used from the window lands with sparks in its school's or rarity's colour; a
+  refused one shakes its row and says why beside it. Starring an entry throws amber sparks.
+- Motion: the window settles in when it opens, a tab or a section brings its entries in as a short cascade, cards
+  light up under the cursor, presses send a ripple, buttons and doll slots lift, a row's tile catches a sheen, the tab
+  strip casts a shadow over a scrolled panel, a new accent or theme crossfades, slot gems glint like runes, a changed
+  quantity pops, a new attunement socket lands, an offered item slides in.
+- Vehicle crew shows as pills with portrait and name; the banner of a doll without slots shows its figure large.
+
+### Fixed
+- Generic equipment («Stone of Light», «Heavy Coat», «Robe of Stars», goggles) no longer takes the armor slot and
+  pushes off the worn armor.
+- Equipped ammunition takes no hand, so a shield can still be equipped from the dnd5e sheet.
+- Deleting a world preset gives a vehicle or a beast its own default doll back, not a humanoid one.
+- `formatItemForDisplay` of the API no longer shows players an unidentified item's price, rarity and description.
+- An unlinked token's window takes outside drops while its base actor trades.
+- Trading:
+  - A trade stuck in recovery locks only the items and coins: hit points, slots, death saves and experience change.
+  - A big trade no longer times out on the player's screen while the GM is still carrying it out.
+  - Received items join an identical stack outside containers instead of adding a second row.
+  - The chosen partner no longer resets to the first one on a redraw.
+  - An offer edit made just before closing the window is sent.
+  - The panel slides in and out; its error shakes once, not on every keystroke; withdrawing your own confirmation no
+    longer shakes the status.
+  - In a window under about 1040 px the open panel covers the inventory instead of crushing it.
+- Biography text being typed is no longer lost when something else redraws the window.
+- In a popped-out window, typed text and open menus behave as in the main one.
+- A long rest refills the dice and runes after the dawn, once; a hit die roll spins the die it spent.
+- HP, coin and quantity animations are no longer cut off by the redraw that follows.
+- A wrecked vehicle shows no death saves.
+- In the card view an item's tags wrap inside the card.
+- The inspector slides in only when an entry is picked, not on every change.
+- An observer's header tools no longer cover the actor's name.
+- The preset editor follows Foundry's light or dark scheme in «Авто».
+- «Сдержанно» stops the particle bursts too.
+- The «⋯» menu and the XP card close on a click outside; the menu entry names the NPC or vehicle sheet.
+- The I key brings a minimised window back instead of closing it; collapse and expand keep the width you had.
+- The list view, folded trays and the hidden doll follow in every open window.
+- A tray that sprang open under a drag stays open; a socket dragged out of the doll ends the attunement.
+- A refused activity shakes its row; a doll slot or socket click scrolls the item's details into view.
+- The closed settings drawer is out of the Tab order and Escape drops a pending reset.
+- The narrow window's rail scrolls with the wheel and fades where more blocks wait.
+- A vehicle's or NPC's settings list only the tabs it can have, with the names its tabs show.
+
 ## 2.0.8
 
 ### Fixed

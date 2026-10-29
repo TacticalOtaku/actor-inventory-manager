@@ -83,6 +83,23 @@ describe("two-handed weapons", () => {
     const oneFree = makeActor([weapon("longsword", [], true, "mainHand"), potion]);
     assert.equal(findEquipSlot(oneFree, potion), "offHand");
   });
+
+  it("leave the hands free of equipped arrows, so a shield still goes on", () => {
+    const arrows = { id: "arrows", name: "Arrows", type: "consumable", flags: {}, system: { equipped: true, type: { value: "ammo" } } };
+    const actor = makeActor([weapon("longsword", [], true, "mainHand"), arrows, shield("shield")]);
+    assert.equal(findEquipSlot(actor, arrows), null);
+    assert.deepEqual([...getActorEquippedMap(actor).keys()], ["mainHand"]);
+    assert.equal(findEquipSlot(actor, actor.items.get("shield")), "offHand");
+  });
+
+  it("never take off worn armor for generic gear", () => {
+    const plate = { id: "plate", name: "Plate Armor", type: "equipment", flags: { "actor-inventory-manager": { slot: "armor" } }, system: { equipped: true, type: { value: "heavy" } } };
+    const gear = [["Goggles of Night", "clothing"], ["Heavy Coat", "clothing"], ["Stone of Light", "trinket"], ["Robe of Stars", "wondrous"]]
+      .map(([name, value]) => ({ id: name, name, type: "equipment", flags: {}, system: { equipped: false, type: { value } } }));
+    const actor = makeActor([plate, ...gear]);
+    for (const item of gear) assert.notEqual(findEquipSlot(actor, item), "armor", item.name);
+    assert.equal(findEquipSlot(makeActor([{ ...plate, flags: {}, system: { equipped: false, type: { value: "heavy" } } }]), plate), "armor");
+  });
 });
 
 describe("shields", () => {

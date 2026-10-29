@@ -74,3 +74,28 @@ test("legacy recovery journals with expanded currency paths can still restore ba
   assert.equal(a.system.currency.gp, 5);
   assert.equal(inventoryMatches(a, before), true);
 });
+test("a received item joins an identical loose stack and recovery splits it again", async () => {
+  setup();
+  const loose = { ...structuredClone(potion), _id: "own", system: { quantity: 1, equipped: true, attuned: false, container: null }, flags: {} };
+  const bagged = { ...structuredClone(potion), _id: "bagged", system: { quantity: 3, equipped: false, attuned: false, container: "bag" } };
+  const other = { ...structuredClone(loose), _id: "other", name: "Elixir" };
+  const a = actor("a", [potion]), b = actor("b", [loose, bagged, other]);
+  const before = captureInventory(b);
+  await transferItems(a, b, [{ id: "potion", quantity: 2 }]);
+  assert.deepEqual([...b.items.keys()], ["own", "bagged", "other"]);
+  assert.equal(b.items.get("own").system.quantity, 3);
+  // A stack in a container and a different item are left alone.
+  assert.equal(b.items.get("bagged").system.quantity, 3);
+  assert.equal(b.items.get("other").system.quantity, 1);
+  await restoreInventory(b, before);
+  assert.equal(b.items.get("own").system.quantity, 1);
+  assert.equal(inventoryMatches(b, before), true);
+});
+test("an item that differs in more than its count arrives as a stack of its own", async () => {
+  setup();
+  const used = { ...structuredClone(potion), _id: "used", system: { quantity: 1, container: null, uses: { spent: 1 } } };
+  const a = actor("a", [{ ...structuredClone(potion), system: { ...potion.system, uses: { spent: 0 } } }]), b = actor("b", [used]);
+  await transferItems(a, b, [{ id: "potion", quantity: 1 }]);
+  assert.equal(b.items.get("used").system.quantity, 1);
+  assert.equal(b.items.get("received").system.quantity, 1);
+});

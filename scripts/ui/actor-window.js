@@ -69,6 +69,8 @@ import { readMotionCaps, schemeIsLight, stampTheme } from "./theme-root.js";
 import { REST_HOOK, buildRailContext, openStatConfig, playLongRest, playRailChanges, railSnapshot, startRuneGlints } from "./rail.js";
 import { preloadBursts } from "./bursts.js";
 import { readVehicleOf, vehicleKind } from "./vehicle.js";
+import { t } from "./html.js";
+import { signed } from "../core/overview.js";
 
 const TEMPLATES = `modules/${MODULE_ID}/templates/window`;
 
@@ -114,7 +116,6 @@ const TAB_FILTERS = { equipment: LIST_FILTERS, spells: SPELL_FILTERS, features: 
 /** Width the collapse button shrinks the window to: the compact layout, rail only. */
 const COLLAPSED_WIDTH = 320;
 
-const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 const hasLegendary = (actor) => Object.values(readNpc(actor)?.legendary ?? {}).some(Boolean);
 /** The settings list names a block by what it holds for this actor type: an NPC's stats add its rating, its chips lack inspiration. */
 const railBlockLabel = (id, type) => {
@@ -122,7 +123,6 @@ const railBlockLabel = (id, type) => {
   if (type === "vehicle" && id === "stats") return t("AIM.window.rail.statsVehicle");
   return t(`AIM.window.rail.${id}`);
 };
-const signed = (n) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 
 function windowIdFor(actor) {
   return `${MODULE_ID}-window-${String(actor.uuid ?? actor.id).replace(/[^\w-]/g, "-")}`;
@@ -276,6 +276,13 @@ export class ActorWindow extends WindowBase {
 
   get canEdit() {
     return canEditActor(this.actor, game.user);
+  }
+
+  /** A user who lost sight of the actor (the GM took Observer away) sees the window close, as with a document sheet. */
+  _canRender(options) {
+    if (canViewActor(foundry.utils.fromUuidSync(this.actorKey) ?? this.actor, game.user)) return super._canRender(options);
+    if (this.rendered) this.close();
+    return false;
   }
 
   /* ─── Context ─── */
@@ -812,8 +819,10 @@ export class ActorWindow extends WindowBase {
     this.#switchTo(target.dataset.tab);
   }
 
+  /** Shows a tab; false for one the user hid, which a favorite does not open either. */
   #switchTo(tab) {
-    if (!tab || tab === this.tab) return;
+    if (!tab || this.element.querySelector(`.aim-tab[data-tab="${tab}"]`)?.hidden) return false;
+    if (tab === this.tab) return true;
     this.tab = tab;
     for (const button of this.element.querySelectorAll(".aim-tab")) button.setAttribute("aria-selected", String(button.dataset.tab === tab));
     for (const panel of this.element.querySelectorAll(".aim-panel")) {
@@ -822,6 +831,7 @@ export class ActorWindow extends WindowBase {
       if (on && this.motionOn) panel.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 240, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
     }
     this.#moveInk();
+    return true;
   }
 
   static #onOpenSettings() {
@@ -1252,7 +1262,7 @@ export class ActorWindow extends WindowBase {
   /** A favorite effect, skill or tool opens its tab and highlights its row. */
   #revealFavorite({ type, id }) {
     const tab = type === "effect" ? "effects" : "overview";
-    this.#switchTo(tab);
+    if (!this.#switchTo(tab)) return;
     const panel = this.element.querySelector(`[data-panel="${tab}"]`);
     const row = type === "effect"
       ? [...panel.querySelectorAll("[data-effect-rel]")].find((el) => el.dataset.effectRel === id)?.querySelector("[data-effect-row]")
@@ -1860,7 +1870,7 @@ export class ActorWindow extends WindowBase {
     const doc = ["item", "activity"].includes(favorite.type) ? await fromUuid(favorite.id, { relative: this.actor }) : null;
     const item = favorite.type === "activity" ? doc?.item : doc;
     const tab = tabForFavorite({ type: favorite.type, itemType: item?.type });
-    this.#switchTo(tab);
+    if (!this.#switchTo(tab)) return;
     const row = item && this.element.querySelector(`[data-panel="${tab}"] .aim-rowwrap[data-item-id="${item.id}"] [data-row]`);
     if (!row) return;
     if (this.selected !== item.id) await this.#selectRow(row);

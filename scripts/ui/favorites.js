@@ -5,12 +5,12 @@
 import { groupFavorites } from "../core/favorites.js";
 import { readFavorites } from "../integrations/dnd5e.js";
 import { automationOnly } from "../integrations/midi-qol.js";
+import { t } from "./html.js";
+import { signed } from "../core/overview.js";
 
 /** More uses than this show as a number. */
 const MAX_PIPS = 8;
 
-const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
-const signed = (n) => (Number(n) >= 0 ? `+${Number(n)}` : `−${Math.abs(Number(n))}`);
 
 /** dnd5e keeps favorites on characters only. */
 export const hasFavorites = (actor) => actor.type === "character";

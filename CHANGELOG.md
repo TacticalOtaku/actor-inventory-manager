@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.0.7
+
+### Fixed
+- Unidentified items no longer tell players their price, rarity, properties or charges, in rows, the doll, the
+  inspector and hover cards; a player's card also leaves out to-hit, damage and save, which carry the magic bonus.
+- A player who loses sight of an actor (the GM takes Observer away) sees its window close.
+- Trading:
+  - An offered item that changed (a potion drunk from the offered stack) no longer jams the trade: the offer is read
+    again and both players confirm what is offered now.
+  - Item Piles secondary currencies are no longer offered as money, which Item Piles never moved; they trade as
+    items.
+  - The GM can cancel an open trade, for when a player left it.
+- Equipping:
+  - Natural weapons (claws, a bite) no longer take a hand on the doll.
+  - Equipping a potion or a scroll no longer pushes the held weapon or shield out of a hand; with both hands full it
+    is equipped without a slot.
+  - A spell scroll no longer lands in the head slot by its name («Crown of Madness»).
+- A space vehicle shows its speed.
+- Effects keep their size after a browser zoom or a move to another screen, and no longer reallocate the renderer
+  every frame at a fractional display scale.
+- A favorite no longer opens a tab the user hid.
+- An item deleted by another player while being dragged no longer throws.
+- A weight unit whose key has capitals converts by its exact key.
+
+### Removed
+- Unused translation strings, the Unbounded and JetBrains Mono fonts, the old slot registry and unused constants.
+
 ## 2.0.6
 
 ### Fixed

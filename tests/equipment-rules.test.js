@@ -59,6 +59,16 @@ describe("two-handed weapons", () => {
     const actor = makeActor([weapon("greataxe", ["two"], true, "mainHand"), weapon("longsword")]);
     assert.equal(findEquipSlot(actor, actor.items.get("longsword")), "mainHand");
   });
+
+  it("never push a held weapon out for a potion, and leave hands free of claws", () => {
+    const potion = { id: "potion", name: "Potion of Healing", type: "consumable", flags: {}, system: { equipped: false, type: { value: "potion" } } };
+    const claws = { ...weapon("claws"), system: { equipped: false, properties: new Set(), type: { value: "natural" } } };
+    const full = makeActor([weapon("longsword", [], true, "mainHand"), shield("shield", true, "offHand"), potion, claws]);
+    assert.equal(findEquipSlot(full, potion), null);
+    assert.equal(findEquipSlot(full, claws), null);
+    const oneFree = makeActor([weapon("longsword", [], true, "mainHand"), potion]);
+    assert.equal(findEquipSlot(oneFree, potion), "offHand");
+  });
 });
 
 describe("shields", () => {

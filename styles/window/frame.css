@@ -7,8 +7,6 @@
   font-family: var(--font-ui);
   border: 1px solid var(--line-strong);
   box-shadow: var(--shadow-lift);
-  /* the --accent change flows through every colour */
-  transition: --accent 600ms var(--ease-settle);
 }
 
 /* Foundry's core `button` rule fixes every button at --button-size (28px) high and sets its own font (Signika, with

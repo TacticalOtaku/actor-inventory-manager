@@ -1,5 +1,8 @@
 const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" };
 
+/** A localized string, formatted when it has data. */
+export const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
+
 /**
  * Escape text for interpolation into an HTML string (dialog content).
  * Item names, slot ids and imported JSON are user-controlled.

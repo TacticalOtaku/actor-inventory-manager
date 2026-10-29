@@ -36,5 +36,8 @@ export function profMark(multiplier) {
   return m >= 2 ? "expert" : m >= 1 ? "prof" : m > 0 ? "half" : "none";
 }
 
-/** «+3», «−1»: a bonus as the sheet shows it. */
-export const signed = (n) => (Number(n) >= 0 ? `+${Number(n) || 0}` : `−${Math.abs(Number(n))}`);
+/** «+3», «−1»: a bonus as the sheet shows it; a missing one is «+0», never «−NaN». */
+export const signed = (n) => {
+  const value = Number(n) || 0;
+  return value >= 0 ? `+${value}` : `−${Math.abs(value)}`;
+};

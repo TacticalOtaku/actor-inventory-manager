@@ -19,18 +19,17 @@ import {
   setActorPaperdollTemplate
 } from "../core/paperdoll-templates.js";
 import { addSlot, moveSlot, presetIdFor, removeSlot, sameAsPreset, workingFrom } from "../core/preset-editor.js";
-import { escapeHTML } from "./html.js";
+import { escapeHTML, t } from "./html.js";
 import { stampTheme } from "./theme-root.js";
+import { FIGURE_VIEW } from "./doll.js";
 
 const TEMPLATES = `modules/${MODULE_ID}/templates/window`;
 const FIGURE_HREF = `modules/${MODULE_ID}/assets/figures.svg`;
-const FIGURE_VIEW = { human: "0 0 120 260", beast: "0 0 240 160", wagon: "0 0 240 160", ship: "0 0 240 160", airship: "0 0 240 160" };
 const RULES = ["isArmor", "isShield", "locksOffHandOn2H", "singlePerActor"];
 
 /** Open editors, keyed by actor UUID. */
 const OPEN_EDITORS = new Map();
 
-const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 const slotLabel = (slot) => (slot.labelKey ? t(slot.labelKey) : slot.label || slot.id);
 
 const EditorBase = foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2);

@@ -298,6 +298,18 @@ test("an offered item changed after the partner looked cannot be traded", async 
   assert.deepEqual(tradeState().sessions[0].confirmed, [false, false]);
   assert.equal(tradeState().receipts.p2.error, "AIM.trade.errors.changed");
   assert(actors.get("a").items.has("sword"));
+  // The offer was read again under a new revision: both review the changed item and the trade goes through.
+  assert.equal(tradeState().sessions[0].revision, 2);
+  await command("confirmRequest03", "confirm", "a", "p1", { revision: 2 });
+  await command("confirmRequest04", "confirm", "b", "p2", { revision: 2 });
+  assert.equal(tradeState().sessions[0].status, "complete");
+  assert.equal([...actors.get("b").items.values()][0].name, "Rusty Sword");
+});
+test("the GM cancels an open trade a player cannot", async () => {
+  setup(); await start();
+  await command("cancelRequest001", "cancel", "b", "gm");
+  assert.deepEqual([tradeState().sessions[0].status, tradeState().sessions[0].cancelledBy], ["cancelled", undefined]);
+  assert.equal(tradeState().receipts.gm.error, null);
 });
 test("wearing or opening an offered item keeps the offer, and the session holds a digest, not the item", async () => {
   const { actors } = setup(); await start();

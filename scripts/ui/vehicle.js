@@ -4,8 +4,8 @@
 
 import { cargoMeter, seats, weightText } from "../core/vehicle.js";
 import { readVehicle } from "../integrations/dnd5e.js";
+import { t } from "./html.js";
 
-const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 
 // shortcut: free places draw at most this many placeholders; a galleon's hundred deckhands show as a count instead.
 const MAX_FREE_DRAWN = 12;

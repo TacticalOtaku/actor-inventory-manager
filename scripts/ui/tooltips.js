@@ -8,7 +8,7 @@ import { TIP_TIMING, TIP_MAX_DEPTH, cardsToSweep, openDelay, planClose, planOpen
 import { damageParts } from "../core/damage-scenes.js";
 import { readCardData, readDamageType } from "../integrations/dnd5e.js";
 import { startScene } from "./damage-scenes.js";
-import { unwrapSecrets } from "./html.js";
+import { t, unwrapSecrets } from "./html.js";
 import { scRarityColor, scSchoolColor } from "../integrations/sc-rarity-colors.js";
 import { stampTheme } from "./theme-root.js";
 
@@ -17,7 +17,6 @@ export const TOOLTIP_TEMPLATE = `modules/${MODULE_ID}/templates/window/tooltip-c
 /** What opens a card in the window, and inside a card. */
 const TRIGGERS = ".aim-dmg[data-dmg], [data-row], .aim-slot[data-item-id], .aim-socket[data-item-id], .aim-slotless-item[data-item-id], [data-effect-row], .aim-fav[data-fav-id], .aim-cond[data-status], a.content-link[data-uuid]";
 
-const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 
 /** One layer per document, so a detached window shows its cards in its own window. */
 const LAYERS = new WeakMap();

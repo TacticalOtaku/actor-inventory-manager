@@ -15,9 +15,8 @@ import {
   isShield,
   isTwoHandedWeapon
 } from "./item-classifier.js";
-import { getActorSlots } from "./paperdoll-templates.js";
+import { DND_2024_TEMPLATE, getActorSlots } from "./paperdoll-templates.js";
 import { getPaperdollRuntime } from "./paperdoll-runtime.js";
-import { slotRegistry } from "./slot-definitions.js";
 import { isLegacyNonSlot } from "./migration.js";
 
 /**
@@ -62,7 +61,7 @@ function ruleMessage(key, data = {}) {
  * @returns {Array<Object>}
  */
 function actorSlotDefinitions(actor) {
-  return actor ? getActorSlots(actor) ?? [] : slotRegistry.getAll();
+  return actor ? getActorSlots(actor) ?? [] : DND_2024_TEMPLATE.slots;
 }
 
 function slotDisplayName(actor, slotId) {
@@ -335,7 +334,7 @@ export const equipmentRuleEngine = new EquipmentRuleEngine();
  * Prefers a free slot the rules accept, then an occupied one the rules accept
  * as a swap. A shield never takes a swap that would push a held two-handed weapon
  * out of the main hand: it is pointed at the blocked off hand and refused there.
- * When no slot passes, the first free candidate (else the first candidate) is
+ * A consumable takes a free slot or none. When no slot passes, the first free candidate (else the first candidate) is
  * returned so the caller can report the rule failure.
  * @param {Object} actor
  * @param {Object} item
@@ -350,8 +349,10 @@ export function findEquipSlot(actor, item, slotMap = getActorEquippedMap(actor))
   const isFree = slotId => !slotMap.has(slotId) || slotMap.get(slotId)?.id === item.id;
   const swapAllowed = slotId => !(isShield(item) && isTwoHandedWeapon(slotMap.get(slotId)));
 
-  return candidates.find(slotId => isFree(slotId) && passes(slotId))
-    ?? candidates.find(slotId => swapAllowed(slotId) && passes(slotId))
+  const free = candidates.find(slotId => isFree(slotId) && passes(slotId));
+  // A potion or a scroll never pushes the weapon or shield out of a hand: with both hands full it goes slotless.
+  if (free || item.type === "consumable") return free ?? null;
+  return candidates.find(slotId => swapAllowed(slotId) && passes(slotId))
     ?? candidates.find(isFree)
     ?? candidates[0];
 }

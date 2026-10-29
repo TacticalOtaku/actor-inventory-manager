@@ -74,8 +74,8 @@
     <div class="aim-crew-group" data-crew="{{id}}">
       <div class="aim-rail-title"><span>{{label}}</span><span class="aim-crew-count {{#if over}}is-over{{/if}}">{{countText}}{{#if freeText}} · {{freeText}}{{/if}}</span></div>
       <div class="aim-crew-list">
-        {{#each members}}{{#if unknown}}<span class="aim-crew-face is-unknown" data-tooltip="{{name}}" aria-label="{{name}}"><i class="fa-light fa-user-secret"></i></span>{{else}}<button type="button" class="aim-crew-face" data-action="openCrew" data-uuid="{{uuid}}" data-tooltip="{{name}}" aria-label="{{openLabel}}"><img src="{{img}}" alt=""></button>{{/if}}{{/each}}
-        {{#each freeSeats}}<span class="aim-crew-face is-free" aria-hidden="true"></span>{{/each}}
+        {{#each members}}{{#if unknown}}<span class="aim-crew-face is-unknown"><span class="aim-crew-av"><i class="fa-light fa-user-secret"></i></span><span class="aim-crew-name">{{name}}</span></span>{{else}}<button type="button" class="aim-crew-face" data-action="openCrew" data-uuid="{{uuid}}" data-tooltip="{{name}}" aria-label="{{openLabel}}"><span class="aim-crew-av"><img src="{{img}}" alt=""></span><span class="aim-crew-name">{{name}}</span></button>{{/if}}{{/each}}
+        {{#each freeSeats}}<span class="aim-crew-face is-free" aria-hidden="true"><span class="aim-crew-av"></span></span>{{/each}}
       </div>
     </div>
     {{/each}}
@@ -88,7 +88,7 @@
   </div>
   {{/if}}
 
-  {{#if rail.down}}
+  {{#if rail.dying}}
   <div class="aim-death {{rail.deathState}}" data-flip>
     <span>{{localize "AIM.window.death.successes"}}</span>
     <div class="aim-death-row">{{#each rail.deathMarks.success}}<button type="button" class="is-ok {{#if this}}is-on{{/if}}" data-action="markDeath" data-kind="success" data-index="{{@index}}" {{#unless ../canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.death.success"}}"></button>{{/each}}</div>
@@ -108,7 +108,7 @@
 
   {{#if blocks.stats}}
   <div class="aim-stats" data-block="stats" data-flip>
-    <div class="aim-stat is-ac" data-config="ac" data-tooltip="{{localize "AIM.window.stats.acHint"}}"><b>{{rail.ac}}</b><span>{{localize "AIM.window.stats.ac"}}</span></div>
+    <div class="aim-stat is-ac" data-config="ac" data-tooltip="{{rail.acHint}}"><b>{{rail.ac}}</b><span>{{localize "AIM.window.stats.ac"}}</span></div>
     {{#if rail.vehicle}}
     <div class="aim-stat" data-tooltip="{{localize "AIM.window.stats.thresholdHint"}}"><b>{{rail.vehicle.dt}}</b><span>{{localize "AIM.window.stats.threshold"}}</span></div>
     <div class="aim-stat" data-tooltip="{{localize "AIM.window.stats.mishapHint"}}"><b>{{rail.vehicle.mt}}</b><span>{{localize "AIM.window.stats.mishap"}}</span></div>

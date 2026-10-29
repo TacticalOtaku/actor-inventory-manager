@@ -246,7 +246,7 @@ const BURSTS = {
 export const preloadBursts = () => (hasPixi() ? load().catch(() => null) : null);
 
 /**
- * Plays a burst over an element of a window (#9 reactive effects: «Все» and «Сдержанно»; nothing with motion off).
+ * Plays a burst over an element of a window. Bursts are particles: «Все» only; «Сдержанно» keeps the pulses and numbers.
  * Its canvas sits on the window, ignores the pointer and goes once the burst is over.
  * @param {HTMLElement} root    the window element
  * @param {HTMLElement} anchor  the element it plays over
@@ -255,7 +255,7 @@ export const preloadBursts = () => (hasPixi() ? load().catch(() => null) : null)
  */
 export function playBurst(root, anchor, kind, { token, at } = {}) {
   const def = BURSTS[kind];
-  if (!def || !root || !anchor || root.dataset.motion === "off" || !hasPixi()) return;
+  if (!def || !root || !anchor || root.dataset.motion !== "full" || !hasPixi()) return;
   const doc = root.ownerDocument;
   const frame = root.getBoundingClientRect();
   const el = anchor.getBoundingClientRect();

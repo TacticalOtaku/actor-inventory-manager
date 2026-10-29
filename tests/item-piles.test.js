@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 
-import { computeActorCurrency, readPilesCurrencies } from "../scripts/integrations/item-piles.js";
+import { computeActorCurrency, dropOnGround, readPilesCurrencies } from "../scripts/integrations/item-piles.js";
 
 /** Currencies as Item Piles 3.3.4 returns them for dnd5e (systems/dnd5e-4.0.0.js), quantities filled in. */
 const coin = (key, rate, quantity, primary = false) => ({
@@ -68,5 +68,35 @@ describe("Item Piles purse coins", () => {
     assert.deepEqual(readPilesCurrencies({}), []);
     globalThis.game = { modules: new Map([["item-piles", { active: true }]]), itempiles: { API: { getActorCurrencies: () => { throw new Error("boom"); } } } };
     assert.deepEqual(readPilesCurrencies({}), []);
+  });
+});
+
+describe("drop on the ground", () => {
+  function setup(result) {
+    const calls = [];
+    globalThis.game = { modules: new Map([["item-piles", { active: true }]]), itempiles: { API: { createItemPile: async (options) => { calls.push(options); return result; } } } };
+    const token = { x: 100, y: 200, elevation: 5, parent: { id: "scene" } };
+    const item = {
+      deleted: false,
+      actor: { getActiveTokens: () => [token] },
+      toObject: () => ({ name: "Arrows", system: { quantity: 20, equipped: true, container: "quiver" }, flags: { "actor-inventory-manager": { slot: "offHand" }, other: { kept: 1 } } }),
+      async delete() { this.deleted = true; }
+    };
+    return { calls, item };
+  }
+
+  it("lays the whole stack, unequipped and out of its container, at the token, then takes it from the actor", async () => {
+    const { calls, item } = setup({ tokenUuid: "Scene.scene.Token.pile" });
+    assert.equal(await dropOnGround(item), true);
+    assert.equal(item.deleted, true);
+    const [options] = calls;
+    assert.deepEqual([options.sceneId, options.position, options.tokenOverrides], ["scene", { x: 100, y: 200 }, { elevation: 5 }]);
+    assert.deepEqual(options.items, [{ name: "Arrows", system: { quantity: 20, equipped: false, container: null }, flags: { other: { kept: 1 } } }]);
+  });
+
+  it("keeps the item when Item Piles makes no pile (no GM connected)", async () => {
+    const { item } = setup(false);
+    assert.equal(await dropOnGround(item), false);
+    assert.equal(item.deleted, false);
   });
 });

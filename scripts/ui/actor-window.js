@@ -33,7 +33,8 @@ import { SPELL_FILTERS, pipTarget } from "../core/spellbook.js";
 import { FEATURE_FILTERS, applyUsesEntry } from "../core/features.js";
 import { reorderFavorites, tabForFavorite } from "../core/favorites.js";
 import { parseHpEntry, previewHp, vitalState } from "../core/vitals.js";
-import { readAbilities, readIdentity, readNpc, readRail, readVehicle, toggleSpellPreparation } from "../integrations/dnd5e.js";
+import { readAbilities, readFeatures, readIdentity, readNpc, readRail, readVehicle, toggleSpellPreparation } from "../integrations/dnd5e.js";
+import { isPhysicalItem } from "../core/item-classifier.js";
 import { LOG } from "../foundry/logger.js";
 import {
   EQUIPMENT_TEMPLATES,
@@ -64,10 +65,10 @@ import { equipItemToSlot, toggleAttunement, toggleItemEquipped, unequipItem, use
 import { setActorPaperdollTemplate } from "../core/paperdoll-templates.js";
 import { CONTAINER_RULES_HOOK, openWeightyContainersDialog } from "../integrations/weighty-containers.js";
 import { styleScItemRows } from "../integrations/sc-rarity-colors.js";
-import { SETTLE, glide, glideFrom, measure } from "./motion.js";
+import { SETTLE, bindPointerFx, cascade, glide, glideFrom, measure } from "./motion.js";
 import { readMotionCaps, schemeIsLight, stampTheme } from "./theme-root.js";
-import { REST_HOOK, buildRailContext, openStatConfig, playLongRest, playRailChanges, railSnapshot, startRuneGlints } from "./rail.js";
-import { preloadBursts } from "./bursts.js";
+import { REST_HOOK, buildRailContext, floatText, holdRestored, openStatConfig, playLongRest, playRailChanges, railSnapshot, startRuneGlints } from "./rail.js";
+import { playBurst, preloadBursts } from "./bursts.js";
 import { vehicleKind } from "./vehicle.js";
 import { t } from "./html.js";
 import { signed } from "../core/overview.js";
@@ -88,7 +89,10 @@ function watchNotices(use) {
     realNotices = { warn: notifications.warn, error: notifications.error };
     for (const kind of ["warn", "error"]) {
       notifications[kind] = (...args) => {
-        for (const watched of watchedUses) watched.refused = true;
+        for (const watched of watchedUses) {
+          watched.refused = true;
+          watched.message ??= typeof args[0] === "string" ? args[0] : null;
+        }
         return realNotices[kind].apply(notifications, args);
       };
     }
@@ -106,6 +110,9 @@ function unwatchNotices(use) {
 
 /** Bursts of document hooks become one render. */
 const RENDER_COALESCE_MS = 40;
+
+/** What comes in as a cascade when a tab or a section opens. */
+const CASCADE = ".aim-rowwrap > [data-row], .aim-effwrap, .aim-check, .aim-card";
 
 /** The search fields and the window state each one filters. */
 const SEARCH_FIELDS = { inventorySearch: "query", spellSearch: "spellQuery", featureSearch: "featureQuery" };
@@ -148,6 +155,8 @@ export class ActorWindow extends WindowBase {
       cancelReset: ActorWindow.#onCancelReset,
       confirmReset: ActorWindow.#onConfirmReset,
       reloadPage: () => foundry.utils.debouncedReload(),
+      xpAdd: ActorWindow.#onXpChange,
+      xpSet: ActorWindow.#onXpChange,
       collapseWindow: ActorWindow.#onCollapse,
       expandWindow: ActorWindow.#onExpand,
       toggleMenu: ActorWindow.#onToggleMenu,
@@ -265,6 +274,7 @@ export class ActorWindow extends WindowBase {
     this.tradeDismissed = new Set();
     this.tradeAskRestore = false;
     this.tradeError = null;
+    this.tradePartner = null;
     this.selectedKey = null;
     this.collapsed = new Set();
     this.selected = null;
@@ -302,7 +312,7 @@ export class ActorWindow extends WindowBase {
     const detail = body && selected ? await buildItemDetail(selected, { canEdit: this.canEdit }) : null;
     const favIds = favoriteItemIds(actor);
     const trade = buildTradeContext(actor, { canEdit: this.canEdit, open: this.tradeOpen, draft: this.tradeDraft,
-      askRestore: this.tradeAskRestore, dismissed: this.tradeDismissed, seen: this.tradeSeen, error: this.tradeError });
+      askRestore: this.tradeAskRestore, dismissed: this.tradeDismissed, seen: this.tradeSeen, error: this.tradeError, partner: this.tradePartner });
     if (!trade.button) this.tradeOpen = false;
     return {
       trade,
@@ -319,6 +329,8 @@ export class ActorWindow extends WindowBase {
       pendingText: t("AIM.window.panelPending"),
       menuOpen: this.menuOpen,
       xpOpen: this.xpOpen,
+      xpSteps: [50, 100, 250, 1000],
+      sheetLabel: t(`AIM.window.menu.openSheet${{ npc: "Npc", vehicle: "Vehicle" }[actor.type] ?? ""}`),
       menu: Object.fromEntries(sheetMenuEntries({
         type: actor.type,
         // dnd5e shows the bastion tab only when bastions are on and the character has reached the threshold level.
@@ -391,6 +403,7 @@ export class ActorWindow extends WindowBase {
       hasLevel: this.actor.type === "character",
       nextLevel: id.level + 1,
       xpShare: id.xp.ready ? 1 : share.toFixed(3),
+      xpNear: share >= 0.9,
       orbLabel: id.xp.ready ? t("AIM.window.xp.ready", { level: id.level + 1 }) : t("AIM.window.xp.orb", { value: id.xp.value, max: id.xp.max }),
       // An NPC's challenge rating sits in the level orb's place, its size and type under the name.
       cr: npc && { text: crLabel(npc.cr), hint: t("AIM.window.npc.crHint", { xp: npc.xp.toLocaleString(game.i18n.lang) }) },
@@ -401,15 +414,29 @@ export class ActorWindow extends WindowBase {
     };
   }
 
-  #tabs() {
-    const hidden = getSetting("hiddenTabs") ?? [];
+  /** Tabs this actor has nothing for: no spells, a vehicle without actions, no overview. */
+  #missingTabs() {
     const missing = this.#hasSpells() ? [] : ["spells"];
     // A vehicle shows «Действия» only when it has any (siege weapons, vehicle features).
     if (this.actor.type === "vehicle" && !hasFeatures(this.actor)) missing.push("features");
     if (!hasOverview(this.actor)) missing.push("overview");
-    const shown = visibleTabs({ hidden, missing });
-    const label = (id) => t(id === "features" && featureMode(this.actor) === "action" ? "AIM.window.tabs.actions" : `AIM.window.tabs.${id}`);
-    return SHEET_TABS.map((id) => ({ id, label: label(id), hidden: !shown.includes(id) }));
+    return missing;
+  }
+
+  #tabLabel(id) {
+    return t(id === "features" && featureMode(this.actor) === "action" ? "AIM.window.tabs.actions" : `AIM.window.tabs.${id}`);
+  }
+
+  /** The tabs, with how many items, spells and features each one lists. */
+  #tabs() {
+    const shown = visibleTabs({ hidden: getSetting("hiddenTabs") ?? [], missing: this.#missingTabs() });
+    const items = [...this.actor.items];
+    const counts = {
+      equipment: items.filter(isPhysicalItem).length,
+      spells: items.filter((item) => item.type === "spell").length,
+      features: readFeatures(this.actor, { attacks: featureMode(this.actor) === "action" }).length
+    };
+    return SHEET_TABS.map((id) => ({ id, label: this.#tabLabel(id), count: counts[id] || "", hidden: !shown.includes(id) }));
   }
 
   #hasSpells() {
@@ -429,6 +456,8 @@ export class ActorWindow extends WindowBase {
     const hiddenBlocks = getSetting("hiddenRailBlocks") ?? [];
     const hiddenTabs = getSetting("hiddenTabs") ?? [];
     const hasSpells = this.#hasSpells();
+    const missing = this.#missingTabs();
+    const absent = t(`AIM.window.settings.absent${{ npc: "Npc", vehicle: "Vehicle" }[this.actor.type] ?? ""}`);
     return {
       themes: THEMES.map((id) => ({ id, label: t(`AIM.window.settings.themes.${id}`), active: id === theme })),
       themeHint: theme === "auto" ? t("AIM.window.settings.themeNow", { theme: t(`AIM.window.settings.themes.${resolveTheme("auto", schemeIsLight())}`) }) : "",
@@ -445,13 +474,13 @@ export class ActorWindow extends WindowBase {
         : `${capReason ? `${capReason} ` : ""}${t(`AIM.window.settings.motionAbout.${level}`)}`,
       webFonts: Boolean(getSetting("useWebFonts")),
       fontsPending: Boolean(getSetting("useWebFonts")) !== this.fontsAtLoad,
-      absentText: t(this.actor.type === "npc" ? "AIM.window.settings.absentNpc" : "AIM.window.settings.absent"),
+      absentText: absent,
       railBlocks: railBlocksFor(this.actor.type, { hasSpells, hasLegendary: hasLegendary(this.actor) }, hiddenBlocks)
         .map(({ id, absent, shown }) => ({ id, absent, shown, label: railBlockLabel(id, this.actor.type) })),
       tabs: SHEET_TABS.map((id) => {
-        const locked = id === ALWAYS_TAB || (id === "spells" && !hasSpells);
-        const note = id === ALWAYS_TAB ? t("AIM.window.settings.always") : locked ? t("AIM.window.settings.absent") : "";
-        return { id, label: t(`AIM.window.tabs.${id}`), shown: id === ALWAYS_TAB || (!locked && !hiddenTabs.includes(id)), locked, note };
+        const locked = id === ALWAYS_TAB || missing.includes(id);
+        const note = id === ALWAYS_TAB ? t("AIM.window.settings.always") : locked ? absent : "";
+        return { id, label: this.#tabLabel(id), shown: id === ALWAYS_TAB || (!locked && !hiddenTabs.includes(id)), locked, note };
       })
     };
   }
@@ -492,6 +521,7 @@ export class ActorWindow extends WindowBase {
     // Placing a spell template minimises the window; it comes back once the template is placed or cancelled.
     this.#hook("dnd5e.createActivityTemplate", (activity) => activity?.actor?.uuid === this.actorKey && this.#awaitTemplate());
     this.#hook(REST_HOOK, (actor, result, config) => actor?.uuid === this.actorKey && config?.type === "long" && playLongRest(this.element));
+    this.#hook("dnd5e.preRestCompleted", (actor, result, config) => actor?.uuid === this.actorKey && config?.type === "long" && holdRestored(this.element));
     // Looping effects run only in the actor window in front.
     this.element.addEventListener("pointerdown", () => this.#bringFront(), { capture: true });
     this.#bringFront();
@@ -508,16 +538,65 @@ export class ActorWindow extends WindowBase {
     this._reducedMotion?.addEventListener("change", this._onReducedMotion);
     this._resizeObserver = new ResizeObserver(() => this.#applyLayout());
     this._resizeObserver.observe(this.element);
+    // A click outside the «⋯» menu or the experience card closes it, as Escape does.
+    this._away = (event) => {
+      if (!(this.menuOpen || this.xpOpen) || event.target.closest?.(".aim-menu-wrap, .aim-xp-card, .aim-level")) return;
+      this.menuOpen = this.xpOpen = false;
+      this.render({ parts: ["main"] });
+    };
+    this._awayDoc = this.element.ownerDocument;
+    this._awayDoc.addEventListener("pointerdown", this._away, { capture: true });
+    this.#bindScrolling();
+    bindPointerFx(this.element);
     this.element.addEventListener("keydown", (event) => this.#onKeydown(event));
     this.element.addEventListener("change", (event) => this.#onChange(event));
     this.#bindEquipment();
     bindTooltips(this);
+    // The window settles in from below; the rail's blocks follow one after another.
+    if (this.motionOn) {
+      this.element.querySelector(".window-content")?.animate([{ opacity: 0, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }], { duration: 420, easing: SETTLE });
+      [...this.element.querySelector(".aim-rail")?.children ?? []].slice(0, 12).forEach((block, i) => block.animate(
+        [{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 360, delay: 90 + i * 45, easing: SETTLE, fill: "backwards" }));
+    }
+  }
+
+  /**
+   * Scrolling: once a panel is scrolled the tab strip casts a shadow over it. In the narrow layout the rail is one row
+   * that scrolls sideways: the wheel scrolls it, and its edges fade where more blocks wait.
+   */
+  #bindScrolling() {
+    const el = this.element;
+    el.addEventListener("scroll", (event) => {
+      const target = event.target;
+      if (target.matches?.(".aim-panel")) el.querySelector(".aim-main")?.classList.toggle("is-scrolled", target.scrollTop > 2);
+      else if (target.matches?.(".aim-rail")) this.#railEdges();
+    }, { capture: true, passive: true });
+    el.addEventListener("wheel", (event) => {
+      const rail = event.target.closest?.(".aim-rail");
+      if (!rail || el.dataset.layout !== "narrow" || event.shiftKey || Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return;
+      // A block that scrolls by itself (a long effect list) keeps the wheel.
+      for (let node = event.target; node && node !== rail; node = node.parentElement) {
+        if (node.scrollHeight > node.clientHeight + 1 && getComputedStyle(node).overflowY !== "visible") return;
+      }
+      if (rail.scrollWidth <= rail.clientWidth) return;
+      event.preventDefault();
+      rail.scrollLeft += event.deltaY;
+    }, { passive: false });
+  }
+
+  #railEdges() {
+    const rail = this.element?.querySelector(".aim-rail");
+    if (!rail) return;
+    const narrow = this.element.dataset.layout === "narrow";
+    rail.classList.toggle("has-more-left", narrow && rail.scrollLeft > 2);
+    rail.classList.toggle("has-more-right", narrow && rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 2);
   }
 
   async _preRender(context, options) {
     await super._preRender(context, options);
     // A number field of the trade panel keeps the focus and the caret across the redraw its own send causes.
-    const field = this.element?.contains(document.activeElement) ? document.activeElement : null;
+    const active = this.element?.ownerDocument.activeElement;
+    const field = this.element?.contains(active) ? active : null;
     const key = field?.dataset?.offerQty ?? field?.dataset?.tradeCoin;
     this._tradeFocus = key ? { attr: field.dataset.offerQty ? "data-offer-qty" : "data-trade-coin", key } : null;
     this._equipmentPrev = this.element ? equipmentSnapshot(this.element) : null;
@@ -540,25 +619,29 @@ export class ActorWindow extends WindowBase {
 
   _onRender(context, options) {
     super._onRender(context, options);
+    const drawer = this.element.querySelector('[data-application-part="drawer"]');
+    if (drawer) drawer.inert = !this.element.classList.contains("is-settings");
     this.#applyRootState();
     this.#applyLayout({ animate: false });
     this.#moveInk();
+    this.#railEdges();
     // The rail's own listeners go on its fresh elements only; a redraw of another part keeps them.
-    if (options.parts.includes("rail")) this.#bindRail();
-    const next = railSnapshot(this.actor);
-    playRailChanges(this.element, this._railPrev, next);
-    this._railPrev = next;
+    if (options.parts.includes("rail")) {
+      this.#bindRail();
+      // Only a redrawn rail shows the change; a later rail redraw (dnd5e adding Bloodied) waits until it has played.
+      const next = railSnapshot(this.actor);
+      if (playRailChanges(this.element, this._railPrev, next)) this._railBusyUntil = performance.now() + 1100;
+      this._railPrev = next;
+    }
+    // The orb that just became ready to level throws golden stars.
+    const ready = Boolean(this.element.querySelector(".aim-level.is-ready"));
+    if (ready && this._orbReady === false) playBurst(this.element, this.element.querySelector(".aim-level"), "inspired");
+    this._orbReady = ready;
     this.#afterEquipmentRender();
     // A main redraw patches the rows back to the template, so SC styles them again each time.
     if (options.parts.includes("main")) styleScItemRows(this.element, this.actor);
     this.#playLanding();
-    // A reset of the confirmations (an offer changed) shakes the status once.
-    const session = sessionFor(this.actor.id);
-    const confirmed = Boolean(session?.confirmed.some(Boolean));
-    if (this._tradePrev?.id === session?.id && this._tradePrev?.confirmed && !confirmed && session?.status === "open") {
-      this.#shake(this.element.querySelector("[data-trade-status]"));
-    }
-    this._tradePrev = session ? { id: session.id, confirmed } : null;
+    this.#afterTradeRender(options);
     if (this._tradeFocus) {
       const field = this.element.querySelector(`[${this._tradeFocus.attr}="${CSS.escape(this._tradeFocus.key)}"]`);
       field?.focus();
@@ -649,13 +732,14 @@ export class ActorWindow extends WindowBase {
     band.style.width = `${(to - from) * 100}%`;
   }
 
+  /** The field closes first; the change then plays once, on the redraw the actor update brings. */
   async #applyHp(text) {
     const entry = parseHpEntry(text);
     if (!entry) return this.element.querySelector("[data-hp-input]")?.classList.add("is-invalid");
     this.hpEditing = false;
     this.hpDraft = "";
+    await this.render({ parts: ["rail"] });
     await this.#changeHp(entry);
-    this.render({ parts: ["rail"] });
   }
 
   /** Damage and healing go through applyDamage (so preApplyDamage listeners run), temporary HP through applyTempHP. */
@@ -680,6 +764,7 @@ export class ActorWindow extends WindowBase {
   }
 
   _onClose(options) {
+    this._awayDoc?.removeEventListener("pointerdown", this._away, { capture: true });
     this.tradeDraft.close();
     releaseTooltips(this);
     for (const [name, id] of this._hooks) Hooks.off(name, id);
@@ -704,11 +789,12 @@ export class ActorWindow extends WindowBase {
   #queueRender(parts = null) {
     this._queuedParts = mergeParts(this._queuedParts, parts);
     clearTimeout(this._renderTimer);
+    const wait = Math.max(RENDER_COALESCE_MS, (this._railBusyUntil ?? 0) - performance.now());
     this._renderTimer = setTimeout(() => {
       const queued = this._queuedParts;
       this._queuedParts = undefined;
       if (this.rendered) this.#renderAroundBio(queued);
-    }, RENDER_COALESCE_MS);
+    }, wait);
   }
 
   /** Renders these parts, all when none are named; a biography being typed in holds the main part back. */
@@ -721,7 +807,8 @@ export class ActorWindow extends WindowBase {
 
   #editingBio() {
     const el = this.element;
-    return Boolean(el?.querySelector("[data-bio-editor][open]") || document.activeElement?.closest?.("[data-bio-field]") && el.contains(document.activeElement));
+    const active = el?.ownerDocument.activeElement;
+    return Boolean(el?.querySelector("[data-bio-editor][open]") || active?.closest?.("[data-bio-field]") && el.contains(active));
   }
 
   /** After a biography edit ends, the main part catches up with what changed meanwhile. */
@@ -760,7 +847,10 @@ export class ActorWindow extends WindowBase {
     const change = () => { el.dataset.layout = next; };
     if (!animate || !el.dataset.layout || !this.motionOn) change();
     else glide(el, "[data-flip]", change);
-    requestAnimationFrame(() => this.#moveInk());
+    requestAnimationFrame(() => {
+      this.#moveInk();
+      this.#railEdges();
+    });
   }
 
   #moveInk() {
@@ -773,12 +863,16 @@ export class ActorWindow extends WindowBase {
 
   #onKeydown(event) {
     if (this.#onEquipmentKey(event)) return;
+    if (event.key === "Enter" && event.target.matches?.('[data-xp-form] [name="xp"]')) {
+      event.preventDefault();
+      return ActorWindow.#onXpChange.call(this, event, event.target);
+    }
     if (event.key !== "Escape") return;
     if (closeItemMenu(this.element)) {
       event.stopPropagation();
     } else if (this.element.classList.contains("is-settings")) {
       event.stopPropagation();
-      this.element.classList.remove("is-settings");
+      this.#setSettings(false);
     } else if (this.menuOpen || this.xpOpen) {
       event.stopPropagation();
       this.menuOpen = this.xpOpen = false;
@@ -802,10 +896,31 @@ export class ActorWindow extends WindowBase {
       const item = this.#itemFrom(input);
       if (this.canEdit) return item?.effects.get(input.dataset.effectToggle)?.update({ disabled: !input.checked });
     }
-    if (input.name === "xp" && input.closest("[data-xp-form]")) {
-      const add = Number(input.value);
-      if (!this.canEdit || !Number.isFinite(add) || !add) return;
-      await this.actor.update({ "system.details.xp.value": Math.max(0, readIdentity(this.actor).xp.value + Math.trunc(add)) });
+  }
+
+  /** A quick step or the field's amount adds to the experience, «Задать» sets it; the field empties after. */
+  static async #onXpChange(event, target) {
+    const field = this.element.querySelector('[data-xp-form] [name="xp"]');
+    const raw = target.dataset.amount ?? field?.value ?? "";
+    const amount = Math.trunc(Number(raw));
+    const set = target.dataset.action === "xpSet";
+    if (!this.canEdit || raw === "" || !Number.isFinite(amount) || (!set && !amount)) return;
+    if (field) field.value = "";
+    const value = set ? amount : readIdentity(this.actor).xp.value + amount;
+    await this.actor.update({ "system.details.xp.value": Math.max(0, value) });
+  }
+
+  /** The drawer leaves the tab order while closed; closing it drops a pending reset and gives the focus back to its gear. */
+  #setSettings(open) {
+    const el = this.element;
+    el.classList.toggle("is-settings", open);
+    const drawer = el.querySelector('[data-application-part="drawer"]');
+    if (drawer) drawer.inert = !open;
+    if (open) return;
+    el.querySelector('[data-action="openSettings"]')?.focus({ preventScroll: true });
+    if (this.askReset) {
+      this.askReset = false;
+      this.render({ parts: ["drawer"] });
     }
   }
 
@@ -836,28 +951,37 @@ export class ActorWindow extends WindowBase {
     for (const panel of this.element.querySelectorAll(".aim-panel")) {
       const on = panel.dataset.panel === tab;
       panel.hidden = !on;
-      if (on && this.motionOn) panel.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 240, easing: "cubic-bezier(0.22, 1, 0.36, 1)" });
+      if (!on || !this.motionOn) continue;
+      // The panel fades in from below and its entries come in as a short cascade.
+      panel.animate([{ opacity: 0, transform: "translateY(8px)" }, { opacity: 1, transform: "none" }], { duration: 280, easing: SETTLE });
+      cascade(panel, CASCADE);
     }
+    this.element.querySelector(".aim-main")?.classList.toggle("is-scrolled", this.element.querySelector(`[data-panel="${tab}"]`)?.scrollTop > 2);
     this.#moveInk();
     return true;
   }
 
   static #onOpenSettings() {
-    this.menuOpen = false;
-    this.element.classList.add("is-settings");
+    if (this.menuOpen) {
+      this.menuOpen = false;
+      this.render({ parts: ["main"] });
+    }
+    this.#setSettings(true);
   }
 
   static #onCloseSettings() {
-    this.element.classList.remove("is-settings");
-    this.askReset = false;
+    this.#setSettings(false);
   }
 
   static async #onSetSetting(event, target) {
     const { key, value } = target.dataset;
     if (!key || target.disabled) return;
-    if (key === "windowTheme" && document.startViewTransition && this.motionOn) {
+    // A new theme or accent flows over the window instead of switching at once.
+    if ((key === "windowTheme" || key === "windowAccent") && document.startViewTransition && this.motionOn) {
       await game.settings.set(MODULE_ID, key, value);
-      document.startViewTransition(() => this.#applyRootState());
+      const html = document.documentElement;
+      html.classList.add("aim-vt");
+      document.startViewTransition(() => this.#applyRootState()).finished.finally(() => html.classList.remove("aim-vt"));
       return this.render({ parts: ["drawer"] });
     }
     await this.#setAndRefresh(key, value);
@@ -880,8 +1004,9 @@ export class ActorWindow extends WindowBase {
     await this.render({ parts: ["drawer"] });
   }
 
+  /** Expanding gives back the width the window had, however narrow the user kept it. */
   static #onCollapse() {
-    this.expandedWidth = Math.max(this.position.width, 1040);
+    if (this.position.width > COLLAPSED_WIDTH) this.expandedWidth = this.position.width;
     this.setPosition({ width: COLLAPSED_WIDTH });
   }
 
@@ -985,7 +1110,22 @@ export class ActorWindow extends WindowBase {
       target.closest("[data-block]")?.animate([{ transform: "translateX(0)" }, { transform: "translateX(-4px)" }, { transform: "translateX(4px)" }, { transform: "translateX(0)" }], { duration: 300 });
       return;
     }
-    await this.actor.rollHitDie();
+    this.#showRoll(await this.actor.rollHitDie(), '[data-block="hitDice"]');
+  }
+
+  /** A roll's result shows beside what was rolled («к8: 5 + 2 = 7»), as well as in the chat. */
+  #showRoll(result, selector) {
+    const roll = Array.isArray(result) ? result[0] : result;
+    if (typeof roll?.total !== "number") return;
+    const die = roll.dice?.[0];
+    const rolled = die?.total ?? roll.total;
+    const mod = roll.total - rolled;
+    const text = [
+      die ? `${t("AIM.window.rail.die", { faces: die.faces })}: ${rolled}` : String(rolled),
+      mod ? ` ${mod > 0 ? "+" : "−"} ${Math.abs(mod)} = ${roll.total}` : ""
+    ].join("");
+    const anchor = this.element?.querySelector(selector) ?? this.element?.querySelector("[data-hpcard]");
+    if (anchor) floatText(this.element, anchor, text, "roll");
   }
 
   /** Click the n-th mark to set that many; click the last set mark to remove it. */
@@ -997,8 +1137,8 @@ export class ActorWindow extends WindowBase {
     await this.actor.update({ [`system.attributes.death.${kind}`]: index === current ? index - 1 : index });
   }
 
-  static #onRollDeathSave(event) {
-    if (this.canEdit) return this.actor.rollDeathSave({ event });
+  static async #onRollDeathSave(event) {
+    if (this.canEdit) this.#showRoll(await this.actor.rollDeathSave({ event }), ".aim-death");
   }
 
   static #onShortRest() {
@@ -1022,8 +1162,8 @@ export class ActorWindow extends WindowBase {
     if (this.canEdit) return this.#setExhaustion(1);
   }
 
-  static #onRollConcentration(event) {
-    if (this.canEdit) return this.actor.rollConcentration({ event });
+  static async #onRollConcentration(event) {
+    if (this.canEdit) this.#showRoll(await this.actor.rollConcentration({ event }), ".aim-chip.is-conc");
   }
 
   /** The chip ends every concentration; the × on a concentration effect row ends that one. */
@@ -1045,6 +1185,42 @@ export class ActorWindow extends WindowBase {
     return sessionFor(this.actor.id);
   }
 
+  /** After a redraw: the panel's slide, the shakes of the status and of a new error, the chosen partner. */
+  #afterTradeRender(options) {
+    // A redrawn panel is already where it ends; it starts again from where it was, so opening and closing slide.
+    const panel = this.element.querySelector(".aim-trade");
+    if (panel && this._tradeShown !== undefined && this._tradeShown !== this.tradeOpen) {
+      this.element.classList.toggle("is-trading", this._tradeShown);
+      void panel.offsetWidth;
+      this.element.classList.toggle("is-trading", this.tradeOpen);
+    }
+    this._tradeShown = this.tradeOpen;
+    // Confirmations reset by an offer change (a new revision) shake the status once; a withdrawn one does not.
+    const session = sessionFor(this.actor.id);
+    const confirmed = Boolean(session?.confirmed.some(Boolean));
+    const prev = this._tradePrev;
+    if (prev?.id === session?.id && prev?.confirmed && !confirmed && prev.revision !== session?.revision && session?.status === "open") {
+      this.#shake(this.element.querySelector("[data-trade-status]"));
+    }
+    this._tradePrev = session ? { id: session.id, confirmed, revision: session.revision } : null;
+    // An error shakes when it appears or changes, not on each redraw while it stays.
+    const error = this.element.querySelector(".aim-trade-err");
+    if (error && error.textContent !== this._tradeErrorShown) this.#shake(error);
+    this._tradeErrorShown = error?.textContent ?? null;
+    // An item that joined either offer slides in; the panel is redrawn whole, so the rest stay put.
+    const offered = new Set([...this.element.querySelectorAll("[data-offer-item]")].map((row) => `${row.closest("[data-offer-drop]") ? "mine" : "theirs"}:${row.dataset.offerItem}`));
+    if (this._offeredPrev && this.motionOn) {
+      for (const row of this.element.querySelectorAll("[data-offer-item]")) {
+        if (!this._offeredPrev.has(`${row.closest("[data-offer-drop]") ? "mine" : "theirs"}:${row.dataset.offerItem}`)) row.classList.add("is-new");
+      }
+    }
+    this._offeredPrev = offered;
+    // The chosen partner stays selected across redraws until the trade starts.
+    if (options.parts.includes("trade")) {
+      this.element.querySelector("[data-trade-partner]")?.addEventListener("change", (event) => { this.tradePartner = event.target.value; });
+    }
+  }
+
   /** Opens beside the inventory, without a scrim; opening clears the invitation dot. */
   static #onToggleTrade() {
     this.tradeOpen = !this.tradeOpen;
@@ -1061,11 +1237,12 @@ export class ActorWindow extends WindowBase {
     return !this.tradeError;
   }
 
-  static #onTradeStart() {
+  /** «Подарить» starts the same session as a one-way trade (`data-kind="gift"`). */
+  static #onTradeStart(event, target) {
     const select = this.element.querySelector("[data-trade-partner]");
     const option = select?.selectedOptions?.[0];
     if (!option || option.disabled || game.user.isGM) return;
-    return this.#tradeRequest("start", { targetId: option.value, targetUserId: option.dataset.user });
+    return this.#tradeRequest("start", { targetId: option.value, targetUserId: option.dataset.user, kind: target.dataset.kind });
   }
 
   /** Toggles this side's confirmation; confirming is accepting, the coordinator moves the assets once both did. */
@@ -1220,7 +1397,7 @@ export class ActorWindow extends WindowBase {
   /** Before an effect change: rows glide to their new places and the focused control keeps the focus. */
   #measureEffects() {
     this._effectGlide = measure(this.element, ".aim-effwrap, .aim-eff-cat");
-    const focused = document.activeElement;
+    const focused = this.element.ownerDocument.activeElement;
     const wrap = this.element.contains(focused) ? focused.closest("[data-effect-uuid]") : null;
     this._effectFocus = wrap ? { key: wrap.dataset.key, action: focused.dataset.action ?? null } : null;
   }
@@ -1423,6 +1600,8 @@ export class ActorWindow extends WindowBase {
         // Opacity and a short slide, not the height: only transform and opacity animate (#9).
         detail.animate([{ opacity: 0, transform: "translateY(-6px)" }, { opacity: 1, transform: "none" }], { duration: 260, easing: SETTLE });
       }
+      const inspector = el.querySelector(".aim-insp");
+      if (inspector?.offsetHeight && this.motionOn) inspector.animate([{ opacity: 0, transform: "translateY(6px)" }, { opacity: 1, transform: "none" }], { duration: 240, easing: SETTLE });
     }
   }
 
@@ -1463,6 +1642,7 @@ export class ActorWindow extends WindowBase {
     if (folded) this.collapsed.add(id); else this.collapsed.delete(id);
     section.classList.toggle("is-collapsed", folded);
     head.setAttribute("aria-expanded", String(!folded));
+    if (!folded && this.motionOn) cascade(section, CASCADE);
   }
 
   async #changeCharge(item, direction) {
@@ -1478,9 +1658,10 @@ export class ActorWindow extends WindowBase {
     const key = this.coinEditing;
     this.coinEditing = null;
     this.coinDraft = "";
+    // The field closes first; the coin then flips once, on the redraw the actor update brings.
+    await this.render({ parts: ["main"] });
     const current = Number(foundry.utils.getProperty(this.actor, `system.currency.${key}`)) || 0;
     if (this.canEdit) await this.actor.update({ [`system.currency.${key}`]: applyCoinEntry(current, entry) });
-    this.render({ parts: ["main"] });
   }
 
   #cancelCoin() {
@@ -1526,12 +1707,16 @@ export class ActorWindow extends WindowBase {
   }
 
   static #onUseItem(event, target) {
-    return useItem(this.#itemFrom(target), event);
+    const item = this.#itemFrom(target);
+    if (item && this.canEdit && typeof item.use === "function") return this.#useWithRefusal(item, target, event);
+    return useItem(item, event);
   }
 
   static #onUseActivity(event, target) {
     if (!this.canEdit) return;
-    return this.#itemFrom(target)?.system.activities?.get(target.dataset.activityId)?.use({ event });
+    const item = this.#itemFrom(target);
+    const activity = item?.system.activities?.get(target.dataset.activityId);
+    if (activity) return this.#useWithRefusal(activity, target, event);
   }
 
   static async #onEquipItem(event, target) {
@@ -1579,8 +1764,9 @@ export class ActorWindow extends WindowBase {
       },
       favorite: id && this.canEdit ? async () => {
         this.#measureFavorites();
-        if (this.actor.system.hasFavorite(id)) await this.actor.system.removeFavorite(id);
-        else await this.actor.system.addFavorite({ type: "item", id });
+        if (this.actor.system.hasFavorite(id)) return this.actor.system.removeFavorite(id);
+        playBurst(this.element, holder?.querySelector('[data-action="toggleFavorite"]') ?? holder, "inspired");
+        await this.actor.system.addFavorite({ type: "item", id });
       } : null,
       isFavorite: Boolean(id && this.actor.system.hasFavorite(id))
     };
@@ -1690,7 +1876,7 @@ export class ActorWindow extends WindowBase {
   /** A filled slot selects its item; an empty one equips the first unequipped item that fits, or shakes. */
   static async #onSlotClick(event, target) {
     const id = target.dataset.itemId;
-    if (id) return this.#toggleSelect(id);
+    if (id) return this.#selectAndReveal(id);
     if (!this.canEdit) return;
     const slotId = target.dataset.slot;
     const item = firstItemFor(this.actor, slotId);
@@ -1729,11 +1915,15 @@ export class ActorWindow extends WindowBase {
   /** item.use(): dnd5e chooses the slot, upcasting or ritual casting; a refusal shakes the row beside dnd5e's message. */
   static async #onCastSpell(event, target) {
     const item = this.#itemFrom(target);
-    if (!item || !this.canEdit) return;
+    if (item && this.canEdit) return this.#useWithRefusal(item, target, event);
+  }
+
+  /** A gem spent by this cast bursts in the school's colour, wherever the cast came from. */
+  #markCast(item) {
+    if (item?.type !== "spell") return;
     this._castSchool = item.system.school;
     clearTimeout(this._castSchoolTimer);
     this._castSchoolTimer = setTimeout(() => { this._castSchool = null; }, 4000);
-    return this.#useWithRefusal(item, target, event);
   }
 
   /** The tile of an active feature uses it through dnd5e; with no uses left dnd5e refuses and the row shakes. */
@@ -1742,19 +1932,39 @@ export class ActorWindow extends WindowBase {
     if (item && this.canEdit) return this.#useWithRefusal(item, target, event);
   }
 
-  async #useWithRefusal(item, target, event) {
-    const use = { refused: false };
+  /**
+   * An item or an activity used through dnd5e. Used, its tile lands and throws sparks in the spell school's or the
+   * rarity's colour; refused (no uses, no slots), the row shakes and says why beside it.
+   */
+  async #useWithRefusal(doc, target, event) {
+    const item = doc.item ?? doc;
+    this.#markCast(item);
+    const holderOf = () => this.element.querySelector(`[data-key="${target.closest("[data-key]")?.dataset.key}"]`)
+      ?? target.closest("[data-fav-id]") ?? target;
+    const use = { refused: false, message: null };
     watchNotices(use);
     let result;
     try {
-      result = await item.use({ event });
+      result = await doc.use({ event });
     } finally {
       unwatchNotices(use);
     }
-    if (!result && use.refused) {
-      const holder = this.element.querySelector(`[data-key="${target.closest("[data-key]")?.dataset.key}"]`);
-      this.#shake(holder?.querySelector("[data-row]") ?? holder);
+    const holder = holderOf();
+    const row = holder?.querySelector?.("[data-row]") ?? holder;
+    if (!result) {
+      if (!use.refused) return;
+      this.#shake(row);
+      if (use.message && row?.isConnected) floatText(this.element, row, use.message, "refused");
+      return;
     }
+    if (!row?.isConnected || !this.motionOn) return;
+    row.classList.remove("is-landed");
+    void row.offsetWidth;
+    row.classList.add("is-landed");
+    row.addEventListener("animationend", () => row.classList.remove("is-landed"), { once: true });
+    const school = item.type === "spell" ? item.system.school : null;
+    const rarity = item.system.rarity ? `--rarity-${item.system.rarity}` : null;
+    playBurst(this.element, row.querySelector(".aim-tile") ?? row, "gem", { token: school ? `--school-${school}` : rarity ?? "--accent" });
   }
 
   /** The row glides into or out of the prepared list; past the class limit dnd5e only warns. */
@@ -1826,8 +2036,10 @@ export class ActorWindow extends WindowBase {
     if (!item || !this.canEdit || !hasFavorites(this.actor)) return;
     const id = favoriteIdFor(this.actor, item);
     this.#measureFavorites();
-    if (this.actor.system.hasFavorite(id)) await this.actor.system.removeFavorite(id);
-    else await this.actor.system.addFavorite({ type: "item", id });
+    if (this.actor.system.hasFavorite(id)) return this.actor.system.removeFavorite(id);
+    // A new favorite throws amber sparks from its star.
+    playBurst(this.element, target, "inspired");
+    await this.actor.system.addFavorite({ type: "item", id });
   }
 
   #measureFavorites() {
@@ -1865,7 +2077,7 @@ export class ActorWindow extends WindowBase {
     if (!doc) return;
     // A suppressed effect stays locked here as on its row: its item must be equipped and attuned first.
     if (favorite.type === "effect") return doc.isSuppressed ? this.#shake(target.closest("[data-fav-id]")) : doc.update({ disabled: !doc.disabled });
-    if (favorite.type === "activity") return doc.canUse === false ? undefined : doc.use({ event });
+    if (favorite.type === "activity") return doc.canUse === false ? undefined : this.#useWithRefusal(doc, target, event);
     if (doc.type === "container") return doc.sheet.render({ force: true });
     return this.#useWithRefusal(doc, target, event);
   }
@@ -1890,7 +2102,15 @@ export class ActorWindow extends WindowBase {
   }
 
   static #onSocketClick(event, target) {
-    return this.#toggleSelect(target.dataset.itemId);
+    return this.#selectAndReveal(target.dataset.itemId);
+  }
+
+  /** From the doll: the item's details open under its row, which scrolls into view (the inspector needs no scroll). */
+  async #selectAndReveal(id) {
+    await this.#toggleSelect(id);
+    if (this.selected !== id || this.element.dataset.layout === "wide") return;
+    this.element.querySelector(`[data-panel="${this.tab}"] .aim-rowwrap[data-item-id="${CSS.escape(id)}"]`)
+      ?.scrollIntoView({ block: "nearest", behavior: this.motionOn ? "smooth" : "auto" });
   }
 
   static #onEndAttunement(event, target) {
@@ -1963,7 +2183,11 @@ export function openActorWindow(actor) {
 
 export function toggleActorWindow(actor) {
   const open = liveWindow(actor?.uuid ?? actor?.id);
-  // A second press while the first window is still preparing leaves it be.
+  // A second press while the first window is still preparing leaves it be; a minimised one comes back.
+  if (open?.minimized) {
+    open.bringToFront?.();
+    return open.maximize();
+  }
   if (open) return open.rendered ? open.close() : open;
   return openActorWindow(actor);
 }

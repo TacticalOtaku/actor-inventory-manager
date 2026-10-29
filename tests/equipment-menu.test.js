@@ -84,6 +84,29 @@ describe("item row menu", () => {
   });
 });
 
+describe("drop on the ground", () => {
+  afterEach(() => { delete globalThis.game; });
+
+  function world(sessions = []) {
+    globalThis.game = { modules: new Map([["item-piles", { active: true }]]), settings: { get: () => ({ sessions, receipts: {} }) } };
+  }
+  const onScene = { ...character, id: "hero", getActiveTokens: () => [{ x: 100, y: 200 }] };
+
+  it("is offered with Item Piles for a physical item of an actor on the scene, and not while its exchange runs", () => {
+    world();
+    assert.ok(shown(item({ type: "loot", actor: onScene })).includes("AIM.window.inv.dropGround"));
+    assert.ok(!shown(item({ type: "loot", actor: { ...onScene, getActiveTokens: () => [] } })).includes("AIM.window.inv.dropGround"));
+    assert.ok(!shown(item({ type: "feat", actor: onScene })).includes("AIM.window.inv.dropGround"));
+    world([{ status: "executing", actors: ["hero"] }]);
+    assert.ok(!shown(item({ type: "loot", actor: onScene })).includes("AIM.window.inv.dropGround"));
+  });
+
+  it("stays for a token actor while its base actor trades", () => {
+    world([{ status: "executing", actors: ["hero"] }]);
+    assert.ok(shown(item({ type: "loot", actor: { ...onScene, isToken: true } })).includes("AIM.window.inv.dropGround"));
+  });
+});
+
 describe("activity menu", () => {
   it("is dnd5e's own, after dnd5e.getItemActivityContext", () => {
     const own = [{ name: "DND5E.ContextMenuActionEdit" }];

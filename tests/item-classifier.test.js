@@ -177,6 +177,12 @@ describe("consumables and natural weapons", () => {
     assert.deepEqual(getValidSlotsForItem(scroll, actor), ["mainHand", "offHand"]);
   });
 
+  it("give ammunition no slot on the doll", () => {
+    const arrows = { name: "Arrows", type: "consumable", system: { type: { value: "ammo" } } };
+    assert.deepEqual(getValidSlotsForItem(arrows, actor), []);
+    assert.equal(isItemCompatibleWithSlot(arrows, "offHand", actor), false);
+  });
+
   it("give claws no slot on the doll", () => {
     const claws = { name: "Claws", type: "weapon", system: { type: { value: "natural" }, properties: new Set() } };
     assert.deepEqual(getValidSlotsForItem(claws, actor), []);
@@ -194,6 +200,17 @@ describe("clothes, shields and bands", () => {
     }
     assert.deepEqual(getValidSlotsForItem(mk("Кольчуга", "clothing"), actor), ["armor"]);
     assert.deepEqual(getValidSlotsForItem(mk("Boots of Elvenkind", "clothing"), actor), ["feet"]);
+  });
+
+  it("keep generic gear out of the armor slot, while real armor still takes it", () => {
+    const gear = [["Goggles of Night", "clothing"], ["Heavy Coat", "clothing"], ["Stone of Light", "trinket"], ["Robe of Stars", "wondrous"]];
+    for (const [name, value] of gear) {
+      assert.equal(getValidSlotsForItem(mk(name, value), actor).includes("armor"), false, name);
+      assert.equal(isItemCompatibleWithSlot(mk(name, value), "armor", actor), false, name);
+    }
+    assert.deepEqual(getValidSlotsForItem(mk("Plate Armor", "heavy"), actor), ["armor"]);
+    assert.deepEqual(getValidSlotsForItem(mk("Cloak of Protection", "clothing"), actor), ["cloak"]);
+    assert.deepEqual(getValidSlotsForItem(mk("Gloves of Swimming", "clothing"), actor), ["hands"]);
   });
 
   it("offer a shield the off hand first", () => {

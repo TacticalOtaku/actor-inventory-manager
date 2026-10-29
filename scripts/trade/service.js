@@ -44,7 +44,7 @@ function changed(state) {
     if (session.users?.[1] !== game.user.id) continue;
     if (!ownsActor(game.actors.get(session.actors[1]), game.user)) continue;
     notified.add(session.id);
-    ui.notifications?.info(game.i18n.localize("AIM.trade.invitation"));
+    ui.notifications?.info(game.i18n.localize(session.kind === "gift" ? "AIM.trade.gift.invitation" : "AIM.trade.invitation"));
   }
 }
 
@@ -60,14 +60,22 @@ export async function requestTrade(actor, action, data = {}) {
   if (!activeGM()) throw tradeError("noGM");
   if (!isTradeActor(actor) || !ownsActor(actor, game.user)) throw tradeError("permission");
   const request = { ...data, action, actorId: actor.id, id: foundry.utils.randomID() };
+  const sessionId = request.sessionId ?? request.id;
   let hookId, timer;
   const response = new Promise((resolve, reject) => {
+    const wait = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => reject(tradeError("timeout")), 20000);
+    };
     hookId = Hooks.on(TRADE_HOOK, state => {
       const receipt = state.receipts?.[game.user.id];
-      if (receipt?.id !== request.id) return;
-      receipt.error ? reject(new Error(receipt.error)) : resolve(receipt);
+      if (receipt?.id === request.id) return receipt.error ? reject(new Error(receipt.error)) : resolve(receipt);
+      // The coordinator is at work on this trade (a big settle takes long): only its silence times out.
+      const session = state.sessions?.find(s => s.id === sessionId);
+      if (session?.status === "executing") clearTimeout(timer);
+      else if (session) wait();
     });
-    timer = setTimeout(() => reject(tradeError("timeout")), 20000);
+    wait();
   });
   // Attach rejection handling immediately, including when the document write fails.
   response.catch(() => {});
@@ -221,6 +229,8 @@ export async function processTradeRequest(request, userId) {
       if (currencyProfile(target).signature !== profile.signature) throw tradeError("providerChanged");
       state.sessions.push({ id: request.id, actors: [actor.id, target.id], users: [userId, partner.id],
         names: [actor.name, target.name], status: "open", revision: 0, confirmed: [false, false],
+        // A gift (or a payment) is a one-way trade: only the initiator offers, the receiver's confirmation accepts it.
+        ...(request.kind === "gift" && { kind: "gift" }),
         signature: profile.signature, mode: profile.mode,
         currencies: profile.rows.map(({ key, label }) => ({ key, label })),
         offers: [emptyOffer(), emptyOffer()] });
@@ -280,6 +290,7 @@ export async function processTradeRequest(request, userId) {
         if (request.action === "cancel") Object.assign(session, { status: "cancelled", cancelledBy: side });
         else if (request.action === "offer") {
           if (request.revision !== session.revision) throw tradeError("stale");
+          if (session.kind === "gift" && side === 1) throw tradeError("oneWay");
           changeOffer(session, side, await normalizeOffer(actor, request.offer, session.signature));
         } else if (request.action === "confirm") {
           await validateStoredOffer(actor, session.offers[side], session.signature);
@@ -344,7 +355,8 @@ export function registerTradeService() {
     try { request = JSON.parse(value); } catch { return; }
     queue = queue.then(() => processTradeRequest(request, userId)).catch(error => LOG.error("Trade coordinator error", error));
   });
-  // Prevent ordinary client edits while a saved exchange is being committed.
+  // Prevent ordinary client edits of what the snapshot holds (items and coins) while a saved exchange is being committed;
+  // the rest of the actor (hit points, slots, experience) stays playable.
   const allowEdit = actor => {
     // Token actors share their base actor's id but never take part in a trade.
     if (!isSupportedActor(actor) || actor.isToken) return true;
@@ -356,7 +368,9 @@ export function registerTradeService() {
   };
   for (const hook of ["preCreateItem", "preUpdateItem", "preDeleteItem"]) Hooks.on(hook, item => allowEdit(item.parent));
   Hooks.on("preUpdateActor", (actor, changes) => {
-    if (Object.keys(changes).some(key => key === "system" || key.startsWith("system.") || key === "items")) return allowEdit(actor);
+    const paths = Object.entries(changes).flatMap(([key, value]) =>
+      key === "system" && value && typeof value === "object" ? Object.keys(value).map(name => `system.${name}`) : [key]);
+    if (paths.some(path => path === "items" || path === "system.currency" || path.startsWith("system.currency."))) return allowEdit(actor);
     return true;
   });
 }

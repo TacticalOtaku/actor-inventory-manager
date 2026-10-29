@@ -72,7 +72,9 @@
 .aim-die:hover:not(:disabled) { transform: rotate(12deg) scale(1.1); }
 .aim-die.is-spent { border-color: var(--line-strong); background: transparent; }
 .aim-die:disabled { cursor: default; }
-[data-block="hitDice"].is-spin .aim-die:not(.is-spent):last-of-type { animation: aim-spin 500ms var(--ease-settle); }
+.aim-die.is-spin { animation: aim-spin 500ms var(--ease-settle); }
+/* during a long rest the refilled dice and runes wait for the dawn */
+.aim-window[data-resting] .aim-die:not(.is-spent), .aim-window[data-resting] [data-rune]:not(.is-spent) { opacity: 0; }
 @keyframes aim-spin { to { transform: rotate(360deg); } }
 .aim-runes { display: inline-flex; flex-wrap: wrap; gap: 8px; }
 .aim-rune-group { display: inline-flex; gap: 3px; }
@@ -107,9 +109,11 @@
 /* one button per row: "Продолжительный" is wider than half the rail */
 .aim-rest { display: grid; gap: var(--s2); }
 .aim-rest-btn { display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-1); color: var(--text); font: 600 12.5px var(--font-ui); text-align: left; cursor: pointer; transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-snap); }
-.aim-rest-btn:hover { border-color: var(--accent-line); transform: translateY(-1px); }
-.aim-rest-btn > i { flex: none; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-3); color: var(--warn); }
-.aim-rest-btn.is-long > i { color: var(--arcane); }
+.aim-rest-btn:hover { border-color: color-mix(in oklab, var(--tone) 50%, transparent); background: color-mix(in oklab, var(--tone) 8%, var(--surface-1)); transform: translateY(-1px); }
+.aim-rest-btn:active { transform: translateY(0) scale(0.97); }
+.aim-rest-btn { --tone: var(--school-evo); }
+.aim-rest-btn.is-long { --tone: var(--arcane); }
+.aim-rest-btn > i { flex: none; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in oklab, var(--tone) 16%, transparent); color: var(--tone); }
 .aim-rest-btn span { display: grid; }
 .aim-rest-btn small { font: 500 10.5px var(--font-ui); color: var(--text-3); }
 
@@ -156,6 +160,8 @@ button.aim-stat:disabled { cursor: default; }
 .aim-float.is-damage { color: var(--hp); }
 .aim-float.is-heal { color: var(--heal); }
 .aim-float.is-temp { color: var(--temp); }
+.aim-float.is-roll { color: var(--text); font-size: 13px; }
+.aim-float.is-refused { max-width: 260px; color: var(--warn); font: 600 12px/1.3 var(--font-ui); white-space: normal; text-align: center; }
 .aim-burst { position: absolute; z-index: 40; pointer-events: none; }
 .aim-night { position: absolute; inset: 0; z-index: 18; pointer-events: none; background: radial-gradient(120% 90% at 70% 10%, rgb(40 48 110 / 0.55), rgb(8 10 30 / 0.8)); }
 .aim-night.is-dawn { background: linear-gradient(0deg, rgb(255 170 90 / 0.3), transparent 65%); }
@@ -166,6 +172,10 @@ button.aim-stat:disabled { cursor: default; }
 
 /* ── narrow: one row of fixed-width widgets that scrolls sideways and snaps ── */
 .aim-window[data-layout="narrow"] .aim-rail { scroll-snap-type: x proximity; }
+/* the edges fade where more blocks wait */
+.aim-window[data-layout="narrow"] .aim-rail.has-more-right { mask-image: linear-gradient(90deg, #000 calc(100% - 36px), transparent); }
+.aim-window[data-layout="narrow"] .aim-rail.has-more-left { mask-image: linear-gradient(90deg, transparent, #000 36px); }
+.aim-window[data-layout="narrow"] .aim-rail.has-more-left.has-more-right { mask-image: linear-gradient(90deg, transparent, #000 36px, #000 calc(100% - 36px), transparent); }
 .aim-window[data-layout="narrow"] .aim-rail > * { flex: 0 0 auto; scroll-snap-align: start; }
 .aim-window[data-layout="narrow"] .aim-vitals { display: grid; grid-template-columns: 236px 200px; grid-auto-rows: 1fr; gap: 6px; }
 /* the strip stretches every widget to its height, so the row reads as one band of even cards */
@@ -195,10 +205,15 @@ button.aim-stat:disabled { cursor: default; }
 .aim-crew-count { font: 600 11px var(--font-num); color: var(--text-2); }
 .aim-crew-count.is-over { color: var(--hp); }
 .aim-crew-list { display: flex; flex-wrap: wrap; gap: 5px; }
-.aim-crew-face { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 50%; background: var(--surface-2); color: var(--text-3); }
+/* each aboard is a pill: portrait and name; a free seat is a dashed circle */
+.aim-crew-face { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0; padding: 3px 9px 3px 3px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface-1); color: var(--text); font: 12px var(--font-ui); }
+.aim-crew-av { flex: none; display: grid; place-items: center; width: 24px; height: 24px; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 50%; background: radial-gradient(circle at 35% 30%, var(--surface-3), var(--surface-0)); color: var(--text-3); }
+.aim-crew-av img { width: 100%; height: 100%; object-fit: cover; border: 0; }
+.aim-crew-name { min-width: 0; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 button.aim-crew-face { cursor: pointer; transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-snap); }
-button.aim-crew-face:hover { border-color: var(--accent); transform: scale(1.06); }
-.aim-crew-face img { width: 100%; height: 100%; object-fit: cover; border: 0; }
-.aim-crew-face.is-free { border-style: dashed; background: transparent; }
+button.aim-crew-face:hover { border-color: var(--accent-line); transform: translateY(-1px); }
+.aim-crew-face.is-unknown { color: var(--text-3); }
+.aim-crew-face.is-free { padding: 0; border: 0; background: transparent; }
+.aim-crew-face.is-free .aim-crew-av { border-style: dashed; background: transparent; }
 .aim-crew-row { display: flex; justify-content: space-between; gap: var(--s2); font-size: 12px; color: var(--text); }
 .aim-crew-row small { color: var(--text-3); }

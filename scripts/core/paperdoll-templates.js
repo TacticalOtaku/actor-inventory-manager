@@ -405,10 +405,12 @@ export function getAllTemplates() {
 /**
  * Get template definition by ID
  * @param {string} templateId
+ * @param {string} [fallbackId] the preset for an unknown or deleted id
  * @returns {Object}
  */
-export function getTemplateById(templateId) {
-  if (!templateId) return DND_2024_TEMPLATE;
+export function getTemplateById(templateId, fallbackId = TEMPLATE_PRESETS.DND_2024) {
+  const fallback = PRESET_TEMPLATES[fallbackId] ?? DND_2024_TEMPLATE;
+  if (!templateId) return fallback;
   if (PRESET_TEMPLATES[templateId]) {
     return PRESET_TEMPLATES[templateId];
   }
@@ -416,7 +418,7 @@ export function getTemplateById(templateId) {
   if (custom[templateId]) {
     return custom[templateId];
   }
-  return DND_2024_TEMPLATE;
+  return fallback;
 }
 
 /**
@@ -441,9 +443,9 @@ export function getActorPaperdollTemplate(actor) {
     return { ...formatTemplateContext({ ...customTemplateData, id: "custom" }), isActorCustom: true };
   }
 
-  // 2. A preset or world template linked by id, else the actor type's default
-  const templateId = flags[FLAGS.TEMPLATE_ID] || defaultPresetFor(actor.type, getPaperdollRuntime().vehicleType(actor));
-  return formatTemplateContext(getTemplateById(templateId));
+  // 2. A preset or world template linked by id, else (none linked, or its preset deleted) the actor type's default
+  const defaultId = defaultPresetFor(actor.type, getPaperdollRuntime().vehicleType(actor));
+  return formatTemplateContext(getTemplateById(flags[FLAGS.TEMPLATE_ID] || defaultId, defaultId));
 }
 
 /**

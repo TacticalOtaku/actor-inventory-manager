@@ -103,11 +103,13 @@ function hasArmorCategory(item) {
 }
 
 /**
- * Equipped without a place on the doll: claws, a bite or a tail are part of the body, and clothes are worn under
- * armor, so the armor slot stays free for it.
+ * Equipped without a place on the doll: claws, a bite or a tail are part of the body, arrows ride in the quiver, and
+ * clothes are worn under armor, so the armor slot stays free for it.
  */
 export function takesNoSlot(item) {
-  return (item.type === "weapon" && item.system?.type?.value === "natural") || isBodyClothing(item);
+  const value = item.system?.type?.value;
+  return (item.type === "weapon" && value === "natural") || (item.type === "consumable" && value === "ammo")
+    || isBodyClothing(item);
 }
 
 /**
@@ -301,6 +303,7 @@ function isTwoHandedWeaponSlotMatch(slot) {
  * Match the slot's `accepts` tags against the item.
  * Items with a specific body location match on that classification only, so
  * a cloak never lands in the armor slot because its name contains "light".
+ * Generic items never match the armor slot: "Stone of Light" or a "Heavy Coat" is no armor.
  */
 function matchesSlotAccepts(slot, item) {
   if (!Array.isArray(slot.accepts) || slot.accepts.length === 0) return false;
@@ -308,7 +311,7 @@ function matchesSlotAccepts(slot, item) {
     const t = String(tag || "").toLowerCase();
     if (!t) return false;
     if (t === item.classification) return true;
-    if (!item.generic) return false;
+    if (!item.generic || isArmorSlot(slot)) return false;
     return t === item.systemType || t === item.subType || nameHasToken(item.name, t);
   });
 }

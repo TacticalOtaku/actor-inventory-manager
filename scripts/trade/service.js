@@ -230,7 +230,9 @@ export async function processTradeRequest(request, userId) {
       // Recovery is a separate GM-only, explicitly confirmed operation.
       if (request.action === "recover" && user.isGM && ["recovery", "executing"].includes(session.status)) {
         if (session.phase === "preparing" && !session.recoveryId) {
-          // Preparation never debits assets; interrupted preparation needs only unlocking.
+          // Preparation never debits assets; interrupted preparation needs only unlocking, and the snapshot journal
+          // it may have made before saving its id goes too.
+          await game.journal.getName?.(`AIM recovery ${session.id}`)?.delete();
           session.status = "cancelled";
           state.receipts[userId] = { id: request.id, error: null };
           await save(state);

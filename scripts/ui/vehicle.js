@@ -6,11 +6,8 @@ import { cargoMeter, seats, weightText } from "../core/vehicle.js";
 import { readVehicle } from "../integrations/dnd5e.js";
 import { t } from "./html.js";
 
-
 // shortcut: free places draw at most this many placeholders; a galleon's hundred deckhands show as a count instead.
 const MAX_FREE_DRAWN = 12;
-
-export const readVehicleOf = (actor) => readVehicle(actor);
 
 /** One aboard: a portrait to open, or «Неизвестный» for an actor the viewer may not see (or one that is gone). */
 function member(uuid) {
@@ -34,7 +31,7 @@ function group(id, part) {
 
 /** What the rail shows of a vehicle: its stats, the cargo meter, the crew groups and rows without an actor. */
 export function buildVehicleRail(actor) {
-  const vehicle = readVehicleOf(actor);
+  const vehicle = readVehicle(actor);
   if (!vehicle) return null;
   const meter = cargoMeter(vehicle.cargo.load, vehicle.cargo.capacity);
   const groups = [group("crew", vehicle.crew), group("passengers", vehicle.passengers)];
@@ -52,7 +49,7 @@ export function buildVehicleRail(actor) {
 
 /** The line under a vehicle's name: type, size, keel and beam. */
 export function vehicleKind(actor) {
-  const vehicle = readVehicleOf(actor);
+  const vehicle = readVehicle(actor);
   if (!vehicle) return "";
   return [
     vehicle.typeLabel,

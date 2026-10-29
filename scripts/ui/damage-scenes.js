@@ -290,8 +290,10 @@ const SCENES = {
       const outer = k.sprite("magic_02", cx, cy, 118, { tint: c, alpha: 0.75 });
       const inner = k.sprite("magic_01", cx, cy, 78, { tint: c2, alpha: 0.75 });
       const eye = k.sprite("light_01", cx, cy, 60, { tint: mix(c, 0xffffff, 0.3), alpha: 0.7 });
-      const waves = k.fx({ tex: ["light_03", "circle_02"], life: 1.3, size: 40, grow: [[0, 0.5], [1, 6]], rot: [0, 360],
-        alpha: [[0, 0], [0.12, 0.85], [1, 0]] });
+      // Rings overlap (each lives 1.3 s, one comes every 0.8 s), so each colour has its own emitter.
+      const wave = (tone) => k.fx({ tex: ["light_03", "circle_02"], life: 1.3, size: 40, grow: [[0, 0.5], [1, 6]], rot: [0, 360],
+        alpha: [[0, 0], [0.12, 0.85], [1, 0]], color: [[0, 0xffffff], [1, tone]] });
+      const waves = [wave(c), wave(c2)];
       const motes = k.fx({ tex: ["star_04", "star_05"], life: [1.6, 2.4], spring: { x: cx, y: cy, k: 4 },
         at: (rng) => {
           const p = ring(cx, cy, 30, 58)(rng);
@@ -302,15 +304,14 @@ const SCENES = {
       return (t, dt, ev) => {
         [0, 0.8, 1.6].forEach((at, i) => {
           if (!ev(at)) return;
-          waves.o.color = i % 2 ? [[0, 0xffffff], [1, c2]] : [[0, 0xffffff], [1, c]];
-          waves.spawn(1, { x: cx, y: cy, vx: 0, vy: 0 });
+          waves[i % 2].spawn(1, { x: cx, y: cy, vx: 0, vy: 0 });
         });
         outer.rotation = t * 0.5;
         inner.rotation = -t * 0.8;
         const beat = Math.pow(Math.max(0, Math.cos((t % 0.8) / 0.8 * Math.PI)), 6);
         eye.scale.set(eye.base * (1 + 0.25 * beat));
         k.split(1 + 1.5 * beat, t);
-        waves.update(dt);
+        for (const w of waves) w.update(dt);
         motes.update(dt, 8);
       };
     }

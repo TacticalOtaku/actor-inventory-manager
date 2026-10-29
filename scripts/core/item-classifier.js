@@ -48,11 +48,11 @@ const NOT_BODY_ARMOR_TOKENS = [
   "belt", "пояс"
 ];
 
-/** Clothing names that do occupy the body-armor layer. */
-const BODY_CLOTHING_TOKENS = [
-  "доспех", "латы", "кольчуг", "панцир", "кирас", "роба", "одежд", "костюм",
-  "robe", "vestment", "clothes", "outfit", "garb", "attire"
-];
+/** Armor typed as clothing (a homebrew «Кольчуга»): it takes the body-armor layer. */
+const CLOTHING_ARMOR_TOKENS = ["доспех", "латы", "кольчуг", "панцир", "кирас"];
+
+/** Clothes and robes: worn under armor, so they take no slot. */
+const BODY_CLOTHING_TOKENS = ["роба", "одежд", "костюм", "robe", "vestment", "clothes", "outfit", "garb", "attire"];
 
 /**
  * Check if item is a physical inventory item (not a feat, spell, class, or race)
@@ -102,9 +102,12 @@ function hasArmorCategory(item) {
   return ARMOR_TYPES.includes(armorType) || ARMOR_TYPES.includes(subType);
 }
 
-/** Claws, a bite or a tail are part of the body: they are equipped without taking a hand. */
-function isNaturalWeapon(item) {
-  return item.type === "weapon" && item.system?.type?.value === "natural";
+/**
+ * Equipped without a place on the doll: claws, a bite or a tail are part of the body, and clothes are worn under
+ * armor, so the armor slot stays free for it.
+ */
+export function takesNoSlot(item) {
+  return (item.type === "weapon" && item.system?.type?.value === "natural") || isBodyClothing(item);
 }
 
 /**
@@ -121,7 +124,14 @@ export function isBodyArmor(item) {
   if (nameHasAnyToken(name, NOT_BODY_ARMOR_TOKENS)) return false;
 
   return /armou?r/i.test(armorType) ||
-    (armorType === "clothing" && nameHasAnyToken(name, BODY_CLOTHING_TOKENS));
+    (armorType === "clothing" && nameHasAnyToken(name, CLOTHING_ARMOR_TOKENS));
+}
+
+/** Traveler's Clothes, a robe: clothing for the body, with no armor category. */
+function isBodyClothing(item) {
+  const name = (item.name ?? "").toLowerCase();
+  return item.type === "equipment" && item.system?.type?.value === "clothing" && !hasArmorCategory(item)
+    && nameHasAnyToken(name, BODY_CLOTHING_TOKENS) && !nameHasAnyToken(name, NOT_BODY_ARMOR_TOKENS) && !isBodyArmor(item);
 }
 
 /**
@@ -458,7 +468,8 @@ function resolveSlotMatches(item, slots) {
       continue;
     }
     if (shield) {
-      if (isShieldSlot(slot)) primary.push(slot.id);
+      // The off hand first: with both hands free a shield goes where it is held, not where the sword goes.
+      if (isShieldSlot(slot)) primary[isOffHandSlot(slot) ? "unshift" : "push"](slot.id);
       continue;
     }
     if (twoHanded) {
@@ -486,7 +497,7 @@ function resolveSlotMatches(item, slots) {
  * @returns {Array<string>}
  */
 export function getValidSlotsForItem(item, actor = null) {
-  if (!item || isNaturalWeapon(item)) return [];
+  if (!item || takesNoSlot(item)) return [];
 
   const slots = resolveKnownSlots(resolveEffectiveActor(item, actor));
   const { primary, generic } = resolveSlotMatches(item, slots);
@@ -506,7 +517,7 @@ export function getValidSlotsForItem(item, actor = null) {
  * @returns {boolean}
  */
 export function isItemCompatibleWithSlot(item, slotId, actor = null) {
-  if (!item || !slotId || isNaturalWeapon(item)) return false;
+  if (!item || !slotId || takesNoSlot(item)) return false;
 
   const slots = resolveKnownSlots(resolveEffectiveActor(item, actor));
   const targetSlot = slots.find(slot => slot.id === slotId);

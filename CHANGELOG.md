@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.8
 
 ### Fixed
 - Trading works for a GM who hosts over plain http on the local network: the item digest no longer needs the

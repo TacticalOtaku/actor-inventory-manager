@@ -1,6 +1,13 @@
 import { FLAGS, MODULE_ID } from "../constants.js";
 import { currencyProfile, tradeError, transferMoney } from "./currencies.js";
 import { canonicalJSON, documentFingerprint, recoveryAttributes } from "./document-data.js";
+import { itemFingerprint } from "./offers.js";
+
+/** Two items are one stack when only the count, the ids, the owners, the timestamps and AIM's marks differ. */
+const stackKey = ({ _id, ownership, ...data }) => itemFingerprint({
+  ...data, system: { ...data.system, quantity: 0, container: null },
+  effects: (data.effects ?? []).map(({ _id, _stats, origin, ...effect }) => effect)
+});
 
 /** Private journal recovery data includes item currencies and custom attribute paths. */
 export function captureInventory(actor) {
@@ -65,14 +72,30 @@ export async function transferItems(source, target, items, guard = () => {}) {
     else partial.push({ _id: item.id, "system.quantity": quantity - entry.quantity, left: quantity - entry.quantity });
   }
   if (!copies.length) return;
+  // A received item joins an identical loose stack (not one in a container: its capacity is not ours to check).
+  const stacks = new Map(Array.from(target.items.values(), i => i.toObject())
+    .filter(data => data.type !== "container" && !data.system?.container).map(data => [stackKey(data), data]));
+  const merged = new Map();
+  const created = copies.filter(data => {
+    const stack = data.type !== "container" && stacks.get(stackKey(data));
+    if (!stack) return true;
+    const quantity = (merged.get(stack._id) ?? Number(stack.system.quantity ?? 1)) + data.system.quantity;
+    merged.set(stack._id, quantity);
+    return false;
+  });
   // Debit first, in one write per kind (a big offer must not run past the request timeout); a failed credit is
   // recovered from the persisted snapshot.
   if (partial.length) await source.updateEmbeddedDocuments("Item", partial.map(({ left, ...update }) => update));
   if (whole.length) await source.deleteEmbeddedDocuments("Item", whole);
   if (whole.some(id => source.items.has(id)) || partial.some(({ _id, left }) => Number(source.items.get(_id)?.system?.quantity) !== left)) throw tradeError("transfer");
   guard();
-  const created = await target.createEmbeddedDocuments("Item", copies, { keepId: true });
-  if (created?.length !== copies.length) throw tradeError("transfer");
+  if (merged.size) await target.updateEmbeddedDocuments("Item", Array.from(merged, ([_id, quantity]) =>
+    ({ _id, "system.quantity": quantity, [`flags.${MODULE_ID}.${FLAGS.TRADE_NEW}`]: true })));
+  if ([...merged].some(([id, quantity]) => Number(target.items.get(id)?.system?.quantity) !== quantity)) throw tradeError("transfer");
+  if (!created.length) return;
+  guard();
+  const made = await target.createEmbeddedDocuments("Item", created, { keepId: true });
+  if (made?.length !== created.length) throw tradeError("transfer");
 }
 
 export async function executeTransfer(actors, session, guard = () => {}) {

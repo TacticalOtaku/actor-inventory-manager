@@ -44,3 +44,10 @@ export function received(before, after) {
  * @param {string} containerId
  */
 export const landedOutside = (containers, containerId) => containers.some((id) => (id ?? null) !== containerId);
+
+/**
+ * Whether the row menu offers «Drop on the ground» (Item Piles active is checked first): an owner or the GM, a physical
+ * item, the actor's token on the viewed scene, no running exchange. A container stays: its contents would not follow.
+ * @param {{owner: boolean, physical: boolean, container: boolean, onScene: boolean, trading: boolean}} state
+ */
+export const canDropOnGround = ({ owner, physical, container, onScene, trading }) => owner && physical && !container && onScene && !trading;

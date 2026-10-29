@@ -3,6 +3,8 @@
 // The rules themselves live in trade/ (offers, coordinator); this only reads a session for the panel.
 // ─────────────────────────────────────────────────────────
 
+import { computeActorEncumbrance, getItemWeightInUnit, getSystemEncumbrance } from "./weight-calculator.js";
+
 /** Offers leave by themselves this long after the last edit. */
 export const OFFER_SEND_DELAY = 500;
 
@@ -73,4 +75,24 @@ export function pilesTotals(rows, money) {
     offered: round(rows.reduce((sum, r) => sum + (Number(money[r.key]) || 0) * (Number(r.rate) || 0), 0)),
     purse: round(rows.reduce((sum, r) => sum + (Number(r.quantity) || 0) * (Number(r.rate) || 0), 0))
   };
+}
+
+/** The weight of `quantity` of an item in the world's unit; a container weighs once, whatever its count. */
+export function offeredWeight(item, quantity) {
+  return item ? getItemWeightInUnit({ type: item.type, system: { weight: item.system?.weight, quantity } }) : 0;
+}
+
+/**
+ * The load once the trade is done: dnd5e's derived load (Weighty Containers' reductions and coins included) plus
+ * `change`, the weight arriving less the weight leaving in the world's unit, through the tiers of the load meter.
+ * Null without dnd5e's encumbrance or under the «none» rule.
+ * @returns {{value: number, max: number, tier: string, tierChanged: boolean}|null}
+ */
+export function loadAfterTrade(actor, change) {
+  const enc = getSystemEncumbrance(actor);
+  const now = enc && computeActorEncumbrance(actor);
+  if (!now || now.rule === "none") return null;
+  const value = Math.max(0, Number(enc.value) + change);
+  const after = computeActorEncumbrance({ system: { attributes: { encumbrance: { ...enc, value } } } });
+  return { value: after.value, max: after.max, tier: after.tier, tierChanged: after.tier !== now.tier };
 }

@@ -276,6 +276,23 @@ describe("formatItemForDisplay rarity label", () => {
     assert.equal(formatItemForDisplay(rope).rarityLabel, "");
     assert.equal(formatItemForDisplay(relic).rarityLabel, "");
   });
+
+  it("keeps an unidentified item's details from players, not from the GM", () => {
+    world();
+    const wand = {
+      id: "w", name: "Wand", type: "equipment",
+      system: {
+        identified: false, rarity: "veryRare", quantity: 1, price: { value: 500, denomination: "gp" }, properties: new Set(["mgc"]),
+        description: { value: "Wand of Fireballs" }, unidentified: { description: "A charred stick" }
+      }
+    };
+    globalThis.game.user = { isGM: false };
+    const shown = formatItemForDisplay(wand);
+    assert.deepEqual([shown.rarityLabel, shown.priceDisplay, shown.properties, shown.description], ["", "", [], "A charred stick"]);
+    globalThis.game.user = { isGM: true };
+    assert.equal(formatItemForDisplay(wand).description, "Wand of Fireballs");
+    assert.equal(formatItemForDisplay(wand).priceDisplay, "500 gp");
+  });
 });
 
 describe("actor window header reads (dnd5e 5.3.3)", () => {
@@ -339,7 +356,7 @@ describe("actor window rail reads (dnd5e 5.3.3)", () => {
         spells: { spell1: { value: 3, max: 4 } },
         attributes: {
           hp: { value: 31, max: 38, temp: 5 },
-          ac: { value: 18 },
+          ac: { value: 18, calc: "default", base: 16, armor: 14, dex: 2, shield: 2, bonus: 0, cover: 0, equippedArmor: { name: "Чешуйчатый доспех" } },
           init: { total: 3 },
           movement: { walk: 30, units: "ft" },
           prof: 3,
@@ -353,6 +370,7 @@ describe("actor window rail reads (dnd5e 5.3.3)", () => {
     const rail = readRail(actor);
     assert.deepEqual(rail.hp, { value: 31, max: 38, temp: 5 });
     assert.deepEqual([rail.ac, rail.init, rail.speed, rail.speedUnit, rail.prof], [18, 3, 30, "фт", 3]);
+    assert.deepEqual(rail.acParts, { calc: "default", base: 16, armor: 14, dex: 2, shield: 2, bonus: 0, cover: 0, armorName: "Чешуйчатый доспех" });
     assert.equal(rail.inspiration, true);
     assert.deepEqual(rail.exhaustion, { value: 2, max: 6 });
     assert.deepEqual(rail.death, { success: 1, failure: 0 });

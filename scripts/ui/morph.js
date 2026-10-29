@@ -13,7 +13,7 @@ function syncAttributes(from, to) {
 
 // A field's attributes are its defaults; what it shows is a property. The focused field keeps what is being typed.
 function syncField(from, to) {
-  if (from === document.activeElement) return;
+  if (from === from.ownerDocument.activeElement) return;
   if ("checked" in from && from.checked !== to.checked) from.checked = to.checked;
   if ("value" in from && from.type !== "file" && from.value !== to.value) from.value = to.value;
 }
@@ -55,7 +55,12 @@ export function morph(from, to) {
     return;
   }
   if (from.isEqualNode(to)) return;
-  if (from.nodeName !== to.nodeName || from.localName.includes("-")) return from.replaceWith(to);
+  if (from.nodeName !== to.nodeName) return from.replaceWith(to);
+  if (from.localName.includes("-")) {
+    // An editor being typed in keeps its element: a new one would drop the text not yet saved.
+    if (from.hasAttribute("open") || from.contains(from.ownerDocument.activeElement)) return;
+    return from.replaceWith(to);
+  }
   syncAttributes(from, to);
   morphChildren(from, to);
   syncField(from, to);

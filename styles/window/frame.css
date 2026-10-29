@@ -67,16 +67,22 @@
 .aim-tab {
   flex: none; height: 40px; padding: 0 var(--s3);
   border: 0; border-radius: 0; background: transparent;
-  color: var(--text-2); font: 500 13px var(--font-ui); cursor: pointer;
+  position: relative; color: var(--text-2); font: 500 13px var(--font-ui); cursor: pointer;
   transition: color var(--d-fast);
 }
 .aim-tab:hover, .aim-tab[aria-selected="true"] { color: var(--text); }
+/* a hovered tab previews its underline */
+.aim-tab::after { content: ""; position: absolute; left: var(--s3); right: var(--s3); bottom: 0; height: 2px; border-radius: 2px; background: var(--accent-line); transform: scaleX(0); transition: transform var(--d-base) var(--ease-settle); }
+.aim-tab:hover:not([aria-selected="true"])::after { transform: scaleX(1); }
+.aim-tab-n { margin-left: 6px; padding: 1px 5px; border-radius: 99px; background: var(--surface-3); color: var(--text-3); font: 600 10px var(--font-num); vertical-align: 1px; }
+/* once a panel is scrolled, the tab strip casts a soft shadow over it */
+.aim-main.is-scrolled .aim-tabs { z-index: 1; box-shadow: 0 8px 14px -10px rgb(0 0 0 / 0.55); }
 .aim-tab[hidden] { display: none; }
 .aim-tab-ink {
   position: absolute; left: 0; bottom: -1px; height: 2px; width: 100px;
   border-radius: 2px; background: var(--accent);
   transform-origin: left; transform: scaleX(0);
-  transition: transform var(--d-base) var(--ease-settle);
+  transition: transform var(--d-slow) var(--ease-settle);
 }
 .aim-panels { position: relative; flex: 1; min-height: 0; }
 .aim-panel { position: absolute; inset: 0; overflow: auto; padding: var(--s4); scrollbar-gutter: stable; }
@@ -102,8 +108,10 @@
   height: 30px; padding: 0 var(--s3);
   border: 1px solid var(--line-strong); border-radius: var(--r-sm);
   background: var(--surface-2); color: var(--text); font: 500 12.5px var(--font-ui); cursor: pointer;
+  transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-snap);
 }
-.aim-btn:hover { border-color: var(--accent-line); }
+.aim-btn:hover:not(:disabled) { border-color: var(--accent-line); transform: translateY(-1px); }
+.aim-btn:active:not(:disabled) { transform: translateY(0) scale(0.97); }
 .aim-btn.is-danger { background: var(--hp); border-color: var(--hp); color: var(--surface-0); }
 
 /* scrollbars */
@@ -111,8 +119,29 @@
 .aim-window ::-webkit-scrollbar-track, .aim-window ::-webkit-scrollbar-corner { background: transparent; }
 .aim-window ::-webkit-scrollbar-thumb { min-height: 40px; background: var(--line-strong); background-clip: padding-box; border: 3px solid transparent; border-radius: 99px; }
 .aim-window ::-webkit-scrollbar-thumb:hover { background: var(--accent-line); background-clip: padding-box; border-width: 2px; }
+.aim-window ::-webkit-scrollbar-thumb:active { background: var(--accent); background-clip: padding-box; border-width: 2px; }
+/* Firefox has no ::-webkit-scrollbar; in Chromium the standard properties would replace the styled thumb */
+@supports not selector(::-webkit-scrollbar) {
+  .aim-window * { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+}
+
+/* the cursor light: a soft glow moved by a transform under the pointer (motion.js) */
+.aim-spot { position: relative; overflow: hidden; isolation: isolate; }
+.aim-spot::before {
+  content: ""; position: absolute; left: 0; top: 0; z-index: -1; width: 280px; height: 280px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgb(255 255 255 / 0.07), transparent 70%); opacity: 0;
+  transform: translate(calc(var(--mx, 50%) - 140px), calc(var(--my, 50%) - 140px)); transition: opacity var(--d-base);
+}
+.aim-spot:hover::before { opacity: 1; }
+.aim-root[data-theme="parchment"] .aim-spot::before { background: radial-gradient(circle, rgb(255 255 255 / 0.5), transparent 70%); }
+/* the press ripple */
+.aim-ripple-host { position: relative; overflow: hidden; }
+.aim-ripple-host > .aim-ripple { position: absolute; margin: 0; border-radius: 50%; background: currentColor; opacity: 0; pointer-events: none; }
 
 /* a secret only the document's owners see (Foundry's rule): marked, without core's Reveal button */
 .aim-root section.secret:not(.revealed) { margin: 8px 0; padding: 6px 10px; border: 1px dashed var(--accent-line); border-radius: var(--r-sm); background: var(--accent-soft); }
 /* a revealed secret is ordinary text for everyone; core's grey rules around it read as foreign */
 .aim-root section.secret.revealed { margin: 0; padding: 0; border: 0; }
+
+/* a new theme or accent crossfades over 600 ms (the window's view transition, actor-window.js) */
+html.aim-vt::view-transition-old(root), html.aim-vt::view-transition-new(root) { animation-duration: 600ms; }

@@ -16,8 +16,9 @@ const NONE = Object.freeze({ refusal: null, note: null });
 
 const quantities = (actor) => new Map(actor.items.map((item) => [item.id, Number(item.system?.quantity ?? 1)]));
 const STACK_WAIT_MS = 3000;
-// A running exchange locks the inventory, as it locks the window's own drags.
-const tradeLocked = (actor) => ["executing", "recovery"].includes(sessionFor(actor.id)?.status);
+// A running exchange locks the inventory, as it locks the window's own drags. A token actor shares its base actor's id
+// but never trades (as in the trade service).
+export const tradeLocked = (actor) => !actor.isToken && ["executing", "recovery"].includes(sessionFor(actor.id)?.status);
 
 /** The open tab's content shows it takes the drop while something from outside is over the window. */
 export function showDropTarget(app, on) {

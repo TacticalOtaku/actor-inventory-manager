@@ -2,6 +2,7 @@
 // Actor Inventory Manager - Item Piles Integration
 // ─────────────────────────────────────────────────────────
 
+import { MODULE_ID } from "../constants.js";
 import { LOG } from "../foundry/logger.js";
 
 /** dnd5e's default rates, for a world without CONFIG. */
@@ -23,6 +24,39 @@ export function isItemPile(actor) {
   } catch {
     return false;
   }
+}
+
+/** The actor's token on the scene the user views, where a dropped item lands; null without one. */
+export function groundToken(actor) {
+  return actor?.getActiveTokens?.(false, true)?.[0] ?? null;
+}
+
+/**
+ * Lays the item on the ground as an Item Piles pile at the actor's token, then takes it from the actor. A stack goes
+ * whole. Item Piles makes the pile through a GM; it warns and returns false without one, and the item stays.
+ * @param {Item} item
+ * @returns {Promise<boolean>}
+ */
+export async function dropOnGround(item) {
+  const token = groundToken(item.actor);
+  if (!token || !isItemPilesActive()) return false;
+  const data = item.toObject();
+  if ("equipped" in data.system) data.system.equipped = false;
+  if ("attuned" in data.system) data.system.attuned = false;
+  data.system.container = null;
+  // The slot and «Новое» belong to this actor.
+  delete data.flags?.[MODULE_ID];
+  try {
+    const pile = await globalThis.game.itempiles.API.createItemPile({
+      sceneId: token.parent.id, position: { x: token.x, y: token.y }, tokenOverrides: { elevation: token.elevation }, items: [data]
+    });
+    if (!pile) return false;
+  } catch (err) {
+    LOG.warn("Item Piles could not create a pile", err);
+    return false;
+  }
+  await item.delete();
+  return true;
 }
 
 /**

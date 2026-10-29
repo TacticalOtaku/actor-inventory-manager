@@ -44,7 +44,7 @@ one place to update when it moves again. Never inline these reads at a call site
 
 | Concern | Helper | Where |
 | --- | --- | --- |
-| Attunement state | `isItemAttuned`, `itemRequiresAttunement`, `getAttunementStatus` | `core/attunement.js` |
+| Attunement state | `isItemAttuned`, `attunementRequirement`, `itemRequiresAttunement`, `getAttunementStatus` | `core/attunement.js` |
 | Attunement cap | `getActorAttunementMax` (prepared), `getActorSourceAttunementMax` (stored) | `core/attunement.js` |
 | Spell preparation | `resolveSpellPreparation` | `integrations/dnd5e.js` |
 | Whether a spell has a prepare toggle (the menu and the spells tab) | `hasPreparationToggle` | `integrations/dnd5e.js` |
@@ -305,7 +305,7 @@ new place (`glide`, 420 ms) unless motion is off. The collapse button shrinks th
 
 ### Vendored assets
 
-`npm run vendor` (`tools/vendor.mjs`) copies the Onest, JetBrains Mono and Unbounded variable fonts
+`npm run vendor` (`tools/vendor.mjs`) copies the Onest variable font
 (`@fontsource-variable`, subsets latin, latin-ext, cyrillic, cyrillic-ext) into `assets/fonts/` with their licences,
 and writes the matching `@font-face` rules into `styles/theme/fonts.css`. `fonts.css` is not listed in
 `module.json`: the client setting `useWebFonts` adds it as a `<link>`; with it off the windows use system fonts.
@@ -314,7 +314,7 @@ Nothing is fetched from a CDN.
 The damage scenes use sprites from Kenney's Particle Pack 1.1 (CC0, `assets/vfx/LICENSE-kenney-particle-pack.txt`),
 resized to 256 or 128 px, and pixi-filters 5.3.0 (MIT, `scripts/vendor/LICENSE-pixi-filters.txt`), its browser build
 with one change: it keeps to the global `AIMPixiFilters` instead of merging into `PIXI.filters`, so a module that
-brings another version keeps its own. The script loads on the first damage card.
+brings another version keeps its own. The script loads with the textures on the first window render (`preloadBursts`).
 
 ### Colour constraints
 

@@ -99,6 +99,23 @@ async function save(state) {
   await game.settings.set(MODULE_ID, TRADE_STATE, state);
 }
 
+/**
+ * An item changed since it was offered (a potion drunk from the offered stack): its side's offer is read again, which
+ * moves the revision on, so both players review what is offered now before they confirm. An offer that no longer
+ * fits (the item is gone or too few are left) stays for its owner to edit.
+ */
+async function refreshChangedOffers(session) {
+  for (const [side, actorId] of session.actors.entries()) {
+    const actor = game.actors.get(actorId);
+    try {
+      await validateStoredOffer(actor, session.offers[side], session.signature);
+    } catch (error) {
+      if (error?.message !== "AIM.trade.errors.changed") continue;
+      try { changeOffer(session, side, await normalizeOffer(actor, session.offers[side], session.signature)); } catch { /* left for its owner */ }
+    }
+  }
+}
+
 async function settle(state, session) {
   const actors = session.actors.map(id => game.actors.get(id));
   for (const [side, actor] of actors.entries()) {
@@ -252,6 +269,9 @@ export async function processTradeRequest(request, userId) {
         session.error = "AIM.trade.errors.rolledBack";
         await save(state);
         await journal.delete();
+      } else if (request.action === "cancel" && user.isGM && session.status === "open" && session.actors.includes(actor.id)) {
+        // The GM closes a trade its players cannot (one of them left the game); nothing has moved yet.
+        session.status = "cancelled";
       } else {
         const side = authorizedSide(session, actor.id, user);
         if (session.status !== "open") throw tradeError("stale");
@@ -274,6 +294,7 @@ export async function processTradeRequest(request, userId) {
     // A confirmation that cannot settle (an item ran out, the partner left) clears both, so nobody waits on «both confirmed».
     if (session?.status === "open" && session.users.includes(userId)
       && (request.action === "confirm" || ["AIM.trade.errors.changed", "AIM.trade.errors.funds", "AIM.trade.errors.providerChanged", "AIM.trade.errors.empty"].includes(error))) session.confirmed = [false, false];
+    if (session?.status === "open" && error === "AIM.trade.errors.changed") await refreshChangedOffers(session);
   }
   state.receipts ??= {};
   state.receipts[userId] = { id: request.id, error };

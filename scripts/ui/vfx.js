@@ -217,8 +217,12 @@ export function load() {
 export function paint(entry) {
   const { w, h, ratio } = entry.size;
   renderer ??= new PIXI.Renderer({ width: w, height: h, resolution: ratio, backgroundAlpha: 0, antialias: true, preserveDrawingBuffer: true, powerPreference: "low-power" });
-  if (renderer.screen.width < w || renderer.screen.height < h || renderer.resolution !== ratio) {
-    renderer.resize(Math.max(w, renderer.screen.width), Math.max(h, renderer.screen.height), ratio);
+  const stale = renderer.resolution !== ratio;
+  // PIXI 7's resize() takes no resolution: a new pixel ratio (browser zoom, another monitor) is set on its own.
+  if (stale) renderer.resolution = ratio;
+  // In device pixels: at a fractional ratio the screen size rounds a little below the stage's.
+  if (stale || renderer.width < Math.round(w * ratio) || renderer.height < Math.round(h * ratio)) {
+    renderer.resize(Math.max(w, renderer.screen.width), Math.max(h, renderer.screen.height));
   }
   renderer.render(entry.stage);
   const { width, height } = entry.canvas;

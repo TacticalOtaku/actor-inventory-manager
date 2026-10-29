@@ -16,8 +16,8 @@ import {
 } from "../core/migration.js";
 import { activeGM, cancelOpenTrades } from "../trade/service.js";
 import { LOG } from "./logger.js";
+import { t } from "../ui/html.js";
 
-const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 const VERSION_KEY = "migrationVersion";
 
 /** «Повторить миграцию» in the module settings: a menu that runs it again and closes at once. */

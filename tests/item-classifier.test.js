@@ -168,3 +168,18 @@ describe("slot compatibility", () => {
     assert.equal(isItemCompatibleWithSlot(ioun, "armor", actor), false);
   });
 });
+
+describe("consumables and natural weapons", () => {
+  it("classify a scroll by its type before its name", () => {
+    const scroll = { name: "Spell Scroll: Crown of Madness", type: "consumable", system: { type: { value: "scroll" } } };
+    const spike = { name: "Шип мантикоры", type: "consumable", system: { type: { value: "ammo" } } };
+    assert.deepEqual([classifyItem(scroll), classifyItem(spike)], ["consumable", "consumable"]);
+    assert.deepEqual(getValidSlotsForItem(scroll, actor), ["mainHand", "offHand"]);
+  });
+
+  it("give claws no slot on the doll", () => {
+    const claws = { name: "Claws", type: "weapon", system: { type: { value: "natural" }, properties: new Set() } };
+    assert.deepEqual(getValidSlotsForItem(claws, actor), []);
+    assert.equal(isItemCompatibleWithSlot(claws, "mainHand", actor), false);
+  });
+});

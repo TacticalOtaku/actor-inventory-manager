@@ -9,8 +9,8 @@ import { createDroppedItems, createDroppedSpell, sheetUnsupportedTypes } from ".
 import { isItemPile } from "../integrations/item-piles.js";
 import { validateContainerDrop } from "../integrations/weighty-containers.js";
 import { sessionFor } from "../trade/service.js";
+import { t } from "./html.js";
 
-const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 const NOTE_MS = 2400;
 const NONE = Object.freeze({ refusal: null, note: null });
 

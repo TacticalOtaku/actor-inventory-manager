@@ -5,7 +5,7 @@
 import { MODULE_ID } from "../constants.js";
 import { categorizeEffects, changeText, conditionGrid } from "../core/effects.js";
 import { readEffectChanges, readEffects, readStatusEffects } from "../integrations/dnd5e.js";
-import { unwrapSecrets } from "./html.js";
+import { t, unwrapSecrets } from "./html.js";
 
 const PARTIALS = `modules/${MODULE_ID}/templates/window`;
 export const EFFECT_TEMPLATES = ["effects", "effect-row"].map((name) => `${PARTIALS}/${name}.hbs`);
@@ -13,7 +13,6 @@ export const EFFECT_TEMPLATES = ["effects", "effect-row"].map((name) => `${PARTI
 /** dnd5e's default image for an effect made on the actor. */
 const NEW_EFFECT_IMG = "icons/svg/aura.svg";
 
-const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 
 /**
  * The effects of the rail and the tab, the conditions grid and the open row's description.

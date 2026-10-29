@@ -15,7 +15,8 @@ export function currencyProfile(actor) {
   }
   const api = pilesAPI();
   if (!api?.getActorCurrencies || !api?.getPaymentData || !api?.transferCurrencies) throw tradeError("provider");
-  const currencies = api.getActorCurrencies(actor, { getAll: true, secondary: true });
+  // Secondary currencies have no exchange rate, so Item Piles' payment strings skip them: they trade as items instead.
+  const currencies = api.getActorCurrencies(actor, { getAll: true, secondary: false });
   // Item Piles 3.3+ ships no system currencies; dnd5e gets them from the "Item Piles: D&D 5e" module.
   if (Array.isArray(currencies) && !currencies.length) throw tradeError("providerNoCurrencies");
   if (!Array.isArray(currencies)) throw tradeError("provider");

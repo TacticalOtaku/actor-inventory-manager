@@ -8,13 +8,14 @@ import { getActorEquippedMap, getTwoHandLayout, isOffHandLockedBy2H } from "../c
 import { PHYSICAL_ITEM_TYPES, getValidSlotsForItem, isItemCompatibleWithSlot, isTwoHandedWeapon } from "../core/item-classifier.js";
 import { dollLayout } from "../core/paperdoll-layout.js";
 import { getActorPaperdollTemplate, getAllTemplates } from "../core/paperdoll-templates.js";
-import { readVehicleHold } from "../integrations/dnd5e.js";
+import { concealsDetails, readVehicleHold } from "../integrations/dnd5e.js";
+import { t } from "./html.js";
 
 const FIGURES = `modules/${MODULE_ID}/assets/figures.svg`;
-const FIGURE_VIEW = { human: "0 0 120 260", beast: "0 0 240 160", wagon: "0 0 240 160", ship: "0 0 240 160", airship: "0 0 240 160" };
+/** Each figure's drawing box in `figures.svg`. */
+export const FIGURE_VIEW = { human: "0 0 120 260", beast: "0 0 240 160", wagon: "0 0 240 160", ship: "0 0 240 160", airship: "0 0 240 160" };
 
-const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
-const tile = (item) => item && { id: item.id, name: item.name, img: item.img, rarity: item.system?.rarity ?? "" };
+const tile = (item) => item && { id: item.id, name: item.name, img: item.img, rarity: concealsDetails(item) ? "" : item.system?.rarity ?? "" };
 
 /**
  * Everything the doll draws for an actor.

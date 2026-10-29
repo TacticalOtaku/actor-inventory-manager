@@ -14,7 +14,6 @@ export const PACKAGE_ENTRIES = [
   "LICENSE",
   "README.md",
   "CHANGELOG.md",
-  "API.md",
   "lang",
   "scripts",
   "styles",

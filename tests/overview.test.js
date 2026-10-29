@@ -9,7 +9,7 @@ describe("overview marks", () => {
   });
 
   it("sign bonuses as the sheet does", () => {
-    assert.deepEqual([3, 0, -1, "2"].map(signed), ["+3", "+0", "−1", "+2"]);
+    assert.deepEqual([3, 0, -1, "2", undefined, NaN].map(signed), ["+3", "+0", "−1", "+2", "+0", "+0"]);
   });
 
   it("give every card with a gear at least one dnd5e dialog", () => {

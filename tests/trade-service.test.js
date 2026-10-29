@@ -385,3 +385,34 @@ test("a failed GM restore returns the trade to recovery instead of leaving it ex
   await command("recoverRequest01", "recover", "a", "gm");
   assert.equal(tradeState().sessions[0].status, "recovery");
 });
+const startGift = () => processTradeRequest({ id: "startRequest0001", action: "start", kind: "gift", actorId: "a", targetId: "b", targetUserId: "p2" }, "p1");
+
+test("in a gift only the giver offers", async () => {
+  const { actors } = setup(); await startGift();
+  sword(actors.get("b"));
+  await command("offerRequest0002", "offer", "b", "p2", { revision: 0, offer: { items: [{ id: "sword", quantity: 1 }], money: { gp: 2 } } });
+  assert.equal(tradeState().receipts.p2.error, "AIM.trade.errors.oneWay");
+  assert.deepEqual(tradeState().sessions[0].offers[1], { items: [], money: {} });
+  assert.equal(tradeState().sessions[0].revision, 0);
+});
+test("a gift settles with the receiver's side empty once both confirm", async () => {
+  const { actors } = setup(); await startGift();
+  sword(actors.get("a"));
+  await command("offerRequest0001", "offer", "a", "p1", { revision: 0, offer: { items: [{ id: "sword", quantity: 1 }], money: { gp: 4 } } });
+  await command("confirmRequest01", "confirm", "a", "p1", { revision: 1 });
+  assert.equal(tradeState().sessions[0].status, "open");
+  await command("confirmRequest02", "confirm", "b", "p2", { revision: 1 });
+  assert.equal(tradeState().sessions[0].status, "complete");
+  assert.equal(tradeState().sessions[0].kind, "gift");
+  assert(!actors.get("a").items.has("sword"));
+  assert.equal([...actors.get("b").items.values()][0].name, "Sword");
+  assert.equal(actors.get("a").system.currency.gp, 6);
+  assert.equal(actors.get("b").system.currency.gp, 14);
+});
+test("an empty gift cannot be sent", async () => {
+  setup(); await startGift();
+  await command("confirmRequest01", "confirm", "a", "p1", { revision: 0 });
+  await command("confirmRequest02", "confirm", "b", "p2", { revision: 0 });
+  assert.equal(tradeState().sessions[0].status, "open");
+  assert.equal(tradeState().receipts.p2.error, "AIM.trade.errors.empty");
+});

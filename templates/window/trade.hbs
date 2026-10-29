@@ -2,7 +2,7 @@
 <div class="aim-trade" role="dialog" aria-label="{{localize "AIM.trade.panel.title"}}">
 {{#if trade.button}}
   <div class="aim-drawer-head">
-    <h3>{{localize "AIM.trade.panel.title"}}{{#if trade.partner}} <small>· {{trade.partner}}</small>{{/if}}</h3>
+    <h3>{{#if trade.heading}}{{trade.heading}}{{else}}{{localize "AIM.trade.panel.title"}}{{/if}}{{#if trade.partner}} <small>· {{trade.partner}}</small>{{/if}}</h3>
     <button type="button" class="aim-ibtn" data-action="toggleTrade" aria-label="{{localize "AIM.window.close"}}"><i class="fa-light fa-xmark"></i></button>
   </div>
   <div class="aim-trade-body">
@@ -13,7 +13,7 @@
     <p>{{localize "AIM.trade.panel.intro"}}</p>
     {{#if trade.partners.length}}
     <label class="aim-field"><span>{{localize "AIM.trade.panel.with"}}</span>
-      <select name="tradePartner" data-trade-partner>{{#each trade.partners}}<option value="{{actorId}}" data-user="{{userId}}" {{#if busy}}disabled{{/if}}>{{label}}</option>{{/each}}</select>
+      <select name="tradePartner" data-trade-partner>{{#each trade.partners}}<option value="{{actorId}}" data-user="{{userId}}" {{#if busy}}disabled{{/if}} {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>
     </label>
     {{else}}<p class="aim-hint">{{localize "AIM.trade.noTargets"}}</p>{{/if}}
 
@@ -23,7 +23,7 @@
     <div class="aim-trade-cols">
       {{#each trade.cols}}
       <div><h4>{{title}}</h4>
-        {{#each list.items}}<span class="aim-trade-line"><img src="{{img}}" alt="">{{name}} {{quantityText}}</span>{{/each}}
+        {{#each list.items}}<span class="aim-trade-line"><span class="aim-tile" data-rarity="{{rarity}}"><img src="{{img}}" alt=""></span>{{name}} {{quantityText}}</span>{{/each}}
         {{#each list.coins}}<span class="aim-trade-line"><i class="fa-light fa-coins"></i>{{value}} {{label}}</span>{{/each}}
         {{#unless list.items.length}}{{#unless list.coins.length}}<span class="aim-hint">{{localize "AIM.trade.panel.nothing"}}</span>{{/unless}}{{/unless}}
       </div>
@@ -33,10 +33,11 @@
 
     {{else}}
     <div class="aim-trade-status is-{{trade.statusKey}}" data-trade-status role="status">{{trade.statusText}}</div>
+    {{#if trade.showMine}}
     <section class="aim-offer {{#if (lookup trade.confirmed 0)}}is-confirmed{{/if}}" data-offer-drop>
       <div class="aim-offer-head">{{trade.mineTitle}}<span>{{#if (lookup trade.confirmed 0)}}{{localize "AIM.trade.panel.confirmed"}}{{else}}{{localize "AIM.trade.panel.notConfirmed"}}{{/if}}</span></div>
       {{#each trade.mine}}
-      <div class="aim-offer-item" data-offer-item="{{id}}"><img src="{{img}}" alt=""><span class="aim-offer-name">{{name}}</span>
+      <div class="aim-offer-item" data-offer-item="{{id}}"><span class="aim-tile" data-rarity="{{rarity}}"><img src="{{img}}" alt=""></span><span class="aim-offer-name">{{name}}</span>
         {{#if ../trade.editable}}<span class="aim-offer-qty"><button type="button" data-action="tradeQty" data-id="{{id}}" data-step="-1" aria-label="{{localize "AIM.window.inv.less"}}">−</button><input type="number" min="0" max="{{max}}" step="1" value="{{quantity}}" data-offer-qty="{{id}}" aria-label="{{name}}"><button type="button" data-action="tradeQty" data-id="{{id}}" data-step="1" aria-label="{{localize "AIM.window.inv.plus"}}">+</button></span>
         {{else}}<b>×{{quantity}}</b>{{/if}}
       </div>
@@ -45,18 +46,25 @@
       {{> aimCoins coins=trade.mineCoins editable=trade.editable}}
       {{#if trade.piles}}<div class="aim-piles-hint"><span>{{localize "AIM.trade.panel.pilesHint"}}</span><b {{#if trade.piles.over}}class="is-over"{{/if}}>≈ {{trade.piles.offered}} / {{trade.piles.purse}}</b></div>{{/if}}
     </section>
+    {{/if}}
+    {{#if trade.showTheirs}}
     <section class="aim-offer {{#if (lookup trade.confirmed 1)}}is-confirmed{{/if}}">
       <div class="aim-offer-head">{{trade.theirsTitle}}<span>{{#if (lookup trade.confirmed 1)}}{{localize "AIM.trade.panel.confirmed"}}{{else}}{{localize "AIM.trade.panel.notConfirmed"}}{{/if}}</span></div>
-      {{#each trade.theirs}}<div class="aim-offer-item"><img src="{{img}}" alt=""><span class="aim-offer-name">{{name}}</span><b>{{quantityText}}</b></div>
+      {{#each trade.theirs}}<div class="aim-offer-item" data-offer-item="{{id}}"><span class="aim-tile" data-rarity="{{rarity}}"><img src="{{img}}" alt=""></span><span class="aim-offer-name">{{name}}</span><b>{{quantityText}}</b></div>
       {{else}}<p class="aim-offer-empty">{{localize "AIM.trade.panel.nothingYet"}}</p>{{/each}}
       {{> aimCoins coins=trade.theirsCoins editable=false}}
     </section>
+    {{/if}}
+    {{#if trade.weight}}<p class="aim-trade-weight {{#if trade.weight.tier}}is-{{trade.weight.tier}}{{/if}}">{{trade.weight.text}}</p>{{/if}}
     {{#if trade.gmNote}}<p class="aim-hint">{{localize "AIM.trade.panel.gmNote"}}</p>{{/if}}
     {{/if}}
   </div>
 
   {{#if (eq trade.view "idle")}}
-  <div class="aim-trade-foot"><button type="button" class="aim-btn is-primary" data-action="tradeStart" {{#unless trade.canStart}}disabled{{/unless}}><i class="fa-light fa-arrow-right-arrow-left"></i>{{localize "AIM.trade.start"}}</button></div>
+  <div class="aim-trade-foot">
+    <button type="button" class="aim-btn" data-action="tradeStart" data-kind="gift" {{#unless trade.canStart}}disabled{{/unless}}><i class="fa-light fa-gift"></i>{{localize "AIM.trade.gift.start"}}</button>
+    <button type="button" class="aim-btn is-primary" data-action="tradeStart" {{#unless trade.canStart}}disabled{{/unless}}><i class="fa-light fa-arrow-right-arrow-left"></i>{{localize "AIM.trade.start"}}</button>
+  </div>
   {{else if (eq trade.view "done")}}
   <div class="aim-trade-foot"><button type="button" class="aim-btn" data-action="tradeDismiss">{{localize "AIM.trade.panel.newTrade"}}</button></div>
   {{else if trade.isGM}}
@@ -71,7 +79,7 @@
   {{/if}}
   {{else}}
   <div class="aim-trade-foot">
-    <button type="button" class="aim-btn" data-action="tradeCancel" {{#unless trade.canCancel}}disabled{{/unless}}>{{localize "AIM.trade.cancel"}}</button>
+    <button type="button" class="aim-btn" data-action="tradeCancel" {{#unless trade.canCancel}}disabled{{/unless}}>{{trade.cancelLabel}}</button>
     <button type="button" class="aim-btn is-primary" data-action="tradeConfirm" data-revision="{{trade.session.revision}}" {{#unless trade.canConfirm}}disabled{{/unless}}>{{trade.confirmLabel}}</button>
   </div>
   {{/if}}

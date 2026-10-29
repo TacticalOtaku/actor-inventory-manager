@@ -9,7 +9,10 @@ import { computeActorEncumbrance, getSystemWeightUnit } from "../core/weight-cal
 import { concealsDetails, getDnd5eConfig, hasPreparationToggle, readCoins, readContainerCapacity, readInventory, readSpellbook, resolveItemUses, unitAbbreviation } from "../integrations/dnd5e.js";
 import { castable, ready } from "../core/spellbook.js";
 import { usableActivities } from "../integrations/midi-qol.js";
-import { computeActorCurrency, readPilesCurrencies } from "../integrations/item-piles.js";
+import { computeActorCurrency, dropOnGround, groundToken, isItemPilesActive, readPilesCurrencies } from "../integrations/item-piles.js";
+import { canDropOnGround } from "../core/external-drop.js";
+import { isPhysicalItem } from "../core/item-classifier.js";
+import { tradeLocked } from "./external-drop.js";
 import { getContainerLoad, getContainerWeightReductionPct, isWeightyContainersActive } from "../integrations/weighty-containers.js";
 import { escapeHTML, t, unwrapSecrets } from "./html.js";
 import { playBurst } from "./bursts.js";
@@ -260,6 +263,13 @@ export function itemMenuEntries(item, actions) {
       }
     },
     {
+      name: "AIM.window.inv.dropGround", icon: icon("arrow-down-to-line"), group: "action",
+      condition: () => isItemPilesActive() && canDropOnGround({
+        owner, physical: isPhysicalItem(item), container: item.type === "container", onScene: Boolean(groundToken(actor)), trading: tradeLocked(actor)
+      }),
+      callback: () => dropOnGround(item)
+    },
+    {
       name: "DND5E.ConcentrationBreak", icon: icon("eye-slash"), group: "state",
       condition: () => Boolean(actor?.concentration?.items?.has(item)), callback: () => actor.endConcentration(item)
     },
@@ -339,13 +349,13 @@ export function openItemMenu(root, anchor, entries, target) {
     closeItemMenu(root);
   };
   menu._away = away;
-  setTimeout(() => document.addEventListener("pointerdown", away, { capture: true }));
+  setTimeout(() => root.ownerDocument.addEventListener("pointerdown", away, { capture: true }));
 }
 
 export function closeItemMenu(root) {
   const menu = root?.querySelector(".aim-popmenu");
   if (!menu) return false;
-  document.removeEventListener("pointerdown", menu._away, { capture: true });
+  root.ownerDocument.removeEventListener("pointerdown", menu._away, { capture: true });
   menu.remove();
   return true;
 }
@@ -354,14 +364,21 @@ export function closeItemMenu(root) {
 export function equipmentSnapshot(element) {
   const coins = {};
   for (const coin of element?.querySelectorAll("[data-coin] [data-coin-value]") ?? []) coins[coin.closest("[data-coin]").dataset.coin] = Number(coin.textContent);
+  const quantities = {};
+  for (const qty of element?.querySelectorAll("[data-item-id] > [data-row] .aim-qty b") ?? []) quantities[qty.closest("[data-item-id]").dataset.itemId] = qty.textContent;
   return {
     coins,
+    quantities,
+    sockets: new Set([...element?.querySelectorAll(".aim-socket.is-on") ?? []].map((socket) => socket.dataset.itemId)),
     total: Number(element?.querySelector("[data-coin-total]")?.dataset.coinTotal ?? NaN),
     tier: element?.querySelector("[data-load]")?.dataset.tier ?? null
   };
 }
 
-/** A changed coin flips once, the total counts to its new value, a crossed load stop shakes the meter. */
+/**
+ * A changed coin flips once, the total counts to its new value, a crossed load stop shakes the meter, a changed
+ * quantity pops and a newly attuned item's socket lands.
+ */
 export function playEquipmentChanges(element, prev, motion) {
   if (!prev || motion === "off") return;
   const next = equipmentSnapshot(element);
@@ -374,6 +391,12 @@ export function playEquipmentChanges(element, prev, motion) {
   const total = element.querySelector("[data-coin-total]");
   if (total && Number.isFinite(prev.total) && prev.total !== next.total) countTo(total, prev.total, next.total);
   if (prev.tier && next.tier && prev.tier !== next.tier) pulse(element.querySelector("[data-load]"), "is-cross");
+  for (const [id, quantity] of Object.entries(next.quantities)) {
+    if (id in prev.quantities && prev.quantities[id] !== quantity) pulse(element.querySelector(`[data-item-id="${CSS.escape(id)}"] > [data-row] .aim-qty b`), "is-numpop");
+  }
+  if (prev.sockets.size || next.sockets.size) {
+    for (const id of next.sockets) if (!prev.sockets.has(id)) pulse(element.querySelector(`.aim-socket[data-item-id="${CSS.escape(id)}"]`), "is-new");
+  }
 }
 
 function pulse(el, cls) {

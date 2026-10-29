@@ -31,7 +31,37 @@
         "timeout": "The GM did not respond in time. Check the trade state before trying again.",
         "rolledBack": "The transfer failed. Inventories and currencies were restored to their pre-trade state.",
         "recovery": "The transfer was interrupted. A GM must inspect the saved snapshot and restore the trade. Further trading is blocked.",
-        "recoveryLost": "The trade snapshot journal is missing, so nothing could be restored. The trade is closed; the GM must check both inventories by hand."
+        "recoveryLost": "The trade snapshot journal is missing, so nothing could be restored. The trade is closed; the GM must check both inventories by hand.",
+        "oneWay": "In a gift only the giver offers items and coins."
+      },
+      "gift": {
+        "title": "Gift",
+        "start": "Give",
+        "invitation": "You are offered a gift. Open «Trade» in your character's window.",
+        "send": "Send",
+        "accept": "Accept",
+        "decline": "Decline",
+        "yourGift": "Your gift",
+        "givesYou": "{partner} gives you",
+        "executing": "The GM is handing over the gift…",
+        "giver": {
+          "waitOffer": "Add items or coins to the gift",
+          "review": "Send the gift when it is ready",
+          "partnerConfirmed": "{partner} accepts — send the gift",
+          "waitPartner": "Waiting for {partner} to accept",
+          "done": "Gift handed over",
+          "youCancelled": "You withdrew the gift",
+          "partnerCancelled": "{partner} declined the gift"
+        },
+        "receiver": {
+          "waitOffer": "{partner} is choosing a gift for you",
+          "review": "Accept or decline the gift",
+          "partnerConfirmed": "{partner} sent the gift — accept or decline",
+          "waitPartner": "Accepted — waiting for {partner} to send it",
+          "done": "Gift received",
+          "youCancelled": "You declined the gift",
+          "partnerCancelled": "{partner} withdrew the gift"
+        }
       },
       "panel": {
         "title": "Trade",
@@ -76,7 +106,8 @@
         "restore": "Restore inventories",
         "unlock": "Lift the lock",
         "unlockAsk": "The trade preparation stopped before any debit: there is nothing to restore. Lift the lock?",
-        "notNow": "Not now"
+        "notNow": "Not now",
+        "weightAfter": "Weight after the trade: {value} / {max} {unit}"
       }
     },
     "sheetButton": {
@@ -301,7 +332,9 @@
         "openSheet": "Open character sheet",
         "traits": "Special traits",
         "bastion": "Bastion",
-        "revert": "Revert original form"
+        "revert": "Revert original form",
+        "openSheetNpc": "Open NPC sheet",
+        "openSheetVehicle": "Open vehicle sheet"
       },
       "xp": {
         "label": "XP",
@@ -309,7 +342,10 @@
         "ready": "Ready for level {level}: click to level up",
         "orb": "Experience: {value} of {max}",
         "chooseClass": "Level up",
-        "chooseClassHint": "Which class gets the level?"
+        "chooseClassHint": "Which class gets the level?",
+        "addButton": "Add",
+        "set": "Set",
+        "readyHint": "Ready for level {level}: click the orb"
       },
       "tabs": {
         "overview": "Overview",
@@ -338,7 +374,8 @@
         "chipsNpc": "Exhaustion and concentration",
         "cargo": "Cargo",
         "crew": "Crew and passengers",
-        "statsVehicle": "AC, thresholds, speed"
+        "statsVehicle": "AC, thresholds, speed",
+        "die": "d{faces}"
       },
       "settings": {
         "title": "Window settings",
@@ -389,7 +426,8 @@
           "reduced": "Responses to actions only, no ambient loops or particles.",
           "off": "Short fades only."
         },
-        "absentNpc": "not on this NPC"
+        "absentNpc": "not on this NPC",
+        "absentVehicle": "not on this vehicle"
       },
       "hp": {
         "edit": "Hit points: change",
@@ -428,7 +466,13 @@
         "threshold": "Thresh.",
         "thresholdHint": "Damage threshold: less damage does not get through",
         "mishap": "Mishap",
-        "mishapHint": "Mishap threshold: this much damage or more rolls on the mishap table"
+        "mishapHint": "Mishap threshold: this much damage or more rolls on the mishap table",
+        "acArmor": "Armor {n}",
+        "acDex": "Dexterity {n}",
+        "acBase": "Base {n}",
+        "acShield": "Shield {n}",
+        "acBonus": "Bonuses {n}",
+        "acCover": "Cover {n}"
       },
       "casting": {
         "dc": "DC",
@@ -508,6 +552,7 @@
         "unattune": "End attunement",
         "equip": "Equip",
         "unequip": "Unequip",
+        "dropGround": "Drop on the ground",
         "more": "More",
         "less": "Less",
         "plus": "More",

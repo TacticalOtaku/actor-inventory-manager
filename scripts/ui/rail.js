@@ -42,6 +42,8 @@ export function buildRailContext(actor, { canEdit, hasSpells, hiddenBlocks }) {
     rail: {
       ...rail,
       down,
+      // A wrecked vehicle has no death saves.
+      dying: down && !isVehicle,
       hpLabel: down ? t(isVehicle ? "AIM.window.hp.destroyed" : "AIM.window.hp.down") : t("AIM.window.rail.hp"),
       hpShare: share(value, max),
       tempFrom: share(Math.max(0, value - temp), max),
@@ -59,6 +61,7 @@ export function buildRailContext(actor, { canEdit, hasSpells, hiddenBlocks }) {
       deathOpen: success < 3 && failure < 3,
       shortRestHint: rail.hitDice.value ? t("AIM.window.rest.shortHint", { n: rail.hitDice.value }) : t("AIM.window.rest.noDice"),
       initText: signed(rail.init),
+      acHint: acBreakdown(rail),
       profText: signed(rail.prof),
       casting: rail.casting.map((c) => ({ ...c, attackText: signed(c.attack) })),
       exhaustionPips: Array.from({ length: rail.exhaustion.max }, (_, i) => i < rail.exhaustion.value),
@@ -72,6 +75,17 @@ export function buildRailContext(actor, { canEdit, hasSpells, hiddenBlocks }) {
     isGM: game.user.isGM,
     hpSteps: [-5, -1, 1, 5].map((step) => ({ step, label: signed(step) }))
   };
+}
+
+/** «Доспех 14 (Чешуйчатый) · Ловкость +2 · Щит +2 = 18», then how to open dnd5e's settings. */
+function acBreakdown({ ac, acParts: p }) {
+  const parts = p.calc === "default"
+    ? [t("AIM.window.stats.acArmor", { n: p.armor }) + (p.armorName ? ` (${p.armorName})` : ""), t("AIM.window.stats.acDex", { n: signed(p.dex) })]
+    : [t("AIM.window.stats.acBase", { n: p.base })];
+  if (p.shield) parts.push(t("AIM.window.stats.acShield", { n: signed(p.shield) }));
+  if (p.bonus) parts.push(t("AIM.window.stats.acBonus", { n: signed(p.bonus) }));
+  if (p.cover) parts.push(t("AIM.window.stats.acCover", { n: signed(p.cover) }));
+  return `${parts.join(" · ")} = ${ac}. ${t("AIM.window.stats.acHint")}`;
 }
 
 /** What the rail compares between renders to play its reactive effects. */
@@ -92,10 +106,11 @@ export function railSnapshot(actor) {
 
 /* ─── Bursts and floating numbers (reactive effects: «Все» and «Сдержанно») ─── */
 
-function floatText(root, anchor, text, tone) {
+export function floatText(root, anchor, text, tone) {
+  if (!anchor) return;
   const box = root.getBoundingClientRect();
   const at = anchor.getBoundingClientRect();
-  const el = document.createElement("span");
+  const el = root.ownerDocument.createElement("span");
   el.className = `aim-float is-${tone}`;
   el.textContent = text;
   el.style.left = `${at.left - box.left + at.width / 2}px`;
@@ -120,7 +135,7 @@ function pulse(el, className) {
  * @param {Object} next       snapshot after it
  */
 export function playRailChanges(root, prev, next) {
-  if (!prev || root.dataset.motion === "off") return;
+  if (!prev || root.dataset.motion === "off") return false;
   const bar = root.querySelector("[data-hp-bar]");
   const value = root.querySelector("[data-hp-value]") ?? root.querySelector(".aim-hp-top");
   const card = root.querySelector("[data-hpcard]");
@@ -162,10 +177,12 @@ export function playRailChanges(root, prev, next) {
       pulse(card, "is-shield-break");
       playBurst(root, bar ?? card, "shieldBreak");
     } else if (event === "diceSpent") {
+      // Spent dice follow the intact ones: the first spent one is the die just rolled.
       const dice = root.querySelector('[data-block="hitDice"]');
-      pulse(dice, "is-spin");
-      playBurst(root, dice?.querySelector(".aim-die:not(.is-spent):last-of-type") ?? dice?.querySelector(".aim-die"), "die");
-    } else if (event === "restored") popIn(root);
+      const die = dice?.querySelector(".aim-die.is-spent") ?? dice?.querySelector(".aim-die");
+      pulse(die, "is-spin");
+      playBurst(root, die, "die");
+    } else if (event === "restored" && !root.dataset.resting) popIn(root);
     else if (event === "deathSuccess") playBurst(root, death, "deathSuccess");
     else if (event === "deathFail") { playBurst(root, death, "deathFail"); pulse(death, "is-refused"); }
     else if (event === "inspired") {
@@ -177,6 +194,7 @@ export function playRailChanges(root, prev, next) {
   if (events.includes("hit") || events.includes("heal")) {
     if (value?.matches?.("[data-hp-value]")) countTo(value, prev.hp, next.hp);
   }
+  return events.length > 0;
 }
 
 /** Restored dice, runes and pips pop back in one after another, 70 ms apart; a cascade stops at 24 (#9). */
@@ -195,9 +213,21 @@ function countTo(el, from, to) {
   requestAnimationFrame(step);
 }
 
+/**
+ * Before a long rest refills the actor, the intact dice and runes hide, so they come back only after the dawn. A rest
+ * that another module stops never reaches the dawn: they show again after a while.
+ */
+export function holdRestored(root) {
+  if (!root || root.dataset.motion === "off") return;
+  root.dataset.resting = "";
+  clearTimeout(root._restHold);
+  root._restHold = setTimeout(() => delete root.dataset.resting, 4000);
+}
+
 /** A long rest lets night fall over the window, then a warm dawn; restored resources pop in after it. */
 export async function playLongRest(root) {
   if (root.dataset.motion === "off") return;
+  clearTimeout(root._restHold);
   const night = document.createElement("div");
   night.className = "aim-night";
   root.querySelector(".window-content")?.append(night);
@@ -207,15 +237,16 @@ export async function playLongRest(root) {
   night.classList.add("is-dawn");
   await night.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 700, delay: 250, fill: "forwards" }).finished;
   night.remove();
+  delete root.dataset.resting;
   popIn(root);
 }
 
-/** Intact runes glint one at a time, at random, about every 2 seconds (an ambient effect). */
+/** Intact runes and lit slot gems glint one at a time, at random, about every 2 seconds (an ambient effect). */
 export function startRuneGlints(app) {
   return setInterval(() => {
     const root = app.element;
     if (!root || document.hidden || root.dataset.motion !== "full" || !root.classList.contains("is-front")) return;
-    const runes = [...root.querySelectorAll("[data-rune]:not(.is-spent)")].filter((el) => el.offsetParent);
+    const runes = [...root.querySelectorAll("[data-rune]:not(.is-spent), .aim-gem.is-lit")].filter((el) => el.offsetParent);
     if (runes.length) pulse(runes[Math.floor(Math.random() * runes.length)], "is-glint");
   }, 1800);
 }

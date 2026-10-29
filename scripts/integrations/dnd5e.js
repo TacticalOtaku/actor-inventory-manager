@@ -268,6 +268,17 @@ export function readRail(actor) {
   return {
     hp: { value: num(hp.value, 0), max: num(hp.max, 0), temp: num(hp.temp, 0) },
     ac: num(attributes.ac?.value, 10),
+    // 5.3.3 prepares the parts: base (for the default calculation armor + capped Dexterity), shield, bonus, cover.
+    acParts: {
+      calc: attributes.ac?.calc ?? "default",
+      base: num(attributes.ac?.base, 10),
+      armor: num(attributes.ac?.armor, 10),
+      dex: num(attributes.ac?.dex, 0),
+      shield: num(attributes.ac?.shield, 0),
+      bonus: num(attributes.ac?.bonus, 0),
+      cover: num(attributes.ac?.cover, 0),
+      armorName: attributes.ac?.equippedArmor?.name ?? null
+    },
     init: num(attributes.init?.total, 0),
     speed: num(movement.walk, 0),
     speedUnit: unitAbbreviation("movementUnits", movement.units || "ft"),
@@ -900,7 +911,8 @@ export function readCoins(actor) {
 }
 
 /**
- * Format item details for rendering in inventory list and tooltips
+ * Format item details for rendering in inventory list and tooltips.
+ * An unidentified item shows players its unidentified description and no price, rarity or properties (`concealsDetails`).
  * @param {Object} item
  * @returns {Object}
  */
@@ -908,7 +920,8 @@ export function formatItemForDisplay(item) {
   if (!item) return null;
 
   const system = item.system ?? {};
-  const rarity = (system.rarity ?? "common").toLowerCase();
+  const concealed = concealsDetails(item);
+  const rarity = concealed ? "common" : (system.rarity ?? "common").toLowerCase();
   const rarityVisuals = getItemRarityVisuals(rarity);
   const rarityColor = rarityVisuals.color;
   const hasGlow = rarityVisuals.hasGlow;
@@ -917,7 +930,7 @@ export function formatItemForDisplay(item) {
   // Totals and containers are shown in the world's unit, so rows are too.
   const weightUnit = getSystemWeightUnit();
   const weightUnits = unitAbbreviation("weightUnits", weightUnit);
-  const priceVal = num(system.price?.value, 0);
+  const priceVal = concealed ? 0 : num(system.price?.value, 0);
   const priceDenom = system.price?.denomination ?? "gp";
 
   // Attunement state
@@ -929,7 +942,7 @@ export function formatItemForDisplay(item) {
   const properties = [];
   const config = getDnd5eConfig();
   const itemProps = config.itemProperties ?? {};
-  for (const k of system.properties ?? []) {
+  for (const k of concealed ? [] : system.properties ?? []) {
     properties.push(itemProps[k]?.label ?? k);
   }
 
@@ -956,7 +969,7 @@ export function formatItemForDisplay(item) {
     weightDisplay: `${getItemWeightInUnit(item, weightUnit).toFixed(1)} ${weightUnits}`,
     priceDisplay: priceVal > 0 ? `${priceVal} ${priceDenom}` : "",
     properties,
-    description: system.description?.value ?? ""
+    description: (concealed ? system.unidentified?.description : system.description?.value) ?? ""
   };
 }
 

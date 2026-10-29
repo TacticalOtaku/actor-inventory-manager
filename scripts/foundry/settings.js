@@ -81,25 +81,29 @@ export function registerModuleSettings() {
       default: [],
       onChange: refreshInventories
     });
-    // Each tab's list view, sort and filters; every window keeps its own copy, so no redraw on change.
+    // Each tab's list view, sort and filters, the folded trays and the hidden doll: a change in one window shows in
+    // the other open ones too (the window that made it already shows it, so its redraw changes nothing).
     game.settings.register(MODULE_ID, "listPrefs", {
       scope: "user",
       config: false,
       type: Object,
-      default: {}
+      default: {},
+      onChange: refreshInventories
     });
     // Trays the user folded (true) or unfolded (false), by container UUID.
     game.settings.register(MODULE_ID, "trayFolds", {
       scope: "user",
       config: false,
       type: Object,
-      default: {}
+      default: {},
+      onChange: refreshInventories
     });
     game.settings.register(MODULE_ID, "dollHidden", {
       scope: "user",
       config: false,
       type: Boolean,
-      default: false
+      default: false,
+      onChange: refreshInventories
     });
     game.settings.register(MODULE_ID, "motionLevel", {
       scope: "client",

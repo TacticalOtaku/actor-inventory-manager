@@ -57,3 +57,7 @@ _Avoid_: animation setting, motion mode
 **Trade**:
 An exchange of items and coins between two players' actors, confirmed by both and carried out by the GM.
 _Avoid_: swap, exchange, transfer
+
+**Gift**:
+A one-way **Trade**: only the giver offers, the receiver's confirmation accepts it. A payment is a gift of coins.
+_Avoid_: donation, send

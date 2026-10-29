@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { offerWithQuantity, offersEmpty, partnerChoices, pilesTotals, recoveryAction, sameOffer, tradeStatus } from "../scripts/core/trade-panel.js";
+import { loadAfterTrade, offerWithQuantity, offeredWeight, offersEmpty, partnerChoices, pilesTotals, recoveryAction, sameOffer, tradeStatus } from "../scripts/core/trade-panel.js";
 
 const offer = (items = [], money = {}) => ({ items, money });
 const session = (extra = {}) => ({ status: "open", confirmed: [false, false], offers: [offer(), offer()], ...extra });
@@ -83,5 +83,32 @@ describe("Item Piles totals", () => {
   it("sum the offer and the purse by exchange rate", () => {
     const rows = [{ key: "0", rate: 1, quantity: 12 }, { key: "1", rate: 0.1, quantity: 30 }];
     assert.deepEqual(pilesTotals(rows, { 0: 5, 1: 20 }), { offered: 7, purse: 15 });
+  });
+});
+
+describe("weight after the trade", () => {
+  const carrier = { system: { attributes: { encumbrance: { value: 50, max: 150, thresholds: { encumbered: 50, heavilyEncumbered: 100 } } } } };
+
+  it("weighs the offered count, a container once", () => {
+    const rope = { type: "loot", system: { weight: { value: 2, units: "lb" }, quantity: 10 } };
+    assert.equal(offeredWeight(rope, 3), 6);
+    assert.equal(offeredWeight({ ...rope, type: "container" }, 3), 2);
+    assert.equal(offeredWeight(null, 3), 0);
+  });
+
+  it("adds what arrives to dnd5e's load and says when the tier changes", () => {
+    assert.deepEqual(loadAfterTrade(carrier, 20), { value: 70, max: 150, tier: "encumbered", tierChanged: true });
+    assert.deepEqual(loadAfterTrade(carrier, -10), { value: 40, max: 150, tier: "normal", tierChanged: false });
+    assert.equal(loadAfterTrade(carrier, -80).value, 0);
+  });
+
+  it("is absent without dnd5e's encumbrance or under the «none» rule", () => {
+    assert.equal(loadAfterTrade({ system: {} }, 5), null);
+    globalThis.game = { settings: { settings: new Map([["dnd5e.encumbrance", {}]]), get: (scope, key) => (key === "encumbrance" ? "none" : false) } };
+    try {
+      assert.equal(loadAfterTrade(carrier, 5), null);
+    } finally {
+      delete globalThis.game;
+    }
   });
 });

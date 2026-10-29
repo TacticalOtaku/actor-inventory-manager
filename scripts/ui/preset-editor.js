@@ -146,11 +146,15 @@ export class PresetEditor extends EditorBase {
     stampTheme(this.element);
     this.element.addEventListener("change", (event) => this.#onChange(event));
     this._refreshHook = Hooks.on(REFRESH_HOOK, () => stampTheme(this.element));
+    // «Авто» follows Foundry's colour scheme, as the actor window does.
+    this._bodyObserver = new MutationObserver(() => this.element && stampTheme(this.element));
+    this._bodyObserver.observe(document.body, { attributes: true, attributeFilter: ["class"] });
   }
 
   _onClose(options) {
     if (OPEN_EDITORS.get(this.actorKey) === this) OPEN_EDITORS.delete(this.actorKey);
     Hooks.off(REFRESH_HOOK, this._refreshHook);
+    this._bodyObserver?.disconnect();
     super._onClose(options);
   }
 

@@ -8,6 +8,7 @@ import { SPELL_FILTERS, castable, groupSpellbook, preparationState, ready as isR
 import { extractSpellSlots, readSpellPreparation, readSpellbook } from "../integrations/dnd5e.js";
 import { scSchoolColor } from "../integrations/sc-rarity-colors.js";
 import { playBurst } from "./bursts.js";
+import { t } from "./html.js";
 
 const PARTIALS = `modules/${MODULE_ID}/templates/window`;
 export const SPELL_TEMPLATES = ["spells", "spell-row"].map((name) => `${PARTIALS}/${name}.hbs`);
@@ -15,7 +16,6 @@ export const SPELL_TEMPLATES = ["spells", "spell-row"].map((name) => `${PARTIALS
 /** More uses than this show as a counter instead of pips. */
 const MAX_USE_PIPS = 8;
 
-const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 
 /** Slot tracks per circle, then the warlock's pact track. */
 export function spellSlotTracks(actor) {

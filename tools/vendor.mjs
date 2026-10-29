@@ -11,8 +11,6 @@ const modules = join(root, "node_modules");
 // --- Fonts: keep the subsets the module's languages need.
 const FONTS = [
   ["@fontsource-variable/onest", "onest"],
-  ["@fontsource-variable/jetbrains-mono", "jetbrains-mono"],
-  ["@fontsource-variable/unbounded", "unbounded"],
 ];
 const SUBSETS = ["latin", "latin-ext", "cyrillic", "cyrillic-ext"];
 const fontOut = join(root, "assets/fonts");

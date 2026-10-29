@@ -5,13 +5,12 @@
 import { MODULE_ID } from "../constants.js";
 import { CARD_CONFIGS, CHARACTERISTICS, DEFENSES, PERSONALITY, profMark, signed } from "../core/overview.js";
 import { readAbilities, readBiography, readDefenses, readSenses, readSkills, readTools } from "../integrations/dnd5e.js";
-import { unwrapSecrets } from "./html.js";
+import { t, unwrapSecrets } from "./html.js";
 import { damageChip } from "./tooltips.js";
 
 const PARTIALS = `modules/${MODULE_ID}/templates/window`;
 export const OVERVIEW_TEMPLATES = ["overview", "biography"].map((name) => `${PARTIALS}/${name}.hbs`);
 
-const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 
 /** Skills, tools and saves open on characters and NPCs; a vehicle has neither. */
 export const hasOverview = (actor) => actor.type !== "vehicle";

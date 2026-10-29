@@ -100,7 +100,7 @@ export function getItemWeightInUnit(item, targetUnit = null) {
   if (!item) return 0;
   const tgt = targetUnit ?? getSystemWeightUnit();
   const rawWeight = num(item.system?.weight?.value, 0);
-  const itemUnits = (item.system?.weight?.units || "lb").toLowerCase();
+  const itemUnits = item.system?.weight?.units || "lb";
   // dnd5e does not multiply a container's own weight by its quantity.
   const qty = item.type === "container" ? 1 : Math.max(0, num(item.system?.quantity, 1));
 

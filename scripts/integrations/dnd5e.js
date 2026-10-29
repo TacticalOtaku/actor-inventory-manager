@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 // (rarity + school colours are resolved through the sc-rarity-colors adapter)
-import { countAttunedItems, getActorAttunementMax, getAttunementStatus, isItemAttuned } from "../core/attunement.js";
+import { attunementRequirement, countAttunedItems, getActorAttunementMax, getAttunementStatus, isItemAttuned } from "../core/attunement.js";
 import { PHYSICAL_ITEM_TYPES, canItemBeEquipped } from "../core/item-classifier.js";
 import { convertWeight, getItemWeightInUnit, getSystemWeightUnit, num } from "../core/weight-calculator.js";
 import { computeActorCurrency } from "./item-piles.js";
@@ -287,10 +287,16 @@ export function readRail(actor) {
   };
 }
 
+/** dnd5e's `concealDetails`: an unidentified item keeps its price, rarity, properties and charges from players. */
+export function concealsDetails(item) {
+  return item?.system?.identified === false && !globalThis.game?.user?.isGM;
+}
+
 /**
  * The physical items the actor window lists. dnd5e 5.3.3 shapes: `price` is {value, denomination} per unit and
  * CONFIG.DND5E.currencies[denomination].conversion is coins per gold piece; charges are `uses.max` and `uses.spent`
  * (`uses.value` is derived); `container` is the id of the holding container; a container's own weight ignores quantity.
+ * An unidentified item's price, rarity, properties and charges stay unknown to players (`concealsDetails`).
  * @param {Object} actor
  */
 export function readInventory(actor) {
@@ -305,6 +311,7 @@ export function readInventory(actor) {
     const max = num(system.uses?.max, 0);
     const spent = num(system.uses?.spent, 0);
     const attunement = getAttunementStatus(item);
+    const concealed = concealsDetails(item);
     entries.push({
       id: item.id,
       uuid: item.uuid,
@@ -313,17 +320,17 @@ export function readInventory(actor) {
       type: item.type,
       container: system.container ?? null,
       weight: getItemWeightInUnit(item, unit),
-      price: num(system.price?.value, 0) / conversion,
-      rarity: system.rarity ?? "",
+      price: concealed ? 0 : num(system.price?.value, 0) / conversion,
+      rarity: concealed ? "" : system.rarity ?? "",
       quantity,
       sort: num(item.sort, 0),
       equipped: Boolean(system.equipped),
       canEquip: canItemBeEquipped(item),
       attunement,
       attuned: attunement === "attuned",
-      charges: max > 0 ? { value: Math.max(0, max - spent), max, spent, autoDestroy: Boolean(system.uses?.autoDestroy) } : null,
+      charges: max > 0 && !concealed ? { value: Math.max(0, max - spent), max, spent, autoDestroy: Boolean(system.uses?.autoDestroy) } : null,
       identified: system.identified !== false,
-      tags: [...(system.properties ?? [])].map((key) => config.itemProperties?.[key]?.label ?? key)
+      tags: concealed ? [] : [...(system.properties ?? [])].map((key) => config.itemProperties?.[key]?.label ?? key)
     });
   }
   return entries;
@@ -407,7 +414,8 @@ export function readVehicle(actor) {
     beam: length(traits.beam),
     dt: num(attributes.hp?.dt, 0) || null,
     mt: num(attributes.hp?.mt, 0) || null,
-    speed: { value: num(travel.speeds?.[type], 0), unit: abbreviation ? localizeOr(abbreviation, abbreviation) : units },
+    // travel.speeds has land, water and air; dnd5e keeps a space vehicle's speed under air.
+    speed: { value: num(travel.speeds?.[type === "space" ? "air" : type], 0), unit: abbreviation ? localizeOr(abbreviation, abbreviation) : units },
     cargo: {
       load: convertWeight(loadRaw, getSystemWeightUnit(), capUnit),
       capacity: Number.isFinite(Number(capacity.value)) && capacity.value !== null ? Number(capacity.value) : null,
@@ -665,7 +673,7 @@ export function readEffects(actor, { isGM = false } = {}) {
       disabled: Boolean(effect.disabled),
       suppressed,
       suppressedBy: !suppressed ? null : item?.system?.equipped === false ? "unequipped"
-        : item?.system?.attunement === "required" && !isItemAttuned(item) ? "unattuned" : "other",
+        : attunementRequirement(item) === "required" && !isItemAttuned(item) ? "unattuned" : "other",
       temporary: Boolean(effect.isTemporary),
       statuses: [...(effect.statuses ?? [])],
       onActor: effect.parent === actor,
@@ -727,12 +735,14 @@ export async function readCardData(doc) {
     const labels = data.labels ?? {};
     const stat = (key, value) => (value !== undefined && value !== null && String(value).trim() !== "" ? { key, value: String(value) } : null);
     const damages = (labels.damages ?? []).map((d) => ({ label: d.label ?? d.formula ?? "", formula: d.formula ?? "", types: String(d.damageType ?? "").split("|").filter(Boolean) }));
-    const attunement = doc.system?.attunement;
+    const attunement = attunementRequirement(doc);
     const currency = config.currencies?.[data.price?.denomination];
+    // Price and charges dnd5e already concealed; the bonuses in to-hit, damage and save would still tell.
+    const concealed = concealsDetails(doc);
     const stats = [
-      stat("toHit", labels.toHit),
-      stat("damage", damages.map((d) => d.label).join(", ")),
-      stat("save", labels.save),
+      concealed ? null : stat("toHit", labels.toHit),
+      concealed ? null : stat("damage", damages.map((d) => d.label).join(", ")),
+      concealed ? null : stat("save", labels.save),
       doc.system?.armor?.value ? stat("armor", doc.system.armor.value) : null,
       data.uses?.max ? stat("uses", `${num(data.uses.value, 0)} / ${num(data.uses.max, 0)}`) : null,
       // One item's weight, in the world's unit like the rows (dnd5e's card keeps the item's own unit).
@@ -748,10 +758,10 @@ export async function readCardData(doc) {
       description: data.description?.value ?? "",
       properties: [...(data.tags ?? []), ...(data.properties ?? [])].filter((p) => typeof p === "string" && p),
       stats,
-      damages,
+      damages: concealed ? [] : damages,
       attuned: isItemAttuned(doc),
       school: doc.type === "spell" ? data.school ?? doc.system?.school ?? null : null,
-      rarity: doc.type === "spell" ? null : doc.system?.rarity || "common"
+      rarity: doc.type === "spell" ? null : (!concealed && doc.system?.rarity) || "common"
     };
   }
   const rich = doc.richTooltip ?? doc.system?.richTooltip;

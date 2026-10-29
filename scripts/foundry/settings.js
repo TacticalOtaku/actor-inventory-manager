@@ -8,7 +8,7 @@ import { canViewActor, isSupportedActor } from "../core/actor-scope.js";
 import { DEFAULT_ACCENT, DENSITIES, MOTION_LEVELS, THEMES } from "../core/actor-window.js";
 
 /**
- * Interface fonts bundled with the module (Onest, JetBrains Mono, Unbounded). No leading slash: the `<link>`
+ * The interface font bundled with the module (Onest). No leading slash: the `<link>`
  * resolves against the game page (`<route prefix>/game`), so it keeps working behind a route prefix.
  */
 const WEB_FONTS_URL = `modules/${MODULE_ID}/styles/theme/fonts.css`;

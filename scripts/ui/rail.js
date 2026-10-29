@@ -8,9 +8,9 @@ import { readNpc, readRail } from "../integrations/dnd5e.js";
 import { playBurst } from "./bursts.js";
 import { buildVehicleRail } from "./vehicle.js";
 import { SETTLE } from "./motion.js";
+import { t } from "./html.js";
+import { signed } from "../core/overview.js";
 
-const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
-const signed = (n) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 const share = (part, whole) => (whole > 0 ? Math.max(0, Math.min(1, part / whole)).toFixed(4) : 0);
 
 /**

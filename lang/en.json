@@ -1,36 +1,16 @@
 {
   "AIM": {
     "trade": {
-      "title": "Trade",
-      "close": "Close trade",
-      "with": "Trading with",
-      "you": "You",
-      "theirOffer": "Their offer",
-      "yourOffer": "Your saved offer",
-      "editHint": "Choose item quantities and currency, then save your offer. Empty nonempty containers before trading them.",
-      "currencies": "Currency",
-      "items": "Items",
-      "available": "Available",
-      "noItems": "No transferable items.",
-      "unsaved": "Unsaved changes. Save your offer before confirming.",
-      "intro": "Exchange items, pay with currency, or give a gift. Assets move only after both participants confirm.",
-      "partner": "Another player's character",
       "noTargets": "No other players' characters are available online.",
       "start": "Offer trade",
-      "save": "Save offer",
       "confirm": "Confirm",
       "cancel": "Cancel",
       "invitation": "You were invited to a trade. Open «Trade» in your character's window.",
       "recover": "Restore before trade",
       "recoverWarning": "Both inventories and currency balances will be restored from their pre-trade snapshot. Later changes to those assets will be lost. Ensure nobody is editing either actor and the previous GM is no longer executing the trade. Continue?",
       "status": {
-        "idle": "Ready to trade",
-        "open": "Negotiating",
-        "executing": "Transferring / GM review",
-        "complete": "Trade complete",
         "cancelled": "Trade cancelled",
-        "failed": "Trade failed",
-        "recovery": "GM recovery required"
+        "failed": "Trade failed"
       },
       "errors": {
         "coordinator": "The trade coordinator disconnected or changed. Ask the active GM to inspect the trade state.",
@@ -41,7 +21,7 @@
         "funds": "Insufficient funds or an invalid coin quantity.",
         "item": "An item is missing, duplicated, contains other items, or has insufficient quantity.",
         "stale": "The offer changed or this trade is closed. Review the current state.",
-        "changed": "An offered item changed. Save the offer and confirm again.",
+        "changed": "An offered item changed. Check the offers and confirm again.",
         "transfer": "The trade operation failed. Check the trade state and GM log.",
         "noGM": "An active GM is required to safely transfer assets between characters.",
         "permission": "A participant is unavailable or does not own this actor.",
@@ -100,20 +80,8 @@
         "notNow": "Not now"
       }
     },
-    "app": {
-      "title": "Actor Inventory & Paperdoll",
-      "sidePanels": "Side panels",
-      "readOnly": "Read only"
-    },
-    "paperdoll": {
-      "title": "Equipment",
-      "collapseTooltip": "Collapse Paperdoll Panel",
-      "expandTooltip": "Expand Paperdoll Panel",
-      "occupied": "Occupied slots"
-    },
     "sheetButton": {
-      "label": "AIM",
-      "tooltip": "Open the actor window"
+      "label": "AIM"
     },
     "slots": {
       "head": "Head",
@@ -150,63 +118,22 @@
       "gondola": "Gondola"
     },
     "vitals": {
-      "level": "Level",
-      "hp": "Hit Points",
-      "ac": "AC",
-      "init": "Init",
-      "speed": "Speed",
-      "abilities": "Abilities & Saves",
-      "save": "Saving Throw",
-      "perception": "Perception",
-      "investigation": "Investigation",
-      "insight": "Insight",
-      "passivePerception": "Passive Perception",
-      "passiveInvestigation": "Passive Investigation",
-      "passiveInsight": "Passive Insight",
       "movement": {
         "fly": "Fly",
         "swim": "Swim",
         "climb": "Climb",
         "burrow": "Burrow"
-      },
-      "tempShort": "temp",
-      "speedShort": "Speed",
-      "passives": "Passive",
-      "abilityAbbr": {
-        "str": "STR",
-        "dex": "DEX",
-        "con": "CON",
-        "int": "INT",
-        "wis": "WIS",
-        "cha": "CHA"
       }
     },
-    "theme": {
-      "toggle": "Toggle light/dark",
-      "switchToLight": "Light theme",
-      "switchToDark": "Dark theme"
-    },
     "encumbrance": {
-      "title": "Load",
       "normal": "Normal Load",
       "encumbered": "Encumbered (-10 ft Speed)",
       "heavily_encumbered": "Heavily Encumbered (-20 ft, Disadvantage)",
-      "overburdened": "Overburdened (Cannot Move)",
-      "pushDrag": "Push / Drag / Lift"
+      "overburdened": "Overburdened (Cannot Move)"
     },
     "currency": {
-      "totalValue": "Total Wealth",
-      "pp": "Platinum",
       "gp": "Gold",
-      "ep": "Electrum",
-      "sp": "Silver",
-      "cp": "Copper",
-      "ppAbbr": "PP",
-      "gpAbbr": "GP",
-      "epAbbr": "EP",
-      "spAbbr": "SP",
-      "cpAbbr": "CP",
-      "purse": "Purse"
+      "gpAbbr": "GP"
     },
     "templates": {
       "dnd2024": {
@@ -247,50 +174,24 @@
       }
     },
     "editor": {
-      "windowTitle": "Paperdoll & Slots Editor (GM)",
-      "openTooltip": "Open Paperdoll & Slots Editor (GM Only)",
       "gmOnly": "Only Game Master can access the Paperdoll Editor.",
-      "templateLabel": "Paperdoll Template",
-      "customActorConfig": "Custom Actor Configuration",
       "presetsGroup": "Built-in presets",
       "worldGroup": "World templates",
       "applyToActor": "Apply to this Actor",
-      "applyToActorHint": "Binds this template layout directly to this actor",
       "appliedSuccess": "Applied paperdoll template to {actor}",
       "saveAsNew": "Save as New Template",
-      "saveAsNewHint": "Save this layout as a reusable world template",
       "updateTemplate": "Update Template",
-      "updateTemplateHint": "Update this custom template in world settings",
       "savedTemplateSuccess": "Saved template '{name}' to world settings",
       "deleteTemplate": "Delete Template",
-      "deleteTemplateHint": "Delete this custom template from world",
       "deleteTemplateConfirm": "Are you sure you want to permanently delete template '{id}'?",
       "exportJSON": "Export JSON",
       "importJSON": "Import JSON",
-      "importJSONHint": "Paste valid JSON paperdoll template data",
-      "maxSlots": "Max Slots",
-      "actorTarget": "Target Actor",
       "addSlot": "Add Slot",
-      "columns": {
-        "left": "Left Column",
-        "center": "Center Column",
-        "right": "Right Column"
-      },
-      "slotConfigTitle": "Configure Paperdoll Slot",
-      "browseFile": "Browse Image (FilePicker)",
       "slot": {
         "id": "Slot ID",
-        "idHint": "Unique identifier (letters, numbers, underscore, hyphen)",
         "label": "Slot Label",
-        "icon": "Icon (Font Awesome classes or image path)",
-        "column": "Column",
         "itemTypes": "Allowed Item Types",
         "accepts": "Accepted Tags / Subtypes",
-        "acceptsHint": "Comma separated keywords (e.g. helmet, hat, crown, tattoo)",
-        "rulesTitle": "Slot Restrictions & Rules",
-        "idPlaceholder": "e.g. tattoo1",
-        "labelPlaceholder": "e.g. Magic Tattoo",
-        "iconPlaceholder": "fa-solid fa-gem or path/to/icon.png",
         "acceptsPlaceholder": "e.g. tattoo, amulet, ring, potion"
       },
       "rules": {
@@ -300,30 +201,9 @@
         "singlePerActor": "Single per Actor (Cannot equip multiple items in this category)"
       },
       "templateName": "Template Name",
-      "templateId": "Template ID",
       "defaultTemplateName": "Custom Template",
-      "overwriteConfirm": "A world template with the id '{id}' already exists. Replace it?",
-      "createdBy": "Custom paperdoll template created by {user}",
       "customPaperdollName": "{actor} Custom Paperdoll",
-      "presetReadOnly": "Built-in presets and actor-only layouts cannot be updated. Use 'Save as New Template' instead.",
       "delete": "Delete",
-      "pastePlaceholder": "Paste JSON here...",
-      "importSuccess": "Imported template: {name}",
-      "importFailed": "Import failed: {error}",
-      "customSlotLabel": "Custom Slot {index}",
-      "slotExists": "Slot ID '{id}' already exists.",
-      "deleteSlot": "Delete Slot",
-      "deleteSlotConfirm": "Delete the slot '{slot}'?",
-      "moveUp": "Move Up",
-      "moveDown": "Move Down",
-      "editSlot": "Edit Slot",
-      "itemTypes": {
-        "equipment": "Equipment",
-        "weapon": "Weapon",
-        "consumable": "Consumable",
-        "tool": "Tool",
-        "loot": "Loot"
-      },
       "errors": {
         "invalid": "Invalid template data.",
         "missingId": "The template needs an id.",
@@ -335,129 +215,18 @@
         "slotInvalidId": "Enter a slot ID using letters, numbers, underscores or hyphens."
       }
     },
-    "actions": {
-      "save": "Save",
-      "cancel": "Cancel",
-      "equip": "Equip",
-      "unequip": "Unequip",
-      "use": "Use / Roll",
-      "delete": "Delete Item",
-      "shortRest": "Short Rest",
-      "longRest": "Long Rest",
-      "close": "Close",
-      "shortRestShort": "Short",
-      "longRestShort": "Long"
-    },
-    "attunement": {
-      "title": "Attuned Items",
-      "empty": "Empty Attunement Slot",
-      "attune": "Attune to Item",
-      "break": "End Attunement",
-      "overLimit": "over the attunement limit"
-    },
-    "tabs": {
-      "all": "All",
-      "weapons": "Weapons",
-      "armor": "Armor",
-      "consumables": "Consumables",
-      "containers": "Containers",
-      "loot": "Loot",
-      "label": "Categories"
-    },
-    "filters": {
-      "searchPlaceholder": "Search items..."
-    },
-    "sort": {
-      "name": "Sort by Name",
-      "weight": "Sort by Weight",
-      "value": "Sort by Value",
-      "rarity": "Sort by Rarity",
-      "label": "Sort"
-    },
-    "items": {
-      "attuned": "Attuned",
-      "requiresAttunement": "Requires Attunement",
-      "requiresAttunementShort": "Requires Attune",
-      "emptyList": "No items found in this category.",
-      "noMatches": "Nothing matches the search."
-    },
     "spells": {
-      "drawerTab": "Spells",
-      "drawerTitle": "Spells & Abilities",
-      "collapseTooltip": "Close Spells & Actions Panel",
-      "expandTooltip": "Open Spells & Actions Panel",
-      "searchPlaceholder": "Search spells & abilities...",
-      "spellSlotsTitle": "Spell Slots",
       "pact": "Pact",
-      "levelSlot": "Lvl {level}",
-      "levelGroup": "Level {level} Spells",
-      "preparedGroup": "Prepared Spells",
-      "cantrips": "Cantrips",
-      "cast": "Cast Spell",
-      "prepared": "Prepared",
-      "unprepared": "Unprepared (Click to Prepare)",
-      "noSpellsFound": "No spells found for this character.",
-      "tabs": {
-        "all": "All",
-        "spells": "Spells",
-        "actions": "Actions",
-        "passives": "Passives"
-      },
-      "actionTypes": {
-        "action": "Actions",
-        "bonus": "Bonus Actions",
-        "reaction": "Reactions",
-        "passive": "Passives & Traits"
-      },
-      "activation": {
-        "action": "Action",
-        "bonus": "Bonus Action",
-        "reaction": "Reaction",
-        "special": "Special",
-        "legendary": "Legendary Action",
-        "lair": "Lair Action"
-      },
-      "alwaysPrepared": "Always Prepared",
-      "range": {
-        "self": "Self",
-        "touch": "Touch"
-      },
-      "feature": "Feature",
-      "spendSlot": "Spend a slot",
-      "restoreSlot": "Restore a slot",
-      "components": {
-        "vocal": "Verbal",
-        "vocalAbbr": "V",
-        "somatic": "Somatic",
-        "somaticAbbr": "S",
-        "material": "Material",
-        "materialAbbr": "M",
-        "concentration": "Concentration",
-        "ritual": "Ritual"
-      }
+      "levelSlot": "Lvl {level}"
     },
     "containers": {
-      "title": "Bags & Containers",
-      "empty": "Empty container",
-      "reductionTooltip": "Weight reduction applied to items inside",
-      "rulesConfig": "Configure Container Rules (Weighty Containers)",
       "dropRejected": "{container} does not accept {item}.",
       "typeNotAllowed": "{container} does not accept item type \"{type}\" (allowed: {allowed}).",
       "subtypeNotAllowed": "{container} does not accept \"{item}\" (allowed subtypes: {allowed}).",
       "forbiddenProperty": "{item} has the property \"{property}\", which {container} forbids.",
       "missingRequiredProperty": "{item} lacks the property \"{property}\" required by {container}.",
       "weightyInactive": "The Weighty Containers module is not active.",
-      "loadTooltip": "Carried weight in this container, after weight reduction",
       "cycle": "'{item}' cannot be placed inside itself or one of its own containers."
-    },
-    "dialogs": {
-      "deleteItem": {
-        "title": "Delete Item",
-        "message": "Are you sure you want to delete {item}?",
-        "contents": "Delete everything inside as well ({count} items). Otherwise it stays in the inventory.",
-        "confirm": "Delete",
-        "cancel": "Cancel"
-      }
     },
     "notifications": {
       "maxAttunementReached": "Cannot attune: Maximum attunement limit reached ({max}/{max}).",
@@ -466,31 +235,9 @@
       "slotOccupied": "Cannot equip '{item}': the target slot is occupied by '{conflict}'.",
       "cannotEquip": "'{item}' cannot be equipped.",
       "noPermission": "You do not have permission to change this character.",
-      "noViewPermission": "You do not have permission to view this character's inventory.",
       "attunementNotRequired": "'{item}' does not require attunement."
     },
     "settings": {
-      "theme": {
-        "name": "Interface Theme",
-        "hint": "Choose the theme for the inventory window: dark, light, or follow the system.",
-        "dark": "Dark",
-        "light": "Light",
-        "auto": "Auto (System Preference)"
-      },
-      "accent": {
-        "name": "Accent colour",
-        "hint": "Colour of highlights, meters and primary buttons in the inventory window.",
-        "peach": "Peach",
-        "amber": "Amber",
-        "sage": "Sage",
-        "mint": "Mint",
-        "azure": "Azure",
-        "periwinkle": "Periwinkle",
-        "lavender": "Lavender",
-        "orchid": "Orchid",
-        "rose": "Rose",
-        "steel": "Steel"
-      },
       "enforcementMode": {
         "name": "Equipment Rules Enforcement Mode",
         "hint": "Controls how slot conflicts and rules are handled when equipping items.",
@@ -523,10 +270,6 @@
       "customTemplates": {
         "name": "Custom Paperdoll Templates",
         "hint": "Internal storage for paperdoll templates saved in this world."
-      },
-      "useWebFonts": {
-        "name": "Interface Fonts",
-        "hint": "Load the module's bundled interface fonts (Onest, JetBrains Mono, Unbounded). Turn off to use system fonts."
       }
     },
     "keybindings": {
@@ -807,7 +550,6 @@
         "unequip": "Unequip: {item}",
         "lockedBy": "Held two-handed: {item}",
         "attune": "Attunement",
-        "attuneCount": "{count} / {max}",
         "attuneEnd": "End attunement: {item}",
         "attunedSocket": "Attuned: {item}",
         "freeSocket": "Free attunement: drag an item here",
@@ -875,7 +617,6 @@
         "overHint": "More prepared than the class limit: dnd5e warns but does not refuse",
         "warning": "Prepared {value} / {max}",
         "warningHint": "dnd5e's preparation warning: more prepared than the class limit",
-        "refused": "“{name}” cannot be cast now: dnd5e refused.",
         "filters": {
           "prepared": "Prepared",
           "ritual": "Ritual",

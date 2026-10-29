@@ -10,8 +10,8 @@ import { readCoins } from "../integrations/dnd5e.js";
 import { currencyProfile } from "../trade/currencies.js";
 import { emptyOffer, transferableItems } from "../trade/offers.js";
 import { activeGM, requestTrade, sessionFor, tradeState } from "../trade/service.js";
+import { t } from "./html.js";
 
-const t = (key, data) => (data ? game.i18n.format(key, data) : game.i18n.localize(key));
 const errorText = (error) => {
   const key = String(error?.message ?? error ?? "");
   return key.startsWith("AIM.trade.errors.") ? t(key) : t("AIM.trade.errors.transfer");
@@ -203,7 +203,8 @@ export function buildTradeContext(actor, state) {
     theirs: listed(session.offers[other]), theirsCoins: coinList(session.offers[other].money),
     confirmLabel: t(confirmed ? "AIM.trade.panel.unconfirm" : "AIM.trade.confirm"),
     canConfirm: editable && gmOnline && !state.draft.pending && (confirmed || !offersEmpty({ offers: [draft, session.offers[other]] })),
-    canCancel: editable,
+    // The GM may close an open trade too, for when a player left it.
+    canCancel: editable || (isGM && session.status === "open"),
     recovery, askRestore: Boolean(recovery && state.askRestore),
     gmNote: isGM && session.status === "open",
     // Inventory rows: what may go into the offer and how many are left.

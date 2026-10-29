@@ -66,6 +66,8 @@
   </div>
   {{else if trade.recovery}}
   <div class="aim-trade-foot"><button type="button" class="aim-btn is-primary" data-action="tradeRecover"><i class="fa-light fa-lock"></i>{{#if (eq trade.recovery "unlock")}}{{localize "AIM.trade.panel.unlock"}}{{else}}{{localize "AIM.trade.panel.restore"}}{{/if}}</button></div>
+  {{else if trade.canCancel}}
+  <div class="aim-trade-foot"><button type="button" class="aim-btn" data-action="tradeCancel">{{localize "AIM.trade.cancel"}}</button></div>
   {{/if}}
   {{else}}
   <div class="aim-trade-foot">

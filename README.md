@@ -112,8 +112,8 @@ npm run release  # check, then dist/actor-inventory-manager-v<version>.zip
 Reload Foundry (F5) afterwards. Node.js 24 or newer is required.
 
 See [docs/architecture.md](docs/architecture.md) for the module layout, the public API and
-hooks, how to register custom slots and equipment rules, and the dnd5e data-shape
-differences the code adapts to.
+hooks, how doll presets and equipment rules work, and the dnd5e data-shape differences the
+code adapts to.
 
 ---
 

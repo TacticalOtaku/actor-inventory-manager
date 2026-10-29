@@ -128,6 +128,16 @@ test("GM recovery without its snapshot journal closes the trade instead of locki
   assert.equal(tradeState().sessions[0].error, "AIM.trade.errors.recoveryLost");
   assert.equal(tradeState().receipts.gm.error, null);
 });
+test("unlocking a trade stopped while preparing deletes the snapshot journal it left unnamed in the session", async () => {
+  setup(); await start();
+  const state = tradeState();
+  Object.assign(state.sessions[0], { status: "executing", phase: "preparing" });
+  await game.settings.set("actor-inventory-manager", "tradeState", state);
+  let deleted = false;
+  game.journal.getName = (name) => (name === "AIM recovery startRequest0001" ? { delete: async () => { deleted = true; } } : undefined);
+  await command("recoverRequest01", "recover", "a", "gm");
+  assert.deepEqual([tradeState().sessions[0].status, deleted], ["cancelled", true]);
+});
 test("finished sessions stay in chronological order and pruning drops the oldest", async () => {
   setup();
   for (let i = 0; i < 32; i++) {
@@ -324,6 +334,22 @@ test("wearing or opening an offered item keeps the offer, and the session holds 
   assert.equal(tradeState().sessions[0].status, "complete");
   assert(!JSON.stringify(tradeState()).includes("fingerprint"));
   assert(actors.get("b").items.size === 1);
+});
+test("a GM over plain http, without crypto.subtle, still fingerprints offered items", async () => {
+  const { actors } = setup(); await start();
+  sword(actors.get("a"));
+  // An http page has a `crypto` without `subtle`.
+  const real = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+  Object.defineProperty(globalThis, "crypto", { value: {}, configurable: true });
+  try {
+    await offerSword();
+    await command("confirmRequest01", "confirm", "a", "p1", { revision: 1 });
+    await command("confirmRequest02", "confirm", "b", "p2", { revision: 1 });
+  } finally {
+    Object.defineProperty(globalThis, "crypto", real);
+  }
+  assert.equal(tradeState().sessions[0].status, "complete");
+  assert.equal(actors.get("b").items.size, 1);
 });
 test("an offer saved before 2.0.6 with the item's JSON still confirms", async () => {
   const { actors } = setup(); await start();

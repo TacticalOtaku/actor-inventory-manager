@@ -181,7 +181,8 @@ export async function buildItemDetail(item, { canEdit }) {
     : "";
   // The player picks among the activities dnd5e allows; midi-qol's automation-only ones stay with midi.
   const activities = usableActivities(item);
-  const spell = item.type === "spell" ? readSpellbook({ items: [item] })[0] : null;
+  // The owner's casting classes decide whether a spell is known (no Prepare) or must be prepared to cast.
+  const spell = item.type === "spell" ? readSpellbook({ items: [item], spellcastingClasses: item.actor?.spellcastingClasses })[0] : null;
   return {
     description,
     canEdit,

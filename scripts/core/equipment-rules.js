@@ -13,7 +13,8 @@ import {
   isMainHandSlot,
   isOffHandSlot,
   isShield,
-  isTwoHandedWeapon
+  isTwoHandedWeapon,
+  takesNoSlot
 } from "./item-classifier.js";
 import { DND_2024_TEMPLATE, getActorSlots } from "./paperdoll-templates.js";
 import { getPaperdollRuntime } from "./paperdoll-runtime.js";
@@ -113,6 +114,8 @@ export function getActorEquippedMap(actor) {
   const unassigned = [];
   for (const item of equippedItems) {
     const slotId = getItemAssignedSlot(item);
+    // Clothes a 1.x or 2.0 doll put in the armor slot leave it: they are worn under the armor now.
+    if (takesNoSlot(item)) continue;
     if (slotId && validSlotIdSet.has(slotId) && !slotMap.has(slotId)) {
       slotMap.set(slotId, item);
     } else if (!isLegacyNonSlot(slotId)) {

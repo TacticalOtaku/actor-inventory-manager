@@ -568,6 +568,8 @@ export function readFeatures(actor, { attacks = false } = {}) {
     const recovery = Array.isArray(system.uses?.recovery) ? system.uses.recovery : [];
     const recharge = recovery.find((r) => r?.period === "recharge");
     const attack = item.type === "weapon" ? activities.find((a) => a.type === "attack") : null;
+    // An unidentified weapon's bonus, properties and charges stay unknown to players, as in the inventory.
+    const concealed = concealsDetails(item);
     return {
       id: item.id,
       uuid: item.uuid,
@@ -578,12 +580,12 @@ export function readFeatures(actor, { attacks = false } = {}) {
       originId: root?.id ?? null,
       activation: resolveItemActivation(item).type,
       passive: properties.has("trait") || activities.length === 0,
-      uses: max > 0 ? { value: Math.max(0, max - spent), max, spent } : null,
-      recovery: recovery.filter((r) => r?.period && r.period !== "recharge")
+      uses: max > 0 && !concealed ? { value: Math.max(0, max - spent), max, spent } : null,
+      recovery: concealed ? [] : recovery.filter((r) => r?.period && r.period !== "recharge")
         .map((r) => config.limitedUsePeriods?.[r.period]?.label ?? r.period).map((label) => localizeOr(label, label)),
-      recharge: recharge ? { formula: String(recharge.formula ?? "6") } : null,
-      attack: attack ? { toHit: attack.labels?.toHit ?? "", damage: (attack.labels?.damage ?? []).map((d) => d.label).filter(Boolean).join(" + ") } : null,
-      tags: [...properties].filter((key) => key !== "trait").map((key) => config.itemProperties?.[key]?.label ?? key).map((label) => localizeOr(label, label)),
+      recharge: recharge && !concealed ? { formula: String(recharge.formula ?? "6") } : null,
+      attack: attack && !concealed ? { toHit: attack.labels?.toHit ?? "", damage: (attack.labels?.damage ?? []).map((d) => d.label).filter(Boolean).join(" + ") } : null,
+      tags: concealed ? [] : [...properties].filter((key) => key !== "trait").map((key) => config.itemProperties?.[key]?.label ?? key).map((label) => localizeOr(label, label)),
       sort: num(item.sort, 0)
     };
   });
@@ -737,13 +739,14 @@ export async function readCardData(doc) {
     const damages = (labels.damages ?? []).map((d) => ({ label: d.label ?? d.formula ?? "", formula: d.formula ?? "", types: String(d.damageType ?? "").split("|").filter(Boolean) }));
     const attunement = attunementRequirement(doc);
     const currency = config.currencies?.[data.price?.denomination];
-    // Price and charges dnd5e already concealed; the bonuses in to-hit, damage and save would still tell.
+    // Price and charges dnd5e already concealed; the bonuses in to-hit, damage, save and armor would still tell.
     const concealed = concealsDetails(doc);
     const stats = [
       concealed ? null : stat("toHit", labels.toHit),
       concealed ? null : stat("damage", damages.map((d) => d.label).join(", ")),
       concealed ? null : stat("save", labels.save),
-      doc.system?.armor?.value ? stat("armor", doc.system.armor.value) : null,
+      // dnd5e adds the magic bonus into armor.value.
+      doc.system?.armor?.value && !concealed ? stat("armor", doc.system.armor.value) : null,
       data.uses?.max ? stat("uses", `${num(data.uses.value, 0)} / ${num(data.uses.max, 0)}`) : null,
       // One item's weight, in the world's unit like the rows (dnd5e's card keeps the item's own unit).
       num(data.weight?.value, 0) ? stat("weight", `${Number(convertWeight(data.weight.value, data.weight.units || "lb", getSystemWeightUnit()).toFixed(2))} ${unitAbbreviation("weightUnits", getSystemWeightUnit())}`) : null,

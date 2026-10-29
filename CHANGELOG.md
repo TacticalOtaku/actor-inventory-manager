@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- Trading works for a GM who hosts over plain http on the local network: the item digest no longer needs the
+  browser's `crypto.subtle`, which only https and localhost have. Digests stay SHA-256, so open offers keep theirs.
+- Pressing Enter in the XP field no longer reloads Foundry.
+- Unidentified items: the Actions tab no longer shows a weapon's to-hit, damage, properties or charges to players,
+  and the hover card no longer shows an armor's AC with its magic bonus.
+- Clothes and robes are worn under armor and take no slot: armor goes on over Traveler's Clothes instead of being
+  refused or pushing them off. Clothes an older doll put in the armor slot leave it.
+- A shield equipped with both hands free goes to the off hand.
+- «Iron Bands of Bilarro» is no longer offered the ring slots.
+- «Повторить миграцию» after a finished migration no longer cancels open trades or brings back removed favorites.
+- A window whose first render fails (broken item data) opens again on the next press instead of never; the same for
+  the preset editor.
+- The window of an unlinked token closes when its scene is deleted.
+- Unlocking a trade stopped while preparing deletes the snapshot journal it left.
+- The filter textures of an effect (tens of MB after a long rest) go back to the GPU once nothing plays.
+- Effects keep playing in a popped-out window while the main Foundry tab is hidden.
+- The psychic damage card's rings keep their colour for their whole life.
+- A spell's details agree with its row for classes that know their spells (Cast, no Prepare).
+- An item menu open while its window closes no longer leaves a listener on the page.
+- The purse total uses the world's coin rates, as item prices do.
+
+### Removed
+- Three unused translation strings, an unused style rule and the `readVehicleOf` alias.
+
 ## 2.0.7
 
 ### Fixed

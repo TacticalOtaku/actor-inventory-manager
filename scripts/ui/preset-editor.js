@@ -22,6 +22,7 @@ import { addSlot, moveSlot, presetIdFor, removeSlot, sameAsPreset, workingFrom }
 import { escapeHTML, t } from "./html.js";
 import { stampTheme } from "./theme-root.js";
 import { FIGURE_VIEW } from "./doll.js";
+import { LOG } from "../foundry/logger.js";
 
 const TEMPLATES = `modules/${MODULE_ID}/templates/window`;
 const FIGURE_HREF = `modules/${MODULE_ID}/assets/figures.svg`;
@@ -317,8 +318,12 @@ export function openPresetEditor(actor) {
     return open;
   }
   const editor = new PresetEditor(actor);
-  // Registered before the first render, so a second click finds it.
-  OPEN_EDITORS.set(actor.uuid ?? actor.id, editor);
-  editor.render({ force: true });
+  // Registered before the first render, so a second click finds it; a failed first render gives the place back.
+  const key = actor.uuid ?? actor.id;
+  OPEN_EDITORS.set(key, editor);
+  editor.render({ force: true }).catch((error) => {
+    if (OPEN_EDITORS.get(key) === editor) OPEN_EDITORS.delete(key);
+    LOG.error(`The preset editor of ${actor.name} could not open`, error);
+  });
   return editor;
 }

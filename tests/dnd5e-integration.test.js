@@ -519,6 +519,14 @@ describe("features tab reads (dnd5e 5.3.3)", () => {
     assert.deepEqual([byId.breath.origin.key, byId.breath.recharge, byId.breath.tags], ["other", { formula: "5" }, ["Магический"]]);
     assert.deepEqual(byId.bite.attack, { toHit: "+5", damage: "1к10 + 3 колющего" });
     assert.equal(readFeatures(actor).some((f) => f.id === "bite"), false);
+
+    // A player sees an unidentified weapon's action without its bonus, properties or charges.
+    const sword = add({ id: "odd", name: "Странный меч", type: "weapon", system: { identified: false, properties: new Set(["mgc"]), uses: { max: 3, spent: 0 },
+      activities: [act("attack", { labels: { toHit: "+7", damage: [{ label: "1к8 + 2" }] } })] } });
+    globalThis.game = { user: { isGM: false } };
+    const odd = readFeatures({ items: Object.assign([sword], { get: () => null }) }, { attacks: true })[0];
+    delete globalThis.game;
+    assert.deepEqual([odd.attack, odd.tags, odd.uses], [null, [], null]);
   });
 });
 
@@ -699,7 +707,7 @@ describe("tooltip card reads (dnd5e 5.3.3)", () => {
     const sword = {
       documentName: "Item", type: "weapon", name: "Странный меч", img: "sword.webp",
       system: {
-        identified: false, rarity: "rare", attunement: "", armor: { value: null },
+        identified: false, rarity: "rare", attunement: "", armor: { value: 20 },
         getCardData: async () => ({ name: "Странный меч", labels: { toHit: "+7", damages: [{ label: "1d8 + 2 Рубящий", damageType: "slashing" }], save: "СЛ 15" }, price: null, uses: null })
       }
     };

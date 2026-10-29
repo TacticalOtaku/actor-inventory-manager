@@ -37,6 +37,21 @@ describe("Item Piles purse total", () => {
   });
 });
 
+describe("dnd5e purse total", () => {
+  it("uses the world's own coin rates, as item prices do", () => {
+    globalThis.game = { modules: new Map() };
+    globalThis.CONFIG = { DND5E: { currencies: { pp: { conversion: 0.1 }, gp: { conversion: 1 }, ep: { conversion: 2 }, sp: { conversion: 20 }, cp: { conversion: 200 } } } };
+    try {
+      assert.equal(computeActorCurrency({ system: { currency: { gp: 1, sp: 20, cp: 200 } } }).totalGold, "3.00");
+      delete globalThis.CONFIG;
+      assert.equal(computeActorCurrency({ system: { currency: { pp: 1, ep: 1, sp: 5, cp: 5 } } }).totalGold, "11.05");
+    } finally {
+      delete globalThis.CONFIG;
+      delete globalThis.game;
+    }
+  });
+});
+
 describe("Item Piles purse coins", () => {
   it("asks for every currency, zero amounts included, so each coin can be edited", () => {
     let asked;

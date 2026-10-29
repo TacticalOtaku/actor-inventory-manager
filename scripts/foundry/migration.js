@@ -48,14 +48,17 @@ function* actorsToVisit() {
   }
 }
 
-/** One actor: quick slots into favorites, an own doll into a named world preset assigned to it. */
-async function migrateActor(actor, templates) {
+/**
+ * One actor: quick slots into favorites (until the world has finished once: a later run would bring back favorites
+ * the player removed), an own doll into a named world preset assigned to it.
+ */
+async function migrateActor(actor, templates, { quickSlots }) {
   let items = 0;
   let presets = 0;
   let changed = false;
   // An unlinked token actor inherits its base actor's flags and items; only what its own delta changed is its own.
   const own = actor.isToken ? actor.token?.delta : actor;
-  if (actor.type === "character" && typeof actor.system?.addFavorite === "function") {
+  if (quickSlots && actor.type === "character" && typeof actor.system?.addFavorite === "function") {
     const slots = [...(own?.items ?? [])].map((item) => ({ id: item.id, slot: item.flags?.[MODULE_ID]?.[FLAGS.SLOT] ?? null }));
     for (const favorite of quickSlotFavorites(slots, actor.system.favorites ?? [])) {
       await actor.system.addFavorite(favorite);
@@ -89,7 +92,9 @@ async function migrateActor(actor, templates) {
 export async function runMigration({ force = false } = {}) {
   // The trade coordinator, as cancelling the open trades needs it: core's activeGM may be another GM.
   if (!game.user.isGM || activeGM()?.id !== game.user.id) return null;
-  if (!force && !needsMigration(game.settings.get(MODULE_ID, VERSION_KEY))) return null;
+  // After the world has finished once, «Повторить миграцию» redoes only the dolls: live 2.0 trades and favorites stay.
+  const unfinished = needsMigration(game.settings.get(MODULE_ID, VERSION_KEY));
+  if (!force && !unfinished) return null;
   const counts = { actors: 0, items: 0, presets: 0, trades: 0, failures: 0 };
   const templates = foundry.utils.deepClone(game.settings.get(MODULE_ID, "customTemplates") ?? {});
   for (const [id, template] of Object.entries(templates)) {
@@ -100,7 +105,7 @@ export async function runMigration({ force = false } = {}) {
   }
   for (const actor of actorsToVisit()) {
     try {
-      const result = await migrateActor(actor, templates);
+      const result = await migrateActor(actor, templates, { quickSlots: unfinished });
       if (result.changed) counts.actors++;
       counts.items += result.items;
       counts.presets += result.presets;
@@ -115,11 +120,13 @@ export async function runMigration({ force = false } = {}) {
     counts.failures++;
     LOG.error("Migration to 2.0 failed for the world's doll presets", error);
   }
-  try {
-    counts.trades = await cancelOpenTrades();
-  } catch (error) {
-    counts.failures++;
-    LOG.error("Migration to 2.0 failed for the open trades", error);
+  if (unfinished) {
+    try {
+      counts.trades = await cancelOpenTrades();
+    } catch (error) {
+      counts.failures++;
+      LOG.error("Migration to 2.0 failed for the open trades", error);
+    }
   }
   if (!counts.failures) await game.settings.set(MODULE_ID, VERSION_KEY, MIGRATION_VERSION);
   if (worthReporting(counts)) {

@@ -2,7 +2,8 @@
 
 Worlds running 1.9.x move to 2.0 by one migration that only writes new data. It runs once per world on `ready`, on
 the single active GM, over world actors, world items and unlinked token actors on every scene; compendiums are left
-alone. Every step is safe to repeat. The 1.9 flags and settings stay in place, so a world can go back to 1.9.x
+alone. Every step is safe to repeat. Once the world has finished, «Повторить миграцию» redoes only the dolls and
+presets: quick slots would bring back favorites the player removed, and open trades are 2.0 trades by then. The 1.9 flags and settings stay in place, so a world can go back to 1.9.x
 (losing only what changed in 2.0), and 2.1 removes them. Until the migration has run, the window reads 1.9 data with
 the same rules, so players never wait for it.
 

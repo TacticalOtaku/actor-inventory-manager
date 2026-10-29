@@ -70,4 +70,12 @@ describe("running the 1.9 → 2.0 migration (ADR 0005)", () => {
     assert.equal(counts.trades, 1);
     assert.ok(chat.some((message) => message.content.includes("AIM.migration.tradeCancelled")));
   });
+
+  it("leaves live trades alone when the GM reruns a finished migration", async () => {
+    stub(world({ tokens: [] }));
+    settings.migrationVersion = "2.0.0";
+    settings.tradeState.sessions = [{ id: "s1", status: "open", users: ["gm"] }];
+    const counts = await runMigration({ force: true });
+    assert.deepEqual([settings.tradeState.sessions[0].status, counts.trades], ["open", 0]);
+  });
 });

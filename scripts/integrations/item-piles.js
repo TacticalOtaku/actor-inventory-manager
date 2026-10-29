@@ -4,6 +4,9 @@
 
 import { LOG } from "../foundry/logger.js";
 
+/** dnd5e's default rates, for a world without CONFIG. */
+const COINS_PER_GOLD = { pp: 0.1, gp: 1, ep: 2, sp: 10, cp: 100 };
+
 /**
  * Check if the Item Piles module is installed and active
  * @returns {boolean}
@@ -87,14 +90,10 @@ export function computeActorCurrency(actor) {
     }
   }
 
-  // Standard dnd5e default calculation (1 pp = 10 gp, 1 gp = 1 gp, 1 ep = 0.5 gp, 1 sp = 0.1 gp, 1 cp = 0.01 gp)
-  const defaultTotal = (
-    baseValues.pp * 10 +
-    baseValues.gp +
-    baseValues.ep * 0.5 +
-    baseValues.sp * 0.1 +
-    baseValues.cp * 0.01
-  );
+  // dnd5e's own rates, as the item prices use them: `conversion` is coins per gold piece (5.3.3).
+  const currencies = globalThis.CONFIG?.DND5E?.currencies ?? {};
+  const defaultTotal = Object.entries(baseValues)
+    .reduce((sum, [key, value]) => sum + value / (Number(currencies[key]?.conversion) || COINS_PER_GOLD[key]), 0);
   const formattedTotal = defaultTotal.toFixed(2);
   const goldLabel = globalThis.game?.i18n?.localize?.("AIM.currency.gpAbbr");
   const primaryName = goldLabel && goldLabel !== "AIM.currency.gpAbbr" ? goldLabel : "GP";

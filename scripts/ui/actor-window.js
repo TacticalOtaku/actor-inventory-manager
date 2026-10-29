@@ -33,7 +33,7 @@ import { SPELL_FILTERS, pipTarget } from "../core/spellbook.js";
 import { FEATURE_FILTERS, applyUsesEntry } from "../core/features.js";
 import { reorderFavorites, tabForFavorite } from "../core/favorites.js";
 import { parseHpEntry, previewHp, vitalState } from "../core/vitals.js";
-import { readAbilities, readIdentity, readNpc, readRail, toggleSpellPreparation } from "../integrations/dnd5e.js";
+import { readAbilities, readIdentity, readNpc, readRail, readVehicle, toggleSpellPreparation } from "../integrations/dnd5e.js";
 import { LOG } from "../foundry/logger.js";
 import {
   EQUIPMENT_TEMPLATES,
@@ -68,7 +68,7 @@ import { SETTLE, glide, glideFrom, measure } from "./motion.js";
 import { readMotionCaps, schemeIsLight, stampTheme } from "./theme-root.js";
 import { REST_HOOK, buildRailContext, openStatConfig, playLongRest, playRailChanges, railSnapshot, startRuneGlints } from "./rail.js";
 import { preloadBursts } from "./bursts.js";
-import { readVehicleOf, vehicleKind } from "./vehicle.js";
+import { vehicleKind } from "./vehicle.js";
 import { t } from "./html.js";
 import { signed } from "../core/overview.js";
 
@@ -397,7 +397,7 @@ export class ActorWindow extends WindowBase {
       kind: npc ? [npc.type, npc.size].filter(Boolean).join(" · ") : this.actor.type === "vehicle" ? vehicleKind(this.actor) : "",
       summary: npc
         ? [t("AIM.window.npc.crShort", { cr: crLabel(npc.cr) }), npc.type].filter(Boolean).join(" · ")
-        : this.actor.type === "vehicle" ? (readVehicleOf(this.actor)?.typeLabel ?? "") : links.slice(0, 2).map((l) => l.label).join(" · ")
+        : this.actor.type === "vehicle" ? (readVehicle(this.actor)?.typeLabel ?? "") : links.slice(0, 2).map((l) => l.label).join(" · ")
     };
   }
 
@@ -469,6 +469,8 @@ export class ActorWindow extends WindowBase {
     this.#hook("deleteActor", (actor) => actor?.uuid === this.actorKey && this.close());
     // An unlinked token's actor goes with its token, and no deleteActor says so.
     this.#hook("deleteToken", (token) => this.actorKey.startsWith(`${token.uuid}.`) && this.close());
+    // Deleting a scene fires no deleteToken for its tokens.
+    this.#hook("deleteScene", (scene) => this.actorKey.startsWith(`${scene.uuid}.`) && this.close());
     for (const name of ["createItem", "updateItem", "deleteItem"]) this.#hook(name, (doc) => mine(doc) && rerender());
     for (const name of ["createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) {
       this.#hook(name, (effect) => mine(effect) && this.#queueRender(partsForEffectChange({
@@ -669,6 +671,12 @@ export class ActorWindow extends WindowBase {
     const { value, max } = readRail(this.actor).exhaustion;
     const next = Math.max(0, Math.min(max, value + delta));
     if (next !== value) await this.actor.update({ "system.attributes.exhaustion": next });
+  }
+
+  async _preClose(options) {
+    // An open row menu holds a listener on the document; it goes with the window (by _onClose the element is gone).
+    closeItemMenu(this.element);
+    return super._preClose(options);
   }
 
   _onClose(options) {
@@ -1945,7 +1953,11 @@ export function openActorWindow(actor) {
   const app = new ActorWindow(actor);
   // Registered before the first render: a second click while it prepares finds this window, not a new one.
   OPEN_WINDOWS.set(key, app);
-  app.render({ force: true });
+  // A first render that throws (broken item data, another module's hook) must not keep the place: the next press opens anew.
+  app.render({ force: true }).catch((error) => {
+    if (OPEN_WINDOWS.get(key) === app) OPEN_WINDOWS.delete(key);
+    LOG.error(`The window of ${actor.name} could not open`, error);
+  });
   return app;
 }
 

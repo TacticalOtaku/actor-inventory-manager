@@ -262,6 +262,9 @@ export function sizeCanvas(canvas, size) {
 export const pixelRatio = (doc) => Math.min(2, doc.defaultView?.devicePixelRatio || 1);
 export const hasPixi = () => Boolean(globalThis.PIXI?.Renderer);
 
+/** The frame clock of a window on screen: a popped-out window keeps playing while the main tab is hidden. */
+const frameWindow = () => [...active].find((entry) => !entry.canvas.ownerDocument.hidden)?.canvas.ownerDocument.defaultView ?? window;
+
 function tick(now) {
   for (const entry of active) {
     if (!entry.canvas.isConnected) { entry.stop(); continue; }
@@ -274,7 +277,9 @@ function tick(now) {
     if (!more) entry.stop();
   }
   ticking = active.size > 0;
-  if (ticking) requestAnimationFrame(tick);
+  if (ticking) frameWindow().requestAnimationFrame(tick);
+  // Filters keep their work textures in a pool (a long rest's bloom holds tens of MB); idle, the GPU gets them back.
+  else renderer?.filter.emptyPool();
 }
 
 /**
@@ -282,7 +287,7 @@ function tick(now) {
  */
 export function run(entry) {
   active.add(entry);
-  if (!ticking) { ticking = true; requestAnimationFrame(tick); }
+  if (!ticking) { ticking = true; frameWindow().requestAnimationFrame(tick); }
 }
 
 export const halt = (entry) => active.delete(entry);

@@ -6,7 +6,6 @@
       "confirm": "Confirm",
       "cancel": "Cancel",
       "invitation": "You were invited to a trade. Open «Trade» in your character's window.",
-      "recover": "Restore before trade",
       "recoverWarning": "Both inventories and currency balances will be restored from their pre-trade snapshot. Later changes to those assets will be lost. Ensure nobody is editing either actor and the previous GM is no longer executing the trade. Continue?",
       "status": {
         "cancelled": "Trade cancelled",
@@ -132,7 +131,6 @@
       "overburdened": "Overburdened (Cannot Move)"
     },
     "currency": {
-      "gp": "Gold",
       "gpAbbr": "GP"
     },
     "templates": {
@@ -203,7 +201,6 @@
       "templateName": "Template Name",
       "defaultTemplateName": "Custom Template",
       "customPaperdollName": "{actor} Custom Paperdoll",
-      "delete": "Delete",
       "errors": {
         "invalid": "Invalid template data.",
         "missingId": "The template needs an id.",
@@ -814,7 +811,7 @@
       "retry": {
         "name": "Migration to 2.0",
         "label": "Run the migration again",
-        "hint": "Moves the world's 1.9 data once more (quick slots, own dolls, presets, open trades). Safe to repeat."
+        "hint": "Moves the world's 1.9 dolls and presets once more. Quick slots and open trades move only until the migration has finished once. Safe to repeat."
       }
     }
   }

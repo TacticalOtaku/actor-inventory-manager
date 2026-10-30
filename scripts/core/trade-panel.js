@@ -3,7 +3,7 @@
 // The rules themselves live in trade/ (offers, coordinator); this only reads a session for the panel.
 // ─────────────────────────────────────────────────────────
 
-import { computeActorEncumbrance, getItemWeightInUnit, getSystemEncumbrance } from "./weight-calculator.js";
+import { coinWeight, computeActorEncumbrance, getItemWeightInUnit, getSystemEncumbrance } from "./weight-calculator.js";
 
 /** Offers leave by themselves this long after the last edit. */
 export const OFFER_SEND_DELAY = 500;
@@ -83,15 +83,21 @@ export function offeredWeight(item, quantity) {
 }
 
 /**
- * The load once the trade is done: dnd5e's derived load (Weighty Containers' reductions and coins included) plus
- * `change`, the weight arriving less the weight leaving in the world's unit, through the tiers of the load meter.
+ * The load once the trade is done: dnd5e's derived load (Weighty Containers' reductions and coins included), less
+ * what leaves from where it lies, plus what arrives loose and the coins, through the tiers of the load meter.
  * Null without dnd5e's encumbrance or under the «none» rule.
+ * @param {Object} actor
+ * @param {{leaving?: Array<{item: Object, quantity: number}>, arriving?: Array<{item: Object, quantity: number}>,
+ *   coins?: number}} trade  coins: the count arriving less the count leaving
+ * @param {(actor: Object, item: Object) => number} [share]  how much of an item's weight the actor carries, 0 to 1
  * @returns {{value: number, max: number, tier: string, tierChanged: boolean}|null}
  */
-export function loadAfterTrade(actor, change) {
+export function loadAfterTrade(actor, { leaving = [], arriving = [], coins = 0 }, share = () => 1) {
   const enc = getSystemEncumbrance(actor);
   const now = enc && computeActorEncumbrance(actor);
   if (!now || now.rule === "none") return null;
+  const weigh = (entries, part) => entries.reduce((sum, { item, quantity }) => sum + offeredWeight(item, quantity) * part(item), 0);
+  const change = weigh(arriving, () => 1) - weigh(leaving, (item) => share(actor, item)) + coinWeight(coins);
   const value = Math.max(0, Number(enc.value) + change);
   const after = computeActorEncumbrance({ system: { attributes: { encumbrance: { ...enc, value } } } });
   return { value: after.value, max: after.max, tier: after.tier, tierChanged: after.tier !== now.tier };

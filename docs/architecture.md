@@ -52,6 +52,7 @@ one place to update when it moves again. Never inline these reads at a call site
 | Item activation | `resolveItemActivation` | `integrations/dnd5e.js` |
 | Limited uses / recharge | `resolveItemUses` | `integrations/dnd5e.js` |
 | Carrying capacity | `getSystemEncumbrance`, `computeActorCapacity` | `core/weight-calculator.js` |
+| Coin weight (`currencyWeight` setting, `encumbrance.currencyPerWeight`) | `coinWeight` | `core/weight-calculator.js` |
 | Abilities for the window header | `readAbilities` | `integrations/dnd5e.js` |
 | Level, experience, classes, species, background | `readIdentity` | `integrations/dnd5e.js` |
 | Inventory rows (price per unit in gold, charges from `uses.spent`, holding container) | `readInventory` | `integrations/dnd5e.js` |
@@ -171,6 +172,7 @@ either here guarantees the two modules disagree.
 | --- | --- |
 | Container fill state | `getContainerLoad(actor, containerId)` |
 | Weight reduction | `getContainerWeightReductionPct(container)` |
+| Share of an item's weight its actor carries (weight after a trade) | `carriedShare(actor, item)`: `getCarriedShare` from 3.10, a walk of the container chain before |
 | Can this item go in? | `validateContainerDrop(container, item)` |
 | Open the rules window | `openWeightyContainersDialog(container)` |
 | React to a rules change | `Hooks.on(CONTAINER_RULES_HOOK, callback)` |

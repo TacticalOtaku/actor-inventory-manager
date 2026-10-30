@@ -3,6 +3,7 @@ import { afterEach, describe, it } from "node:test";
 
 import {
   WEIGHTY_CONTAINERS_MODULE_ID,
+  carriedShare,
   getContainerLoad,
   getContainerRulesConfig,
   getContainerWeightReductionPct,
@@ -197,5 +198,35 @@ describe("rules config", () => {
   it("returns null for a container the module never touched", () => {
     stubRuntime({ api: {} });
     assert.equal(getContainerRulesConfig({ flags: {} }), null);
+  });
+});
+
+describe("carried share", () => {
+  const bag = (id, { container = null, weightless = false, reductionPct = 0 } = {}) => ({
+    id, type: "container",
+    system: { container, properties: new Set(weightless ? ["weightlessContents"] : []) },
+    flags: { [WEIGHTY_CONTAINERS_MODULE_ID]: { reductionPct } }
+  });
+  const actorWith = (...items) => ({ items: new Map(items.map(item => [item.id, item])) });
+  const rope = container => ({ id: "rope", type: "loot", system: { container } });
+
+  it("counts only weightless bags without Weighty Containers", () => {
+    globalThis.game = { modules: { get: () => undefined } };
+    assert.equal(carriedShare(actorWith(bag("half", { reductionPct: 50 })), rope("half")), 1);
+    assert.equal(carriedShare(actorWith(bag("holding", { weightless: true })), rope("holding")), 0);
+    assert.equal(carriedShare(actorWith(), rope(null)), 1);
+  });
+
+  it("asks Weighty Containers when it answers, and keeps the answer between 0 and 1", () => {
+    stubRuntime({ api: { getCarriedShare: (actor, item) => (item.id === "rope" ? 0.25 : 7) } });
+    assert.equal(carriedShare(actorWith(), rope("any")), 0.25);
+    assert.equal(carriedShare(actorWith(), { id: "x", system: {} }), 1);
+  });
+
+  it("compounds the reductions up the chain for Weighty Containers before 3.10", () => {
+    stubRuntime({ api: {} });
+    const actor = actorWith(bag("outer", { reductionPct: 50 }), bag("inner", { container: "outer", reductionPct: 50 }));
+    assert.equal(carriedShare(actor, rope("inner")), 0.25);
+    assert.equal(carriedShare(actorWith(bag("loop", { container: "loop", reductionPct: 50 })), rope("loop")), 0.5);
   });
 });

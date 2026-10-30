@@ -253,7 +253,7 @@ export async function moveInventoryItem(app, item, target) {
     return;
   }
   if (target.kind === "favorite") return app.addFavorite({ type: "item", id: item.getRelativeUUID(item.actor) });
-  if (target.kind === "offer") return app.offerItem(item, Number(item.system?.quantity ?? 1));
+  if (target.kind === "offer") return app.trade.offer(item, Number(item.system?.quantity ?? 1));
   if (target.kind === "attune") return isItemAttuned(item) ? undefined : app.attuneWithLimit(item, null);
   if (target.kind === "unequip") return item.system.equipped ? unequipItem(item.actor, item) : undefined;
   if (target.kind === "unattune") return isItemAttuned(item) ? toggleAttunement(item) : undefined;

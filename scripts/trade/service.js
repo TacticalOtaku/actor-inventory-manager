@@ -36,6 +36,12 @@ export function sessionFor(actorId) {
   return tradeState().sessions.find(s => ACTIVE.has(s.status) && s.actors.includes(actorId));
 }
 
+/** The actor's items and coins are frozen while its trade is carried out or recovered (GLOSSARY: Trade lock). */
+export function isTradeLocked(actor) {
+  // Token actors share their base actor's id but never take part in a trade.
+  return Boolean(actor) && !actor.isToken && ["executing", "recovery"].includes(sessionFor(actor.id)?.status);
+}
+
 function changed(state) {
   Hooks.callAll(TRADE_HOOK, state);
   for (const session of state.sessions ?? []) {
@@ -358,10 +364,8 @@ export function registerTradeService() {
   // Prevent ordinary client edits of what the snapshot holds (items and coins) while a saved exchange is being committed;
   // the rest of the actor (hit points, slots, experience) stays playable.
   const allowEdit = actor => {
-    // Token actors share their base actor's id but never take part in a trade.
-    if (!isSupportedActor(actor) || actor.isToken) return true;
-    const session = sessionFor(actor?.id);
-    if (!session || !["executing", "recovery"].includes(session.status)) return true;
+    if (!isSupportedActor(actor) || !isTradeLocked(actor)) return true;
+    const session = sessionFor(actor.id);
     if (session.status === "executing" && game.user.isGM && session.gmId === game.user.id) return true;
     ui.notifications?.warn(game.i18n.localize("AIM.trade.errors.busy"));
     return false;

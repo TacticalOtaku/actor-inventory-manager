@@ -10,6 +10,8 @@
 - In «Только предупреждение» the dnd5e sheet no longer leaves two items in one slot: the old one comes off, and the
   message says which item replaced which.
 - An item equipped from the dnd5e sheet leaves its bag, as it does from the window.
+- An unlinked token's window no longer shows the trade lock while its base actor trades; the token was never
+  locked.
 
 ## 2.0.9
 

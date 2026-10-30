@@ -1,6 +1,6 @@
 import test, { mock } from "node:test";
 import assert from "node:assert/strict";
-import { TRADE_HOOK, registerTradeService, requestTrade } from "../scripts/trade/service.js";
+import { TRADE_HOOK, isTradeLocked, registerTradeService, requestTrade } from "../scripts/trade/service.js";
 import { LOG } from "../scripts/foundry/logger.js";
 LOG.setLevel("none");
 
@@ -22,6 +22,17 @@ test("while a trade is being committed, only its coordinator may change the acto
   for (const hook of ["preCreateItem", "preUpdateItem", "preDeleteItem"]) assert.deepEqual(allowed(hook), [false]);
   game.user = gm;
   for (const hook of ["preCreateItem", "preUpdateItem", "preDeleteItem"]) assert.deepEqual(allowed(hook), [true]);
+});
+
+test("the trade lock holds an actor's inventory only while its trade is carried out or recovered, never a token's", () => {
+  const was = session.status;
+  const locked = (status, who = actor) => { session.status = status; return isTradeLocked(who); };
+  assert.equal(isTradeLocked({ id: "c", isToken: false }), false);
+  assert.equal(locked("open"), false);
+  assert.equal(locked("executing"), true);
+  assert.equal(locked("recovery"), true);
+  assert.equal(locked("executing", { ...actor, isToken: true }), false);
+  session.status = was;
 });
 
 test("a trade request counts only when the user changed their own flag", () => {

@@ -12,11 +12,11 @@ import { usableActivities } from "../integrations/midi-qol.js";
 import { computeActorCurrency, dropOnGround, groundToken, isItemPilesActive, readPilesCurrencies } from "../integrations/item-piles.js";
 import { canDropOnGround } from "../core/external-drop.js";
 import { isPhysicalItem } from "../core/item-classifier.js";
-import { tradeLocked } from "./external-drop.js";
 import { getContainerLoad, getContainerWeightReductionPct, isWeightyContainersActive } from "../integrations/weighty-containers.js";
 import { escapeHTML, t, unwrapSecrets } from "./html.js";
 import { playBurst } from "./bursts.js";
 import { menuLayout } from "../core/menu.js";
+import { isTradeLocked } from "../trade/service.js";
 
 const PARTIALS = `modules/${MODULE_ID}/templates/window`;
 export const EQUIPMENT_TEMPLATES = ["equipment", "doll", "tray", "item-row", "item-detail"].map((name) => `${PARTIALS}/${name}.hbs`);
@@ -265,7 +265,7 @@ export function itemMenuEntries(item, actions) {
     {
       name: "AIM.window.inv.dropGround", icon: icon("arrow-down-to-line"), group: "action",
       condition: () => isItemPilesActive() && canDropOnGround({
-        owner, physical: isPhysicalItem(item), container: item.type === "container", onScene: Boolean(groundToken(actor)), trading: tradeLocked(actor)
+        owner, physical: isPhysicalItem(item), container: item.type === "container", onScene: Boolean(groundToken(actor)), trading: isTradeLocked(actor)
       }),
       callback: () => dropOnGround(item)
     },

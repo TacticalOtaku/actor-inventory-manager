@@ -191,7 +191,7 @@ export function buildTradeContext(actor, state) {
     const actors = game.actors.filter((a) => isTradeActor(a)).map((a) => ({
       id: a.id, name: a.name, owners: game.users.filter((u) => !u.isGM && ownsActor(a, u)).map((u) => u.id)
     }));
-    const busy = new Set(tradeState().sessions.filter((s) => ["open", "executing", "recovery"].includes(s.status)).flatMap((s) => s.actors));
+    const busy = new Set(actors.filter((a) => sessionFor(a.id)).map((a) => a.id));
     const partners = partnerChoices({ actors, users: [...game.users], actorId: actor.id, userId: game.user.id, busy, locale: game.i18n.lang })
       .map((p) => ({ ...p, selected: !p.busy && p.actorId === state.partner, label: `${p.name} · ${p.owner}${p.busy ? ` — ${t("AIM.trade.panel.busy")}` : ""}` }));
     return { ...base, view: "idle", partners, canStart: gmOnline && partners.some((p) => !p.busy) };

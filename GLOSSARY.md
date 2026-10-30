@@ -68,3 +68,8 @@ _Avoid_: swap, exchange, transfer
 **Gift**:
 A one-way **Trade**: only the giver offers, the receiver's confirmation accepts it. A payment is a gift of coins.
 _Avoid_: donation, send
+
+**Trade lock**:
+While a **Trade** is being carried out or recovered, the items and coins of its actors are frozen for everyone but
+the GM carrying it out; hit points, slots and experience stay playable. A token actor is never locked.
+_Avoid_: trade freeze, busy, locked inventory

@@ -53,7 +53,7 @@ import { FEATURE_TEMPLATES, buildFeaturesContext, featureMode, hasFeatures } fro
 import { EFFECT_TEMPLATES, buildEffectsContext, createActorEffect, effectMenuEntries } from "./effects.js";
 import { OVERVIEW_TEMPLATES, buildBiographyContext, buildOverviewContext, cardDialogs, hasOverview } from "./overview.js";
 import { OfferDraft, buildTradeContext, isNewItem, offerButton, offerWithQuantity, sendTradeRequest } from "./trade.js";
-import { TRADE_HOOK, sessionFor } from "../trade/service.js";
+import { TRADE_HOOK, isTradeLocked, sessionFor } from "../trade/service.js";
 import { FLAGS } from "../constants.js";
 import { bindTooltips, releaseTooltips } from "./tooltips.js";
 import { buildFavoritesContext, favoriteIdFor, favoriteItemIds, hasFavorites } from "./favorites.js";
@@ -316,7 +316,7 @@ export class ActorWindow extends WindowBase {
     if (!trade.button) this.tradeOpen = false;
     return {
       trade,
-      tradeLock: ["executing", "recovery"].includes(sessionFor(actor.id)?.status),
+      tradeLock: isTradeLocked(actor),
       offerRows: body ? Object.fromEntries(actor.items.map((item) => [item.id, offerButton(trade, item)]).filter(([, state]) => state)) : {},
       newItems: body ? Object.fromEntries(actor.items.filter(isNewItem).map((item) => [item.id, true])) : {},
       ...(await super._prepareContext(options)),

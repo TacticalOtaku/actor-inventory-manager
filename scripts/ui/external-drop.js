@@ -8,7 +8,7 @@ import { dropBehavior, landedOutside, received, refusedType, spellBecomes } from
 import { createDroppedItems, createDroppedSpell, sheetUnsupportedTypes } from "../integrations/dnd5e.js";
 import { isItemPile } from "../integrations/item-piles.js";
 import { validateContainerDrop } from "../integrations/weighty-containers.js";
-import { sessionFor } from "../trade/service.js";
+import { isTradeLocked } from "../trade/service.js";
 import { t } from "./html.js";
 
 const NOTE_MS = 2400;
@@ -16,9 +16,6 @@ const NONE = Object.freeze({ refusal: null, note: null });
 
 const quantities = (actor) => new Map(actor.items.map((item) => [item.id, Number(item.system?.quantity ?? 1)]));
 const STACK_WAIT_MS = 3000;
-// A running exchange locks the inventory, as it locks the window's own drags. A token actor shares its base actor's id
-// but never trades (as in the trade service).
-export const tradeLocked = (actor) => !actor.isToken && ["executing", "recovery"].includes(sessionFor(actor.id)?.status);
 
 /** The open tab's content shows it takes the drop while something from outside is over the window. */
 export function showDropTarget(app, on) {
@@ -108,7 +105,7 @@ export async function dropFromOutside(app, event, { tray = null } = {}) {
   const actor = app.actor;
   const data = foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
   if (!data?.type) return NONE;
-  if (tradeLocked(actor)) return { refusal: t("AIM.window.drop.trade"), note: null };
+  if (isTradeLocked(actor)) return { refusal: t("AIM.window.drop.trade"), note: null };
   if (data.type === "Actor") return { refusal: t("AIM.window.drop.actor"), note: null };
   const dropped = await resolve(data);
   if (!dropped) return NONE;
@@ -127,7 +124,7 @@ export async function dropFromOutside(app, event, { tray = null } = {}) {
   const parent = items[0].parent;
   const source = parent?.documentName === "Actor" && !parent.pack ? parent : null;
   // A move would delete from an actor whose exchange is running; its preDeleteItem refuses and the item would double.
-  if (source && source.uuid !== actor.uuid && tradeLocked(source)) return { refusal: t("AIM.window.drop.trade"), note: null };
+  if (source && source.uuid !== actor.uuid && isTradeLocked(source)) return { refusal: t("AIM.window.drop.trade"), note: null };
   const { behavior, refusal } = dropBehavior({
     fromActor: Boolean(source),
     sameActor: source?.uuid === actor.uuid,

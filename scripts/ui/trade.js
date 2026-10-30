@@ -44,7 +44,7 @@ export function tradeButtonState(actor, { canEdit, seen }) {
  * The offer being edited here and its sending: an edit leaves by itself after a pause, as the same `offer` request;
  * a stale revision is sent again with the new one.
  */
-export class OfferDraft {
+class OfferDraft {
   constructor(app) {
     this.app = app;
     this.sessionId = null;
@@ -111,6 +111,148 @@ export class OfferDraft {
   }
 }
 
+/**
+ * The trade panel of one actor window: whether it is open, the offer being edited, invitations seen, finished trades
+ * dismissed, the GM's restore question, the last error and the chosen partner; every edit of this side's offer goes
+ * through `tradeRoles`. The window keeps the action wiring and the panel's motion.
+ */
+export class TradePanel {
+  constructor(app) {
+    this.app = app;
+    this.open = false;
+    this.draft = new OfferDraft(app);
+    this.seen = new Set();
+    this.dismissed = new Set();
+    this.askRestore = false;
+    this.error = null;
+    this.partner = null;
+  }
+
+  get canEdit() {
+    return this.app.canEdit;
+  }
+
+  /** The actor's active trade, with the draft following it. */
+  session() {
+    const session = sessionFor(this.app.actor.id);
+    if (session) this.draft.sync(session, session.actors.indexOf(this.app.actor.id));
+    return session;
+  }
+
+  /** The panel's context; a window that may not show the button closes the panel. */
+  context() {
+    this.session();
+    const trade = buildTradeContext(this.app.actor, this);
+    if (!trade.button) this.open = false;
+    return trade;
+  }
+
+  /** Opens or closes the panel; opening clears the invitation dot. Returns whether it is open. */
+  toggle() {
+    this.open = !this.open;
+    const session = this.session();
+    if (this.open && session) this.seen.add(session.id);
+    return this.open;
+  }
+
+  async request(action, data = {}) {
+    this.error = await sendTradeRequest(this.app.actor, action, data);
+    this.app.renderTrade();
+    return !this.error;
+  }
+
+  /** «Подарить» starts the same session as a one-way trade (`kind` "gift"). */
+  start(targetId, targetUserId, kind) {
+    if (!game.user.isGM) return this.request("start", { targetId, targetUserId, kind });
+  }
+
+  /** Toggles this side's confirmation at the revision drawn on the button (what was seen is what is accepted). */
+  confirm(revision) {
+    const session = this.session();
+    if (!session || this.draft.pending || !tradeRoles(session, this.app.actor, game.user).acts) return;
+    const side = session.actors.indexOf(this.app.actor.id);
+    if (session.confirmed[side]) return this.request("unconfirm", { sessionId: session.id });
+    return this.request("confirm", { sessionId: session.id, revision });
+  }
+
+  cancel() {
+    const session = this.session();
+    if (session) return this.request("cancel", { sessionId: session.id });
+  }
+
+  /** The draft to change, or null when this user may not change this side's offer. */
+  #editable() {
+    const session = this.session();
+    return session && tradeRoles(session, this.app.actor, game.user).offers ? this.draft.offer : null;
+  }
+
+  #change(offer, parts = ["trade", "main"]) {
+    this.draft.change(offer);
+    if (parts.includes("main")) this.app.renderTrade();
+    else this.app.render({ parts });
+  }
+
+  /** Adds to the offer (a dropped row brings its whole stack) or sets the quantity, within the stack. */
+  offer(item, quantity, { absolute = false } = {}) {
+    const draft = item && this.#editable();
+    if (!draft) return;
+    const current = draft.items.find((e) => e.id === item.id)?.quantity ?? 0;
+    this.#change(offerWithQuantity(draft, item.id, absolute ? quantity : current + quantity, Number(item.system?.quantity ?? 1)));
+  }
+
+  /** A step button; an item used up or deleted since it was offered can only leave the offer. */
+  step(id, step) {
+    const item = this.app.actor.items.get(id);
+    if (!item) return this.remove(id);
+    const current = this.draft.offer.items.find((e) => e.id === id)?.quantity ?? 0;
+    this.offer(item, current + step, { absolute: true });
+  }
+
+  remove(id) {
+    const draft = this.#editable();
+    if (draft) this.#change(offerWithQuantity(draft, id, 0, 0));
+  }
+
+  /** A quantity or coin field as it is typed; the panel follows (status, the Item Piles sum), the rows wait. */
+  input(field) {
+    const draft = this.#editable();
+    if (!draft) return;
+    if (field.dataset.offerQty) {
+      // A field cleared to type a new number is not yet a 0 that takes the item out.
+      if (field.value === "") return;
+      const item = this.app.actor.items.get(field.dataset.offerQty);
+      if (!item) return this.remove(field.dataset.offerQty);
+      return this.#change(offerWithQuantity(draft, item.id, field.value, Number(item.system?.quantity ?? 1)), ["trade"]);
+    }
+    // dnd5e coins are capped by the purse; Item Piles decides by value whether the purse covers the sum.
+    const max = field.max === "" ? Infinity : Number(field.max);
+    const value = Math.max(0, Math.min(max, Math.floor(Number(field.value) || 0)));
+    if (String(value) !== field.value && field.value !== "") field.value = value;
+    const money = { ...draft.money, [field.dataset.tradeCoin]: value };
+    if (!value) delete money[field.dataset.tradeCoin];
+    this.#change({ ...draft, money }, ["trade"]);
+  }
+
+  /** GM only: restoring (or unlocking) asks first. */
+  async recover() {
+    const session = this.session();
+    this.askRestore = false;
+    if (session && game.user.isGM) await this.request("recover", { sessionId: session.id });
+  }
+
+  /** Hides the last finished trade's result. */
+  dismiss() {
+    const last = tradeState().sessions.filter((s) => s.actors.includes(this.app.actor.id)).at(-1);
+    if (last) this.dismissed.add(last.id);
+    this.error = null;
+  }
+
+  /** The window closes: an edit still waiting for its pause leaves now instead of being lost. */
+  close() {
+    this.draft.close();
+  }
+}
+
 /** Ids of the items the actor may offer, and why the others may not. */
 function offerability(actor) {
   const allowed = new Set(transferableItems(actor).map((i) => i.id));
@@ -151,12 +293,22 @@ function moneyRows(session, actor) {
 }
 
 /**
+ * Who may do what in an open trade. A co-owner of the actor sees the trade, but only the player who joined it with
+ * this actor acts in it (confirms, cancels); in a gift only the giver offers, the receiver accepts or declines.
+ * @returns {{side: number, acts: boolean, offers: boolean}}
+ */
+export function tradeRoles(session, actor, user) {
+  const side = session.actors.indexOf(actor.id);
+  const acts = !user.isGM && session.status === "open" && ownsActor(actor, user) && session.users[side] === user.id;
+  return { side, acts, offers: acts && (session.kind !== "gift" || side === 0) };
+}
+
+/**
  * Everything the trade panel and the inventory rows need.
  * @param {Actor} actor
- * @param {{canEdit: boolean, open: boolean, draft: OfferDraft, askRestore: boolean, dismissed: Set<string>,
- *   seen: Set<string>, error: string|null, partner: string|null}} state
+ * @param {TradePanel} state
  */
-export function buildTradeContext(actor, state) {
+function buildTradeContext(actor, state) {
   const button = tradeButtonState(actor, state);
   if (!button) return { button: null };
   const isGM = game.user.isGM;
@@ -207,9 +359,7 @@ export function buildTradeContext(actor, state) {
     };
   }
 
-  state.draft.sync(session, side);
-  // A co-owner of the actor sees the trade, but only the player who joined it with this actor acts in it.
-  const editable = !isGM && session.status === "open" && ownsActor(actor, game.user) && session.users[side] === game.user.id;
+  const { acts: editable, offers: canOffer } = tradeRoles(session, actor, game.user);
   const draft = editable ? state.draft.offer : session.offers[side];
   const status = tradeStatus(session, side, { sending: editable && state.draft.pending });
   const { allowed, reasons } = offerability(actor);
@@ -227,8 +377,6 @@ export function buildTradeContext(actor, state) {
   }
   const recovery = isGM ? recoveryAction(session) : null;
   const confirmed = session.confirmed[side];
-  // In a gift only the giver offers; the receiver sees the gift alone and accepts or declines it.
-  const canOffer = editable && (!gift || side === 0);
   return {
     ...base, view: "trade", session, partner, side, editable, heading,
     showMine: !gift || side === 0, showTheirs: !gift || side === 1,
@@ -263,7 +411,7 @@ export function offerButton(trade, item) {
 }
 
 /** The trade request for an action of the panel; errors come back as text for the red line. */
-export async function sendTradeRequest(actor, action, data) {
+async function sendTradeRequest(actor, action, data) {
   try {
     await requestTrade(actor, action, data);
     return null;
@@ -275,4 +423,3 @@ export async function sendTradeRequest(actor, action, data) {
 /** A received item keeps its «Новое» mark until its owner opens it. */
 export const isNewItem = (item) => Boolean(item?.getFlag?.(MODULE_ID, FLAGS.TRADE_NEW));
 
-export { offerWithQuantity };

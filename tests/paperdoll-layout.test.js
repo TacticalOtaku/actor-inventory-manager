@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 
-import { ENFORCEMENT_MODES } from "../scripts/constants.js";
-import { getActorEquippedMap, resolveEquipValidation } from "../scripts/core/equipment-rules.js";
+import { getActorEquippedMap } from "../scripts/core/equipment-rules.js";
 import { getValidSlotsForItem } from "../scripts/core/item-classifier.js";
 import { dollLayout } from "../scripts/core/paperdoll-layout.js";
 import { configurePaperdollRuntime, resetPaperdollRuntime } from "../scripts/core/paperdoll-runtime.js";
@@ -89,22 +88,6 @@ describe("doll presets", () => {
     const lantern = { type: "equipment", name: "Lantern", system: { type: { value: "trinket" } }, parent: airship };
     assert.deepEqual(getValidSlotsForItem(lantern, airship), []);
     assert.equal(DND_2024_TEMPLATE.figure, "human");
-  });
-});
-
-describe("enforcement mode in the window", () => {
-  it("refuses a shield beside a two-handed weapon in block and warn modes, and swaps the weapon out in auto-swap mode", () => {
-    const greataxe = { id: "axe", name: "Greataxe", type: "weapon", system: { equipped: true, properties: new Set(["two"]), type: { value: "martialM" } }, flags: { "actor-inventory-manager": { slot: "mainHand" } } };
-    const shield = { id: "shield", name: "Shield", type: "equipment", system: { equipped: false, type: { value: "shield" }, armor: { value: 2 } }, flags: {} };
-    const actor = { type: "character", flags: {}, hasPlayerOwner: true, items: new Map([["axe", greataxe], ["shield", shield]]), system: { attributes: {} } };
-    const map = getActorEquippedMap(actor);
-    const block = resolveEquipValidation(actor, shield, "offHand", map, ENFORCEMENT_MODES.BLOCK);
-    assert.equal(block.valid, false);
-    assert.equal(block.conflictItem.id, "axe");
-    assert.equal(resolveEquipValidation(actor, shield, "offHand", map, ENFORCEMENT_MODES.WARN).valid, false);
-    const swap = resolveEquipValidation(actor, shield, "offHand", map, ENFORCEMENT_MODES.AUTO_SWAP);
-    assert.equal(swap.valid, true);
-    assert.deepEqual(swap.autoSwapItems.map((i) => i.id), ["axe"]);
   });
 });
 

@@ -41,6 +41,13 @@ A named figure plus the set of paperdoll slots around it, which the GM assigns p
 presets (by actor type, and for vehicles by vehicle type) and the GM can build more. A preset may have no slots.
 _Avoid_: template, slot template, layout
 
+**Enforcement mode**:
+The GM's choice of how paperdoll rules meet a conflicting equip, the same from the actor window and from any sheet:
+block refuses a rule conflict, auto-swap takes off the item causing it, warn lets it through with a message. A slot
+the player chose takes the new item in every mode, taking off what was there; a slot picked for them is never
+emptied in block. An item never goes into a slot it does not fit, and a slot never holds two items.
+_Avoid_: enforcement setting, strict mode, rule mode
+
 **Reactive effect**:
 A visual effect the actor window plays once in answer to an event or a pointer: damage, a refusal, a glide, a hover.
 _Avoid_: animation, feedback

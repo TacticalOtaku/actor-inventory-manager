@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { coinWeight } from "../scripts/core/weight-calculator.js";
 import { loadAfterTrade, offerWithQuantity, offeredWeight, offersEmpty, partnerChoices, pilesTotals, recoveryAction, sameOffer, tradeStatus } from "../scripts/core/trade-panel.js";
 
 const offer = (items = [], money = {}) => ({ items, money });
@@ -96,17 +97,46 @@ describe("weight after the trade", () => {
     assert.equal(offeredWeight(null, 3), 0);
   });
 
+  const sack = (weight) => ({ item: { type: "loot", system: { weight: { value: weight, units: "lb" }, quantity: 1 } }, quantity: 1 });
+
   it("adds what arrives to dnd5e's load and says when the tier changes", () => {
-    assert.deepEqual(loadAfterTrade(carrier, 20), { value: 70, max: 150, tier: "encumbered", tierChanged: true });
-    assert.deepEqual(loadAfterTrade(carrier, -10), { value: 40, max: 150, tier: "normal", tierChanged: false });
-    assert.equal(loadAfterTrade(carrier, -80).value, 0);
+    assert.deepEqual(loadAfterTrade(carrier, { arriving: [sack(20)] }), { value: 70, max: 150, tier: "encumbered", tierChanged: true });
+    assert.deepEqual(loadAfterTrade(carrier, { leaving: [sack(10)] }), { value: 40, max: 150, tier: "normal", tierChanged: false });
+    assert.equal(loadAfterTrade(carrier, { leaving: [sack(80)] }).value, 0);
+  });
+
+  it("takes off only the share the actor carries of what leaves, and counts what arrives in full", () => {
+    const share = (actor, item) => item.share;
+    const inBag = (weight, part) => { const entry = sack(weight); entry.item.share = part; return entry; };
+    assert.equal(loadAfterTrade(carrier, { leaving: [inBag(30, 0)] }, share).value, 50);
+    assert.equal(loadAfterTrade(carrier, { leaving: [inBag(30, 0.5)] }, share).value, 35);
+    assert.equal(loadAfterTrade(carrier, { arriving: [inBag(30, 0)] }, share).value, 80);
+  });
+
+  it("weighs the coins under dnd5e's currency rule, in pounds or kilograms", () => {
+    const world = (metric, weighed = true) => {
+      globalThis.game = { settings: { settings: new Map(), get: (scope, key) => (key === "currencyWeight" ? weighed : key === "metricWeightUnits" ? metric : undefined) } };
+      globalThis.CONFIG = { DND5E: { encumbrance: { currencyPerWeight: { imperial: 50, metric: 110 } } } };
+    };
+    try {
+      world(false);
+      assert.equal(loadAfterTrade(carrier, { coins: 500 }).value, 60);
+      assert.equal(loadAfterTrade(carrier, { coins: -500 }).value, 40);
+      world(true);
+      assert.equal(coinWeight(220), 2);
+      world(false, false);
+      assert.equal(coinWeight(500), 0);
+    } finally {
+      delete globalThis.game;
+      delete globalThis.CONFIG;
+    }
   });
 
   it("is absent without dnd5e's encumbrance or under the «none» rule", () => {
-    assert.equal(loadAfterTrade({ system: {} }, 5), null);
+    assert.equal(loadAfterTrade({ system: {} }, {}), null);
     globalThis.game = { settings: { settings: new Map([["dnd5e.encumbrance", {}]]), get: (scope, key) => (key === "encumbrance" ? "none" : false) } };
     try {
-      assert.equal(loadAfterTrade(carrier, 5), null);
+      assert.equal(loadAfterTrade(carrier, { arriving: [sack(5)] }), null);
     } finally {
       delete globalThis.game;
     }

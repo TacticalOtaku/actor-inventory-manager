@@ -12,6 +12,8 @@
 - An item equipped from the dnd5e sheet leaves its bag, as it does from the window.
 - An unlinked token's window no longer shows the trade lock while its base actor trades; the token was never
   locked.
+- The weight after a trade asks Weighty Containers 3.10+ how much of a bagged item the actor carries, so it counts
+  by that module's own load rules; older versions keep the previous estimate.
 
 ## 2.0.9
 

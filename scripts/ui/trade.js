@@ -5,10 +5,10 @@
 import { FLAGS, MODULE_ID } from "../constants.js";
 import { isTradeActor, ownsActor } from "../core/actor-scope.js";
 import { isPhysicalItem } from "../core/item-classifier.js";
-import { OFFER_SEND_DELAY, loadAfterTrade, offerWithQuantity, offeredWeight, offersEmpty, partnerChoices, pilesTotals, recoveryAction, sameOffer, tradeStatus } from "../core/trade-panel.js";
+import { OFFER_SEND_DELAY, loadAfterTrade, offerWithQuantity, offersEmpty, partnerChoices, pilesTotals, recoveryAction, sameOffer, tradeStatus } from "../core/trade-panel.js";
 import { getSystemWeightUnit } from "../core/weight-calculator.js";
 import { concealsDetails, readCoins, unitAbbreviation } from "../integrations/dnd5e.js";
-import { getContainerWeightReductionPct, isWeightyContainersActive } from "../integrations/weighty-containers.js";
+import { carriedShare } from "../integrations/weighty-containers.js";
 import { currencyProfile } from "../trade/currencies.js";
 import { emptyOffer, transferableItems } from "../trade/offers.js";
 import { activeGM, requestTrade, sessionFor, tradeState } from "../trade/service.js";
@@ -122,41 +122,18 @@ function offerability(actor) {
   return { allowed, reasons };
 }
 
-/** How much of an item's weight its actor carries: none in a weightless bag, less in a Weighty Containers one. */
-function carriedShare(actor, item) {
-  let share = 1;
-  for (let id = item?.system?.container, seen = new Set(); id && !seen.has(id); id = actor.items.get(id)?.system?.container) {
-    seen.add(id);
-    const container = actor.items.get(id);
-    if (container?.system?.properties?.has?.("weightlessContents")) return 0;
-    if (container && isWeightyContainersActive()) share *= 1 - getContainerWeightReductionPct(container) / 100;
-  }
-  return share;
-}
-
-/** dnd5e's coins weigh only under its currency-weight rule: so many to the pound (or the kilogram). */
-function coinWeight(count) {
-  try {
-    if (!count || !game.settings.get("dnd5e", "currencyWeight")) return 0;
-  } catch { return 0; }
-  const perUnit = Number(CONFIG.DND5E?.encumbrance?.currencyPerWeight?.[getSystemWeightUnit() === "kg" ? "metric" : "imperial"]);
-  return perUnit > 0 ? count / perUnit : 0;
-}
-
 /** The viewer's load after the trade: what leaves from its places, what arrives loose, and the coins. */
 function weightAfter(actor, session, side, draft) {
   const partner = game.actors.get(session.actors[1 - side]);
   const theirs = session.offers[1 - side];
-  const leaving = draft.items.reduce((sum, e) => {
-    const item = actor.items.get(e.id);
-    return sum + offeredWeight(item, e.quantity) * carriedShare(actor, item);
-  }, 0);
-  // Every world actor reaches every client, so the partner's offered items are read where they lie.
-  const arriving = theirs.items.reduce((sum, e) => sum + offeredWeight(partner?.items.get(e.id), e.quantity), 0);
   const coins = (money) => Object.values(money ?? {}).reduce((sum, n) => sum + (Number(n) || 0), 0);
-  // shortcut: Item Piles pays with change, so its coins are left out; count them if its payment becomes predictable.
-  const net = session.mode === "item-piles" ? 0 : coins(theirs.money) - coins(draft.money);
-  const load = loadAfterTrade(actor, arriving - leaving + coinWeight(net));
+  const load = loadAfterTrade(actor, {
+    leaving: draft.items.map((e) => ({ item: actor.items.get(e.id), quantity: e.quantity })),
+    // Every world actor reaches every client, so the partner's offered items are read where they lie.
+    arriving: theirs.items.map((e) => ({ item: partner?.items.get(e.id), quantity: e.quantity })),
+    // shortcut: Item Piles pays with change, so its coins are left out; count them if its payment becomes predictable.
+    coins: session.mode === "item-piles" ? 0 : coins(theirs.money) - coins(draft.money)
+  }, carriedShare);
   if (!load) return null;
   const format = (n) => n.toLocaleString(game.i18n.lang);
   return {

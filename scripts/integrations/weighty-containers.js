@@ -73,6 +73,33 @@ export function getContainerWeightReductionPct(containerItem) {
 }
 
 /**
+ * How much of an item's weight its actor carries, from 0 to 1: none in a weightless bag, less in a Weighty Containers
+ * one. Weighty Containers 3.10+ answers this itself, by the rules it counts the actor's load with.
+ * @param {Object} actor
+ * @param {Object} item
+ * @returns {number}
+ */
+export function carriedShare(actor, item) {
+  const api = getWeightyContainersApi();
+  if (typeof api?.getCarriedShare === "function") {
+    try {
+      return Math.min(1, Math.max(0, num(api.getCarriedShare(actor, item), 1)));
+    } catch (err) {
+      LOG.debug("Weighty Containers getCarriedShare failed, walking the containers", err);
+    }
+  }
+  // shortcut: this walk copies Weighty Containers' load rules; drop it once WC before 3.10 is unsupported.
+  let share = 1;
+  for (let id = item?.system?.container, seen = new Set(); id && !seen.has(id); id = actor.items.get(id)?.system?.container) {
+    seen.add(id);
+    const container = actor.items.get(id);
+    if (container?.system?.properties?.has?.("weightlessContents")) return 0;
+    if (container && isWeightyContainersActive()) share *= 1 - getContainerWeightReductionPct(container) / 100;
+  }
+  return share;
+}
+
+/**
  * Normalize a restriction flag into a token list.
  * Weighty Containers stores these either as arrays or as delimited strings,
  * so both shapes have to be accepted.

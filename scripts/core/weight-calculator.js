@@ -244,6 +244,22 @@ export function getEncumbranceRule() {
 }
 
 /**
+ * The weight of `count` coins in the world's unit: dnd5e weighs coins only under its `currencyWeight` setting, so many
+ * to the pound or, with metric units, to the kilogram (`CONFIG.DND5E.encumbrance.currencyPerWeight`).
+ * @param {number} count  may be negative, for coins leaving
+ * @returns {number}
+ */
+export function coinWeight(count) {
+  try {
+    if (!count || !globalThis.game?.settings?.get?.("dnd5e", "currencyWeight")) return 0;
+  } catch {
+    return 0;
+  }
+  const perUnit = num(globalThis.CONFIG?.DND5E?.encumbrance?.currencyPerWeight?.[getSystemWeightUnit() === "kg" ? "metric" : "imperial"], 0);
+  return perUnit > 0 ? count / perUnit : 0;
+}
+
+/**
  * Is the item inside a container flagged with dnd5e's `weightlessContents`?
  * @param {Object} actor
  * @param {Object} item

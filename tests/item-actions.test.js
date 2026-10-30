@@ -100,23 +100,38 @@ describe("equipItemToSlot and the enforcement mode", () => {
     return { actor, buckler };
   };
 
-  it("refuses a shield beside a two-handed weapon in block mode", async () => {
-    const { actor, buckler } = setup("block");
-    assert.equal(await equipItemToSlot(actor, buckler, "offHand"), false);
-    assert.equal(actor.writes.length, 0);
-  });
-
-  it("takes the two-handed weapon off in auto-swap mode", async () => {
+  it("writes the plan in one batch the sheet hook trusts", async () => {
     const { actor, buckler } = setup("auto_swap");
+    let options;
+    const write = actor.updateEmbeddedDocuments;
+    actor.updateEmbeddedDocuments = (type, updates, opts) => { options = opts; return write(type, updates); };
     assert.equal(await equipItemToSlot(actor, buckler, "offHand"), true);
     assert.deepEqual(actor.writes.map((w) => [w._id, w["system.equipped"]]), [["greataxe", false], ["buckler", true]]);
+    assert.equal(options.aimEquip, true);
   });
 
-  it("lets the shield through with a warning in warn mode, but never into a slot it does not fit", async () => {
-    const { actor, buckler } = setup("warn");
-    assert.equal(await equipItemToSlot(actor, buckler, "offHand"), true);
-    assert.deepEqual(actor.writes.map((w) => w._id), ["buckler"]);
-    assert.equal(await equipItemToSlot(actor, buckler, "head"), false);
+  it("shows the plan's refusal and its warning", async () => {
+    const warnings = [];
+    globalThis.ui.notifications.warn = (message) => warnings.push(message);
+    const blocked = setup("block");
+    assert.equal(await equipItemToSlot(blocked.actor, blocked.buckler, "offHand"), false);
+    assert.equal(blocked.actor.writes.length, 0);
+    const warned = setup("warn");
+    assert.equal(await equipItemToSlot(warned.actor, warned.buckler, "offHand"), true);
+    assert.equal(warnings.length, 2);
+  });
+
+  it("takes a ring off for a dropped one, but the equip button never empties a slot in block mode", async () => {
+    globalThis.game.settings = { get: () => "block" };
+    const actor = makeActor();
+    for (const slot of ["ring1", "ring2"]) {
+      addItem(actor, { id: slot, system: { equipped: true, type: { value: "ring" } } }).flags = { "actor-inventory-manager": { slot } };
+    }
+    const ring = addItem(actor, { id: "new", system: { type: { value: "ring" } } });
+    assert.equal(await toggleItemEquipped(actor, ring), false);
+    assert.equal(actor.writes.length, 0);
+    assert.equal(await equipItemToSlot(actor, ring, "ring2"), true);
+    assert.deepEqual(actor.writes.map((w) => w._id), ["ring2", "new"]);
   });
 });
 

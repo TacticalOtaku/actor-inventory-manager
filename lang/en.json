@@ -260,7 +260,6 @@
       "maxAttunementReached": "Cannot attune: Maximum attunement limit reached ({max}/{max}).",
       "attunedSuccess": "Attuned to {item}",
       "unattunedSuccess": "Ended attunement to {item}",
-      "slotOccupied": "Cannot equip '{item}': the target slot is occupied by '{conflict}'.",
       "cannotEquip": "'{item}' cannot be equipped.",
       "noPermission": "You do not have permission to change this character.",
       "attunementNotRequired": "'{item}' does not require attunement."
@@ -269,7 +268,7 @@
       "enforcementMode": {
         "name": "Equipment Rules Enforcement Mode",
         "hint": "Controls how slot conflicts and rules are handled when equipping items.",
-        "block": "Strict Block (Prevent invalid equipment with toast warning)",
+        "block": "Strict Block (Refuse conflicts; a chosen slot takes the item, replacing what is there)",
         "autoSwap": "Smart Auto-Swap (Automatically unequip conflicting items)",
         "warn": "Warn Only (Show warning but permit invalid equipment)"
       },
@@ -315,7 +314,9 @@
       "armorAlreadyEquipped": "Cannot equip '{item}': '{conflict}' is already worn as body armor.",
       "offHandBlocked": "Cannot equip '{item}' in the off hand: '{conflict}' requires both hands.",
       "shieldAlreadyEquipped": "Cannot equip '{item}': shield '{conflict}' is already equipped.",
-      "singlePerActor": "Cannot equip '{item}': '{conflict}' of the same kind is already equipped."
+      "singlePerActor": "Cannot equip '{item}': '{conflict}' of the same kind is already equipped.",
+      "slotOccupied": "Cannot equip '{item}': '{conflict}' is in the way. Take it off, or drop the item onto its slot to replace it.",
+      "replaced": "'{item}' replaced '{conflict}'."
     },
     "window": {
       "expand": "Expand window",

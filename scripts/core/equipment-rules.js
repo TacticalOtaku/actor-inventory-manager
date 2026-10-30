@@ -2,7 +2,7 @@
 // Actor Inventory Manager - Equipment Rules & Validation Engine
 // ─────────────────────────────────────────────────────────
 
-import { ENFORCEMENT_MODES, SLOTS } from "../constants.js";
+import { ENFORCEMENT_MODES, FLAGS, MODULE_ID, SLOTS } from "../constants.js";
 import { isSupportedActor } from "./actor-scope.js";
 import {
   classifyItem,
@@ -49,7 +49,9 @@ const RULE_MESSAGES = {
   armorAlreadyEquipped: "Cannot equip '{item}': '{conflict}' is already worn as body armor.",
   offHandBlocked: "Cannot equip '{item}' in the off hand: '{conflict}' requires both hands.",
   shieldAlreadyEquipped: "Cannot equip '{item}': shield '{conflict}' is already equipped.",
-  singlePerActor: "Cannot equip '{item}': '{conflict}' of the same kind is already equipped."
+  singlePerActor: "Cannot equip '{item}': '{conflict}' of the same kind is already equipped.",
+  slotOccupied: "Cannot equip '{item}': '{conflict}' is in the way. Take it off, or drop the item onto its slot to replace it.",
+  replaced: "'{item}' replaced '{conflict}'."
 };
 
 function ruleMessage(key, data = {}) {
@@ -371,7 +373,7 @@ export function findEquipSlot(actor, item, slotMap = getActorEquippedMap(actor))
  * @param {string} mode  block | auto_swap | warn
  * @returns {ValidationResult}
  */
-export function resolveEquipValidation(actor, item, targetSlotId, slotMap, mode) {
+function resolveEquipValidation(actor, item, targetSlotId, slotMap, mode) {
   let result = equipmentRuleEngine.validateEquip(actor, item, targetSlotId, { slotMap });
   if (result.valid || mode !== ENFORCEMENT_MODES.AUTO_SWAP) return result;
 
@@ -386,4 +388,53 @@ export function resolveEquipValidation(actor, item, targetSlotId, slotMap, mode)
   if (!result.valid) return result;
   result.autoSwapItems = [...displaced, ...(result.autoSwapItems ?? [])];
   return result;
+}
+
+/** What taking an item off writes: not equipped, and out of its paperdoll slot. */
+export function takeOffChanges() {
+  return { "system.equipped": false, [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: null };
+}
+
+/**
+ * Plan an equip under the enforcement mode (GLOSSARY: Enforcement mode), the same for the actor window and any sheet.
+ * A slot the player chose takes the item in every mode; a slot picked for them is never emptied in block.
+ * @param {Object} actor
+ * @param {Object} item
+ * @param {string|null} chosenSlotId  the slot the player chose, or null to pick one (none for an item with no place)
+ * @param {string} mode  block | auto_swap | warn
+ * @param {Map<string, Object>} [slotMap]
+ * @returns {{refusal: {code: string, message: string}} | {updates: Object[], warning: string|null}}
+ *   updates are item changes with `_id`, the equipped item last
+ */
+export function planEquip(actor, item, chosenSlotId, mode, slotMap = getActorEquippedMap(actor)) {
+  const slotId = chosenSlotId || findEquipSlot(actor, item, slotMap);
+  const putOn = {
+    _id: item.id,
+    "system.equipped": true,
+    // A worn item is not inside a bag.
+    ...(item.system?.container ? { "system.container": null } : {}),
+    [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: slotId ?? null,
+    ...(slotId ? { [`flags.${MODULE_ID}.${FLAGS.EQUIPPED_AT}`]: Date.now() } : {})
+  };
+  if (!slotId) return { updates: [putOn], warning: null };
+
+  const result = resolveEquipValidation(actor, item, slotId, slotMap, mode);
+  const occupant = slotMap.get(slotId);
+  let takeOff = (result.autoSwapItems ?? []).filter(other => other.id !== item.id);
+  let warning = null;
+  if (!result.valid) {
+    // Warn lets a broken rule through, but never into a slot the item does not fit, and the slot still holds one item.
+    if (mode !== ENFORCEMENT_MODES.WARN || result.code === "SLOT_INCOMPATIBLE") {
+      return { refusal: { code: result.code, message: result.error } };
+    }
+    takeOff = occupant && occupant.id !== item.id ? [occupant] : [];
+    warning = result.error;
+  } else if (takeOff.length) {
+    const data = { item: item.name, conflict: takeOff.map(other => other.name).join(", ") };
+    if (!chosenSlotId && mode === ENFORCEMENT_MODES.BLOCK) {
+      return { refusal: { code: "SLOT_OCCUPIED", message: ruleMessage("slotOccupied", data) } };
+    }
+    if (mode === ENFORCEMENT_MODES.WARN) warning = ruleMessage("replaced", data);
+  }
+  return { updates: [...takeOff.map(other => ({ _id: other.id, ...takeOffChanges() })), putOn], warning };
 }

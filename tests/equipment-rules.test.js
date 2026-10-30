@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 
-import { equipmentRuleEngine, findEquipSlot, getActorEquippedMap, getTwoHandLayout, isOffHandLockedBy2H } from "../scripts/core/equipment-rules.js";
+import { equipmentRuleEngine, findEquipSlot, getActorEquippedMap, getTwoHandLayout, isOffHandLockedBy2H, planEquip } from "../scripts/core/equipment-rules.js";
 import { configurePaperdollRuntime, resetPaperdollRuntime } from "../scripts/core/paperdoll-runtime.js";
 import { DND_2024_TEMPLATE } from "../scripts/core/paperdoll-templates.js";
 
@@ -153,5 +153,61 @@ describe("auto-reconcile setting", () => {
     const map = getActorEquippedMap(actor);
     assert.equal(map.get("mainHand")?.id, "longsword");
     assert.deepEqual([...map.values()].map((item) => item.id), ["longsword"]);
+  });
+});
+
+describe("equip plan", () => {
+  const ring = (id, slot = null) => ({
+    id, name: id, type: "equipment",
+    flags: slot ? { "actor-inventory-manager": { slot } } : {},
+    system: { equipped: Boolean(slot), type: { value: "ring" } }
+  });
+  const trinket = { id: "stone", name: "stone", type: "equipment", system: { equipped: false, type: { value: "trinket" } } };
+  /** Each case builds [actor, item, chosen slot] and names the outcome per mode: a refusal code, or the writes in order. */
+  const cases = [
+    ["a free slot", () => makeActor([weapon("sword")]), "sword", "mainHand",
+      { block: "sword+", auto_swap: "sword+", warn: "sword+" }],
+    ["a chosen slot that is taken", () => makeActor([ring("old", "ring1"), ring("new")]), "new", "ring1",
+      { block: "old- new+", auto_swap: "old- new+", warn: "old- new+" }],
+    ["a picked slot with every place taken", () => makeActor([ring("a", "ring1"), ring("b", "ring2"), ring("new")]), "new", null,
+      { block: "SLOT_OCCUPIED", auto_swap: "a- new+", warn: "a- new+" }],
+    ["a rule broken by another item", () => makeActor([weapon("greataxe", ["two"], true, "mainHand"), shield("shield")]), "shield", "offHand",
+      { block: "OFFHAND_BLOCKED_BY_2H", auto_swap: "greataxe- shield+", warn: "shield+" }],
+    ["a rule broken with the slot taken", () => makeActor([weapon("greataxe", ["two"], true, "mainHand"), weapon("dagger", [], true, "offHand"), shield("shield")]), "shield", "offHand",
+      { block: "OFFHAND_BLOCKED_BY_2H", auto_swap: "greataxe- dagger- shield+", warn: "dagger- shield+" }],
+    ["a slot the item does not fit", () => makeActor([weapon("sword")]), "sword", "ring1",
+      { block: "SLOT_INCOMPATIBLE", auto_swap: "SLOT_INCOMPATIBLE", warn: "SLOT_INCOMPATIBLE" }],
+    ["an item with no place on the doll", () => makeActor([{ ...trinket }]), "stone", null,
+      { block: "stone+", auto_swap: "stone+", warn: "stone+" }]
+  ];
+  const outcome = plan => plan.refusal?.code ?? plan.updates.map(u => `${u._id}${u["system.equipped"] ? "+" : "-"}`).join(" ");
+
+  for (const [name, build, itemId, slotId, expected] of cases) {
+    for (const [mode, result] of Object.entries(expected)) {
+      it(`${name} in ${mode} mode: ${result}`, () => {
+        const actor = build();
+        assert.equal(outcome(planEquip(actor, actor.items.get(itemId), slotId, mode)), result);
+      });
+    }
+  }
+
+  it("warns only in warn mode, about the broken rule or the replaced item", () => {
+    const taken = () => makeActor([ring("old", "ring1"), ring("new")]);
+    for (const mode of ["block", "auto_swap"]) assert.equal(planEquip(taken(), taken().items.get("new"), "ring1", mode).warning, null);
+    const actor = taken();
+    assert.match(planEquip(actor, actor.items.get("new"), "ring1", "warn").warning, /'new' replaced 'old'/);
+    const held = makeActor([weapon("greataxe", ["two"], true, "mainHand"), shield("shield")]);
+    assert.match(planEquip(held, held.items.get("shield"), "offHand", "warn").warning, /requires both hands/);
+  });
+
+  it("writes the slot, the time and the way out of a bag on the equipped item, and no slot for a slotless one", () => {
+    const actor = makeActor([{ ...weapon("sword"), system: { equipped: false, container: "bag", properties: new Set(), type: { value: "martialM" } } }, { ...trinket }]);
+    const [sword] = planEquip(actor, actor.items.get("sword"), null, "block").updates;
+    assert.equal(sword["flags.actor-inventory-manager.slot"], "mainHand");
+    assert.equal(sword["system.container"], null);
+    assert.equal(typeof sword["flags.actor-inventory-manager.equippedAt"], "number");
+    const [stone] = planEquip(actor, actor.items.get("stone"), null, "block").updates;
+    assert.equal(stone["flags.actor-inventory-manager.slot"], null);
+    assert.equal("flags.actor-inventory-manager.equippedAt" in stone, false);
   });
 });

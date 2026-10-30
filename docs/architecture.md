@@ -187,17 +187,22 @@ See `API.md` in the Weighty Containers repository for the full surface.
 
 ## Enforcement
 
-`foundry/enforcement-hooks.js` intercepts `preUpdateItem` so equipping from the
-*character sheet* obeys the same rules as equipping from this window. The
-`enforcementMode` world setting picks between `block`, `auto_swap` and `warn`.
-In `auto_swap` a rule failure caused by another item (a two-handed weapon, a
-second body armor or shield) swaps that item out; a failure with no culprit is
-still refused. Items with no place on the paperdoll (Ioun stones, trinkets) are
-equipped without a slot rather than blocked.
+`planEquip` in `core/equipment-rules.js` decides every equip, from this window and from any sheet, under the
+`enforcementMode` world setting (`block`, `auto_swap`, `warn`; see **Enforcement mode** in `GLOSSARY.md`). It takes
+the actor, the item, the slot the player chose (or none, to pick one with `findEquipSlot`) and the mode, and returns
+a refusal `{code, message}` or the item changes to write, the equipped item last, with an optional warning.
 
-The inventory window validates an equip itself and writes displaced and new
-items in one `updateEmbeddedDocuments` call with the `aimEquip` option, which
-the hook trusts.
+- A slot the player chose takes the item in every mode, taking off what was there. A slot picked for them is never
+  emptied in `block` (`SLOT_OCCUPIED`).
+- `block` refuses a rule failure; `auto_swap` takes off the item causing it, and refuses a failure with no culprit;
+  `warn` lets it through with the message but still takes off the slot's occupant.
+- `SLOT_INCOMPATIBLE` is refused in every mode. Items with no place on the paperdoll (Ioun stones, trinkets) are
+  equipped without a slot.
+
+Two adapters apply the plan. `ui/item-actions.js` writes it in one `updateEmbeddedDocuments` call with the `aimEquip`
+option, which the hook trusts. `foundry/enforcement-hooks.js` intercepts `preUpdateItem` from a sheet: it writes the
+equipped item's part into `changes` and sends the items it takes off beside it; only a slot named in the change
+counts as chosen.
 
 Two-handed locking follows the template: slots flagged `locksOffHandOn2H` are
 main hands, slots flagged `isShield` (or named off hand) are off hands

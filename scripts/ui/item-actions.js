@@ -5,7 +5,7 @@
 import { AIM_EQUIP_OPTION, ENFORCEMENT_MODES, FLAGS, MODULE_ID } from "../constants.js";
 import { canEditActor, isSupportedActor } from "../core/actor-scope.js";
 import { getActorAttunementMax, isItemAttuned, itemRequiresAttunement } from "../core/attunement.js";
-import { findEquipSlot, getActorEquippedMap, resolveEquipValidation } from "../core/equipment-rules.js";
+import { planEquip, takeOffChanges } from "../core/equipment-rules.js";
 import { canItemBeEquipped } from "../core/item-classifier.js";
 import { LOG } from "../foundry/logger.js";
 
@@ -35,6 +35,39 @@ function enforcementMode() {
 }
 
 /**
+ * Equip an item under the enforcement mode: into the slot given, or into the one the rules pick (none for an item with
+ * no place on the paperdoll).
+ * @param {Object} actor
+ * @param {Object} item
+ * @param {string|null} slotId
+ * @returns {Promise<boolean>}
+ */
+async function equip(actor, item, slotId) {
+  if (!assertCanEdit(actor)) return false;
+  if (!canItemBeEquipped(item)) {
+    ui.notifications?.warn(game.i18n.format("AIM.notifications.cannotEquip", { item: item.name }));
+    return false;
+  }
+
+  const plan = planEquip(actor, item, slotId, enforcementMode());
+  if (plan.refusal) {
+    ui.notifications?.warn(plan.refusal.message);
+    LOG.warn("Equip refused in UI", { item: item.name, slotId, code: plan.refusal.code });
+    return false;
+  }
+  if (plan.warning) ui.notifications?.warn(plan.warning);
+
+  // One batched write: displaced items and the new one change together, so a
+  // failure cannot leave the old item unequipped and the new one not worn.
+  // Foundry drops a document from the result when a preUpdate hook vetoes it.
+  const updated = await actor.updateEmbeddedDocuments("Item", plan.updates, { [AIM_EQUIP_OPTION]: true });
+  if (!updated?.some(doc => doc?.id === item.id)) return false;
+
+  LOG.info("Item equipped", { item: item.name, slot: plan.updates.at(-1)[`flags.${MODULE_ID}.${FLAGS.SLOT}`], actor: actor.name });
+  return true;
+}
+
+/**
  * Equip an item into a designated target slot
  * @param {Object} actor
  * @param {Object} item
@@ -45,52 +78,7 @@ function enforcementMode() {
  */
 export async function equipItemToSlot(actor, item, targetSlotId) {
   if (!isSupportedActor(actor) || !item || !targetSlotId) return false;
-  if (!assertCanEdit(actor)) return false;
-  if (!canItemBeEquipped(item)) {
-    ui.notifications?.warn(game.i18n.format("AIM.notifications.cannotEquip", { item: item.name }));
-    return false;
-  }
-
-  const currentSlotMap = getActorEquippedMap(actor);
-  const mode = enforcementMode();
-  const validation = resolveEquipValidation(actor, item, targetSlotId, currentSlotMap, mode);
-
-  if (!validation.valid) {
-    ui.notifications?.warn(validation.error);
-    LOG.warn("Equip validation failed in UI", { item: item.name, targetSlotId, error: validation.error, mode });
-    // Warn mode lets a broken rule through with the message; an item never goes into a slot it does not fit.
-    if (mode !== ENFORCEMENT_MODES.WARN || validation.code === "SLOT_INCOMPATIBLE") return false;
-    if (currentSlotMap.get(targetSlotId) && currentSlotMap.get(targetSlotId).id !== item.id) validation.autoSwapItems = [currentSlotMap.get(targetSlotId)];
-  }
-
-  // One batched write: displaced items and the new one change together, so a
-  // failure cannot leave the old item unequipped and the new one not worn.
-  const updates = (validation.autoSwapItems ?? [])
-    .filter(swapItem => swapItem.id !== item.id)
-    .map(swapItem => {
-      LOG.info("Auto-swapping item from slot", { unequipping: swapItem.name });
-      return {
-        _id: swapItem.id,
-        "system.equipped": false,
-        [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: null
-      };
-    });
-
-  updates.push({
-    _id: item.id,
-    "system.equipped": true,
-    // A worn item is not inside a bag.
-    ...(item.system?.container ? { "system.container": null } : {}),
-    [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: targetSlotId,
-    [`flags.${MODULE_ID}.${FLAGS.EQUIPPED_AT}`]: Date.now()
-  });
-
-  // Foundry drops a document from the result when a preUpdate hook vetoes it.
-  const updated = await actor.updateEmbeddedDocuments("Item", updates, { [AIM_EQUIP_OPTION]: true });
-  if (!updated?.some(doc => doc?.id === item.id)) return false;
-
-  LOG.info("Item equipped to slot", { item: item.name, slot: targetSlotId, actor: actor.name });
-  return true;
+  return equip(actor, item, targetSlotId);
 }
 
 /**
@@ -104,10 +92,7 @@ export async function unequipItem(actor, item) {
   if (!isSupportedActor(actor) || !item) return false;
   if (!assertCanEdit(actor)) return false;
 
-  const updated = await item.update({
-    "system.equipped": false,
-    [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: null
-  });
+  const updated = await item.update(takeOffChanges());
   if (!updated) return false;
 
   LOG.info("Item unequipped", { item: item.name, actor: actor?.name });
@@ -124,25 +109,7 @@ export async function unequipItem(actor, item) {
  */
 export async function toggleItemEquipped(actor, item) {
   if (!isSupportedActor(actor) || !item) return false;
-
-  if (item.system?.equipped) return unequipItem(actor, item);
-
-  const targetSlotId = findEquipSlot(actor, item, getActorEquippedMap(actor));
-  if (targetSlotId) return equipItemToSlot(actor, item, targetSlotId);
-
-  // Items with no place on the paperdoll (Ioun stones, trinkets, ...) are
-  // still equippable in the system - they just do not occupy a slot.
-  if (!assertCanEdit(actor)) return false;
-  if (!canItemBeEquipped(item)) {
-    ui.notifications?.warn(game.i18n.format("AIM.notifications.cannotEquip", { item: item.name }));
-    return false;
-  }
-  const updated = await item.update({
-    "system.equipped": true,
-    ...(item.system?.container ? { "system.container": null } : {}),
-    [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: null
-  }, { [AIM_EQUIP_OPTION]: true });
-  return Boolean(updated);
+  return item.system?.equipped ? unequipItem(actor, item) : equip(actor, item, null);
 }
 
 /**
@@ -252,6 +219,6 @@ export async function setItemContainer(item, containerId) {
   await item.update({
     "system.container": containerId || null,
     // Unequip if moving into a container
-    ...(containerId ? { "system.equipped": false, [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: null } : {})
+    ...(containerId ? takeOffChanges() : {})
   });
 }

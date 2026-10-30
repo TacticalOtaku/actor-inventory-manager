@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- The actor window and the dnd5e sheet equip by the same rules. An item dropped onto a slot replaces what is there in
+  every mode; «Надеть» and the sheet's equip toggle never empty a taken slot in «Строгая блокировка».
+
+### Fixed
+- In «Только предупреждение» the dnd5e sheet no longer leaves two items in one slot: the old one comes off, and the
+  message says which item replaced which.
+- An item equipped from the dnd5e sheet leaves its bag, as it does from the window.
+
 ## 2.0.9
 
 ### Added

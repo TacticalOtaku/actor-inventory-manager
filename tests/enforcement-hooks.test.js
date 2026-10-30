@@ -91,4 +91,18 @@ describe("sheet equip enforcement", () => {
     assert.deepEqual(unequipped, ["greataxe"]);
     assert.ok(["mainHand", "offHand"].includes(utils.getProperty(changes, "flags.actor-inventory-manager.slot")));
   });
+
+  it("takes the occupant off in warn mode, so a slot never holds two items", () => {
+    mode = "warn";
+    const ring = (id, slot) => ({ id, name: id, type: "equipment", flags: slot ? { "actor-inventory-manager": { slot } } : {}, system: { equipped: Boolean(slot), type: { value: "ring" } } });
+    const item = ring("new");
+    const actor = makeActor([ring("a", "ring1"), ring("b", "ring2"), item]);
+    let unequipped = null;
+    actor.updateEmbeddedDocuments = async (type, updates) => { unequipped = updates.map(update => update._id); return []; };
+    const changes = { "system.equipped": true };
+    assert.equal(handlePreUpdateItem(item, changes, {}, "p1"), true);
+    assert.deepEqual(unequipped, ["a"]);
+    assert.equal(utils.getProperty(changes, "flags.actor-inventory-manager.slot"), "ring1");
+    assert.equal(warnings.length, 1);
+  });
 });

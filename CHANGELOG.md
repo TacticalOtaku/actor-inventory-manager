@@ -1,19 +1,28 @@
 # Changelog
 
-## Unreleased
+## 2.1.0
 
 ### Changed
-- The actor window and the dnd5e sheet equip by the same rules. An item dropped onto a slot replaces what is there in
-  every mode; «Надеть» and the sheet's equip toggle never empty a taken slot in «Строгая блокировка».
+- The actor window and the dnd5e sheet share the same equipment rules. Dropping onto a paperdoll slot replaces its
+  current item; ordinary equip actions respect occupied slots in strict mode.
+- External item transfers use copy-first receipt verification before deleting the source. Drops involving the same
+  actor are serialized within the client, and permissions and trade locks are checked again before source removal.
+- The trade panel owns its rendering lifecycle independently of the rest of the actor window.
 
 ### Fixed
-- In «Только предупреждение» the dnd5e sheet no longer leaves two items in one slot: the old one comes off, and the
-  message says which item replaced which.
-- An item equipped from the dnd5e sheet leaves its bag, as it does from the window.
-- An unlinked token's window no longer shows the trade lock while its base actor trades; the token was never
-  locked.
-- The weight after a trade asks Weighty Containers 3.10+ how much of a bagged item the actor carries, so it counts
-  by that module's own load rules; older versions keep the previous estimate.
+- In warning mode, equipping from the dnd5e sheet removes the previous item from the slot and reports the replacement.
+- Equipping an item from the dnd5e sheet takes it out of its container, as it does from the actor window.
+- An unlinked token no longer inherits the trade lock of its base actor.
+- Weight after a trade uses Weighty Containers 3.10+ load rules for bagged items; older versions retain the estimate.
+- An unrelated inventory change can no longer confirm an incoming drop and cause its source to be deleted.
+- A move confirms the complete item or container contents. An incomplete transfer retains the source and rolls back
+  destination changes when safe; ambiguous or concurrently modified transfers stop with a recovery notice.
+- Container drops force dnd5e's copy behavior during creation, so source deletion remains under transfer control.
+- Background redraws wait for rail effects only when updating the rail; inventory and trade updates continue.
+- Document and trade changes arriving during an asynchronous render are retained instead of being discarded.
+- Ending a rail effect no longer cuts short a fresh document update's 40 ms coalescing delay.
+- Biography editing holds only the main part, with one catch-up after editing. Rail-only changes add no main redraw.
+- Closing the actor window cancels delayed redraws and biography catch-up; explicit user actions still render immediately.
 
 ## 2.0.9
 

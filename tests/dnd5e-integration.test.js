@@ -849,6 +849,19 @@ describe("drops from outside (dnd5e 5.3.3 sheet calls, ADR 0004)", () => {
     assert.deepEqual([...sheetUnsupportedTypes(actor)], ["facility"]);
   });
 
+  it("forces copy behavior for a tray and restores the original event even on failure", async () => {
+    const { createDroppedItems } = await import("../scripts/integrations/dnd5e.js");
+    const source = { present: true };
+    const event = { _behavior: "move" };
+    const actor = { sheet: { async _onDropItemContainer(event) {
+      if (event._behavior === "move") source.present = false;
+      throw new Error("creation veto");
+    } } };
+    await assert.rejects(createDroppedItems(actor, event, [{ id: "s" }], { container: { id: "bag" } }), /creation veto/);
+    assert.equal(source.present, true);
+    assert.equal(event._behavior, "move");
+  });
+
   it("fall back to createWithContents and createDocuments with keepId on a sheet without those methods", async () => {
     const { createDroppedItems } = await import("../scripts/integrations/dnd5e.js");
     const seen = [];

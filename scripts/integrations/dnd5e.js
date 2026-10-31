@@ -439,6 +439,20 @@ export function readVehicle(actor) {
   };
 }
 
+/** A sheet with only the root drop method cannot honor a tray; the document fallback can. */
+export function droppedItemContainer(actor, container) {
+  return container && typeof actor.sheet?._onDropItemContainer !== "function"
+    && typeof actor.sheet?._onDropCreateItems === "function" ? null : container;
+}
+
+/** Receipt identity only: dnd5e itself still decides whether and how to stack a consumable. */
+export function matchesDroppedStack(stack, dropped, container = null) {
+  const sourceId = (item) => item._stats?.compendiumSource ?? item.flags?.core?.sourceId;
+  return dropped.type === "consumable" && Boolean(sourceId(dropped))
+    && sourceId(stack) === sourceId(dropped) && stack.name === dropped.name
+    && (stack.system?.container ?? null) === (container?.id ?? null);
+}
+
 /**
  * Creates items dropped from outside the actor through its sheet (ADR 0004), so dnd5e's sheet rules hold. dnd5e 5.3.3:
  * the protected `sheet._onDropCreateItems(event, items, behavior)`, always given `"copy"` so dnd5e never deletes the
@@ -455,8 +469,15 @@ export async function createDroppedItems(actor, event, items, { container = null
   const sheet = actor.sheet;
   if (container && typeof sheet?._onDropItemContainer === "function") {
     const created = [];
-    for (const item of items) created.push(...[await sheet._onDropItemContainer(event, item, container)].flat().filter(Boolean));
-    return created;
+    const behavior = Object.getOwnPropertyDescriptor(event, "_behavior");
+    try {
+      Object.defineProperty(event, "_behavior", { value: "copy", configurable: true });
+      for (const item of items) created.push(...[await sheet._onDropItemContainer(event, item, container)].flat().filter(Boolean));
+      return created;
+    } finally {
+      if (behavior) Object.defineProperty(event, "_behavior", behavior);
+      else delete event._behavior;
+    }
   }
   if (typeof sheet?._onDropCreateItems === "function") return [await sheet._onDropCreateItems(event, items, "copy")].flat().filter(Boolean);
   console.info(`AIM | ${sheet?.constructor?.name ?? "The actor's sheet"} has no _onDropCreateItems: dnd5e's drop rules (data reset, consumable stacking, advancement, NPC gear) are skipped`);

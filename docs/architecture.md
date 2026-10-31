@@ -36,6 +36,29 @@ rather than reaching for `game` directly.
 
 The actor window's trade panel (`ui/trade.js`, `templates/window/trade.hbs`) is a client of this service only: it reads the saved session, sends requests through `requestTrade`, and keeps a local draft that leaves by itself after a pause (a stale revision is sent again; an unchanged draft is not sent). Besides the request actions the service adds `unconfirm` (a side withdraws only its own confirmation) and records `cancelledBy`; received items carry the `tradeNew` flag until their owner opens them. `actor-inventory-manager.tradeState` fires when the saved session changes.
 
+## Items dropped from outside
+
+`ui/external-drop.js` resolves the drop and presents the result. Copy batches still go through dnd5e together,
+including its multiple-advancement guard. Each item moved from another owned actor completes separately through
+`foundry/external-drop.js`: create through the existing dnd5e adapter, confirm its own receipt, delete the source,
+and compensate a refused deletion. Earlier successful items remain moved if a later one fails.
+
+During the sheet call, the runtime module records a matching consumable quantity write before it is sent and tags
+its options to follow that write through `updateItem`. It stops accepting new candidate writes when the sheet call
+returns; later manual edits and unrelated inventory increases are not receipts. Both new documents and a grown stack
+can be compensated. A changed destination, partial source deletion, unconfirmed receipt, or refused compensation
+stops automatic work and shows a persistent message identifying the item and both actors for the GM to check.
+Scroll conversion and its dialog finish before receipt observation starts; the generated scroll is the receipt
+identity while the original spell remains the source. A canceled dialog changes neither actor.
+
+Local moves touching either actor are serialized; this is not a server-side lock across clients. dnd5e does not
+forward an operation token into its stack write. A matching same-client edit already in flight during the sheet
+call cannot be distinguished conclusively from that write; this observer narrows that window but does not make
+moves transactional across unrelated edits or modules. Sheet dialogs may
+complete after the receipt timeout, so an unconfirmed move keeps its source and must not be retried without checking.
+Container creation still belongs to the sheet; its event is explicitly copy-only, and source contents are deleted
+only after a complete receipt (ADR 0004).
+
 ## Data-model adapter rule
 
 dnd5e reshapes its data model between major versions. Every place that reads a
@@ -225,7 +248,15 @@ base actor's id.
 Settings that change what every window shows (theme, accent colour, custom
 templates, portrait backdrop, auto-reconcile, SC rarity colours) call the
 `actor-inventory-manager.refresh` hook; open windows re-render on it. Document
-hooks are coalesced so a batched change renders once.
+hooks are coalesced for 40 ms so a batched change renders once.
+
+`core/window-render-queue.js` owns background redraw timing, pending parts and disposal. ActorWindow supplies
+its declared parts, the Foundry render call and the current focus/visibility checks. An active rail reactive effect
+holds only rail updates; main, inspector, drawer and trade continue to refresh. A biography edit holds only main,
+which catches up after focus leaves the editor. A rail-only update creates no main catch-up. Queued renders run one
+at a time, retaining changes that arrive while a render is pending. Closing the window cancels coalescing, the rail
+hold and biography catch-up. Direct user actions still render immediately and may interrupt a reactive effect;
+the next rail render reports whether a new effect actually started.
 
 ## Actor window and theme
 

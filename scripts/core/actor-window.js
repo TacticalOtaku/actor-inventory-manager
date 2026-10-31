@@ -189,9 +189,3 @@ export function partsForEffectChange({ onActor, changes, statuses }, tab) {
   if (!onActor || changes.length || !statuses.length || !statuses.every((status) => MARKER_STATUSES.includes(status))) return null;
   return tab === "effects" ? ["rail", "main"] : ["rail"];
 }
-
-/** Parts queued for one redraw add up; once any asks for every part (null), every part it is. */
-export function mergeParts(queued, parts) {
-  if (queued === undefined) return parts;
-  return queued && parts ? [...new Set([...queued, ...parts])] : null;
-}

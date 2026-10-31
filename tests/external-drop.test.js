@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { canDropOnGround, dropBehavior, landedOutside, received, refusedType, spellBecomes } from "../scripts/core/external-drop.js";
+import { canDropOnGround, dropBehavior, landedOutside, refusedType, spellBecomes } from "../scripts/core/external-drop.js";
 
 const base = { fromActor: false, sameActor: false, isPile: false, ownsSource: false, isGM: false, shift: false };
 
@@ -35,13 +35,6 @@ describe("drops from outside (ADR 0004)", () => {
 
   it("turn a spell into a scroll only on the equipment tab", () => {
     assert.deepEqual(["equipment", "spells", "overview"].map(spellBecomes), ["scroll", "spell", "spell"]);
-  });
-
-  it("see a new item or a grown stack as received", () => {
-    const before = new Map([["a", 1], ["b", 3]]);
-    assert.equal(received(before, new Map([["a", 1], ["b", 3], ["c", 1]])), true);
-    assert.equal(received(before, new Map([["a", 1], ["b", 4]])), true);
-    assert.equal(received(before, new Map([["a", 1], ["b", 3]])), false);
   });
 
   it("notes a drop onto a container only when something stayed outside it", () => {

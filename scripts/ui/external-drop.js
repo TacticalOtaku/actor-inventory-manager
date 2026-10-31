@@ -4,18 +4,17 @@
 // ─────────────────────────────────────────────────────────
 
 import { FLAGS, MODULE_ID } from "../constants.js";
-import { dropBehavior, landedOutside, received, refusedType, spellBecomes } from "../core/external-drop.js";
-import { createDroppedItems, createDroppedSpell, sheetUnsupportedTypes } from "../integrations/dnd5e.js";
+import { dropBehavior, landedOutside, refusedType, spellBecomes } from "../core/external-drop.js";
+import { createDroppedItems, createDroppedSpell, droppedItemContainer, sheetUnsupportedTypes } from "../integrations/dnd5e.js";
 import { isItemPile } from "../integrations/item-piles.js";
 import { validateContainerDrop } from "../integrations/weighty-containers.js";
 import { isTradeLocked } from "../trade/service.js";
 import { t } from "./html.js";
+import { moveDroppedItems, receiveDroppedCopies } from "../foundry/external-drop.js";
 
 const NOTE_MS = 2400;
 const NONE = Object.freeze({ refusal: null, note: null });
 
-const quantities = (actor) => new Map(actor.items.map((item) => [item.id, Number(item.system?.quantity ?? 1)]));
-const STACK_WAIT_MS = 3000;
 
 /** The open tab's content shows it takes the drop while something from outside is over the window. */
 export function showDropTarget(app, on) {
@@ -59,27 +58,14 @@ async function resolve(data) {
   return null;
 }
 
-/**
- * Whether the actor got the drop. dnd5e stacks an identical consumable onto the actor's own without awaiting that
- * update, so a drop that created nothing waits for the stack to grow (a refused drop waits out the timeout).
- */
-function arrival(actor, before, created) {
-  if (created.length || received(before, quantities(actor))) return Promise.resolve(received(before, quantities(actor)));
-  return new Promise((resolve) => {
-    const done = (value) => { Hooks.off("updateItem", hook); clearTimeout(timer); resolve(value); };
-    const hook = Hooks.on("updateItem", (item) => item.parent === actor && received(before, quantities(actor)) && done(true));
-    const timer = setTimeout(() => done(false), STACK_WAIT_MS);
-  });
-}
-
 /** Spells follow the window's tab: a scroll through dnd5e's dialog on the equipment tab, a spell elsewhere. */
-async function create(app, event, items, container) {
+async function prepareCreation(app, event, items, container) {
   const actor = app.actor;
   const spells = items.filter((item) => item.type === "spell");
   const rest = items.filter((item) => item.type !== "spell");
-  const created = [];
+  const keptSpells = [];
   if (spells.length && spellBecomes(app.tab) === "spell") {
-    for (const spell of spells) created.push(...await createDroppedSpell(actor, event, spell));
+    keptSpells.push(...spells);
   } else {
     for (const spell of spells) {
       const scroll = await Item.implementation.createScrollFromSpell(spell);
@@ -89,8 +75,15 @@ async function create(app, event, items, container) {
   // The copies carry «Новое» from the start; keepId keeps a container's contents with it.
   // The source actor's slot stays behind, as in a trade: on this actor it would steer the next equip.
   const marked = rest.map((item) => item.clone({ [`flags.${MODULE_ID}.${FLAGS.TRADE_NEW}`]: true, [`flags.${MODULE_ID}.${FLAGS.SLOT}`]: null }, { keepId: true }));
-  if (marked.length) created.push(...await createDroppedItems(actor, event, marked, { container }));
-  return created;
+  return {
+    items: [...keptSpells, ...marked],
+    async create() {
+      const created = [];
+      for (const spell of keptSpells) created.push(...await createDroppedSpell(actor, event, spell));
+      if (marked.length) created.push(...await createDroppedItems(actor, event, marked, { container }));
+      return created;
+    }
+  };
 }
 
 /**
@@ -103,6 +96,7 @@ async function create(app, event, items, container) {
  */
 export async function dropFromOutside(app, event, { tray = null } = {}) {
   const actor = app.actor;
+  if (!app.canEdit) return { refusal: t("AIM.notifications.noPermission"), note: null };
   const data = foundry.applications.ux.TextEditor.implementation.getDragEventData(event);
   if (!data?.type) return NONE;
   if (isTradeLocked(actor)) return { refusal: t("AIM.window.drop.trade"), note: null };
@@ -143,23 +137,38 @@ export async function dropFromOutside(app, event, { tray = null } = {}) {
     if (!check.ok) return { refusal: check.reason, note: null };
   }
 
-  const before = quantities(actor);
-  const created = await create(app, event, items, container);
-  app.landItems(created.map((item) => item.id).filter(Boolean));
-  const arrived = await arrival(actor, before, created);
-  // A move finishes only once the actor has it: then the source goes, with its contents. If the source keeps an item
-  // (a hook refused the delete), the copies go instead, so nothing exists twice.
-  if (behavior === "move" && arrived) {
-    for (const item of items) await item.delete({ deleteContents: true });
-    if (items.some((item) => source.items.has(item.id))) {
-      const copies = created.map((item) => item.id).filter((id) => actor.items.has(id));
-      if (copies.length) await actor.deleteEmbeddedDocuments("Item", copies);
-      return { refusal: t("AIM.window.drop.moveFailed"), note: null };
+  const created = [];
+  let arrived = false;
+  let failure = null;
+  let moved = 0;
+  // Copies keep dnd5e's batch rules (including its multiple-advancement guard). Moves complete one source at a time.
+  if (behavior === "copy") {
+    const outcome = await receiveDroppedCopies(actor, () => prepareCreation(app, event, items, container), { container });
+    created.push(...outcome.created);
+    arrived = outcome.arrived;
+  } else {
+    const outcomes = await moveDroppedItems(actor, items, (item) => prepareCreation(app, event, [item], container), { container });
+    for (const outcome of outcomes) {
+      const item = outcome.item;
+      if (outcome.arrived) { created.push(...outcome.created); arrived = true; moved++; }
+      if (!outcome.failure) continue;
+      const text = t(`AIM.window.drop.${outcome.failure}`, {
+        item: item.name ?? item.id,
+        source: `${item.parent.name ?? item.parent.id} (${item.parent.uuid})`,
+        target: `${actor.name ?? actor.id} (${actor.uuid})`
+      });
+      failure ??= text;
+      if (outcome.failure === "recovery" || outcome.failure === "unconfirmed") {
+        ui.notifications?.error(text, { permanent: true });
+        break;
+      }
     }
   }
+  app.landItems(created.map((item) => item.id).filter(Boolean));
+  if (failure) return { refusal: moved ? t("AIM.window.drop.partial", { count: moved, reason: failure }) : failure, note: null };
   // Weighty Containers refuses an overflowing container in its own words; the tray still shakes.
   if (container && !arrived) return { refusal: null, note: null, shakeTray: true };
   // A sheet that cannot put items into a container (Tidy) leaves them in the inventory root (ADR 0004).
-  const outside = container && landedOutside(created.map((item) => item.system?.container), container.id);
+  const outside = container && (droppedItemContainer(actor, container) === null || landedOutside(created.map((item) => item.system?.container), container.id));
   return { refusal: null, note: outside ? t("AIM.window.drop.root") : null };
 }

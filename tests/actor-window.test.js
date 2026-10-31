@@ -11,7 +11,6 @@ import {
   motionCap,
   normalizeAccent,
   crLabel,
-  mergeParts,
   orbAction,
   partsForActorChange,
   partsForEffectChange,
@@ -170,11 +169,5 @@ describe("what an actor change redraws (#9)", () => {
     assert.equal(partsForEffectChange({ onActor: false, changes: [], statuses: ["bloodied"] }, "equipment"), null);
   });
 
-  it("adds up queued parts until one asks for all", () => {
-    assert.deepEqual(mergeParts(undefined, ["rail"]), ["rail"]);
-    assert.deepEqual(mergeParts(["rail"], ["rail", "main"]), ["rail", "main"]);
-    assert.equal(mergeParts(["rail"], null), null);
-    assert.equal(mergeParts(null, ["rail"]), null);
-    assert.equal(mergeParts(undefined, null), null);
-  });
+
 });

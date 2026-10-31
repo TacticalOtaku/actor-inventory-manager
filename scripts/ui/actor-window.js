@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { MODULE_ID, REFRESH_HOOK } from "../constants.js";
+import { WindowRenderQueue } from "../core/window-render-queue.js";
 import { canEditActor, canViewActor, isSupportedActor } from "../core/actor-scope.js";
 import {
   ACCENTS,
@@ -17,7 +18,6 @@ import {
   fallbackTab,
   layoutForWidth,
   motionCap,
-  mergeParts,
   normalizeAccent,
   partsForActorChange,
   partsForEffectChange,
@@ -107,9 +107,6 @@ function unwatchNotices(use) {
     realNotices = null;
   }
 }
-
-/** Bursts of document hooks become one render. */
-const RENDER_COALESCE_MS = 40;
 
 /** What comes in as a cascade when a tab or a section opens. */
 const CASCADE = ".aim-rowwrap > [data-row], .aim-effwrap, .aim-check, .aim-card";
@@ -274,7 +271,13 @@ export class ActorWindow extends WindowBase {
     this.coinEditing = null;
     this.coinDraft = "";
     this._hooks = [];
-    this._renderTimer = null;
+    this._redraws = new WindowRenderQueue({
+      parts: Object.keys(this.constructor.PARTS),
+      render: (parts) => this.render({ parts }),
+      editing: () => this.#editingBio(),
+      active: () => this.rendered,
+      onError: (error) => LOG.error("Actor window redraw failed", error)
+    });
   }
 
   get canEdit() {
@@ -481,10 +484,10 @@ export class ActorWindow extends WindowBase {
   _onFirstRender(context, options) {
     super._onFirstRender(context, options);
     OPEN_WINDOWS.set(this.actorKey, this);
-    const rerender = () => this.#queueRender();
+    const rerender = () => this._redraws.enqueue();
     // An item's own effect is the actor's grandchild.
     const mine = (doc) => [doc, doc?.parent, doc?.parent?.parent].some((d) => d?.uuid === this.actorKey);
-    this.#hook("updateActor", (actor, changes) => mine(actor) && this.#queueRender(actor === this.actor ? partsForActorChange(changes) : null));
+    this.#hook("updateActor", (actor, changes) => mine(actor) && this._redraws.enqueue(actor === this.actor ? partsForActorChange(changes) : null));
     // A transformed actor is deleted when it reverts; its window goes with it.
     this.#hook("deleteActor", (actor) => actor?.uuid === this.actorKey && this.close());
     // An unlinked token's actor goes with its token, and no deleteActor says so.
@@ -493,7 +496,7 @@ export class ActorWindow extends WindowBase {
     this.#hook("deleteScene", (scene) => this.actorKey.startsWith(`${scene.uuid}.`) && this.close());
     for (const name of ["createItem", "updateItem", "deleteItem"]) this.#hook(name, (doc) => mine(doc) && rerender());
     for (const name of ["createActiveEffect", "updateActiveEffect", "deleteActiveEffect"]) {
-      this.#hook(name, (effect) => mine(effect) && this.#queueRender(partsForEffectChange({
+      this.#hook(name, (effect) => mine(effect) && this._redraws.enqueue(partsForEffectChange({
         onActor: effect.parent === this.actor,
         changes: effect.changes ?? [],
         statuses: [...(effect.statuses ?? [])]
@@ -610,6 +613,8 @@ export class ActorWindow extends WindowBase {
 
   _onRender(context, options) {
     super._onRender(context, options);
+    // Foundry is rendered again: release changes that arrived during an explicit render.
+    this._redraws.resume();
     const drawer = this.element.querySelector('[data-application-part="drawer"]');
     if (drawer) drawer.inert = !this.element.classList.contains("is-settings");
     this.#applyRootState();
@@ -621,7 +626,8 @@ export class ActorWindow extends WindowBase {
       this.#bindRail();
       // Only a redrawn rail shows the change; a later rail redraw (dnd5e adding Bloodied) waits until it has played.
       const next = railSnapshot(this.actor);
-      if (playRailChanges(this.element, this._railPrev, next)) this._railBusyUntil = performance.now() + 1100;
+      const playing = playRailChanges(this.element, this._railPrev, next);
+      this._redraws.holdRail(playing ? 1100 : 0);
       this._railPrev = next;
     }
     // The orb that just became ready to level throws golden stars.
@@ -755,6 +761,7 @@ export class ActorWindow extends WindowBase {
   }
 
   _onClose(options) {
+    this._redraws.close();
     this._awayDoc?.removeEventListener("pointerdown", this._away, { capture: true });
     this.trade.close();
     releaseTooltips(this);
@@ -763,7 +770,6 @@ export class ActorWindow extends WindowBase {
     this._bodyObserver?.disconnect();
     this._resizeObserver?.disconnect();
     this._reducedMotion?.removeEventListener("change", this._onReducedMotion);
-    clearTimeout(this._renderTimer);
     clearTimeout(this._searchTimer);
     clearInterval(this._templateWatch);
     clearTimeout(this._castSchoolTimer);
@@ -777,38 +783,10 @@ export class ActorWindow extends WindowBase {
     this._hooks.push([name, Hooks.on(name, fn)]);
   }
 
-  #queueRender(parts = null) {
-    this._queuedParts = mergeParts(this._queuedParts, parts);
-    clearTimeout(this._renderTimer);
-    const wait = Math.max(RENDER_COALESCE_MS, (this._railBusyUntil ?? 0) - performance.now());
-    this._renderTimer = setTimeout(() => {
-      const queued = this._queuedParts;
-      this._queuedParts = undefined;
-      if (this.rendered) this.#renderAroundBio(queued);
-    }, wait);
-  }
-
-  /** Renders these parts, all when none are named; a biography being typed in holds the main part back. */
-  #renderAroundBio(parts) {
-    if (!this.#editingBio()) return this.render(parts ? { parts } : undefined);
-    this._mainStale = true;
-    const rest = (parts ?? ["rail", "inspector", "drawer"]).filter((part) => part !== "main");
-    if (rest.length) this.render({ parts: rest });
-  }
-
   #editingBio() {
     const el = this.element;
     const active = el?.ownerDocument.activeElement;
     return Boolean(el?.querySelector("[data-bio-editor][open]") || active?.closest?.("[data-bio-field]") && el.contains(active));
-  }
-
-  /** After a biography edit ends, the main part catches up with what changed meanwhile. */
-  #catchUpBio() {
-    setTimeout(() => {
-      if (!this._mainStale || this.#editingBio()) return;
-      this._mainStale = false;
-      this.render({ parts: ["main"] });
-    });
   }
 
   /** Theme, accent, density, motion and role sit on the window root as data attributes. */
@@ -1169,7 +1147,7 @@ export class ActorWindow extends WindowBase {
 
   /** Redraws the panel and the rows whose offer buttons follow the draft. */
   renderTrade() {
-    if (this.rendered) this.#renderAroundBio(["trade", "main"]);
+    this._redraws.request(["trade", "main"]);
   }
 
   /** After a redraw: the panel's slide, the shakes of the status and of a new error, the chosen partner. */
@@ -1422,9 +1400,9 @@ export class ActorWindow extends WindowBase {
       // Focus left for another control or for the canvas (the field is still there); only a redraw that took the
       // field away keeps the search to give it back.
       if (event.target.name === this._searching && (event.relatedTarget || event.target.isConnected)) this._searching = null;
-      if (event.target.matches?.("[data-bio-field]")) this.#catchUpBio();
+      if (event.target.matches?.("[data-bio-field]")) this._redraws.resume();
     });
-    el.addEventListener("close", (event) => event.target.matches?.("[data-bio-editor]") && this.#catchUpBio(), { capture: true });
+    el.addEventListener("close", (event) => event.target.matches?.("[data-bio-editor]") && this._redraws.resume(), { capture: true });
     bindInventoryDrag(this);
   }
 

@@ -25,19 +25,6 @@ export const refusedType = (types, unsupported) => types.find((type) => unsuppor
 export const spellBecomes = (tab) => (tab === "equipment" ? "scroll" : "spell");
 
 /**
- * Whether the actor received what was dropped: an item that was not there before, or a stack that grew (dnd5e
- * stacks identical consumables instead of creating one). A move deletes its source only then.
- * @param {Map<string, number>} before  item id → quantity, before the drop
- * @param {Map<string, number>} after   item id → quantity, after it
- */
-export function received(before, after) {
-  for (const [id, quantity] of after) {
-    if (!before.has(id) || quantity > before.get(id)) return true;
-  }
-  return false;
-}
-
-/**
  * Whether a drop onto a container left something outside it: a sheet that cannot put items into one (Tidy's new
  * sheet) creates them in the inventory root, the window says so (ADR 0004).
  * @param {(string|null|undefined)[]} containers  the `system.container` of each created item

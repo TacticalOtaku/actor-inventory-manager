@@ -111,6 +111,10 @@ npm run release  # check, then dist/actor-inventory-manager-v<version>.zip
 `--data <path>` or the `FOUNDRY_DATA` environment variable (the Foundry `Data` folder).
 Reload Foundry (F5) afterwards. Node.js 24 or newer is required.
 
+GitHub Actions runs ESLint, the automated tests and package validation on pushes to `main`, pull requests and
+manual dispatches. It uses Node.js 24 and a clean `npm ci` install. Successful runs keep the Foundry ZIP as an
+Actions artifact for 14 days. CI does not deploy to Foundry or publish releases.
+
 See [docs/architecture.md](docs/architecture.md) for the module layout, the public API and
 hooks, how doll presets and equipment rules work, and the dnd5e data-shape differences the
 code adapts to.

@@ -73,3 +73,14 @@ _Avoid_: donation, send
 While a **Trade** is being carried out or recovered, the items and coins of its actors are frozen for everyone but
 the GM carrying it out; hit points, slots and experience stay playable. A token actor is never locked.
 _Avoid_: trade freeze, busy, locked inventory
+
+
+**Trade recovery**:
+The GM's resolution of an interrupted Trade by restoring its participants' property. Its Trade lock stays until
+completion or restoration is confirmed; an unknown outcome does not count as a finished Trade.
+_Avoid_: force unlock, successful cancellation
+
+**Inline draft**:
+Text being edited in an Actor window field, before the player saves it with Enter or cancels it. A draft is not a
+change to the actor or an item.
+_Avoid_: pending update, unsaved document

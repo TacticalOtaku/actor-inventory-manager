@@ -224,10 +224,25 @@ a refusal `{code, message}` or the item changes to write, the equipped item last
 - `SLOT_INCOMPATIBLE` is refused in every mode. Items with no place on the paperdoll (Ioun stones, trinkets) are
   equipped without a slot.
 
-Two adapters apply the plan. `ui/item-actions.js` writes it in one `updateEmbeddedDocuments` call with the `aimEquip`
-option, which the hook trusts. `foundry/enforcement-hooks.js` intercepts `preUpdateItem` from a sheet: it writes the
-equipped item's part into `changes` and sends the items it takes off beside it; only a slot named in the change
-counts as chosen.
+The pure planner remains in `core/equipment-rules.js` as `planEquipSync` (the original `planEquip` name is retained).
+Document application belongs to `foundry/equipment.js`. Its `EquipService` serializes equipment operations per actor
+UUID on this client, computes plans against current state, applies a batch with `aimEquip`, and checks every returned
+item and requested field. A partial/vetoed write is not success. Recognizable partial writes are compensated only
+while all affected equipment fields still match the baseline or planned result; unknown/concurrent changes are left
+intact with an explicit partial-change warning. A refused compensation also requires manual inspection. This is not
+a server-side transaction or a guarantee against other clients' concurrent edits.
+
+The Actor window adapter displays the structured result. Container placement uses one item update that combines
+container, equipped state and slot clearing, rather than taking the item off in a separate preliminary update.
+Ownership and container-cycle checks run again when the queued operation begins.
+
+The Vanilla sheet adapter is synchronous because Foundry does not await `preUpdateItem`. A non-displacing equip is
+validated and patched into the original change. When displacement is needed, it returns false for the original update
+and automatically redirects the full replacement through `EquipService`, preserving other requested fields. External
+handlers therefore see the original update cancelled; the replacement has its own normal document updates. The user
+explicitly chose this behavior over parallel companion writes. All other hooks still run, including Trade lock and
+third-party vetoes; the private marker bypasses only this module's repeated equipment validation. No protected sheet
+method or document-operation override is introduced.
 
 Two-handed locking follows the template: slots flagged `locksOffHandOn2H` are
 main hands, slots flagged `isShield` (or named off hand) are off hands
@@ -389,3 +404,50 @@ shape.
 with F5 afterwards; a stylesheet or language newly added to `module.json` needs a
 server restart instead. `npm run check` runs ESLint and the tests; `npm run release`
 validates `module.json` and writes `dist/actor-inventory-manager-v<version>.zip`.
+
+
+## Trade lifecycle ownership
+
+`trade/commands.js` owns the request queue, authorization, status transitions, persisted trade state, receipts,
+settlement and recovery. `trade/service.js` is the Foundry adapter: User-flag transport, subscriptions, invitations
+and inventory hook guards. It retains the existing exports, so UI, migration and other callers keep their interface.
+Migration cancellation enters the same queue as user requests. Adapters never interpret handler completion flags or
+choose when a trade state should be saved.
+
+The lifecycle persists its lock before capturing the private journal, and its journal pointer before any debit.
+Terminal status and the originating request receipt are saved together; journal cleanup follows that acknowledged
+write. An uncertain final save keeps the journal and publishes a recovery lock when the coordinator still has
+write authority. A coordinator that loses authority stops; its successor recovers from the persisted baseline.
+Cleanup failure after an acknowledged terminal result leaves an orphan journal, not a rollback of a completed trade.
+
+`trade/state-machine.js` contains the internal transition rules. `trade/recovery.js` is the private-journal adapter,
+retaining JSON and legacy object payloads and validating both participant snapshots. A restore checks the actual
+inventory against its snapshot, including non-quantity changes and only the saved attribute paths, independently of the current currency provider.
+A missing or incomplete journal after transfer
+cannot prove rollback: the trade remains in recovery with its lock. Known interrupted preparation without a
+persisted transfer pointer may be cancelled because no debit began. Journal/state formats and request names remain
+unchanged; no saved-data migration is introduced.
+
+`tests/trade-service.test.js` exercises the lifecycle through the same exported processor as the Foundry adapter,
+with in-memory Foundry documents and injected persistence/authority failures. Tests cover request replay,
+confirmation, gifts, preparation failures, journal-pointer acknowledgement, rollback, missing/corrupt snapshots,
+partial restoration, terminal-save ambiguity, cleanup failure, coordinator handoff and migration/request ordering.
+
+### Inline drafts
+
+`ui/inline-edits.js` owns the Actor window's HP, coin and feature-use drafts: input binding, validation state,
+Enter/Escape/blur, focus on replacement fields and asynchronous completion. Removing a field during a redraw
+preserves its draft; a connected blur cancels it. Retained input nodes keep their caret and regain validation
+classes after a morph. Listener cleanup follows rebinding and window close. DOM replacement suppresses blur cancellation only while
+Foundry synchronously patches/replaces nodes, including a blur delivered before disconnection.
+
+ActorWindow supplies three adapters using the existing parsers and document calls. HP and coins redraw the closed
+field before writing; feature uses writes before its closing redraw. HP damage, healing and temporary HP remain
+dnd5e actions. The module does not replace WindowRenderQueue or manage biography or TradePanel state.
+
+A reported write failure restores the original text only if no newer editing session has started and the window
+remains open. Retrying requires Enter again; relative operations are never automatically replayed, and the warning
+asks the player to check the current document value first. Closing suppresses later UI completions, without
+cancelling document writes already started. HP effects may legitimately transform the outcome, so the module
+does not compare predicted HP with the resulting document to infer failure. A redraw failure after a successful
+write reports a refresh problem and never restores the already-applied relative draft.

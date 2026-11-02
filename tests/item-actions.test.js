@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 
-import { equipItemToSlot, toggleAttunement, toggleItemEquipped, unequipItem } from "../scripts/ui/item-actions.js";
+import { LOG } from "../scripts/foundry/logger.js";
+LOG.setLevel("none");
+
+import { equipItemToSlot, toggleAttunement, toggleItemEquipped, unequipItem, setItemContainer } from "../scripts/ui/item-actions.js";
 
 /** Records the writes an action makes; `refuse` mimics a preUpdate hook veto. */
 function makeActor({ canEdit = true, attunementMax = 3 } = {}) {
@@ -19,7 +22,17 @@ function makeActor({ canEdit = true, attunementMax = 3 } = {}) {
     async updateEmbeddedDocuments(type, updates) {
       if (actor.refuse) return [];
       actor.writes.push(...updates);
-      return updates.map(update => actor.items.get(update._id)).filter(Boolean);
+      return updates.filter(update => !actor.veto?.has(update._id)).map(update => {
+        const item=actor.items.get(update._id);
+        if(!item)return null;
+        for(const [key,value] of Object.entries(update)) {
+          if(key==="_id")continue;
+          const parts=key.split("."),last=parts.pop();
+          const object=parts.reduce((o,k)=>o[k]??={},item);
+          if(last.startsWith("-="))delete object[last.slice(2)]; else object[last]=value;
+        }
+        return item;
+      }).filter(Boolean);
     }
   };
   return actor;
@@ -34,10 +47,9 @@ function addItem(actor, { id, name = id, type = "equipment", system = {} }) {
     flags: {},
     getFlag: () => undefined,
     system: { equipped: false, ...system },
-    async update(changes) {
-      if (actor.refuse) return undefined;
-      actor.writes.push({ _id: id, ...changes });
-      return item;
+    async update(changes,options) {
+      const written=await actor.updateEmbeddedDocuments("Item",[{_id:id,...changes}],options);
+      return written.find(doc=>doc.id===id);
     }
   };
   actor.items.set(id, item);
@@ -231,4 +243,121 @@ describe("toggleAttunement result", () => {
     assert.equal(await toggleAttunement(ring), false);
     assert.deepEqual(infos, []);
   });
+});
+
+
+describe("equipment write outcomes",()=>{
+  function rings() {
+    const actor=makeActor();
+    const old=addItem(actor,{id:"old",system:{equipped:true,type:{value:"ring"}}});
+    old.flags={"actor-inventory-manager":{slot:"ring1"}};
+    const next=addItem(actor,{id:"next",system:{type:{value:"ring"}}});
+    return {actor,old,next};
+  }
+  it("does not report success or leave two rings worn when the displaced write is vetoed",async()=>{
+    const {actor,old,next}=rings();actor.veto=new Set(["old"]);
+    assert.equal(await equipItemToSlot(actor,next,"ring1"),false);
+    assert.equal(old.system.equipped,true);
+    assert.equal(next.system.equipped,false);
+    assert.equal(next.flags["actor-inventory-manager"]?.slot??null,null);
+  });
+  it("restores displaced equipment when the new item is vetoed",async()=>{
+    const {actor,old,next}=rings();actor.veto=new Set(["next"]);
+    assert.equal(await equipItemToSlot(actor,next,"ring1"),false);
+    assert.equal(old.system.equipped,true);
+    assert.equal(old.flags["actor-inventory-manager"].slot,"ring1");
+    assert.equal(next.system.equipped,false);
+  });
+  it("serializes quick replacements using the actual result of the first equip",async()=>{
+    const {actor,old,next}=rings();
+    const third=addItem(actor,{id:"third",system:{type:{value:"ring"}}});
+    const write=actor.updateEmbeddedDocuments;let release,entered;
+    const waiting=new Promise(resolve=>{entered=resolve;});const hold=new Promise(resolve=>{release=resolve;});let first=true;
+    actor.updateEmbeddedDocuments=async(...args)=>{if(first){first=false;entered();await hold;}return write(...args);};
+    const a=equipItemToSlot(actor,next,"ring1");await waiting;
+    const b=equipItemToSlot(actor,third,"ring1");release();
+    assert.deepEqual(await Promise.all([a,b]),[true,true]);
+    assert.deepEqual([old.system.equipped,next.system.equipped,third.system.equipped],[false,false,true]);
+  });
+  it("returns failure if a hook acknowledges a different slot, without overwriting its edit",async()=>{
+    const {actor,next}=rings();const write=actor.updateEmbeddedDocuments;
+    actor.updateEmbeddedDocuments=async(type,updates,options)=>{
+      const docs=await write(type,updates,options);
+      next.flags["actor-inventory-manager"].slot="ring2";
+      return docs;
+    };
+    assert.equal(await equipItemToSlot(actor,next,"ring1"),false);
+    assert.equal(next.flags["actor-inventory-manager"].slot,"ring2");
+  });
+});
+
+describe("container placement",()=>{
+  it("does not move equipment when a hook vetoes taking it off",async()=>{
+    const actor=makeActor(),item=addItem(actor,{id:"worn",system:{equipped:true,container:null}});
+    const write=actor.updateEmbeddedDocuments;
+    actor.updateEmbeddedDocuments=(type,updates,options)=>write(type,updates.filter(change=>change["system.equipped"]!==false),options);
+    const result=await setItemContainer(item,"bag");
+    assert.equal(item.system.container,null);
+    assert.equal(item.system.equipped,true);
+    assert.equal(result,false);
+  });
+  it("places the item, takes it off and clears its slot in one update",async()=>{
+    const actor=makeActor(),item=addItem(actor,{id:"worn",system:{equipped:true,container:null}});
+    item.flags={"actor-inventory-manager":{slot:"ring1"}};
+    assert.equal(await setItemContainer(item,"bag"),true);
+    assert.equal(actor.writes.length,1);
+    assert.equal(item.system.container,"bag");
+    assert.equal(item.system.equipped,false);
+    assert.equal(item.flags["actor-inventory-manager"].slot,null);
+  });
+  it("does not leave equipment taken off when placement is vetoed",async()=>{
+    const actor=makeActor(),item=addItem(actor,{id:"worn",system:{equipped:true,container:null}});
+    actor.veto=new Set(["worn"]);
+    assert.equal(await setItemContainer(item,"bag"),false);
+    assert.equal(item.system.equipped,true);
+    assert.equal(item.system.container,null);
+  });
+  it("reports a thrown container write as a failure",async()=>{
+    const actor=makeActor(),item=addItem(actor,{id:"worn",system:{equipped:true,container:null}});
+    actor.updateEmbeddedDocuments=async()=>{throw new Error("database unavailable");};
+    assert.equal(await setItemContainer(item,"bag"),false);
+    assert.equal(item.system.container,null);
+  });
+});
+
+it("reports an unresolved partial equip when a hook also vetoes compensation",async()=>{
+  const actor=makeActor();
+  const old=addItem(actor,{id:"old",system:{equipped:true,type:{value:"ring"}}});old.flags={"actor-inventory-manager":{slot:"ring1"}};
+  const next=addItem(actor,{id:"next",system:{type:{value:"ring"}}});
+  const warnings=[];ui.notifications.warn=message=>warnings.push(message);
+  actor.veto=new Set(["old"]);const write=actor.updateEmbeddedDocuments;
+  actor.updateEmbeddedDocuments=async(type,updates,options)=>{
+    const result=await write(type,updates,options);
+    if(next.system.equipped)actor.veto.add("next");
+    return result;
+  };
+  assert.equal(await equipItemToSlot(actor,next,"ring1"),false);
+  assert.deepEqual([old.system.equipped,next.system.equipped],[true,true]);
+  assert.deepEqual(warnings,["AIM.notifications.equipPartial"]);
+});
+
+it("rechecks ownership when a queued equip begins",async()=>{
+  const actor=makeActor(),ring=addItem(actor,{id:"ring",system:{type:{value:"ring"}}});
+  const result=equipItemToSlot(actor,ring,"ring1");
+  actor.testUserPermission=()=>false;
+  assert.equal(await result,false);
+  assert.deepEqual(actor.writes,[]);
+});
+
+it("restores recognized writes when the database rejects after applying the equip",async()=>{
+  const actor=makeActor(),ring=addItem(actor,{id:"ring",system:{type:{value:"ring"}}});
+  const write=actor.updateEmbeddedDocuments;let rejected=false;
+  actor.updateEmbeddedDocuments=async(...args)=>{
+    const docs=await write(...args);
+    if(!rejected){rejected=true;throw new Error("acknowledgement lost");}
+    return docs;
+  };
+  assert.equal(await equipItemToSlot(actor,ring,"ring1"),false);
+  assert.equal(ring.system.equipped,false);
+  assert.equal(ring.flags["actor-inventory-manager"]?.slot??null,null);
 });

@@ -4,9 +4,10 @@
 
 import { AIM_EQUIP_OPTION, ENFORCEMENT_MODES, FLAGS, MODULE_ID } from "../constants.js";
 import { isSupportedActor } from "../core/actor-scope.js";
-import { planEquip } from "../core/equipment-rules.js";
+import { planEquipSync } from "../core/equipment-rules.js";
 import { getActorSlots } from "../core/paperdoll-templates.js";
 import { LOG } from "./logger.js";
+import { EquipService } from "./equipment.js";
 
 /**
  * Handle item preUpdate to enforce equipment rules bidirectionally
@@ -41,20 +42,25 @@ export function handlePreUpdateItem(item, changes, options, _userId) {
   const knownSlotIds = new Set(getActorSlots(actor).map(slot => slot.id));
   const requestedSlot = foundry.utils.getProperty(changes, `flags.${MODULE_ID}.${FLAGS.SLOT}`);
   const mode = game.settings?.get?.(MODULE_ID, "enforcementMode") ?? ENFORCEMENT_MODES.BLOCK;
-  const plan = planEquip(actor, item, knownSlotIds.has(requestedSlot) ? requestedSlot : null, mode);
+  const slotId = knownSlotIds.has(requestedSlot) ? requestedSlot : null;
+
+  const plan = planEquipSync(actor, item, slotId, mode);
 
   if (plan.refusal) {
     LOG.warn("Equip refused", { item: item.name, code: plan.refusal.code, mode });
     ui.notifications?.warn(plan.refusal.message);
     return false;
   }
-  if (plan.warning) ui.notifications?.warn(plan.warning);
-
-  // This change carries the equipped item's part of the plan; the items it takes off are written beside it.
-  for (const [key, value] of Object.entries(plan.updates.pop())) if (key !== "_id") foundry.utils.setProperty(changes, key, value);
-  if (plan.updates.length) {
-    actor.updateEmbeddedDocuments("Item", plan.updates).catch(err => LOG.error("Failed to take off swapped items", err));
+  if (plan.updates.length > 1) {
+    // Foundry calls this hook synchronously. Veto this request; the owner applies the whole plan and verifies it.
+    EquipService.equip(actor, item, slotId, { mode, changes: structuredClone(changes) }).then(result => {
+      if (!result.ok) ui.notifications?.warn(result.message);
+      else if (result.warning) ui.notifications?.warn(result.warning);
+    }).catch(error => LOG.error("Redirected equip failed", error));
+    return false;
   }
+  if (plan.warning) ui.notifications?.warn(plan.warning);
+  for (const [key, value] of Object.entries(plan.updates[0])) if (key !== "_id") foundry.utils.setProperty(changes, key, value);
 
   LOG.debug("Equipped item validated and slot assigned", { item: item.name, actor: actor.name });
   return true;

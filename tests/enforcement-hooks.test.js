@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 
 import { handlePreUpdateItem } from "../scripts/foundry/enforcement-hooks.js";
+import { setImmediate as turn } from "node:timers/promises";
 import { LOG } from "../scripts/foundry/logger.js";
 
 LOG.setLevel("none");
@@ -37,7 +38,15 @@ afterEach(() => {
 });
 
 function makeActor(items) {
-  const actor = { documentName: "Actor", type: "character", hasPlayerOwner: true, flags: {}, items: new Map(), updateEmbeddedDocuments: async () => [] };
+  const actor = { documentName: "Actor", type: "character", hasPlayerOwner: true, flags: {}, items: new Map(), testUserPermission:()=>true,
+    async updateEmbeddedDocuments(type,updates) {
+      return updates.map(update=>{
+        const item=actor.items.get(update._id);
+        for(const [key,value] of Object.entries(update))if(key!=="_id")utils.setProperty(item,key,value);
+        return item;
+      });
+    }
+  };
   for (const item of items) {
     item.parent = actor;
     actor.items.set(item.id, item);
@@ -80,29 +89,57 @@ describe("sheet equip enforcement", () => {
     assert.equal(warnings.length, 1);
   });
 
-  it("swaps the two-handed weapon out in auto-swap mode instead of equipping an invalid loadout", () => {
+  it("redirects an auto-swap to the verified writer after cancelling the native update", async () => {
     mode = "auto_swap";
     const item = shield();
     const actor = makeActor([greataxe(), item]);
     let unequipped = null;
-    actor.updateEmbeddedDocuments = async (type, updates) => { unequipped = updates.map(update => update._id); return []; };
+    const write=actor.updateEmbeddedDocuments;
+    actor.updateEmbeddedDocuments = async (type, updates, options) => { unequipped = updates.map(update => update._id); return write(type,updates,options); };
     const changes = { "system.equipped": true };
-    assert.equal(handlePreUpdateItem(item, changes, {}, "p1"), true);
-    assert.deepEqual(unequipped, ["greataxe"]);
-    assert.ok(["mainHand", "offHand"].includes(utils.getProperty(changes, "flags.actor-inventory-manager.slot")));
+    assert.equal(handlePreUpdateItem(item, changes, {}, "p1"), false);
+    await turn();
+    assert.deepEqual(unequipped, ["greataxe","shield"]);
+    assert.equal(actor.items.get("greataxe").system.equipped,false);
+    assert.equal(item.system.equipped,true);
+    assert.ok(["mainHand", "offHand"].includes(utils.getProperty(item, "flags.actor-inventory-manager.slot")));
   });
 
-  it("takes the occupant off in warn mode, so a slot never holds two items", () => {
+  it("redirects a warn-mode replacement and reports its warning after success", async () => {
     mode = "warn";
     const ring = (id, slot) => ({ id, name: id, type: "equipment", flags: slot ? { "actor-inventory-manager": { slot } } : {}, system: { equipped: Boolean(slot), type: { value: "ring" } } });
     const item = ring("new");
     const actor = makeActor([ring("a", "ring1"), ring("b", "ring2"), item]);
     let unequipped = null;
-    actor.updateEmbeddedDocuments = async (type, updates) => { unequipped = updates.map(update => update._id); return []; };
+    const write=actor.updateEmbeddedDocuments;
+    actor.updateEmbeddedDocuments = async (type, updates, options) => { unequipped = updates.map(update => update._id); return write(type,updates,options); };
     const changes = { "system.equipped": true };
-    assert.equal(handlePreUpdateItem(item, changes, {}, "p1"), true);
-    assert.deepEqual(unequipped, ["a"]);
-    assert.equal(utils.getProperty(changes, "flags.actor-inventory-manager.slot"), "ring1");
+    assert.equal(handlePreUpdateItem(item, changes, {}, "p1"), false);
+    await turn();
+    assert.deepEqual(unequipped, ["a","new"]);
+    assert.equal(actor.items.get("a").system.equipped,false);
+    assert.equal(item.system.equipped,true);
+    assert.equal(utils.getProperty(item, "flags.actor-inventory-manager.slot"), "ring1");
     assert.equal(warnings.length, 1);
   });
+});
+
+
+it("redirected native equip preserves non-equipment fields from the original update",async()=>{
+  mode="auto_swap";const item=shield();makeActor([greataxe(),item]);
+  const changes={system:{equipped:true,quantity:5},name:"Renamed shield",flags:{custom:{note:"keep"}}};
+  assert.equal(handlePreUpdateItem(item,changes,{},"p1"),false);
+  await turn();
+  assert.equal(item.system.equipped,true);
+  assert.equal(item.system.quantity,5);
+  assert.equal(item.name,"Renamed shield");
+  assert.equal(item.flags.custom.note,"keep");
+});
+
+it("redirected equip clears a container introduced by the same native update",async()=>{
+  mode="auto_swap";const item=shield();makeActor([greataxe(),item]);
+  assert.equal(handlePreUpdateItem(item,{system:{equipped:true,container:"bag"}},{},"p1"),false);
+  await turn();
+  assert.equal(item.system.equipped,true);
+  assert.equal(item.system.container,null);
 });

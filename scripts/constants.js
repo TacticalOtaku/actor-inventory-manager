@@ -14,7 +14,10 @@ export const FLAGS = {
   TRADE_NEW: "tradeNew"
 };
 
-/** Update option telling the enforcement hook the inventory window already validated an equip. */
+/**
+ * Update option suppressing enforcement-hooks validation.
+ * Internal: contract between EquipService and the hook. Do not use outside EquipService.
+ */
 export const AIM_EQUIP_OPTION = "aimEquip";
 
 /** Called when a setting changes that every open inventory window has to redraw for. */

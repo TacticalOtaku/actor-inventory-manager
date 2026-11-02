@@ -398,6 +398,7 @@ export function takeOffChanges() {
 /**
  * Plan an equip under the enforcement mode (GLOSSARY: Enforcement mode), the same for the actor window and any sheet.
  * A slot the player chose takes the item in every mode; a slot picked for them is never emptied in block.
+ * Used internally by EquipService and synchronously by enforcement-hooks.
  * @param {Object} actor
  * @param {Object} item
  * @param {string|null} chosenSlotId  the slot the player chose, or null to pick one (none for an item with no place)
@@ -406,7 +407,7 @@ export function takeOffChanges() {
  * @returns {{refusal: {code: string, message: string}} | {updates: Object[], warning: string|null}}
  *   updates are item changes with `_id`, the equipped item last
  */
-export function planEquip(actor, item, chosenSlotId, mode, slotMap = getActorEquippedMap(actor)) {
+export function planEquipSync(actor, item, chosenSlotId, mode, slotMap = getActorEquippedMap(actor)) {
   const slotId = chosenSlotId || findEquipSlot(actor, item, slotMap);
   const putOn = {
     _id: item.id,
@@ -438,3 +439,7 @@ export function planEquip(actor, item, chosenSlotId, mode, slotMap = getActorEqu
   }
   return { updates: [...takeOff.map(other => ({ _id: other.id, ...takeOffChanges() })), putOn], warning };
 }
+
+
+// Preserve the original planner export for existing callers.
+export const planEquip = planEquipSync;

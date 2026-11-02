@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.1.1
+
+### Changed
+- Trade lifecycle transitions, persistence, receipts and recovery now share one owner and a serialized command queue.
+- Equipment actions share verified write outcomes between the actor window and redirected native sheet updates.
+- HP, coin and feature-use inline drafts share their input, focus and asynchronous completion lifecycle.
+- GitHub Actions checks lint, tests and the Foundry package on main pushes and pull requests.
+
+### Fixed
+- Interrupted or incomplete Trade recovery keeps its lock until restoration is verified. Coordinator handoff and
+  rejected persistence acknowledgements no longer allow an unverified completion.
+- Equipment replacement verifies every affected item and compensates recognizable partial writes when safe;
+  conflicting concurrent changes are preserved and reported for inspection.
+- Placing an equipped item in a container updates its container and equipped state together.
+- Native sheet equips requiring replacement cancel the original update and run the full operation through the
+  verified writer, preserving other requested fields and clearing the equipped item's container.
+- Inline saves cannot apply twice from repeated Enter. Failed saves retain the draft for explicit retry; a refresh
+  failure after a successful save never restores an already-applied relative entry.
+- Redraws preserve draft text and validation, including blur delivered before a focused field is disconnected.
+- Closing the window or starting a newer edit prevents stale asynchronous completions from restoring old fields.
+
 ## 2.1.0
 
 ### Changed

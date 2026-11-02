@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { activeGM, processTradeRequest, tradeState } from "../scripts/trade/service.js";
+import { activeGM, cancelOpenTrades, isTradeLocked, processTradeRequest, tradeState } from "../scripts/trade/service.js";
 import { LOG } from "../scripts/foundry/logger.js";
 LOG.setLevel("none");
 
@@ -113,7 +113,7 @@ test("failed rollback keeps a private recovery record and GM can explicitly rest
   assert.equal(actors.get("b").system.currency.gp, 10);
   assert.equal(game.journal.size, 0);
 });
-test("GM recovery without its snapshot journal closes the trade instead of locking both actors", async () => {
+test("GM recovery without its snapshot journal retains the lock because restoration is unconfirmed", async () => {
   const { actors } = setup(); await start();
   const target = actors.get("b"), update = target.update;
   target.update = async () => { throw new Error("database unavailable"); };
@@ -124,9 +124,10 @@ test("GM recovery without its snapshot journal closes the trade instead of locki
   target.update = update;
   game.journal.clear();
   await command("recoverRequest01", "recover", "a", "gm");
-  assert.equal(tradeState().sessions[0].status, "failed");
+  assert.equal(tradeState().sessions[0].status, "recovery");
   assert.equal(tradeState().sessions[0].error, "AIM.trade.errors.recoveryLost");
-  assert.equal(tradeState().receipts.gm.error, null);
+  assert.equal(isTradeLocked(actors.get("a")), true);
+  assert.equal(tradeState().receipts.gm.error, "AIM.trade.errors.recoveryLost");
 });
 test("unlocking a trade stopped while preparing deletes the snapshot journal it left unnamed in the session", async () => {
   setup(); await start();
@@ -415,4 +416,187 @@ test("an empty gift cannot be sent", async () => {
   await command("confirmRequest02", "confirm", "b", "p2", { revision: 0 });
   assert.equal(tradeState().sessions[0].status, "open");
   assert.equal(tradeState().receipts.p2.error, "AIM.trade.errors.empty");
+});
+
+
+for (const persisted of [false, true]) test(`an ambiguous completion save keeps the journal and lock (${persisted ? "written before rejection" : "not written"})`, async () => {
+  const { actors } = setup(); await start();
+  const save = game.settings.set;
+  let rejected = false;
+  game.settings.set = async (id, key, state) => {
+    if (state.sessions[0]?.status === "complete" && !rejected) {
+      rejected = true;
+      if (persisted) await save(id, key, state);
+      throw new Error("completion acknowledgement lost");
+    }
+    return save(id, key, state);
+  };
+  await command("offerRequest0001", "offer", "a", "p1", { revision: 0, offer: { items: [], money: { gp: 3 } } });
+  await command("confirmRequest01", "confirm", "a", "p1", { revision: 1 });
+  await command("confirmRequest02", "confirm", "b", "p2", { revision: 1 });
+  assert.equal(tradeState().sessions[0].status, "recovery");
+  assert.equal(tradeState().receipts.p2.error, "AIM.trade.errors.recovery");
+  assert.equal(isTradeLocked(actors.get("a")), true);
+  assert.equal(game.journal.size, 1);
+  assert.deepEqual([actors.get("a").system.currency.gp, actors.get("b").system.currency.gp], [7,13]);
+  await command("confirmRequest02", "confirm", "b", "p2", { revision: 1 });
+  assert.deepEqual([actors.get("a").system.currency.gp, actors.get("b").system.currency.gp], [7,13]);
+  await command("recoverRequest01", "recover", "a", "gm");
+  assert.equal(tradeState().sessions[0].status, "failed");
+  assert.deepEqual([actors.get("a").system.currency.gp, actors.get("b").system.currency.gp], [10,10]);
+});
+
+test("a durable terminal state contains the receipt before its recovery journal is deleted", async () => {
+  setup(); await start();
+  const create = JournalEntry.create;
+  let receiptAtCleanup;
+  JournalEntry.create = async data => {
+    const journal = await create(data), remove = journal.delete;
+    journal.delete = async () => { receiptAtCleanup = tradeState().receipts.p2; return remove(); };
+    return journal;
+  };
+  await command("offerRequest0001", "offer", "a", "p1", { revision: 0, offer: { items: [], money: { gp: 3 } } });
+  await command("confirmRequest01", "confirm", "a", "p1", { revision: 1 });
+  await command("confirmRequest02", "confirm", "b", "p2", { revision: 1 });
+  assert.deepEqual(receiptAtCleanup, {id:"confirmRequest02",error:null});
+});
+
+test("cleanup failure after a persisted completion never rolls back the completed trade", async () => {
+  const { actors } = setup(); await start();
+  const create = JournalEntry.create;
+  JournalEntry.create = async data => { const journal = await create(data); journal.delete = async () => { throw new Error("cannot delete journal"); }; return journal; };
+  await command("offerRequest0001", "offer", "a", "p1", { revision: 0, offer: { items: [], money: { gp: 3 } } });
+  await command("confirmRequest01", "confirm", "a", "p1", { revision: 1 });
+  await command("confirmRequest02", "confirm", "b", "p2", { revision: 1 });
+  assert.equal(tradeState().sessions[0].status,"complete");
+  assert.equal(tradeState().receipts.p2.error,null);
+  assert.deepEqual([actors.get("a").system.currency.gp,actors.get("b").system.currency.gp],[7,13]);
+  assert.equal(game.journal.size,1);
+});
+
+test("recovery of a preparing session with no transfer may cancel from recovery state", async () => {
+  const { actors } = setup(); await start();
+  const state=tradeState();Object.assign(state.sessions[0],{status:"recovery",phase:"preparing"});
+  await game.settings.set("actor-inventory-manager","tradeState",state);
+  await command("recoverRequest01","recover","a","gm");
+  assert.equal(tradeState().sessions[0].status,"cancelled");
+  assert.equal(isTradeLocked(actors.get("a")),false);
+});
+
+test("migration cancellation shares the queue with requests and cannot be overwritten by an in-flight offer", async () => {
+  const { users }=setup();await start();
+  for (const user of users.values()) user.getFlag=()=>undefined;
+  globalThis.ChatMessage={implementation:{create:async()=>{}}};
+  game.i18n={localize:key=>key};
+  const save=game.settings.set;
+  let release,entered;
+  const paused=new Promise(resolve=>{entered=resolve;});
+  const hold=new Promise(resolve=>{release=resolve;});
+  let waiting=false;
+  game.settings.set=async(id,key,state)=>{
+    if(state.sessions[0]?.revision===1&&!waiting){waiting=true;entered();await hold;}
+    return save(id,key,state);
+  };
+  const offer=command("offerRequest0001","offer","a","p1",{revision:0,offer:{items:[],money:{gp:3}}});
+  await paused;
+  const cancellation=cancelOpenTrades();
+  await new Promise(resolve=>setImmediate(resolve));
+  release();await offer;
+  assert.equal(await cancellation,1);
+  assert.equal(tradeState().sessions[0].status,"cancelled");
+});
+
+
+test("an incomplete recovery journal cannot acknowledge a successful restore", async () => {
+  const { actors }=setup();await start();
+  const state=tradeState();Object.assign(state.sessions[0],{status:"recovery",phase:"transferring",recoveryId:"journal"});
+  await game.settings.set("actor-inventory-manager","tradeState",state);
+  game.journal.set("journal",{getFlag:()=>JSON.stringify({sessionId:"startRequest0001",snapshots:[]}),delete:async()=>game.journal.delete("journal")});
+  await command("recoverRequest01","recover","a","gm");
+  assert.equal(tradeState().sessions[0].status,"recovery");
+  assert.equal(isTradeLocked(actors.get("a")),true);
+  assert.equal(game.journal.size,1);
+});
+
+for(const persisted of [false,true]) test(`a rejected preparation save never starts actor writes (${persisted ? "written" : "not written"})`, async()=>{
+  const {actors}=setup();await start();
+  const save=game.settings.set;let rejected=false;
+  game.settings.set=async(id,key,state)=>{
+    if(state.sessions[0]?.phase==="preparing"&&!rejected){rejected=true;if(persisted)await save(id,key,state);throw new Error("lock acknowledgement lost");}
+    return save(id,key,state);
+  };
+  await command("offerRequest0001","offer","a","p1",{revision:0,offer:{items:[],money:{gp:3}}});
+  await command("confirmRequest01","confirm","a","p1",{revision:1});
+  await command("confirmRequest02","confirm","b","p2",{revision:1});
+  assert.deepEqual([actors.get("a").system.currency.gp,actors.get("b").system.currency.gp],[10,10]);
+  assert.equal(game.journal.size,0);
+  assert.equal(tradeState().sessions[0].phase,"preparing");
+  await command("recoverRequest01","recover","a","gm");
+  assert.equal(tradeState().sessions[0].status,"cancelled");
+});
+
+for(const persisted of [false,true]) test(`a rejected journal-pointer save cancels before any actor write (${persisted ? "written" : "not written"})`,async()=>{
+  const {actors}=setup();await start();
+  const save=game.settings.set;let rejected=false;
+  game.settings.set=async(id,key,state)=>{
+    if(state.sessions[0]?.phase==="transferring"&&!rejected){rejected=true;if(persisted)await save(id,key,state);throw new Error("pointer acknowledgement lost");}
+    return save(id,key,state);
+  };
+  await command("offerRequest0001","offer","a","p1",{revision:0,offer:{items:[],money:{gp:3}}});
+  await command("confirmRequest01","confirm","a","p1",{revision:1});
+  await command("confirmRequest02","confirm","b","p2",{revision:1});
+  assert.deepEqual([actors.get("a").system.currency.gp,actors.get("b").system.currency.gp],[10,10]);
+  assert.equal(tradeState().sessions[0].status,"cancelled");
+  assert.equal(game.journal.size,0);
+});
+
+test("GM restore cannot unlock when a non-quantity item change was vetoed", async()=>{
+  const {actors}=setup();await start();
+  const data={_id:"sword",name:"Changed",type:"weapon",system:{quantity:1,equipped:false}};
+  actors.get("a").items.set("sword",{id:"sword",...data,toObject:()=>structuredClone(data)});
+  actors.get("a").updateEmbeddedDocuments=async()=>[];
+  const state=tradeState();Object.assign(state.sessions[0],{status:"recovery",phase:"transferring",recoveryId:"journal"});
+  await game.settings.set("actor-inventory-manager","tradeState",state);
+  game.journal.set("journal",{getFlag:()=>({sessionId:"startRequest0001",snapshots:[
+    {actorId:"a",items:[{...data,name:"Original"}],attributes:{"system.currency.gp":10}},
+    {actorId:"b",items:[],attributes:{"system.currency.gp":10}}
+  ]}),delete:async()=>game.journal.delete("journal")});
+  await command("recoverRequest01","recover","a","gm");
+  assert.equal(tradeState().sessions[0].status,"recovery");
+  assert.equal(isTradeLocked(actors.get("a")),true);
+  assert.equal(game.journal.size,1);
+});
+
+test("a successor GM recovers when authority is lost after the final actor credit", async()=>{
+  const {actors,users}=setup();await start();
+  const update=actors.get("b").update;
+  actors.get("b").update=async data=>{await update.call(actors.get("b"),data);users.get("gm").active=false;};
+  users.set("newGM",{id:"newGM",active:true,isGM:true});
+  await command("offerRequest0001","offer","a","p1",{revision:0,offer:{items:[],money:{gp:3}}});
+  await command("confirmRequest01","confirm","a","p1",{revision:1});
+  await command("confirmRequest02","confirm","b","p2",{revision:1});
+  assert.equal(tradeState().sessions[0].status,"executing");
+  assert.equal(game.journal.size,1);
+  assert.deepEqual([actors.get("a").system.currency.gp,actors.get("b").system.currency.gp],[7,13]);
+  actors.get("b").update=update;game.user=users.get("newGM");
+  await command("recoverRequest01","recover","a","newGM");
+  assert.equal(tradeState().sessions[0].status,"failed");
+  assert.deepEqual([actors.get("a").system.currency.gp,actors.get("b").system.currency.gp],[10,10]);
+});
+
+for(const active of [false,true]) test(`GM recovery uses only saved currency paths when Item Piles is ${active ? "broken" : "disabled"}`,async()=>{
+  const {actors}=setup();await start();
+  const state=tradeState();Object.assign(state.sessions[0],{status:"recovery",phase:"transferring",recoveryId:"journal"});
+  await game.settings.set("actor-inventory-manager","tradeState",state);
+  // A journal from an item-currency provider contains no attribute currencies.
+  // The actors' fallback currency attributes are outside this snapshot.
+  game.journal.set("journal",{getFlag:()=>({sessionId:"startRequest0001",snapshots:[
+    {actorId:"a",items:[],attributes:{}},{actorId:"b",items:[],attributes:{}}
+  ]}),delete:async()=>game.journal.delete("journal")});
+  game.modules.set("item-piles",{active});
+  await command("recoverRequest01","recover","a","gm");
+  assert.equal(tradeState().sessions[0].status,"failed");
+  assert.equal(isTradeLocked(actors.get("a")),false);
+  assert.equal(game.journal.size,0);
+  assert.deepEqual([actors.get("a").system.currency.gp,actors.get("b").system.currency.gp],[10,10]);
 });

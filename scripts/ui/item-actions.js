@@ -2,12 +2,12 @@
 // Actor Inventory Manager - Item Actions Controller
 // ─────────────────────────────────────────────────────────
 
-import { AIM_EQUIP_OPTION, ENFORCEMENT_MODES, FLAGS, MODULE_ID } from "../constants.js";
+import { ENFORCEMENT_MODES, MODULE_ID } from "../constants.js";
 import { canEditActor, isSupportedActor } from "../core/actor-scope.js";
 import { getActorAttunementMax, isItemAttuned, itemRequiresAttunement } from "../core/attunement.js";
-import { planEquip, takeOffChanges } from "../core/equipment-rules.js";
+import { EquipService } from "../foundry/equipment.js";
+export { wouldCreateContainerCycle } from "../foundry/equipment.js";
 import { canItemBeEquipped } from "../core/item-classifier.js";
-import { LOG } from "../foundry/logger.js";
 
 // Attunements sent and not yet back, per actor: two quick ones must not both take the last place.
 const attuning = new Map();
@@ -49,21 +49,12 @@ async function equip(actor, item, slotId) {
     return false;
   }
 
-  const plan = planEquip(actor, item, slotId, enforcementMode());
-  if (plan.refusal) {
-    ui.notifications?.warn(plan.refusal.message);
-    LOG.warn("Equip refused in UI", { item: item.name, slotId, code: plan.refusal.code });
+  const result = await EquipService.equip(actor, item, slotId, { mode: enforcementMode() });
+  if (!result.ok) {
+    ui.notifications?.warn(result.message);
     return false;
   }
-  if (plan.warning) ui.notifications?.warn(plan.warning);
-
-  // One batched write: displaced items and the new one change together, so a
-  // failure cannot leave the old item unequipped and the new one not worn.
-  // Foundry drops a document from the result when a preUpdate hook vetoes it.
-  const updated = await actor.updateEmbeddedDocuments("Item", plan.updates, { [AIM_EQUIP_OPTION]: true });
-  if (!updated?.some(doc => doc?.id === item.id)) return false;
-
-  LOG.info("Item equipped", { item: item.name, slot: plan.updates.at(-1)[`flags.${MODULE_ID}.${FLAGS.SLOT}`], actor: actor.name });
+  if (result.warning) ui.notifications?.warn(result.warning);
   return true;
 }
 
@@ -92,10 +83,11 @@ export async function unequipItem(actor, item) {
   if (!isSupportedActor(actor) || !item) return false;
   if (!assertCanEdit(actor)) return false;
 
-  const updated = await item.update(takeOffChanges());
-  if (!updated) return false;
-
-  LOG.info("Item unequipped", { item: item.name, actor: actor?.name });
+  const result = await EquipService.unequip(actor, item);
+  if (!result.ok) {
+    ui.notifications?.warn(result.message);
+    return false;
+  }
   return true;
 }
 
@@ -184,41 +176,13 @@ export async function toggleAttunement(item) {
 }
 
 /**
- * Is `containerId` the item itself or one of the containers nested inside it?
- * Moving a bag into its own contents would detach the whole branch.
- * @param {Object} actor
- * @param {Object} item
- * @param {string} containerId
- * @returns {boolean}
- */
-export function wouldCreateContainerCycle(actor, item, containerId) {
-  let current = containerId;
-  const visited = new Set();
-  while (current && !visited.has(current)) {
-    if (current === item.id) return true;
-    visited.add(current);
-    current = actor.items.get(current)?.system?.container ?? null;
-  }
-  return false;
-}
-
-/**
  * Move item into or out of a container
  * @param {Object} item
  * @param {string|null} containerId
  */
 export async function setItemContainer(item, containerId) {
-  if (!item) return;
-  const actor = item.parent;
-  if (!isSupportedActor(actor)) return;
-  if (!assertCanEdit(actor)) return;
-  if (containerId && wouldCreateContainerCycle(actor, item, containerId)) {
-    ui.notifications?.warn(game.i18n.format("AIM.containers.cycle", { item: item.name }));
-    return;
-  }
-  await item.update({
-    "system.container": containerId || null,
-    // Unequip if moving into a container
-    ...(containerId ? takeOffChanges() : {})
-  });
+  if (!item || !isSupportedActor(item.parent) || !assertCanEdit(item.parent)) return false;
+  const result = await EquipService.setContainer(item.parent, item, containerId);
+  if (!result.ok) ui.notifications?.warn(result.message);
+  return result.ok;
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 
-import { equipmentRuleEngine, findEquipSlot, getActorEquippedMap, getTwoHandLayout, isOffHandLockedBy2H, planEquip } from "../scripts/core/equipment-rules.js";
+import { equipmentRuleEngine, findEquipSlot, getActorEquippedMap, getTwoHandLayout, isOffHandLockedBy2H, planEquipSync } from "../scripts/core/equipment-rules.js";
 import { configurePaperdollRuntime, resetPaperdollRuntime } from "../scripts/core/paperdoll-runtime.js";
 import { DND_2024_TEMPLATE } from "../scripts/core/paperdoll-templates.js";
 
@@ -186,27 +186,27 @@ describe("equip plan", () => {
     for (const [mode, result] of Object.entries(expected)) {
       it(`${name} in ${mode} mode: ${result}`, () => {
         const actor = build();
-        assert.equal(outcome(planEquip(actor, actor.items.get(itemId), slotId, mode)), result);
+        assert.equal(outcome(planEquipSync(actor, actor.items.get(itemId), slotId, mode)), result);
       });
     }
   }
 
   it("warns only in warn mode, about the broken rule or the replaced item", () => {
     const taken = () => makeActor([ring("old", "ring1"), ring("new")]);
-    for (const mode of ["block", "auto_swap"]) assert.equal(planEquip(taken(), taken().items.get("new"), "ring1", mode).warning, null);
+    for (const mode of ["block", "auto_swap"]) assert.equal(planEquipSync(taken(), taken().items.get("new"), "ring1", mode).warning, null);
     const actor = taken();
-    assert.match(planEquip(actor, actor.items.get("new"), "ring1", "warn").warning, /'new' replaced 'old'/);
+    assert.match(planEquipSync(actor, actor.items.get("new"), "ring1", "warn").warning, /'new' replaced 'old'/);
     const held = makeActor([weapon("greataxe", ["two"], true, "mainHand"), shield("shield")]);
-    assert.match(planEquip(held, held.items.get("shield"), "offHand", "warn").warning, /requires both hands/);
+    assert.match(planEquipSync(held, held.items.get("shield"), "offHand", "warn").warning, /requires both hands/);
   });
 
   it("writes the slot, the time and the way out of a bag on the equipped item, and no slot for a slotless one", () => {
     const actor = makeActor([{ ...weapon("sword"), system: { equipped: false, container: "bag", properties: new Set(), type: { value: "martialM" } } }, { ...trinket }]);
-    const [sword] = planEquip(actor, actor.items.get("sword"), null, "block").updates;
+    const [sword] = planEquipSync(actor, actor.items.get("sword"), null, "block").updates;
     assert.equal(sword["flags.actor-inventory-manager.slot"], "mainHand");
     assert.equal(sword["system.container"], null);
     assert.equal(typeof sword["flags.actor-inventory-manager.equippedAt"], "number");
-    const [stone] = planEquip(actor, actor.items.get("stone"), null, "block").updates;
+    const [stone] = planEquipSync(actor, actor.items.get("stone"), null, "block").updates;
     assert.equal(stone["flags.actor-inventory-manager.slot"], null);
     assert.equal("flags.actor-inventory-manager.equippedAt" in stone, false);
   });

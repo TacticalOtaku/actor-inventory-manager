@@ -262,7 +262,11 @@
       "unattunedSuccess": "Ended attunement to {item}",
       "cannotEquip": "'{item}' cannot be equipped.",
       "noPermission": "You do not have permission to change this character.",
-      "attunementNotRequired": "'{item}' does not require attunement."
+      "attunementNotRequired": "'{item}' does not require attunement.",
+      "inlineEditRefreshFailed": "The change was saved, but the window could not refresh. Reopen the window to see the current value.",
+      "inlineEditFailed": "The change could not be saved. Your entry is kept for retry; check the current value before trying again.",
+      "equipWriteRefused": "The equipment change was refused or failed. No change was confirmed; try again after checking the item.",
+      "equipPartial": "Equipment changed only partly and could not be safely restored. Check worn items and slots before trying again."
     },
     "settings": {
       "enforcementMode": {

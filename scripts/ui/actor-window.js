@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { MODULE_ID, REFRESH_HOOK } from "../constants.js";
+import { InlineEdits } from "./inline-edits.js";
 import { WindowRenderQueue } from "../core/window-render-queue.js";
 import { canEditActor, canViewActor, isSupportedActor } from "../core/actor-scope.js";
 import {
@@ -253,23 +254,24 @@ export class ActorWindow extends WindowBase {
     // useWebFonts takes effect after a reload; the toggle only marks the change.
     this.fontsAtLoad = Boolean(getSetting("useWebFonts"));
     this.expandedWidth = null;
-    this.hpEditing = false;
-    this.hpDraft = "";
     this._railPrev = null;
     // The equipment tab: search, folded sections, the selected entry, the coin being edited.
     this.query = "";
     this.spellQuery = "";
     this.featureQuery = "";
-    this.usesEditing = null;
-    this.usesDraft = "";
     // «where:uuid» of the effect row whose details are open.
     this.effectOpen = null;
     this.trade = new TradePanel(this);
     this.selectedKey = null;
     this.collapsed = new Set();
     this.selected = null;
-    this.coinEditing = null;
-    this.coinDraft = "";
+    this._edits = new InlineEdits(this.#inlineEditAdapters(), {
+      render: part => this.render({ parts: [part] }),
+      onError: (error, { saved = false } = {}) => {
+        LOG.error("Inline edit failed", error);
+        ui.notifications?.warn(t(`AIM.notifications.${saved ? "inlineEditRefreshFailed" : "inlineEditFailed"}`));
+      }
+    });
     this._hooks = [];
     this._redraws = new WindowRenderQueue({
       parts: Object.keys(this.constructor.PARTS),
@@ -278,6 +280,51 @@ export class ActorWindow extends WindowBase {
       active: () => this.rendered,
       onError: (error) => LOG.error("Actor window redraw failed", error)
     });
+  }
+
+  get hpEditing() { return this._edits.state("hp").target !== null; }
+  get hpDraft() { return this._edits.state("hp").text; }
+  get coinEditing() { return this._edits.state("coin").target; }
+  get coinDraft() { return this._edits.state("coin").text; }
+  get usesEditing() { return this._edits.state("uses").target; }
+  get usesDraft() { return this._edits.state("uses").text; }
+
+  #inlineEditAdapters() {
+    return {
+      hp: {
+        selector: "[data-hp-input]", part: "rail", beforeWrite: true,
+        editable: () => this.canEdit,
+        parse: (_target, text) => parseHpEntry(text),
+        preview: input => this.#previewHp(input),
+        write: async (_target, entry) => {
+          const result = await this.#changeHp(entry);
+          if (entry.kind === "set" && !result) throw new Error("HP update refused");
+        }
+      },
+      coin: {
+        selector: "[data-coin-input]", part: "main", beforeWrite: true,
+        editable: key => this.canEdit && Object.hasOwn(this.actor.system.currency ?? {}, key),
+        parse: (_target, text) => parseCoinEntry(text),
+        write: async (key, entry) => {
+          const current = Number(foundry.utils.getProperty(this.actor, `system.currency.${key}`)) || 0;
+          if (!await this.actor.update({ [`system.currency.${key}`]: applyCoinEntry(current, entry) })) throw new Error("Coin update refused");
+        }
+      },
+      uses: {
+        selector: "[data-uses-input]", part: "main", beforeWrite: false,
+        editable: id => this.canEdit && Boolean(this.actor.items.get(id)),
+        parse: (id, text) => {
+          const uses = this.actor.items.get(id)?.system.uses;
+          const max = Number(uses?.max) || 0;
+          return applyUsesEntry({ value: max - (Number(uses?.spent) || 0), max }, text);
+        },
+        write: async (id, value) => {
+          const item = this.actor.items.get(id);
+          const max = Number(item.system.uses?.max) || 0;
+          if (!await item.update({ "system.uses.spent": max - value })) throw new Error("Uses update refused");
+        }
+      }
+    };
   }
 
   get canEdit() {
@@ -600,15 +647,17 @@ export class ActorWindow extends WindowBase {
 
   /** The main part is patched in place, not replaced: only what changed is restyled and laid out again (#9). */
   _replaceHTML(result, content, options) {
-    const prior = result.main && content.querySelector('[data-application-part="main"]');
-    if (prior) {
-      const state = {};
-      this._preSyncPartState("main", result.main, prior, state);
-      morph(prior, result.main);
-      this._syncPartState("main", prior, prior, state);
-      delete result.main;
-    }
-    super._replaceHTML(result, content, options);
+    return this._edits.replace(() => {
+      const prior = result.main && content.querySelector('[data-application-part="main"]');
+      if (prior) {
+        const state = {};
+        this._preSyncPartState("main", result.main, prior, state);
+        morph(prior, result.main);
+        this._syncPartState("main", prior, prior, state);
+        delete result.main;
+      }
+      return super._replaceHTML(result, content, options);
+    });
   }
 
   _onRender(context, options) {
@@ -670,19 +719,6 @@ export class ActorWindow extends WindowBase {
   /** Listeners the rail needs beyond click actions: the HP field, right clicks. */
   #bindRail() {
     const el = this.element;
-    const input = el.querySelector("[data-hp-input]");
-    if (input) {
-      input.focus();
-      input.setSelectionRange(input.value.length, input.value.length);
-      this.#previewHp(input);
-      input.addEventListener("input", () => this.#previewHp(input));
-      input.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") { event.preventDefault(); this.#applyHp(input.value); }
-        else if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); this.#cancelHp(); }
-      });
-      // A rail redraw from another client takes the field away; only leaving it cancels the entry.
-      input.addEventListener("blur", () => input.isConnected && this.hpEditing && this.#cancelHp());
-    }
     el.querySelector('[data-action="editHp"]')?.addEventListener("contextmenu", (event) => {
       event.preventDefault();
       if (this.canEdit) this.#openHpField("в");
@@ -700,23 +736,14 @@ export class ActorWindow extends WindowBase {
   }
 
   #openHpField(draft = "") {
-    this.hpEditing = true;
-    this.hpDraft = draft;
-    this.render({ parts: ["rail"] });
-  }
-
-  #cancelHp() {
-    this.hpEditing = false;
-    this.hpDraft = "";
-    this.render({ parts: ["rail"] });
+    this._edits.begin("hp", true, draft);
   }
 
   /** While typing, the result is drawn on the bar: red for damage (after temporary HP), green for healing. */
   #previewHp(input) {
-    this.hpDraft = input.value;
     const band = this.element.querySelector("[data-hp-preview]");
     const entry = parseHpEntry(input.value);
-    input.classList.toggle("is-invalid", Boolean(input.value.trim()) && !entry);
+    input.classList.toggle("is-invalid", (Boolean(input.value.trim()) && !entry) || this._edits.state("hp").invalid);
     if (!band) return;
     const hp = readRail(this.actor).hp;
     if (!entry || !hp.max) { band.hidden = true; return; }
@@ -727,16 +754,6 @@ export class ActorWindow extends WindowBase {
     band.classList.toggle("is-heal", after.value > hp.value);
     band.style.left = `${from * 100}%`;
     band.style.width = `${(to - from) * 100}%`;
-  }
-
-  /** The field closes first; the change then plays once, on the redraw the actor update brings. */
-  async #applyHp(text) {
-    const entry = parseHpEntry(text);
-    if (!entry) return this.element.querySelector("[data-hp-input]")?.classList.add("is-invalid");
-    this.hpEditing = false;
-    this.hpDraft = "";
-    await this.render({ parts: ["rail"] });
-    await this.#changeHp(entry);
   }
 
   /** Damage and healing go through applyDamage (so preApplyDamage listeners run), temporary HP through applyTempHP. */
@@ -761,6 +778,7 @@ export class ActorWindow extends WindowBase {
   }
 
   _onClose(options) {
+    this._edits.close();
     this._redraws.close();
     this._awayDoc?.removeEventListener("pointerdown", this._away, { capture: true });
     this.trade.close();
@@ -1364,8 +1382,6 @@ export class ActorWindow extends WindowBase {
       if (effectRow) this.#toggleEffectOpen(effectRow);
     });
     el.addEventListener("input", (event) => {
-      if (event.target.dataset.coinInput) this.coinDraft = event.target.value;
-      if (event.target.matches?.("[data-uses-input]")) this.usesDraft = event.target.value;
       if (event.target.matches?.("[data-offer-qty], [data-trade-coin]")) return this.trade.input(event.target);
       const field = SEARCH_FIELDS[event.target.name];
       if (!field) return;
@@ -1395,8 +1411,6 @@ export class ActorWindow extends WindowBase {
       if (this.#openContextMenu(event)) event.preventDefault();
     });
     el.addEventListener("focusout", (event) => {
-      if (event.target.dataset?.coinInput && this.coinEditing) this.#cancelCoin();
-      if (event.target.matches?.("[data-uses-input]") && this.usesEditing) this.#cancelUses();
       // Focus left for another control or for the canvas (the field is still there); only a redraw that took the
       // field away keeps the search to give it back.
       if (event.target.name === this._searching && (event.relatedTarget || event.target.isConnected)) this._searching = null;
@@ -1409,18 +1423,8 @@ export class ActorWindow extends WindowBase {
   /** Enter or Space selects a focused row and toggles a focused section header; the coin field reads Enter and Esc. */
   #onEquipmentKey(event) {
     const target = event.target;
-    if (target.dataset?.usesInput !== undefined && target.matches?.("[data-uses-input]")) {
-      if (event.key === "Enter") { event.preventDefault(); this.#applyUses(target.value); }
-      else if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); this.#cancelUses(); }
-      else return false;
-      return true;
-    }
-    if (target.dataset?.coinInput) {
-      if (event.key === "Enter") { event.preventDefault(); this.#applyCoin(target.value); }
-      else if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); this.#cancelCoin(); }
-      else return false;
-      return true;
-    }
+    // The bound inline editor owns Enter/Escape; do not interpret them as row selection.
+    if (target.matches?.("[data-coin-input], [data-uses-input]")) return true;
     if (event.key !== "Enter" && event.key !== " ") return false;
     if (target.matches?.("[data-row]")) {
       event.preventDefault();
@@ -1471,11 +1475,8 @@ export class ActorWindow extends WindowBase {
       this._spellGlide = null;
     }
     playEquipmentChanges(el, this._equipmentPrev, el.dataset.motion);
+    this._edits.mount(el);
     const coin = el.querySelector("[data-coin-input], [data-uses-input]");
-    if (coin) {
-      coin.focus();
-      coin.setSelectionRange(coin.value.length, coin.value.length);
-    }
     const search = this._searching && el.querySelector(`[name="${this._searching}"]`);
     if (search && !coin) {
       search.focus();
@@ -1538,24 +1539,6 @@ export class ActorWindow extends WindowBase {
     const { max = 0, spent = 0 } = item.system.uses ?? {};
     const next = chargeChange(spent, max, direction);
     if (next !== spent) await item.update({ "system.uses.spent": next });
-  }
-
-  async #applyCoin(text) {
-    const entry = parseCoinEntry(text);
-    if (!entry) return this.element.querySelector("[data-coin-input]")?.classList.add("is-invalid");
-    const key = this.coinEditing;
-    this.coinEditing = null;
-    this.coinDraft = "";
-    // The field closes first; the coin then flips once, on the redraw the actor update brings.
-    await this.render({ parts: ["main"] });
-    const current = Number(foundry.utils.getProperty(this.actor, `system.currency.${key}`)) || 0;
-    if (this.canEdit) await this.actor.update({ [`system.currency.${key}`]: applyCoinEntry(current, entry) });
-  }
-
-  #cancelCoin() {
-    this.coinEditing = null;
-    this.coinDraft = "";
-    this.render({ parts: ["main"] });
   }
 
   /** The lists glide from the old view to the new one; no redraw, the next render reads the saved choice. */
@@ -1874,26 +1857,7 @@ export class ActorWindow extends WindowBase {
 
   static #onEditUses(event, target) {
     if (!this.canEdit) return;
-    this.usesEditing = target.closest("[data-item-id]").dataset.itemId;
-    this.usesDraft = "";
-    this.render({ parts: ["main"] });
-  }
-
-  async #applyUses(text) {
-    const item = this.actor.items.get(this.usesEditing);
-    const max = Number(item?.system.uses?.max) || 0;
-    const value = applyUsesEntry({ value: max - (Number(item?.system.uses?.spent) || 0), max }, text);
-    if (value === null) return this.element.querySelector("[data-uses-input]")?.classList.add("is-invalid");
-    this.usesEditing = null;
-    this.usesDraft = "";
-    if (this.canEdit && item) await item.update({ "system.uses.spent": max - value });
-    this.render({ parts: ["main"] });
-  }
-
-  #cancelUses() {
-    this.usesEditing = null;
-    this.usesDraft = "";
-    this.render({ parts: ["main"] });
+    this._edits.begin("uses", target.closest("[data-item-id]").dataset.itemId);
   }
 
   /** A recharge feature rolls its d6 through dnd5e; a 5–6 (or its own threshold) refills it. */
@@ -2029,9 +1993,7 @@ export class ActorWindow extends WindowBase {
 
   static #onEditCoin(event, target) {
     if (!this.canEdit) return;
-    this.coinEditing = target.dataset.coin;
-    this.coinDraft = "";
-    this.render({ parts: ["main"] });
+    this._edits.begin("coin", target.dataset.coin);
   }
 }
 

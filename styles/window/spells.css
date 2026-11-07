@@ -53,6 +53,10 @@
 .aim-tag.is-conc { color: var(--arcane); background: color-mix(in oklab, var(--arcane) 15%, transparent); }
 .aim-tag.is-rit { color: var(--school-trs); background: color-mix(in oklab, var(--school-trs) 15%, transparent); }
 .aim-tag.is-always { color: var(--accent); background: var(--accent-soft); }
+/* SC can place a dark gradient beneath the light theme's dark label colors. */
+.aim-root[data-theme="parchment"] .aim-row.scirc-inv-gradient-enabled .aim-tag:is(.is-conc, .is-rit, .is-always) {
+  background: var(--surface-0);
+}
 .aim-row-act .aim-cast { color: var(--tone, var(--accent)); }
 .aim-row-act .aim-cast.is-ritual { color: var(--school-trs); }
 /* toggles show their on state by colour only */

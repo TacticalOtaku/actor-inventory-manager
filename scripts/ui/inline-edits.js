@@ -1,3 +1,8 @@
+function showInvalid(input, invalid) {
+  input.classList.toggle("is-invalid", invalid);
+  input.setAttribute("aria-invalid", String(invalid));
+}
+
 /** Per-window editing lifecycle; document-specific parsing and writes stay in its adapters. */
 export class InlineEdits {
   #adapters;
@@ -37,7 +42,7 @@ export class InlineEdits {
       const bound = this.#bindings.get(name);
       if (bound?.input === input && bound?.session === session) {
         if (input) {
-          input.classList.toggle("is-invalid", session.invalid);
+          showInvalid(input, session.invalid);
           adapter.preview?.(input);
         }
         continue;
@@ -45,7 +50,7 @@ export class InlineEdits {
       this.#unbind(name);
       if (!input) continue;
       input.value = session.text;
-      input.classList.toggle("is-invalid", session.invalid);
+      showInvalid(input, session.invalid);
       input.focus();
       input.setSelectionRange(input.value.length, input.value.length);
       adapter.preview?.(input);
@@ -55,7 +60,7 @@ export class InlineEdits {
           if (!current()) return;
           session.text = input.value;
           session.invalid = false;
-          input.classList.toggle("is-invalid", false);
+          showInvalid(input, false);
           adapter.preview?.(input);
         },
         keydown: event => {
@@ -113,7 +118,7 @@ export class InlineEdits {
     const value = adapter.parse(session.target, session.text);
     if (value === null) {
       session.invalid = true;
-      input.classList.toggle("is-invalid", true);
+      showInvalid(input, true);
       return;
     }
     const current = () => !this.#closed && this.#revision === session.revision;

@@ -361,6 +361,7 @@ export class ActorWindow extends WindowBase {
       offerRows: body ? Object.fromEntries(actor.items.map((item) => [item.id, offerButton(trade, item)]).filter(([, state]) => state)) : {},
       newItems: body ? Object.fromEntries(actor.items.filter(isNewItem).map((item) => [item.id, true])) : {},
       ...(await super._prepareContext(options)),
+      windowId: this.id,
       actor,
       canEdit: this.canEdit,
       identity,
@@ -648,6 +649,9 @@ export class ActorWindow extends WindowBase {
   /** The main part is patched in place, not replaced: only what changed is restyled and laid out again (#9). */
   _replaceHTML(result, content, options) {
     return this._edits.replace(() => {
+      const active = content.ownerDocument.activeElement;
+      const drawer = content.querySelector('[data-application-part="drawer"]');
+      const drawerFocus = result.drawer && drawer?.contains(active) ? active : null;
       const prior = result.main && content.querySelector('[data-application-part="main"]');
       if (prior) {
         const state = {};
@@ -656,7 +660,19 @@ export class ActorWindow extends WindowBase {
         this._syncPartState("main", prior, prior, state);
         delete result.main;
       }
-      return super._replaceHTML(result, content, options);
+      const replaced = super._replaceHTML(result, content, options);
+      if (drawerFocus && this.element.classList.contains("is-settings")) {
+        const newDrawer = content.querySelector('[data-application-part="drawer"]');
+        if (newDrawer) {
+          newDrawer.inert = false;
+          const keys = ["action", "key", "value", "settingToggle", "railToggle", "tabToggle"];
+          const match = [...newDrawer.querySelectorAll("button:not(:disabled), input:not(:disabled)")]
+            .find(control => keys.every(key => control.dataset[key] === drawerFocus.dataset[key]));
+          (match ?? newDrawer.querySelector('.aim-drawer-head [data-action="closeSettings"]'))
+            ?.focus({ preventScroll: true });
+        }
+      }
+      return replaced;
     });
   }
 
@@ -664,8 +680,7 @@ export class ActorWindow extends WindowBase {
     super._onRender(context, options);
     // Foundry is rendered again: release changes that arrived during an explicit render.
     this._redraws.resume();
-    const drawer = this.element.querySelector('[data-application-part="drawer"]');
-    if (drawer) drawer.inert = !this.element.classList.contains("is-settings");
+    this.#syncDrawer(this.element.classList.contains("is-settings"));
     this.#applyRootState();
     this.#applyLayout({ animate: false });
     this.#moveInk();
@@ -831,7 +846,19 @@ export class ActorWindow extends WindowBase {
     if (el.dataset.layout === next) return;
     // A tooltip over a block that the new layout hides would otherwise stay on screen.
     game.tooltip?.deactivate?.();
-    const change = () => { el.dataset.layout = next; };
+    const change = () => {
+      const focus = el.ownerDocument.activeElement;
+      const prior = el.dataset.layout;
+      el.dataset.layout = next;
+      if (!focus || !el.contains(focus)) return;
+      if (next === "compact" && focus.closest(".aim-main, .aim-inspector")) {
+        el.querySelector('[data-action="expandWindow"]')?.focus({ preventScroll: true });
+      } else if (prior === "compact" && focus.matches('[data-action="expandWindow"]')) {
+        el.querySelector('[data-action="collapseWindow"]')?.focus({ preventScroll: true });
+      } else if (next !== "wide" && focus.closest(".aim-inspector")) {
+        el.querySelector('.aim-tab[aria-selected="true"]')?.focus();
+      }
+    };
     if (!animate || !el.dataset.layout || !this.motionOn) change();
     else glide(el, "[data-flip]", change);
     requestAnimationFrame(() => {
@@ -849,6 +876,25 @@ export class ActorWindow extends WindowBase {
   }
 
   #onKeydown(event) {
+    if (event.target.matches?.(".aim-tab") && ["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+      const tabs = [...this.element.querySelectorAll(".aim-tab:not([hidden])")];
+      const index = tabs.indexOf(event.target);
+      const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1
+        : (index + (event.key === "ArrowLeft" ? -1 : 1) + tabs.length) % tabs.length;
+      const tab = tabs[next];
+      if (tab && this.#switchTo(tab.dataset.tab)) {
+        event.preventDefault();
+        tab.focus();
+      }
+      return;
+    }
+    if (event.key === "Delete" && !event.repeat && this.canEdit && event.target.matches?.(".aim-slot, .aim-socket, .aim-slotless-item")) {
+      const control = event.target.querySelector(".aim-slot-x[data-action]");
+      if (control) {
+        event.preventDefault();
+        return this.constructor.DEFAULT_OPTIONS.actions[control.dataset.action]?.call(this, event, control);
+      }
+    }
     if (this.#onEquipmentKey(event)) return;
     if (event.key === "Enter" && event.target.matches?.('[data-xp-form] [name="xp"]')) {
       event.preventDefault();
@@ -901,14 +947,26 @@ export class ActorWindow extends WindowBase {
   #setSettings(open) {
     const el = this.element;
     el.classList.toggle("is-settings", open);
-    const drawer = el.querySelector('[data-application-part="drawer"]');
-    if (drawer) drawer.inert = !open;
-    if (open) return;
-    el.querySelector('[data-action="openSettings"]')?.focus({ preventScroll: true });
+    this.#syncDrawer(open);
+    if (open) {
+      closeItemMenu(el);
+      el.querySelector('.aim-drawer-head [data-action="closeSettings"]')?.focus({ preventScroll: true });
+      return;
+    }
+    const trigger = el.dataset.layout === "compact" ? "expandWindow" : "openSettings";
+    el.querySelector(`[data-action="${trigger}"]`)?.focus({ preventScroll: true });
     if (this.askReset) {
       this.askReset = false;
       this.render({ parts: ["drawer"] });
     }
+  }
+
+  #syncDrawer(open) {
+    const drawer = this.element.querySelector('[data-application-part="drawer"]');
+    if (drawer) drawer.inert = !open;
+    for (const part of this.element.querySelectorAll(
+      '[data-application-part="rail"], [data-application-part="main"], [data-application-part="inspector"], [data-application-part="trade"]'
+    )) part.inert = open;
   }
 
   async #setAndRefresh(key, value) {
@@ -934,7 +992,11 @@ export class ActorWindow extends WindowBase {
     if (!tab || this.element.querySelector(`.aim-tab[data-tab="${tab}"]`)?.hidden) return false;
     if (tab === this.tab) return true;
     this.tab = tab;
-    for (const button of this.element.querySelectorAll(".aim-tab")) button.setAttribute("aria-selected", String(button.dataset.tab === tab));
+    for (const button of this.element.querySelectorAll(".aim-tab")) {
+      const active = button.dataset.tab === tab;
+      button.setAttribute("aria-selected", String(active));
+      button.tabIndex = active ? 0 : -1;
+    }
     for (const panel of this.element.querySelectorAll(".aim-panel")) {
       const on = panel.dataset.panel === tab;
       panel.hidden = !on;

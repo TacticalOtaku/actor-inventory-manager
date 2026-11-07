@@ -65,13 +65,13 @@
   </header>
   <nav class="aim-tabs" role="tablist">
     {{#each tabs}}
-    <button type="button" class="aim-tab" role="tab" data-action="switchTab" data-tab="{{id}}" aria-selected="{{active}}" {{#if hidden}}hidden{{/if}}>{{label}}{{#if count}}<span class="aim-tab-n">{{count}}</span>{{/if}}</button>
+    <button type="button" class="aim-tab" role="tab" id="{{@root.windowId}}-tab-{{id}}" aria-controls="{{@root.windowId}}-panel-{{id}}" tabindex="{{#if active}}0{{else}}-1{{/if}}" data-action="switchTab" data-tab="{{id}}" aria-selected="{{active}}" {{#if hidden}}hidden{{/if}}>{{label}}{{#if count}}<span class="aim-tab-n">{{count}}</span>{{/if}}</button>
     {{/each}}
     <span class="aim-tab-ink" aria-hidden="true"></span>
   </nav>
   <div class="aim-panels" data-drop-label="{{localize "AIM.window.drop.release"}}">
     {{#each tabs}}
-    <section class="aim-panel" data-panel="{{id}}" role="tabpanel" {{#unless active}}hidden{{/unless}}>
+    <section class="aim-panel" data-panel="{{id}}" role="tabpanel" id="{{@root.windowId}}-panel-{{id}}" aria-labelledby="{{@root.windowId}}-tab-{{id}}" {{#unless active}}hidden{{/unless}}>
       {{#if (eq id "equipment")}}{{> "modules/actor-inventory-manager/templates/window/equipment.hbs" @root}}
       {{else if (eq id "features")}}{{> "modules/actor-inventory-manager/templates/window/features.hbs" @root}}
       {{else if (eq id "overview")}}{{#if @root.overview}}{{> "modules/actor-inventory-manager/templates/window/overview.hbs" @root}}{{/if}}

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.2
+
+### Fixed
+- Item and spell controls stay legible over SC Item Rarity Colors gradients. Parchment spell tags use an opaque surface on SC rows.
+- Common row actions have larger hit areas and can wrap in narrow lists.
+- Arrow keys and Home/End navigate tabs. Focus follows the settings drawer and compact layout transitions.
+- Invalid HP, coin and feature-use entries expose their state and associated instructions.
+- Paperdoll labels wrap, and critical HP uses a local border and label. Restrained motion stops the level arrow and trade invitation pulse.
+
 ## 2.1.1
 
 ### Changed

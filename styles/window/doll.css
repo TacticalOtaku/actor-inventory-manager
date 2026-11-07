@@ -27,7 +27,7 @@
   justify-content: center;
 }
 .aim-figure { grid-column: 2; align-self: center; justify-self: center; width: 100%; height: 100%; max-height: calc(var(--rows) * 70px); color: var(--text-3); opacity: 0.35; pointer-events: none; }
-.aim-doll-backdrop { grid-column: 2; align-self: center; justify-self: center; width: 100%; height: 100%; max-height: calc(var(--rows) * 70px); object-fit: cover; object-position: 50% 20%; border: 0; border-radius: var(--r-lg); opacity: 0.32; filter: grayscale(0.25); mask-image: radial-gradient(closest-side, #000 60%, transparent); pointer-events: none; }
+.aim-doll-backdrop { grid-column: 2; align-self: center; justify-self: center; width: 100%; height: 100%; max-height: calc(var(--rows) * 70px); object-fit: cover; object-position: 50% 20%; border: 0; border-radius: var(--r-lg); opacity: 0.44; filter: grayscale(0.12); mask-image: radial-gradient(closest-side, #000 60%, transparent); pointer-events: none; }
 
 .aim-slot {
   position: relative; display: grid; place-items: center; align-content: center; gap: 2px;
@@ -39,16 +39,16 @@
 .aim-slot:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .aim-slot.is-filled { border-style: solid; border-color: var(--line); }
 .aim-slot.is-selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
-.aim-slot .aim-tile { --tile: 38px; }
+.aim-slot .aim-tile { --tile: 32px; }
 .aim-slot-ico { font-size: 18px; }
-.aim-slot-label { max-width: 100%; overflow: hidden; color: var(--text-3); font-size: 9.5px; line-height: 1.1; text-overflow: ellipsis; white-space: nowrap; }
+.aim-slot-label { max-width: 100%; overflow: hidden; color: var(--text-3); font-size: 10px; line-height: 1.1; text-align: center; overflow-wrap: anywhere; }
 .aim-slot-x {
   position: absolute; top: -6px; right: -6px; display: grid; place-items: center; width: 18px; height: 18px;
   border: 1px solid var(--line-strong); border-radius: 50%; background: var(--surface-0); color: var(--text-2);
   font-size: 10px; opacity: 0; transition: opacity var(--d-fast);
 }
 .aim-slot:hover .aim-slot-x, .aim-slot:focus-visible .aim-slot-x,
-.aim-socket:hover .aim-slot-x, .aim-slotless-item:hover .aim-slot-x { opacity: 1; }
+.aim-socket:is(:hover, :focus-visible) .aim-slot-x, .aim-slotless-item:is(:hover, :focus-visible) .aim-slot-x { opacity: 1; }
 .aim-slot-x:hover { color: var(--hp); border-color: var(--hp); }
 .aim-slot.is-locked { border-style: solid; cursor: default; }
 .aim-slot-ghost { opacity: 0.3; filter: grayscale(1); }

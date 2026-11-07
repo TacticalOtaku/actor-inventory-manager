@@ -8,9 +8,11 @@ class Input extends EventTarget {
     super();
     this.value = value;
     this.isConnected = true;
+    this.attributes = new Map();
     this.classes = new Set();
     this.classList = { toggle: (key, on) => (on ? this.classes.add(key) : this.classes.delete(key)) };
   }
+  setAttribute(name, value) { this.attributes.set(name, value); }
   focus() {
     this.focused = true;
   }
@@ -325,4 +327,19 @@ it("Foundry replacing a focused node may blur it before detach without cancellin
   const next = f.mount();
   assert.equal(next.value, "+8");
   f.edits.close();
+});
+
+it("exposes invalid submission after redraw and clears it when corrected", () => {
+  const f = fixture();
+  f.edits.begin("amount", "gp");
+  const input = f.mount();
+  input.value = "invalid";
+  input.fire("keydown", "Enter");
+  assert.equal(input.attributes.get("aria-invalid"), "true");
+
+  const next = f.mount();
+  assert.equal(next.attributes.get("aria-invalid"), "true");
+  next.value = "+4";
+  next.fire("input");
+  assert.equal(next.attributes.get("aria-invalid"), "false");
 });

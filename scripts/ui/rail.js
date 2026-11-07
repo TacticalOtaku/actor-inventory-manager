@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { crLabel, railBlocksFor } from "../core/actor-window.js";
-import { heartbeatFor, railEvents } from "../core/vitals.js";
+import { heartbeatFor, railEvents, vitalState } from "../core/vitals.js";
 import { readNpc, readRail } from "../integrations/dnd5e.js";
 import { playBurst } from "./bursts.js";
 import { buildVehicleRail } from "./vehicle.js";
@@ -35,7 +35,7 @@ export function buildRailContext(actor, { canEdit, hasSpells, hiddenBlocks }) {
   blocks.rest &&= restAllowed && canEdit;
   blocks.spellcasting &&= rail.casting.length > 0;
   blocks.spellSlots &&= rail.slots.length > 0;
-  const info = [t("AIM.window.hp.max", { max })];
+  const info = [];
   if (temp) info.push(t("AIM.window.hp.tempInfo", { temp }));
   if (value < max) info.push(`−${max - value}`);
   return {
@@ -44,7 +44,9 @@ export function buildRailContext(actor, { canEdit, hasSpells, hiddenBlocks }) {
       down,
       // A wrecked vehicle has no death saves.
       dying: down && !isVehicle,
-      hpLabel: down ? t(isVehicle ? "AIM.window.hp.destroyed" : "AIM.window.hp.down") : t("AIM.window.rail.hp"),
+      hpLabel: down ? t(isVehicle ? "AIM.window.hp.destroyed" : "AIM.window.hp.down")
+        : vitalState(value, max) === "critical" ? t("AIM.window.hp.critical") : t("AIM.window.rail.hp"),
+      hpStatus: t("AIM.window.hp.status", { value, max }),
       hpShare: share(value, max),
       tempFrom: share(Math.max(0, value - temp), max),
       tempShare: share(Math.min(temp, value), max),

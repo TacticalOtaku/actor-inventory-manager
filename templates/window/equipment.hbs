@@ -21,7 +21,7 @@
     <div class="aim-coins" role="group" aria-label="{{localize "AIM.window.inv.coins"}}">
       {{#each inv.coins}}
       {{#if editing}}
-      <span class="aim-coin is-editing" data-coin="{{key}}"><i></i><input type="text" inputmode="text" autocomplete="off" spellcheck="false" value="{{../inv.coinDraft}}" data-coin-input="{{key}}" aria-label="{{editLabel}}" data-tooltip="{{localize "AIM.window.inv.coinForms"}}"></span>
+      <span class="aim-coin is-editing" data-coin="{{key}}"><i></i><input type="text" inputmode="text" autocomplete="off" spellcheck="false" value="{{../inv.coinDraft}}" data-coin-input="{{key}}" aria-describedby="{{@root.windowId}}-coin-forms" aria-label="{{editLabel}}" data-tooltip="{{localize "AIM.window.inv.coinForms"}}"><span class="aim-edit-error" id="{{@root.windowId}}-coin-forms">{{localize "AIM.window.inv.coinForms"}}</span></span>
       {{else}}
       <button type="button" class="aim-coin" data-coin="{{key}}" data-action="editCoin" {{#unless editable}}disabled{{/unless}} aria-label="{{editLabel}}" data-tooltip="{{label}}">{{#if img}}<img src="{{img}}" alt="">{{else}}<i></i>{{/if}}<b data-coin-value>{{value}}</b><small>{{abbr}}</small></button>
       {{/if}}

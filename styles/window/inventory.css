@@ -48,6 +48,9 @@
 .aim-coin.is-editing { padding-right: 4px; border-color: var(--accent); }
 .aim-coin.is-editing input { width: 64px; height: 22px; padding: 0 4px; border: 0; outline: none; background: transparent; color: var(--text); font: inherit; box-shadow: none; }
 .aim-coin.is-editing input.is-invalid { color: var(--hp); }
+.aim-coin.is-editing { flex-wrap: wrap; height: auto; min-height: 28px; max-width: 100%; padding-block: 3px; border-radius: var(--r-md); }
+.aim-edit-error { display: none; flex-basis: 100%; overflow-wrap: anywhere; color: var(--hp); font: 500 11.5px/1.4 var(--font-ui); white-space: normal; }
+input[aria-invalid="true"] + .aim-edit-error { display: block; }
 .aim-coin.is-flip i, .aim-coin.is-flip img { animation: aim-coin-flip 600ms var(--ease-snap); }
 @keyframes aim-coin-flip { 50% { transform: rotateY(90deg) scale(1.2); } }
 .aim-coin-total { padding: 0 var(--s1); color: var(--text-2); font: 600 12px var(--font-num); }
@@ -121,28 +124,36 @@
 .aim-row-main { flex: 1; min-width: 0; display: grid; gap: 1px; }
 .aim-row-name { overflow: hidden; color: var(--text); font-weight: 500; white-space: nowrap; text-overflow: ellipsis; }
 .aim-row.is-equipped .aim-row-name::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 7px; border-radius: 50%; background: var(--accent); vertical-align: middle; }
-/* tags stay on one line and fade out at the right edge, so rows keep one height */
-.aim-row-meta { display: flex; gap: 6px; overflow: hidden; color: var(--text-3); font-size: 11.5px; white-space: nowrap; mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
-.aim-row-meta.is-wrap { flex-wrap: wrap; mask-image: none; }
+/* Keep list metadata on one line; cards can wrap it. */
+.aim-row-meta { display: flex; gap: 6px; overflow: hidden; color: var(--text-3); font-size: 11.5px; white-space: nowrap; }
+.aim-row-meta.is-wrap { flex-wrap: wrap; }
 .aim-tag { display: inline-flex; flex: none; align-items: center; height: 18px; padding: 0 6px; border-radius: 5px; background: var(--surface-3); color: var(--text-2); font-size: 10.5px; }
 .aim-tag.is-att { color: var(--warn); background: color-mix(in oklab, var(--warn) 14%, transparent); }
 
-.aim-qty { display: inline-flex; align-items: center; gap: 2px; font: 600 12px var(--font-num); }
+.aim-qty { display: inline-flex; align-items: center; gap: 2px; font: 600 12px var(--font-num); font-variant-numeric: tabular-nums; }
 .aim-qty b { min-width: 18px; text-align: center; }
-.aim-qty button { width: 20px; height: 20px; padding: 0; border: 0; border-radius: var(--r-xs); background: transparent; color: var(--text-3); line-height: 1; cursor: pointer; opacity: 0; transition: opacity var(--d-fast), color var(--d-fast); }
+.aim-qty button { width: 24px; height: 24px; padding: 0; border: 0; border-radius: var(--r-xs); background: transparent; color: var(--text-3); line-height: 1; cursor: pointer; opacity: 0; transition: opacity var(--d-fast), color var(--d-fast); }
 .aim-row:hover .aim-qty button, .aim-qty button:focus-visible { opacity: 1; }
 .aim-qty button:hover { color: var(--text); background: var(--surface-3); }
 .aim-charges { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; max-width: 120px; }
-.aim-pip { width: 12px; height: 12px; padding: 0; border: 1.5px solid var(--accent); border-radius: 50%; background: var(--accent); cursor: pointer; transition: transform var(--d-fast) var(--ease-snap); }
-.aim-pip.is-spent { background: transparent; }
+.aim-pip { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: transparent; cursor: pointer; transition: transform var(--d-fast) var(--ease-snap); }
+.aim-pip::before { content: ""; width: 12px; height: 12px; border: 1.5px solid var(--accent); border-radius: 50%; background: var(--accent); }
+.aim-pip.is-spent::before { background: transparent; }
 .aim-pip:active { transform: scale(0.8); }
 .aim-pip:disabled { cursor: default; }
 .aim-charge-text { height: 22px; padding: 0 8px; border: 1px solid var(--accent-line); border-radius: 99px; background: transparent; color: var(--text); font: 600 11.5px var(--font-num); cursor: pointer; }
-.aim-row-act { display: flex; align-items: center; gap: 2px; opacity: 0.55; transition: opacity var(--d-fast); }
-.aim-row:hover .aim-row-act, .aim-row.is-selected .aim-row-act, .aim-row-act:focus-within { opacity: 1; }
+.aim-row-act { display: flex; align-items: center; gap: 2px; flex: none; }
+.aim-row-act .aim-ibtn.aim-mini { width: 28px; height: 28px; }
+.aim-root[data-density="compact"] .aim-row-act .aim-ibtn.aim-mini { width: 24px; height: 24px; }
+/* Keep actions legible even when SC puts a bright gradient beneath the row. */
+.aim-row.scirc-inv-gradient-enabled :is(.aim-row-act, .aim-qty, .aim-charges):not(:empty) {
+  padding: 2px; border-radius: var(--r-sm); background: var(--surface-0);
+}
 .aim-row-act .aim-ibtn.is-on { color: var(--accent); }
 /* list columns line up whichever row buttons an item has */
-.aim-items[data-view="list"] .aim-row-act { min-width: 70px; justify-content: flex-end; }
+.aim-items[data-view="list"] .aim-row { flex-wrap: wrap; }
+.aim-items[data-view="list"] .aim-row-main { flex-basis: 90px; }
+.aim-items[data-view="list"] .aim-row-act { min-width: 70px; justify-content: flex-end; margin-inline-start: auto; }
 .aim-items[data-view="list"] .aim-qty { min-width: 64px; justify-content: center; }
 
 /* cards */
@@ -151,9 +162,9 @@
 .aim-items[data-view="grid"] .aim-row:hover { border-color: var(--line-strong); }
 .aim-items[data-view="grid"] .aim-tile { --tile: 40px; }
 .aim-items[data-view="grid"] .aim-row-main { width: 100%; min-width: 0; }
-/* a card is narrow: its tags wrap under each other instead of running past its edge */
-.aim-items[data-view="grid"] .aim-row-meta { flex-wrap: wrap; mask-image: none; }
-.aim-items[data-view="grid"] .aim-row-act { position: absolute; top: 6px; right: 6px; }
+/* A card wraps its tags and keeps the actions below the artwork. */
+.aim-items[data-view="grid"] .aim-row-meta { flex-wrap: wrap; }
+.aim-items[data-view="grid"] .aim-row-act { align-self: flex-end; flex-wrap: wrap; justify-content: flex-end; max-width: 100%; }
 .aim-items[data-view="grid"] .aim-qty, .aim-items[data-view="grid"] .aim-charges { align-self: flex-end; justify-content: flex-end; max-width: none; margin-top: auto; }
 .aim-items[data-view="list"] .aim-qty-badge { display: none; }
 /* in cards and icons the details of the selected entry take a whole row of the grid under it */

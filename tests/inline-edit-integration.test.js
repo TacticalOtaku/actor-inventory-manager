@@ -29,9 +29,11 @@ class Input extends EventTarget {
     super();
     this.value = "";
     this.isConnected = true;
+    this.attributes = new Map();
     this.classes = new Set();
     this.classList = { toggle: (key, on) => (on ? this.classes.add(key) : this.classes.delete(key)) };
   }
+  setAttribute(name, value) { this.attributes.set(name, value); }
   focus() {}
   setSelectionRange() {}
   fire(type, key) {

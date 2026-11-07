@@ -95,7 +95,7 @@
   background: var(--warn); box-shadow: 0 0 0 2px var(--surface-1), 0 0 10px var(--warn); animation: aim-invite 1.6s ease-in-out infinite;
 }
 @keyframes aim-invite { 50% { transform: scale(1.35); } }
-.aim-window[data-motion="off"] .aim-trade-btn.is-invited::after { animation: none; }
+.aim-window:is([data-motion="off"], [data-motion="reduced"]) .aim-trade-btn.is-invited::after { animation: none; }
 .aim-offer-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .aim-trade-lock {

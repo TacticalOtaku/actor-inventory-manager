@@ -57,6 +57,7 @@
 .aim-level.is-ready:hover { transform: scale(1.17); }
 .aim-level.is-ready .aim-level-glow { opacity: 1; box-shadow: 0 0 22px 4px color-mix(in oklab, var(--warn) 55%, transparent); }
 .aim-level.is-ready::after { content: "▲"; position: absolute; top: 3px; font-size: 8px; line-height: 1; color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / 0.5); animation: aim-orb-float 1.4s ease-in-out infinite; }
+.aim-root[data-motion="reduced"] .aim-level.is-ready::after { animation: none; }
 @keyframes aim-orb-float { 50% { transform: translateY(-3px); } }
 
 .aim-tools { position: absolute; top: var(--s4); right: var(--s4); display: flex; align-items: center; gap: var(--s1); }
@@ -105,8 +106,8 @@
 .aim-ability-m { font: 700 20px/1 var(--font-num); }
 .aim-ability-v, .aim-ability-s { font: 500 11px var(--font-num); color: var(--text-2); transition: transform var(--d-base) var(--ease-snap), opacity var(--d-fast); }
 .aim-ability-s { position: absolute; bottom: 7px; inset-inline: 0; text-align: center; color: var(--accent); opacity: 0; transform: translateY(6px); }
-.aim-ability:hover .aim-ability-v { opacity: 0; transform: translateY(-6px); }
-.aim-ability:hover .aim-ability-s { opacity: 1; transform: none; }
+.aim-ability:is(:hover, :focus-visible) .aim-ability-v { opacity: 0; transform: translateY(-6px); }
+.aim-ability:is(:hover, :focus-visible) .aim-ability-s { opacity: 1; transform: none; }
 .aim-ability-save { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--line-strong); }
 .aim-ability-save.is-prof { background: var(--accent); border-color: var(--accent); }
 

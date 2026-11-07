@@ -13,9 +13,9 @@
       <div class="aim-hp-top">
         <span class="aim-hp-label">{{rail.hpLabel}}</span>
         {{#if hpEditing}}
-        <input class="aim-hp-input" type="text" inputmode="text" autocomplete="off" spellcheck="false" value="{{hpDraft}}" data-hp-input aria-label="{{localize "AIM.window.hp.edit"}}">
+        <input class="aim-hp-input" type="text" inputmode="text" autocomplete="off" spellcheck="false" value="{{hpDraft}}" data-hp-input aria-describedby="{{windowId}}-hp-forms" aria-label="{{localize "AIM.window.hp.edit"}}">
         {{else}}
-        <button type="button" class="aim-hp-value" data-action="editHp" {{#unless canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.hp.edit"}}">
+        <button type="button" class="aim-hp-value" data-action="editHp" {{#unless canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.hp.edit"}}. {{rail.hpStatus}} {{rail.hpInfo}}">
           <span data-hp-value>{{rail.hp.value}}</span><small>/{{rail.hp.max}}</small>{{#if rail.hp.temp}}<em class="aim-hp-temp"><i class="fa-light fa-shield"></i>{{rail.hp.temp}}</em>{{/if}}
         </button>
         {{/if}}
@@ -27,7 +27,7 @@
         <i class="aim-hp-preview" data-hp-preview hidden></i>
       </div>
       <div class="aim-hp-foot">
-        {{#if hpEditing}}<span class="aim-hint" data-hp-hint>{{localize "AIM.window.hp.forms"}}</span>
+        {{#if hpEditing}}<span class="aim-hint" id="{{windowId}}-hp-forms" data-hp-hint>{{localize "AIM.window.hp.forms"}}</span>
         {{else}}<span class="aim-hp-info">{{rail.hpInfo}}</span>{{/if}}
         {{#if isGM}}
         <span class="aim-hp-steps">

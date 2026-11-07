@@ -21,7 +21,7 @@
     <span class="aim-charges" data-tooltip="{{uses.value}} / {{uses.max}}">
       {{#if canRecharge}}{{#if @root.canEdit}}<button type="button" class="aim-ibtn aim-mini aim-recharge" data-action="rechargeItem" aria-label="{{localize "AIM.window.features.rollRecharge"}}" data-tooltip="{{localize "AIM.window.features.rollRecharge"}}"><i class="fa-light fa-dice-d6"></i></button>{{/if}}{{/if}}
       {{#if usePips}}{{#each usePips}}<button type="button" class="aim-pip {{#unless lit}}is-spent{{/unless}}" data-action="usePip" data-index="{{index}}" {{#unless @root.canEdit}}disabled{{/unless}} aria-label="{{label}}"></button>{{/each}}
-      {{else if usesEditing}}<input type="text" class="aim-uses-input" data-uses-input autocomplete="off" spellcheck="false" value="{{@root.features.usesDraft}}" aria-label="{{localize "AIM.window.features.usesEdit"}}" data-tooltip="{{localize "AIM.window.features.usesForms"}}">
+      {{else if usesEditing}}<input type="text" class="aim-uses-input" data-uses-input aria-describedby="{{@root.windowId}}-uses-forms" autocomplete="off" spellcheck="false" value="{{@root.features.usesDraft}}" aria-label="{{localize "AIM.window.features.usesEdit"}}" data-tooltip="{{localize "AIM.window.features.usesForms"}}"><span class="aim-edit-error" id="{{@root.windowId}}-uses-forms">{{localize "AIM.window.features.usesForms"}}</span>
       {{else}}<button type="button" class="aim-charge-text" data-action="editUses" {{#unless @root.canEdit}}disabled{{/unless}} aria-label="{{localize "AIM.window.features.usesEdit"}}">{{uses.value}} / {{uses.max}}</button>{{/if}}
     </span>
     {{/if}}

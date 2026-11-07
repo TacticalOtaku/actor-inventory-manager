@@ -436,6 +436,8 @@
       },
       "hp": {
         "edit": "Hit points: change",
+        "critical": "Critical HP",
+        "status": "{value} of {max} hit points",
         "forms": "−7 damage · +5 healing · 20 set · t8 temporary",
         "max": "max {max}",
         "tempInfo": "temp {temp}",

@@ -1,125 +1,155 @@
+<div align="center">
+
 # AIM: Actor Window
 
-**AIM, formerly Actor Inventory Manager & Paperdoll.** A full actor window for D&D 5e on Foundry VTT: paperdoll,
-equipment rules, spells, features, effects and player trading, beside whatever sheet the actor uses. It never replaces
-the sheet: the window opens next to it, and «Open character sheet» in its menu reaches the sheet with everything
-other modules add there.
+**A full character, NPC & vehicle window for D&D 5e on Foundry VTT** — paperdoll, equipment rules, spells, features, effects, and safe player trading beside whatever actor sheet you use.
 
-Foundry VTT 14, D&D 5e 5.3.3 or newer. Release notes: [CHANGELOG.md](CHANGELOG.md).
+[![GitHub Release](https://img.shields.io/github/v/release/TacticalOtaku/actor-inventory-manager?label=Release&color=b8860b)](https://github.com/TacticalOtaku/actor-inventory-manager/releases/latest)
+[![CI](https://github.com/TacticalOtaku/actor-inventory-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/TacticalOtaku/actor-inventory-manager/actions/workflows/ci.yml)
+[![Foundry VTT](https://img.shields.io/badge/Foundry%20VTT-14-ff6400)](https://foundryvtt.com/)
+[![D&D 5e](https://img.shields.io/badge/D%26D%205e-5.3.3%2B-c62828)](https://github.com/foundryvtt/dnd5e)
+[![Languages](https://img.shields.io/badge/Languages-EN%20%7C%20RU-2e7d32)](lang/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-3b82f6)](LICENSE)
 
-> **Updating from 1.9:** back up your world first. The first start of 2.0 moves the world's data once (quick slots to
-> favorites, own dolls to presets, open trades cancelled) and whispers the GM a report; nothing 1.9 wrote is deleted,
-> so the world can still go back to 1.9.x.
+[Installation](#installation) · [Features](#features) · [Player Trading & Gifts](#player-trading--gifts) · [Integrations](#integrations) · [Customization](#customization) · [Development](#development)
+
+</div>
 
 ---
 
-## Features
+AIM never replaces the system or third-party sheet — it opens alongside it from **AIM** in the sheet's `⋮` menu or with the **`I`** key, while keeping `"Open character sheet"` one click away in its own menu. Full release history lives in [CHANGELOG.md](CHANGELOG.md).
 
-- **One window per actor**, opened from **AIM** in the sheet's ⋮ menu or the `I` key. It picks its layout
-  from its own width: compact, narrow, standard, and wide with an inspector. Observers get a read-only window.
-- **The rail**: hit points (type −7, +5, or t8 for temporary HP), hit dice, spell slots, AC, initiative, speed, effects,
-  inspiration, exhaustion, concentration, rests and dnd5e favorites. Each block can be hidden.
-- **Overview and biography**: skills, saves, tools, defenses and senses with dnd5e's rolls and dialogs; the biography
-  in dnd5e's own fields.
-- **Equipment with the paperdoll**: slots by figure (humanoid, beast, wagon, ship, airship), the two-handed lock,
-  attunement sockets, nested containers, filters, sorting, manual order, a purse and the load meter. A GM preset
-  editor shapes the figure, the slots and the attunement limit, per world or per actor.
-- **Spells**: slots as gems, prepared spells with the class limit, the spellbook by circle, innate and at-will spells,
-  casting through dnd5e's own dialog.
-- **Features and actions**: features by origin for characters, actions by cost for NPCs and vehicles.
-- **Effects and conditions**: dnd5e's categories, the conditions grid, enable and disable, the effect menu.
-- **Tooltip cards** for items, spells, effects, rules and damage types, with nesting and pinning; damage types play
-  a small scene in their colour.
-- **NPC and vehicle windows**: challenge rating, legendary actions and resistance; damage and mishap thresholds,
-  cargo in tons, crew and passengers.
-- **Player trading** in a panel beside the inventory, authorised by the GM, with coins or Item Piles currencies.
-- **Items from outside**: drop items, folders and effects from the sidebar, compendiums, chat, journals or another
-  actor onto any tab; they go through the actor's sheet, so dnd5e's rules (stacking, advancement) hold.
-- **Look**: Night, Parchment or Auto themes, six accents, two densities, and three motion levels (All, Restrained,
-  Off); the system's reduced-motion setting caps them. Interface fonts are bundled; nothing is fetched from a CDN.
-
-### Works with
-
-Each one is optional and detected; without it the window uses its own rules.
-
-- *midi-qol* — its automation-only activities stay out of the lists; damage typed into HP goes through it.
-- *Tidy 5e Sheets* (the 5.3.x line) — the AIM button sits in its header too; drops work with it.
-- *Item Piles* (3.3+, with «Item Piles: D&D 5e») — currencies, payment with change, «Give to character».
-- *Weighty Containers* — container load, weight reduction and restrictions.
-- *SC - Item Rarity Colors* — rarity and spell-school colours where the GM switched them on.
+> [!IMPORTANT]
+> **Updating from 1.9:** back up your world first. On the first launch of 2.0+, the GM client runs an additive migration once (quick slots → favorites, custom actor dolls → world presets, open trades cancelled) and whispers a report to the GM. Nothing written by 1.9 is deleted, so worlds can still return to 1.9.x if needed.
 
 ---
 
 ## Installation
 
-### Via Manifest URL
-In Foundry VTT Setup > **Add-on Modules** > **Install Module**, paste the Manifest URL:
-```
+### Via Manifest URL (Recommended)
+
+In Foundry VTT Setup → **Add-on Modules** → **Install Module**, paste the Manifest URL:
+
+```text
 https://raw.githubusercontent.com/TacticalOtaku/actor-inventory-manager/main/module.json
 ```
 
+### Manual / Offline Archive
+
+Download `actor-inventory-manager-v<version>.zip` from [GitHub Releases](https://github.com/TacticalOtaku/actor-inventory-manager/releases/latest) and extract it into your Foundry `Data/modules/actor-inventory-manager` folder.
+
+**Requirements:** Foundry VTT **14** (verified on `14.367`), D&D 5e **`5.3.3+`**.
+
 ---
 
-## Using player trading
+## Features
 
-Open your character's window, go to **Equipment** and press **Trade**. Choose another online player's character and
-start a trade; the invited player gets a notification and a dot on their Trade button. Offer items with ⇄ on a row or
-by dragging a row onto your offer, and set coins. Edits are sent by themselves; any change clears both
-confirmations. Confirm when the offers suit you; cancelling ends the trade for both. An active GM authorises the
-transfer. Received items arrive marked «New».
+### Adaptive Actor Window
+- **Supported actors:** **Characters**, **Vehicles**, and **Player-owned NPCs** (GM-only NPCs and group actors are intentionally untouched).
+- **Permissions & tokens:** **Observers** open a read-only `"View only"` window; **Owners** and the GM can edit. Unlinked tokens get independent windows keyed by UUID.
+- **Responsive layouts:** Automatically adapts to the window's own width — **Compact** (`< 420 px`, rail only), **Narrow** (`420–759 px`, top rail strip), **Standard** (`760–1319 px`, rail + content), and **Wide** (`≥ 1320 px`, rail + content + live inspector) — plus a one-click collapse-to-column toggle.
+- **Keyboard navigation:** Press **`I`** to toggle the controlled token's (or assigned character's) window. Navigate tabs with **`ArrowLeft`**, **`ArrowRight`**, **`Home`**, and **`End`**, with preserved focus across settings drawer and compact layout transitions.
+
+### Side Rail & Inline Vitals
+- **Level orb & XP card:** Animated liquid orb that glows as XP fills and lets you level up on click when ready, plus quick XP steps (`+50`, `+100`, `+250`, `+1000`, `Add`, `Set`).
+- **Inline edits with validation:** Edit **HP** (`−7` damage, `+5` healing, `20` set, `t8` temporary HP), **coins**, and **feature uses** directly in place with syntax hints, `Enter`/`Escape` support, and draft preservation across background redraws.
+- **Combat & survival:** AC hover breakdown (armor, Dexterity, shield, bonuses, cover), hit dice, spell slot tracks, initiative, speed, temporary effects, inspiration, exhaustion, concentration, short/long rests, and reorderable **dnd5e Favorites**.
+- **NPC & Vehicle rails:** NPCs show CR and legendary action/resistance pools; vehicles show damage & mishap thresholds, speeds, cargo load, and crew/passenger/draft-animal rosters.
+- **Per-player visibility:** Every rail block (except HP) can be toggled on or off in the window's settings drawer.
+
+### Paperdoll & Equipment Rules
+- **9 built-in presets across 5 figures:** `Humanoid` (`Standard 2024`, `Standard 2014`), `Beast`, `Wagon` (`hold` and `tack & weapon`), `Ship` (`hold` and `gun ports`), and `Airship` (`hold` and `rigging`).
+- **Slot mechanics:** Two-handed weapons lock the off hand automatically; attunement sockets track and respect actor attunement caps; slotless worn items stay visible in a compact strip.
+- **GM Preset Editor:** Customize figures, slot placement (`Left`, `Right`, `Under the doll`, `By order`), slot rules, and attunement limits per world or per actor — with JSON import/export.
+- **Shared Enforcement Modes:** Choose **Strict Block**, **Smart Auto-Swap**, or **Warn Only** in module settings. Rules are enforced consistently from both the Actor window and the actor's native sheet.
+- **Inventory management:** Switch between **List**, **Cards**, and **Icons only** views; sort by name, weight, price, rarity, or manual order; filter by `Equipped` / `Attuned`; manage nested containers, purse totals, and encumbrance meters; or use **"Drop on the ground"** with Item Piles.
+
+### Window Tabs
+
+| Tab | What it provides |
+| --- | --- |
+| **Overview** | Skills, saving throws, tools, damage/condition defenses, passive scores, senses, proficiencies, and native dnd5e config dialogs |
+| **Equipment** | Paperdoll, attunement sockets, nested container trays, inventory views/filters, purse, encumbrance meter, and the Trade panel |
+| **Spells** | Interactive spell slot gems, class preparation limits, spellbook by circle, innate/at-will lists, casting dialogs, auto-minimize on spell template placement |
+| **Features / Actions** | Features grouped by origin for characters; actions grouped by action cost for NPCs & vehicles, with inline uses and d6 recharge rolls |
+| **Effects** | dnd5e effect categories (`Temporary`, `Passive`, `Inactive`, `Unavailable`), conditions grid, switches, and context menu |
+| **Biography** | Character traits, appearance, and ProseMirror biography fields, held safely against background redraws while typing |
+
+### Tooltips, Visual Effects & Privacy
+- **Nested & pinnable tooltip cards:** Hover items, spells, effects, rules, or damage types to inspect cards up to 4 levels deep, pin them, and drag them around the workspace. Damage types play PixiJS scenes for all 13 dnd5e damage types plus a generic fallback.
+- **Reactive & ambient VFX:** Subtle sprite bursts and animations for hits, heals, temporary HP, spent slots/hit dice, starred favorites, coin updates, rests, and refusals.
+- **Unidentified item privacy:** Players never see an unidentified item's price, rarity, properties, charges, or magic bonuses in rows, the doll, the inspector, or tooltip cards.
+- **Native external drops:** Items, folders, and effects dragged from the sidebar, compendiums, chat, journals, or your other characters route through the actor's sheet so dnd5e stacking, scroll conversion, and advancement rules apply cleanly.
+
+---
+
+## Player Trading & Gifts
+
+Open your character's window, go to **Equipment**, and click **Trade**:
+
+- **Two-way Trade or one-way Gift:** Select another online player's character (`Offer trade` or `Give`). Invited players receive a notification and an indicator dot on their Trade button.
+- **Offers without friction:** Click **`⇄`** on an inventory row to offer one item, drag a row into your offer to offer the whole stack, and enter coins (`pp`, `gp`, `ep`, `sp`, `cp` or active Item Piles currencies). Edits send automatically after a short pause, and any change resets confirmations.
+- **Weight after the trade:** Live carried-weight preview shows how the exchange affects your encumbrance and highlights load-tier changes.
+- **Safe delivery:** Once both sides confirm (or the recipient accepts a gift), an active GM authorizes the transfer. Received items arrive unequipped, unattuned, detached from containers, and marked **`New`** until opened.
+
+<details>
+<summary><strong>Technical details: GM authorization, snapshots & recovery</strong></summary>
+
+- **GM-authorized queue:** Players never need ownership of each other's sheets. One connected GM acts as the serialized coordinator; requests run through authenticated `User` flags, and no module socket payload authorizes writes.
+- **Pre-trade snapshots & rollback:** Before any debit, the GM locks items and currency on both actors (HP, spell slots, and XP remain playable) and stores a full JSON snapshot in a **GM-only private journal**. A normal transfer error automatically rolls inventories and currencies back.
+- **Interrupted trade recovery:** If a transfer or rollback is interrupted, the trade remains locked rather than retrying blindly. A GM can open either participant's Trade panel and use **Restore inventories** (after checking the journal) or **Lift the lock** (if preparation stopped before any debit).
+- **Non-transactional Foundry scope:** Foundry VTT has no multi-actor database transaction; avoid macros or manual GM inventory edits on participating actors during active execution or recovery.
+
+</details>
+
+---
+
+## Integrations
+
+All integrations are optional and auto-detected; without them, AIM falls back to its own rules.
+
+| Module | Compatibility | Integration behavior |
+| --- | --- | --- |
+| **midi-qol** | Optional | Filters automation-only activities out of lists/favorites; routes inline HP damage through `dnd5e.preApplyDamage` |
+| **Tidy 5e Sheets** | `5.3.x` line | Adds the **AIM** button to Tidy's sheet menu and preserves native drop behavior |
+| **Item Piles** | `3.3.0+` *(with `itempilesdnd5e`)* | Enables custom currencies & automatic change in trades, `"Give to character"`, and `"Drop on the ground"` |
+| **Weighty Containers** | `3.5.0+` *(`3.10+` load rules)* | Delegates container load meters, weight reductions, drop restrictions, and post-trade carried weight |
+| **SC - Item Rarity Colors** | `3.0.18+` | Applies SC rarity gradients and spell-school styling while keeping row buttons and parchment tags legible |
+
+---
+
+## Customization
+
+Personal window preferences live directly in the window's **Settings drawer** (`⚙`); GM rules live in Foundry's Module Settings.
+
+| Setting | Options | Scope |
+| --- | --- | --- |
+| **Theme** | `Night` · `Parchment` · `Auto` *(follows Foundry's colour scheme)* | User |
+| **Accent** | `Brass` · `Embers` · `Arcane` · `Forest` · `Frost` · `Rose` | User |
+| **Density** | `Comfortable` · `Compact` | User |
+| **Side column & Tabs** | Toggle individual rail blocks and sheet tabs (`Equipment` always stays visible) | User |
+| **Motion** | `All` · `Restrained` *(reactive only)* · `Off` *(fades only; capped by OS reduced motion & Foundry low performance)* | Client |
+| **Decorative fonts** | Bundled **Onest** variable font (`assets/fonts/`, zero external CDN requests) | Client |
+| **Equipment Rules & Doll** | `Enforcement Mode` (`Block` / `Auto-Swap` / `Warn`), `Portrait Backdrop`, `Auto-Reconcile Slots`, `AIM in sheet menu` | World / Client |
 
 ---
 
 ## Development
 
-### Trading in detail
+Requires **Node.js 24+** (`npm install`). Automated checks run on in-memory Foundry document doubles — no running Foundry instance is needed.
 
-Open your character's window, go to **Equipment** and press **Trade**; the panel opens beside the inventory. Choose another online player's character and start a trade; the invited player gets a notification and a dot on their Trade button. Add items with ⇄ on an inventory row (one at a time) or by dragging a row onto your offer (the whole stack), and set coins. There is no Save step: an edit is sent by itself half a second after the last change, and any change clears both confirmations. Confirming is accepting and can be withdrawn; cancelling ends the trade for both sides at once. A free gift requires the recipient's confirmation too. An active GM is required to authorize the transfer to both actors and sees the trade read-only; players do not need ownership of each other's sheets.
+| Command | Purpose |
+| --- | --- |
+| `npm run check` | Run ESLint and the Node unit test suite |
+| `npm run deploy` | Copy module files to local Foundry `Data/modules/actor-inventory-manager` (`--data <path>` or `FOUNDRY_DATA`) |
+| `npm run release` | Run `npm run check`, validate `module.json`, and build `dist/actor-inventory-manager-v<version>.zip` |
+| `npm run vendor` | Refresh bundled Onest font files and `styles/theme/fonts.css` |
 
-Only one trade per actor can be active. Nonempty containers must be emptied first; individual contained items can be offered. Received items are unequipped, unattuned, detached from their former container, have no AIM equipment-slot assignment, and are marked «New» until opened. Item Piles currency items appear as currency rather than being offered twice as ordinary items.
+GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs linting, unit tests, and Foundry package validation on pushes to `main`, pull requests, and manual dispatches.
 
-With Item Piles active, custom currencies, exchange rates and change are handled by its [official currency API](https://github.com/fantasycalendar/FoundryVTT-ItemPiles/blob/master/src/API/api.js). Different currency definitions on the participants, changed settings, or an unavailable active API stop the trade. There is no silent fallback mid-trade. With Item Piles absent, enter exact quantities of `pp`, `gp`, `ep`, `sp`, and `cp`; this mode does not automatically make change.
-
-### Interrupted trades
-
-Before any assets move, the GM saves both inventories and currency attributes in a **GM-only recovery journal**. A normal transfer error triggers restoration. If restoration fails or the GM disconnects during execution, the trade stays blocked and is never retried automatically. A GM can open either participant's Trade panel and select **Restore inventories** after checking the journal; an interrupted preparation that never debited anything offers **Lift the lock** instead. The confirmation explains that this replaces inventories and currency with the saved state, including any later edits. Successful trades and successful restores remove their recovery journal.
-
-Recovery payloads are encoded as JSON inside the private journal flag so document processing cannot rewrite currency paths or mutate the comparison baseline. Asset comparisons ignore object property ordering. If assets really change before transfer, the trade is cancelled without restoring anything; the GM console identifies affected item IDs and currency paths. Older object-shaped recovery records remain readable.
-
-Foundry does not provide a database transaction spanning both actors. Keep other macros and GM inventory edits away from the participants during execution and recovery. Local edit guards and snapshots provide coordinated transfer and recovery, not database-level atomicity.
-
-### Foundry acceptance checks
-
-The full live check, with the module sets to run it on, is in [docs/live-check.md](docs/live-check.md). The trade
-checks below are part of it. Use two player accounts and one GM in a test world:
-
-1. Trade part of a stack for coins; confirm one side only and verify nothing moves. Edit the other offer and verify confirmations reset. Confirm both and verify quantities and balances.
-2. Repeat without Item Piles using standard coins, then with the campaign's configured attribute and item currencies. Check exact receipt amounts and Item Piles change.
-3. Cancel a trade, exhaust an offered item, disconnect a participant, and change currency settings. Verify no invalid transfer completes.
-4. If deliberately testing interrupted execution, use disposable actors and verify the GM recovery path before resuming normal play.
-
-Automated tests use in-memory Foundry document doubles.
-
-```bash
-npm install
-npm run check    # ESLint and the unit tests (no Foundry required)
-npm run deploy   # copy the module into the local Foundry Data/modules folder
-npm run release  # check, then dist/actor-inventory-manager-v<version>.zip
-```
-
-`npm run deploy` targets `%LOCALAPPDATA%\FoundryVTT\Data` by default; override it with
-`--data <path>` or the `FOUNDRY_DATA` environment variable (the Foundry `Data` folder).
-Reload Foundry (F5) afterwards. Node.js 24 or newer is required.
-
-GitHub Actions runs ESLint, the automated tests and package validation on pushes to `main`, pull requests and
-manual dispatches. It uses Node.js 24 and a clean `npm ci` install. Successful runs keep the Foundry ZIP as an
-Actions artifact for 14 days. CI does not deploy to Foundry or publish releases.
-
-See [docs/architecture.md](docs/architecture.md) for the module layout, the public API and
-hooks, how doll presets and equipment rules work, and the dnd5e data-shape differences the
-code adapts to.
-
----
-
-## License
-This project is licensed under the [MIT License](LICENSE).
+### Project Docs
+- [docs/architecture.md](docs/architecture.md) — module layering, dnd5e data-model adapters, extension hooks, and public API
+- [docs/live-check.md](docs/live-check.md) — manual verification checklist across Foundry module combinations
+- [GLOSSARY.md](GLOSSARY.md) — domain vocabulary
+- [CHANGELOG.md](CHANGELOG.md) — version-by-version release notes
+- [LICENSE](LICENSE) — MIT License

@@ -280,6 +280,10 @@
         "name": "AIM in the sheet menu",
         "hint": "Adds AIM to the ⋮ menu of actor sheets; it opens the actor window. The I key opens it too."
       },
+      "replaceActorSheet": {
+        "name": "Open AIM instead of actor sheet",
+        "hint": "For players (never affects the GM), opening a supported actor opens the AIM window instead of the standard sheet. The standard sheet stays available from AIM's ⋮ menu."
+      },
       "showActorPortraitBackdrop": {
         "name": "Show Actor Portrait Backdrop in Paperdoll",
         "hint": "Displays the character's portrait as a stylized fantasy silhouette backdrop behind the equipment slots."

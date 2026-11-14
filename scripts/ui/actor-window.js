@@ -37,6 +37,7 @@ import { parseHpEntry, previewHp, vitalState } from "../core/vitals.js";
 import { readAbilities, readFeatures, readIdentity, readNpc, readRail, readVehicle, toggleSpellPreparation } from "../integrations/dnd5e.js";
 import { isPhysicalItem } from "../core/item-classifier.js";
 import { LOG } from "../foundry/logger.js";
+import { renderVanillaActorSheet } from "../foundry/sheet-injection.js";
 import {
   EQUIPMENT_TEMPLATES,
   buildEquipmentContext,
@@ -1070,7 +1071,7 @@ export class ActorWindow extends WindowBase {
 
   static #onOpenSheet() {
     this.menuOpen = false;
-    this.actor.sheet.render({ force: true });
+    renderVanillaActorSheet(this.actor.sheet, { force: true });
     this.render({ parts: ["main"] });
   }
 
@@ -1087,7 +1088,7 @@ export class ActorWindow extends WindowBase {
     this.menuOpen = false;
     this.render({ parts: ["main"] });
     const sheet = this.actor.sheet;
-    await sheet.render({ force: true });
+    await renderVanillaActorSheet(sheet, { force: true });
     // Another sheet (Tidy or a third-party one) may not have that tab; then it simply opens.
     if (sheet.constructor.TABS?.some?.((entry) => entry.tab === tab)) sheet.changeTab(tab, "primary");
   }

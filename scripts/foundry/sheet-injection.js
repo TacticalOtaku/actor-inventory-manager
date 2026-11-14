@@ -82,13 +82,140 @@ export function addInventoryHeaderControl(app, controls) {
   });
 }
 
+const REPLACE_SHEET_SETTING = "replaceActorSheet";
+const BYPASS_SHEETS = new WeakMap();
+const WRAPPED_PROTOTYPES = new WeakSet();
+
+function retainBypass(sheet) {
+  BYPASS_SHEETS.set(sheet, (BYPASS_SHEETS.get(sheet) ?? 0) + 1);
+}
+
+function releaseBypass(sheet) {
+  const depth = BYPASS_SHEETS.get(sheet) ?? 0;
+  if (depth <= 1) BYPASS_SHEETS.delete(sheet);
+  else BYPASS_SHEETS.set(sheet, depth - 1);
+}
+
+function isReplaceActorSheetEnabled() {
+  try {
+    return Boolean(globalThis.game?.settings?.get?.(MODULE_ID, REPLACE_SHEET_SETTING));
+  } catch {
+    return false;
+  }
+}
+
+function isForcedRender(options) {
+  if (options === true) return true;
+  return Boolean(options && typeof options === "object" && options.force);
+}
+
+function isSheetAlreadyOpen(sheet) {
+  if (sheet?.rendered) return true;
+  if (typeof sheet?.state === "number" && sheet.state > 0) return true;
+  return typeof sheet?._state === "number" && sheet._state > 0;
+}
+
+/**
+ * Determine whether opening this Foundry actor sheet should redirect to AIM's window instead.
+ * Never affects GM actions, already-open vanilla sheets, or explicit bypass renders.
+ */
+export function shouldRedirectActorSheetOpen(sheet, options) {
+  if (!sheet || BYPASS_SHEETS.has(sheet)) return false;
+  if (globalThis.game?.user?.isGM) return false;
+  if (!isReplaceActorSheetEnabled()) return false;
+  if (!isForcedRender(options) || isSheetAlreadyOpen(sheet)) return false;
+  return isPrimaryActorSheet(sheet);
+}
+
+/**
+ * Render an underlying Foundry actor sheet while bypassing AIM's non-GM open redirect.
+ */
+export function renderVanillaActorSheet(sheet, options = { force: true }) {
+  if (!sheet || typeof sheet.render !== "function") return undefined;
+  retainBypass(sheet);
+  let result;
+  try {
+    result = sheet.render(options);
+  } catch (err) {
+    releaseBypass(sheet);
+    throw err;
+  }
+  if (result && typeof result.then === "function") {
+    const release = () => releaseBypass(sheet);
+    result.then(release, release);
+    return result;
+  }
+  releaseBypass(sheet);
+  return result;
+}
+
+function handleSheetRender(sheet, invokeOriginal, args, asyncReturn, openWindow) {
+  const [options] = args;
+  if (shouldRedirectActorSheetOpen(sheet, options)) {
+    const actor = sheet.actor ?? sheet.document;
+    if (openWindow(actor)) return asyncReturn ? Promise.resolve(sheet) : sheet;
+  }
+  return invokeOriginal(...args);
+}
+
+function canUseLibWrapper() {
+  return Boolean(
+    globalThis.game?.modules?.get?.("lib-wrapper")?.active
+    && typeof globalThis.libWrapper?.register === "function"
+  );
+}
+
+function sheetRenderTargets() {
+  return [
+    {
+      target: "foundry.applications.sheets.ActorSheetV2.prototype.render",
+      proto: globalThis.foundry?.applications?.sheets?.ActorSheetV2?.prototype,
+      asyncReturn: true
+    },
+    {
+      target: "foundry.appv1.sheets.ActorSheet.prototype.render",
+      proto: globalThis.foundry?.appv1?.sheets?.ActorSheet?.prototype,
+      asyncReturn: false
+    }
+  ];
+}
+
+function installTargetRenderWrapper({ target, proto, asyncReturn }, openWindow) {
+  if (!proto || typeof proto.render !== "function" || WRAPPED_PROTOTYPES.has(proto)) return;
+  if (canUseLibWrapper()) {
+    try {
+      globalThis.libWrapper.register(
+        MODULE_ID,
+        target,
+        function aimActorSheetRenderWrapper(wrapped, ...args) {
+          return handleSheetRender(this, wrapped, args, asyncReturn, openWindow);
+        },
+        "MIXED"
+      );
+      WRAPPED_PROTOTYPES.add(proto);
+      return;
+    } catch (err) {
+      LOG.warn("libWrapper registration failed, falling back to prototype wrap", { target, err });
+    }
+  }
+  const original = proto.render;
+  proto.render = function aimActorSheetRenderWrapper(...args) {
+    return handleSheetRender(this, (...callArgs) => original.apply(this, callArgs), args, asyncReturn, openWindow);
+  };
+  WRAPPED_PROTOTYPES.add(proto);
+}
+
 /**
  * Register sheet hooks and keybinding
  */
-export function registerSheetInjectionHooks() {
+export function registerSheetInjectionHooks({ openWindow = openActorWindow } = {}) {
   // Every dnd5e actor sheet is an ActorSheetV2, so this hook covers them all; the entry sits in the sheet's ⋮ menu,
   // beside the I key, instead of a button of its own in the header.
   Hooks.on("getHeaderControlsActorSheetV2", addInventoryHeaderControl);
+
+  for (const spec of sheetRenderTargets()) {
+    installTargetRenderWrapper(spec, openWindow);
+  }
 
   // NOTE: keybindings must be registered during "init" (Foundry throws otherwise).
   // The inventory hotkey lives in foundry/settings.js.

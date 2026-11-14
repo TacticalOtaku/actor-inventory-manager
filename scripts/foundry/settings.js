@@ -143,6 +143,15 @@ export function registerModuleSettings() {
       default: true
     });
 
+    game.settings.register(MODULE_ID, "replaceActorSheet", {
+      name: "AIM.settings.replaceActorSheet.name",
+      hint: "AIM.settings.replaceActorSheet.hint",
+      scope: "client",
+      config: true,
+      type: Boolean,
+      default: true
+    });
+
     game.settings.register(MODULE_ID, "customTemplates", {
       name: "AIM.settings.customTemplates.name",
       hint: "AIM.settings.customTemplates.hint",

@@ -250,7 +250,7 @@ main hands, slots flagged `isShield` (or named off hand) are off hands
 
 ## Permissions
 
-`canViewActor` (Observer) gates the sheet button, the hotkey and the window;
+`canViewActor` (Observer) gates the sheet button, the hotkey, the non-GM sheet-open redirect and the window;
 Limited users only see a biography in dnd5e. `canEditActor` (Owner or GM) gates
 every change. Observers get a read-only window: no drag and drop, no item
 controls, and UI preferences are kept locally instead of in actor flags.
@@ -276,7 +276,7 @@ the next rail render reports whether a new effect actually started.
 ## Actor window and theme
 
 Version 2.0 replaces the 1.9 inventory window with the actor window (ADR 0002): one ApplicationV2 window per actor
-UUID, opened from the ⋮ menu of any `ActorSheetV2` and the `I` key. The approved mock
+UUID, opened from the ⋮ menu of any `ActorSheetV2` and the `I` key, or directly when a non-GM player triggers a forced open on a closed supported actor sheet with `replaceActorSheet` enabled (`libWrapper` `MIXED` wrap with prototype fallback; explicit AIM menu sheet opens bypass it via `renderVanillaActorSheet`). The approved mock
 `design/character-sheet/mock.html` and its `mock.notes.json` are the behaviour spec; the window is built slice by
 slice from the map #28.
 

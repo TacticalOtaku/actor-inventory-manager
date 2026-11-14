@@ -17,7 +17,7 @@
 
 ---
 
-AIM never replaces the system or third-party sheet — it opens alongside it from **AIM** in the sheet's `⋮` menu or with the **`I`** key, while keeping `"Open character sheet"` one click away in its own menu. Full release history lives in [CHANGELOG.md](CHANGELOG.md).
+AIM keeps the system or third-party sheet intact — for players, opening a supported actor opens AIM automatically (configurable in Module Settings, never affecting the GM), alongside **AIM** in the sheet's `⋮` menu and the **`I`** key, while keeping `"Open character sheet"` one click away in AIM's menu. Full release history lives in [CHANGELOG.md](CHANGELOG.md).
 
 > [!IMPORTANT]
 > **Updating from 1.9:** back up your world first. On the first launch of 2.0+, the GM client runs an additive migration once (quick slots → favorites, custom actor dolls → world presets, open trades cancelled) and whispers a report to the GM. Nothing written by 1.9 is deleted, so worlds can still return to 1.9.x if needed.
@@ -47,6 +47,7 @@ Download `actor-inventory-manager-v<version>.zip` from [GitHub Releases](https:/
 ### Adaptive Actor Window
 - **Supported actors:** **Characters**, **Vehicles**, and **Player-owned NPCs** (GM-only NPCs and group actors are intentionally untouched).
 - **Permissions & tokens:** **Observers** open a read-only `"View only"` window; **Owners** and the GM can edit. Unlinked tokens get independent windows keyed by UUID.
+- **Player sheet-open redirect:** With `Open AIM instead of actor sheet` enabled (default), clicking or double-clicking a supported actor (or opening its `@UUID` link) opens AIM directly for players while leaving GM actions, unsupported actors (groups, GM NPCs, `LIMITED`), and AIM's `"Open character sheet"` menu entry untouched.
 - **Responsive layouts:** Automatically adapts to the window's own width — **Compact** (`< 420 px`, rail only), **Narrow** (`420–759 px`, top rail strip), **Standard** (`760–1319 px`, rail + content), and **Wide** (`≥ 1320 px`, rail + content + live inspector) — plus a one-click collapse-to-column toggle.
 - **Keyboard navigation:** Press **`I`** to toggle the controlled token's (or assigned character's) window. Navigate tabs with **`ArrowLeft`**, **`ArrowRight`**, **`Home`**, and **`End`**, with preserved focus across settings drawer and compact layout transitions.
 
@@ -130,7 +131,7 @@ Personal window preferences live directly in the window's **Settings drawer** (`
 | **Side column & Tabs** | Toggle individual rail blocks and sheet tabs (`Equipment` always stays visible) | User |
 | **Motion** | `All` · `Restrained` *(reactive only)* · `Off` *(fades only; capped by OS reduced motion & Foundry low performance)* | Client |
 | **Decorative fonts** | Bundled **Onest** variable font (`assets/fonts/`, zero external CDN requests) | Client |
-| **Equipment Rules & Doll** | `Enforcement Mode` (`Block` / `Auto-Swap` / `Warn`), `Portrait Backdrop`, `Auto-Reconcile Slots`, `AIM in sheet menu` | World / Client |
+| **Equipment Rules & Doll** | `Enforcement Mode` (`Block` / `Auto-Swap` / `Warn`), `Portrait Backdrop`, `Auto-Reconcile Slots`, `Open AIM instead of actor sheet`, `AIM in sheet menu` | World / Client |
 
 ---
 

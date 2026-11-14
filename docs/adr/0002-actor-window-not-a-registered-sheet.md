@@ -19,5 +19,19 @@ test, and a registered sheet either inherits that code's DOM work against our ma
 - No sheet registration and no preparatory code for it in 2.0; revisiting this needs its own ticket.
 - The window never replaces how a sheet opens: no wrapping of the actor directory or token double-click. Opening it
   leaves the actor's sheet as it is.
+
+## Update: Non-GM sheet-open redirect
+
+Revisited the second consequence to support opening the AIM window by default when non-GM players open a supported
+actor sheet (Actors Directory click, token double-click, `@UUID` links, etc.), without altering ADR 0002's core
+architecture decision:
+
+- AIM still does **not** register via `DocumentSheetConfig.registerSheet` and stores no per-actor sheet flag on documents.
+- Wrapping `ActorSheetV2.prototype.render` (and legacy AppV1 `ActorSheet.prototype.render`, using `libWrapper` `MIXED` when
+  active) redirects forced initial renders strictly when `!game.user.isGM`, the client setting
+  `replaceActorSheet` is enabled (default `true`), the actor/permission passes `isPrimaryActorSheet`, and the sheet is
+  not already rendered.
+- GM actions are never redirected, and AIM's own menu actions (`"Open character sheet"`, Special traits, Bastion) bypass
+  the redirect via `renderVanillaActorSheet`.
 - Third-party modules do not see inside the window; anything we want from them goes through the dnd5e API (ADR 0001)
   or hooks we choose to call ourselves.

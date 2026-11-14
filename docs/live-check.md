@@ -29,6 +29,7 @@ Run the whole list on set 1, then repeat it on each set after adding its modules
    opens it for the controlled token.
 2. A GM-only NPC shows no button and ignores the key; a group actor never gets one.
 3. «Открыть лист персонажа» in the window's «⋯» menu opens the actor's own sheet (dnd5e's, or Tidy's on set 3).
+4. As a non-GM player with «Открывать AIM вместо листа актора» (`replaceActorSheet`) enabled, clicking a supported actor in the Actors directory or double-clicking its token opens the AIM window directly instead of the vanilla sheet, while «Открыть лист персонажа» / «Особые черты» / «Бастион» in AIM's «⋯» menu still open the vanilla sheet (`renderVanillaActorSheet`). As the GM, opening any actor still opens the vanilla sheet normally.
 4. A player with Observer permission gets a read-only window with the «Только просмотр» badge.
 
 ### Actions

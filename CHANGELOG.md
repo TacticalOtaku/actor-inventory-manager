@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.2.0
+
+### Added
+- Non-GM players opening a supported actor (via the Actors directory, token double-click, `@UUID` links, etc.) now open the AIM window directly by default instead of the standard Foundry sheet.
+- Added the `Open AIM instead of actor sheet` (`replaceActorSheet`) client setting, enabled by default so players can opt out individually; GM actions are never redirected.
+- Added explicit bypass handling (`renderVanillaActorSheet`) so `"Open character sheet"`, Special traits, and Bastion from AIM's `⋮` menu continue opening the standard sheet.
+
+### Changed
+- Refreshed and restructured `README.md` and updated ADR 0002, architecture notes, and live-check documentation.
+
 ## 2.1.2
 
 ### Fixed

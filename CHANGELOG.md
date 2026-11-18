@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.2.1
+
+### Changed
+- Replaced remaining global `fromUuid` and `fromUuidSync` calls with `foundry.utils.fromUuid` and `foundry.utils.fromUuidSync`, removing deprecated globals from ESLint configuration.
+- Replaced the global `document.startViewTransition` theme/accent fade with a local `.aim-root` transition (`.aim-theme-fade`), avoiding full-canvas locking during theme changes.
+- Added `color-scheme` (`dark` / `light`) on `.aim-root` and `.aim-root[data-theme="parchment"]` so native form controls and scrollbars follow AIM's active theme.
+- Separated doll unequip controls (`.aim-slot-wrap` / `.aim-slot-x`), section header collapse toggles (`.aim-sec-toggle` with `aria-expanded` and `aria-controls`), row/effect expansion toggles (`.aim-row-toggle`, `.aim-effect-toggle`), and `role="switch"` drawer toggles to remove nested interactive controls.
+- Modernized collection helpers, deferred promises, and tooltip mask declarations (`toSorted`, `toReversed`, `Promise.withResolvers`, standard `mask`).
+
+### Fixed
+- `morph()` now syncs live `.checked`, `.selected`, and `.value` properties on form controls even when DOM attributes match (`isEqualNode`), restoring authoritative server state on rejected edits once blurred.
+- Item popmenus (`.aim-popmenu`) now construct DOM elements directly without `innerHTML` icon interpolation, support `ArrowUp`/`ArrowDown`/`Home`/`End`/`Escape` navigation with trigger focus restoration (shared with the header `.aim-menu`), and are no longer blocked by hover tooltips capturing `Escape`.
+- Added IME composition guards (`isComposing` / `keyCode === 229`) on Enter submission for inline edits and XP entry, widened inline feature-uses error wrapping, restored `:focus-visible` outlines across editor/overview/inventory controls, and added polite live-region (`[data-live-status]`) validation announcements.
+
 ## 2.2.0
 
 ### Added

@@ -14,6 +14,7 @@
   unicode-range: U+0000-024F, U+1E00-1EFF, U+2000-206F, U+20A0-20CF, U+2100-214F;
 }
 .aim-root {
+  color-scheme: dark;
   /* surfaces */
   --surface-0: #11131a;
   --surface-1: #161922;
@@ -88,6 +89,7 @@
   --shadow-lift: 0 18px 40px rgb(0 0 0 / 0.5);
 }
 .aim-root[data-theme="parchment"] {
+  color-scheme: light;
   --surface-0: #f4eedf;
   --surface-1: #ece3cf;
   --surface-2: #e3d8c0;

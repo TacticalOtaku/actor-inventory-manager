@@ -48,7 +48,7 @@
 .aim-tip.is-pinning::after {
   opacity: 1; padding: 2px;
   background: conic-gradient(var(--accent) var(--pin, 0turn), transparent 0);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
   animation: aim-tip-pin 1200ms linear forwards;
 }
 @property --pin { syntax: "<angle>"; inherits: false; initial-value: 0turn; }

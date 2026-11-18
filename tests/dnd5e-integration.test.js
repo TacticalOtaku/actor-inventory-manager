@@ -549,7 +549,7 @@ describe("features tab reads (dnd5e 5.3.3)", () => {
 });
 
 describe("favorites reads (dnd5e 5.3.3)", () => {
-  afterEach(() => { delete globalThis.CONFIG; delete globalThis.fromUuid; });
+  afterEach(() => { delete globalThis.CONFIG; delete globalThis.foundry; });
 
   it("resolves items, activities and effects by relative UUID, slots by key and skills by key", async () => {
     const { readFavorites } = await import("../scripts/integrations/dnd5e.js");
@@ -560,7 +560,7 @@ describe("favorites reads (dnd5e 5.3.3)", () => {
     const parry = { id: "act1", item: shield, activation: { type: "reaction" }, getFavoriteData: async () => ({ title: "Парирование" }) };
     const gone = null;
     const docs = { ".Item.fb": fireball, ".Item.sh.Activity.act1": parry, ".Item.missing": gone };
-    globalThis.fromUuid = async (id) => docs[id] ?? null;
+    globalThis.foundry = { utils: { fromUuid: async (id) => docs[id] ?? null } };
     const actor = { system: {
       favorites: [
         { type: "item", id: ".Item.fb", sort: 100 },

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 
-import { activityMenuEntries, itemMenuEntries } from "../scripts/ui/equipment.js";
+import { activityMenuEntries, closeItemMenu, itemMenuEntries, openItemMenu } from "../scripts/ui/equipment.js";
 
 let hooked;
 
@@ -114,5 +114,107 @@ describe("activity menu", () => {
     const target = { dataset: { activityId: "a" } };
     assert.equal(activityMenuEntries(activity, target), own);
     assert.deepEqual(hooked, [["dnd5e.getItemActivityContext", activity, target, own]]);
+  });
+});
+
+describe("popmenu DOM safety and keyboard navigation", () => {
+  it("strips unsafe HTML icons, navigates with arrow/Home/End keys, and restores focus to trigger on Escape", () => {
+    const doc = {
+      activeElement: null,
+      listeners: new Map(),
+      addEventListener(type, fn) { this.listeners.set(type, fn); },
+      removeEventListener(type, fn) { if (this.listeners.get(type) === fn) this.listeners.delete(type); },
+      createDocumentFragment() {
+        const children = [];
+        return { isFrag: true, childNodes: children, append(...n) { children.push(...n); } };
+      },
+      createElement(tag) {
+        const el = new EventTarget();
+        el.tagName = tag.toUpperCase();
+        el.nodeType = 1;
+        el.ownerDocument = doc;
+        el.dataset = {};
+        el.style = {};
+        el.className = "";
+        el.attributes = new Map();
+        el.children = [];
+        el.isConnected = true;
+        el.setAttribute = (k, v) => { el.attributes.set(k, String(v)); };
+        el.getAttribute = (k) => el.attributes.get(k) ?? null;
+        el.append = (...nodes) => {
+          for (const n of nodes) {
+            if (n.isFrag) el.append(...n.childNodes);
+            else {
+              n.parentNode = el;
+              el.children.push(n);
+            }
+          }
+        };
+        el.focus = () => { el.focused = true; doc.activeElement = el; };
+        el.remove = () => { el.isConnected = false; root.children = root.children.filter((c) => c !== el); };
+        el.contains = (target) => el === target || el.children.some((c) => c.contains?.(target));
+        el.querySelectorAll = (sel) => {
+          const out = [];
+          const walk = (n) => {
+            for (const c of n.children ?? []) {
+              if (sel.includes('[role="menuitem"]') && c.getAttribute?.("role") === "menuitem") out.push(c);
+              walk(c);
+            }
+          };
+          walk(el);
+          return out;
+        };
+        el.querySelector = (sel) => (sel === ".aim-popmenu" ? el.children.find((c) => c.className.includes("aim-popmenu")) ?? null : el.querySelectorAll(sel)[0] ?? null);
+        el.getBoundingClientRect = () => ({ left: 0, top: 0, right: 200, bottom: 200, width: 200, height: 200 });
+        Object.defineProperty(el, "offsetWidth", { get: () => 140 });
+        Object.defineProperty(el, "offsetHeight", { get: () => 80 });
+        Object.defineProperty(el, "innerHTML", {
+          set() { throw new Error("openItemMenu must never assign innerHTML"); }
+        });
+        return el;
+      }
+    };
+    const root = doc.createElement("div");
+    const anchor = doc.createElement("button");
+    root.append(anchor);
+    globalThis.game = { i18n: { localize: (k) => k } };
+    try {
+      openItemMenu(root, anchor, [
+        { name: "Safe", icon: '<i class="fa-light fa-eye"></i>', callback() {} },
+        { name: "UnsafeImg", icon: '<img src="x" onerror="alert(1)">', callback() {} },
+        { name: "UnsafeAttr", icon: '<i onclick="alert(1)" class="fa-light fa-pen"></i>', callback() {} }
+      ], null);
+
+      const menu = root.querySelector(".aim-popmenu");
+      assert.ok(menu);
+      const items = menu.querySelectorAll('[role="menuitem"]');
+      assert.equal(items.length, 3);
+      assert.equal(items[0].children[0].className, "fa-light fa-eye");
+      assert.equal(items[1].children.length, 1, "<img> payload is dropped");
+      assert.equal(items[2].children[0].className, "fa-light fa-pen");
+      assert.equal(doc.activeElement, items[0]);
+
+      const press = (key) => {
+        const ev = new Event("keydown", { cancelable: true });
+        Object.defineProperty(ev, "key", { value: key });
+        menu.dispatchEvent(ev);
+      };
+      press("ArrowDown");
+      assert.equal(doc.activeElement, items[1]);
+      press("End");
+      assert.equal(doc.activeElement, items[2]);
+      press("ArrowDown");
+      assert.equal(doc.activeElement, items[0]);
+      press("ArrowUp");
+      assert.equal(doc.activeElement, items[2]);
+      press("Home");
+      assert.equal(doc.activeElement, items[0]);
+      press("Escape");
+      assert.equal(root.querySelector(".aim-popmenu"), null);
+      assert.equal(doc.activeElement, anchor);
+      closeItemMenu(root);
+    } finally {
+      delete globalThis.game;
+    }
   });
 });

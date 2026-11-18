@@ -11,7 +11,7 @@ const MAX_FREE_DRAWN = 12;
 
 /** One aboard: a portrait to open, or «Неизвестный» for an actor the viewer may not see (or one that is gone). */
 function member(uuid) {
-  const actor = fromUuidSync(uuid);
+  const actor = foundry.utils.fromUuidSync(uuid);
   if (!actor?.testUserPermission?.(game.user, "LIMITED")) return { unknown: true, name: t("AIM.window.crew.unknown") };
   return { uuid, name: actor.name, img: actor.img, openLabel: t("AIM.window.crew.open", { name: actor.name }) };
 }

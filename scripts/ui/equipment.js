@@ -13,7 +13,7 @@ import { computeActorCurrency, dropOnGround, groundToken, isItemPilesActive, rea
 import { canDropOnGround } from "../core/external-drop.js";
 import { isPhysicalItem } from "../core/item-classifier.js";
 import { getContainerLoad, getContainerWeightReductionPct, isWeightyContainersActive } from "../integrations/weighty-containers.js";
-import { escapeHTML, t, unwrapSecrets } from "./html.js";
+import { t, unwrapSecrets } from "./html.js";
 import { playBurst } from "./bursts.js";
 import { menuLayout } from "../core/menu.js";
 import { isTradeLocked } from "../trade/service.js";
@@ -318,16 +318,91 @@ export function activityMenuEntries(activity, target) {
   return entries;
 }
 
+function menuItems(menu) {
+  return [...menu?.querySelectorAll('[role="menuitem"]:not([hidden]):not([disabled])') ?? []];
+}
+
+/** Handles ArrowUp/ArrowDown/Home/End/Escape inside an open ARIA menu; returns true if handled. */
+export function handleMenuKey(event, menu, onEscape) {
+  if (!menu) return false;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    event.stopPropagation();
+    onEscape?.();
+    return true;
+  }
+  if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return false;
+  const items = menuItems(menu);
+  if (!items.length) return false;
+  event.preventDefault();
+  event.stopPropagation();
+  const doc = menu.ownerDocument;
+  const current = items.indexOf(doc?.activeElement);
+  let next = 0;
+  if (event.key === "End") next = items.length - 1;
+  else if (event.key === "ArrowDown") next = current < 0 ? 0 : (current + 1) % items.length;
+  else if (event.key === "ArrowUp") next = current <= 0 ? items.length - 1 : current - 1;
+  items[next]?.focus?.({ preventScroll: true });
+  return true;
+}
+
+function buildMenuIcon(doc, raw) {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  const trimmed = raw.trim();
+  let tag = "i";
+  let classes = trimmed;
+  if (trimmed.includes("<")) {
+    const simple = trimmed.match(/^<(i|span)\b[^>]*\bclass=["']([^"']+)["'][^>]*>\s*<\/\1>$/i);
+    if (simple) {
+      tag = simple[1].toLowerCase();
+      classes = simple[2];
+    } else {
+      const Parser = doc.defaultView?.DOMParser ?? globalThis.DOMParser;
+      if (typeof Parser !== "function") return null;
+      const node = new Parser().parseFromString(trimmed, "text/html").body.firstElementChild;
+      if (!node || !["I", "SPAN"].includes(node.tagName)) return null;
+      tag = node.tagName.toLowerCase();
+      classes = node.className ?? "";
+    }
+  }
+  const clean = classes.trim();
+  if (!clean || !/^[\w\s-]+$/.test(clean)) return null;
+  const ico = doc.createElement(tag);
+  ico.className = clean;
+  ico.setAttribute("aria-hidden", "true");
+  return ico;
+}
+
 /** Shows the window's own menu under the anchor; entries in either shape run on click. */
 export function openItemMenu(root, anchor, entries, target) {
   closeItemMenu(root);
   const layout = menuLayout(entries, target);
   if (!layout.length) return;
   const shown = layout.map(({ entry }) => entry);
-  const menu = document.createElement("div");
+  const doc = root.ownerDocument;
+  const menu = doc.createElement("div");
   menu.className = "aim-menu aim-popmenu";
   menu.setAttribute("role", "menu");
-  menu.innerHTML = layout.map(({ entry: e, divider }, i) => `${divider ? '<hr role="separator">' : ""}<button type="button" role="menuitem" data-menu-index="${i}">${e.icon ?? ""}<span>${escapeHTML(game.i18n.localize(e.name ?? e.label ?? ""))}</span></button>`).join("");
+  menu._trigger = anchor?.nodeType === 1 ? anchor : null;
+  const frag = doc.createDocumentFragment();
+  layout.forEach(({ entry: e, divider }, i) => {
+    if (divider) {
+      const hr = doc.createElement("hr");
+      hr.setAttribute("role", "separator");
+      frag.append(hr);
+    }
+    const button = doc.createElement("button");
+    button.type = "button";
+    button.setAttribute("role", "menuitem");
+    button.dataset.menuIndex = String(i);
+    const ico = buildMenuIcon(doc, e.icon);
+    if (ico) button.append(ico);
+    const label = doc.createElement("span");
+    label.textContent = game.i18n.localize(e.name ?? e.label ?? "");
+    button.append(label);
+    frag.append(button);
+  });
+  menu.append(frag);
   root.append(menu);
   const box = root.getBoundingClientRect();
   const at = anchor.getBoundingClientRect();
@@ -336,13 +411,20 @@ export function openItemMenu(root, anchor, entries, target) {
   const top = below + menu.offsetHeight > box.height - 8 ? at.top - box.top - menu.offsetHeight - 4 : below;
   menu.style.left = `${Math.max(8, left)}px`;
   menu.style.top = `${Math.max(8, Math.min(top, box.height - menu.offsetHeight - 8))}px`;
-  menu.querySelector("button")?.focus();
+  menu.querySelector('[role="menuitem"]')?.focus?.({ preventScroll: true });
   menu.addEventListener("click", (event) => {
     const button = event.target.closest("[data-menu-index]");
     if (!button) return;
     const entry = shown[Number(button.dataset.menuIndex)];
     closeItemMenu(root);
     (entry.callback ?? entry.onClick)?.(target);
+  });
+  menu.addEventListener("keydown", (event) => {
+    if (event.key === "Tab") {
+      closeItemMenu(root);
+      return;
+    }
+    handleMenuKey(event, menu, () => closeItemMenu(root, { restoreFocus: true }));
   });
   const away = (event) => {
     if (menu.contains(event.target)) return;
@@ -352,11 +434,13 @@ export function openItemMenu(root, anchor, entries, target) {
   setTimeout(() => root.ownerDocument.addEventListener("pointerdown", away, { capture: true }));
 }
 
-export function closeItemMenu(root) {
+export function closeItemMenu(root, { restoreFocus = false } = {}) {
   const menu = root?.querySelector(".aim-popmenu");
   if (!menu) return false;
   root.ownerDocument.removeEventListener("pointerdown", menu._away, { capture: true });
+  const trigger = menu._trigger;
   menu.remove();
+  if (restoreFocus && trigger?.isConnected) trigger.focus?.({ preventScroll: true });
   return true;
 }
 

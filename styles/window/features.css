@@ -12,8 +12,12 @@
   min-height: 0; height: auto; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer;
 }
 .aim-sec-head h3 .aim-link:hover, .aim-sec-meta .aim-link:hover { color: var(--accent); text-decoration: underline; }
-.aim-uses-input { width: 64px; height: 22px; padding: 0 6px; border: 1px solid var(--accent); border-radius: 99px; background: var(--surface-0); color: var(--text); font: 600 11.5px var(--font-num); box-shadow: none; outline: none; }
+.aim-uses-input { width: 64px; height: 22px; padding: 0 6px; border: 1px solid var(--accent); border-radius: 99px; background: var(--surface-0); color: var(--text); font: 600 11.5px var(--font-num); box-shadow: none; }
+.aim-uses-input:focus:not(:focus-visible) { outline: none; }
+.aim-uses-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .aim-uses-input.is-invalid { border-color: var(--hp); color: var(--hp); }
+.aim-charges:has([data-uses-input]) { max-width: min(240px, 100%); }
+.aim-charges .aim-edit-error { text-align: right; }
 .aim-charges .aim-recharge { color: var(--warn); }
 
 /* favorites in the rail */

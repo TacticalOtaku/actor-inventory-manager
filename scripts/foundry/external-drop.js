@@ -36,9 +36,8 @@ function watchArrival(actor, item, container) {
   let receipt = null;
   let ambiguous = false;
   let attempted = null;
-  let finish;
   let timer;
-  const arrived = new Promise((resolve) => { finish = resolve; });
+  const { promise: arrived, resolve: finish } = Promise.withResolvers();
   const pre = Hooks.on("preUpdateItem", (doc, changes, options, userId) => {
     if (doc.parent !== actor || userId !== game.user.id || !matchesDroppedStack(doc, item, container)) return;
     const value = changes["system.quantity"] ?? changes.system?.quantity;

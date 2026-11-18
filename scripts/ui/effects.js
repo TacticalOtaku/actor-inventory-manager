@@ -52,7 +52,7 @@ export async function buildEffectsContext(actor, { open, canFavorite }) {
 
 /** The open row: its description, enriched as dnd5e does, and its changes. */
 async function effectDetail(actor, uuid) {
-  const effect = await fromUuid(uuid);
+  const effect = await foundry.utils.fromUuid(uuid);
   if (!effect) return null;
   const description = effect.description
     ? unwrapSecrets(await foundry.applications.ux.TextEditor.implementation.enrichHTML(effect.description, { relativeTo: effect, secrets: effect.isOwner }))

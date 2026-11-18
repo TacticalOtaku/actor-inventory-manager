@@ -144,5 +144,13 @@
 /* a revealed secret is ordinary text for everyone; core's grey rules around it read as foreign */
 .aim-root section.secret.revealed { margin: 0; padding: 0; border: 0; }
 
-/* a new theme or accent crossfades over 600 ms (the window's view transition, actor-window.js) */
-html.aim-vt::view-transition-old(root), html.aim-vt::view-transition-new(root) { animation-duration: 600ms; }
+/* a new theme or accent crossfades inside the window without blocking Foundry's canvas */
+.aim-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .aim-root.aim-theme-fade:not([data-motion="off"]),
+  .aim-root.aim-theme-fade:not([data-motion="off"]) * {
+    transition-property: background-color, color, border-color, box-shadow !important;
+    transition-duration: 280ms !important;
+    transition-timing-function: var(--ease-settle) !important;
+  }
+}

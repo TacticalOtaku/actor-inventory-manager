@@ -343,3 +343,42 @@ it("exposes invalid submission after redraw and clears it when corrected", () =>
   next.fire("input");
   assert.equal(next.attributes.get("aria-invalid"), "false");
 });
+
+it("ignores Enter during IME composition (isComposing or Safari keyCode 229) and announces invalid text to live status", async () => {
+  let announced = "";
+  const live = { set textContent(v) { announced = v; }, get textContent() { return announced; } };
+  const input = new Input();
+  input.nextElementSibling = { textContent: "Only digits or +/-N" };
+  const f = fixture();
+  f.edits.begin("amount", "gp");
+  f.edits.mount({
+    querySelector: (sel) => (sel === "[data-live-status]" ? live : input)
+  });
+
+  input.value = "+5";
+  input.fire("input");
+
+  const composing = new Event("keydown", { cancelable: true });
+  Object.defineProperty(composing, "key", { value: "Enter" });
+  Object.defineProperty(composing, "isComposing", { value: true });
+  input.dispatchEvent(composing);
+
+  const safariConfirm = new Event("keydown", { cancelable: true });
+  Object.defineProperty(safariConfirm, "key", { value: "Enter" });
+  Object.defineProperty(safariConfirm, "keyCode", { value: 229 });
+  input.dispatchEvent(safariConfirm);
+
+  await turn();
+  assert.equal(f.calls.some(([kind]) => kind === "write"), false);
+
+  input.value = "bad";
+  input.fire("input");
+  input.fire("keydown", "Enter");
+  await turn();
+  assert.equal(announced, "Only digits or +/-N");
+
+  input.value = "+6";
+  input.fire("input");
+  assert.equal(announced, "");
+  f.edits.close();
+});

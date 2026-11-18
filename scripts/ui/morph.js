@@ -11,11 +11,25 @@ function syncAttributes(from, to) {
   for (const { name, value } of to.attributes) if (from.getAttribute(name) !== value) from.setAttribute(name, value);
 }
 
+const FORM_CONTROLS = "input, textarea, select, option";
+
 // A field's attributes are its defaults; what it shows is a property. The focused field keeps what is being typed.
 function syncField(from, to) {
-  if (from === from.ownerDocument.activeElement) return;
+  const active = from.ownerDocument?.activeElement;
+  if (from === active || (from.nodeName === "OPTION" && active?.nodeName === "SELECT" && active.contains(from))) return;
   if ("checked" in from && from.checked !== to.checked) from.checked = to.checked;
+  if ("selected" in from && from.selected !== to.selected) from.selected = to.selected;
   if ("value" in from && from.type !== "file" && from.value !== to.value) from.value = to.value;
+}
+
+function syncSubtreeFields(from, to) {
+  if (from.matches?.(FORM_CONTROLS)) syncField(from, to);
+  const fromFields = from.querySelectorAll?.(FORM_CONTROLS);
+  if (!fromFields?.length) return;
+  const toFields = to.querySelectorAll(FORM_CONTROLS);
+  for (let i = 0; i < fromFields.length; i += 1) {
+    syncField(fromFields[i], toFields[i]);
+  }
 }
 
 function morphChildren(from, to) {
@@ -54,7 +68,10 @@ export function morph(from, to) {
     if (from.nodeValue !== to.nodeValue) from.nodeValue = to.nodeValue;
     return;
   }
-  if (from.isEqualNode(to)) return;
+  if (from.isEqualNode(to)) {
+    syncSubtreeFields(from, to);
+    return;
+  }
   if (from.nodeName !== to.nodeName) return from.replaceWith(to);
   if (from.localName.includes("-")) {
     // An editor being typed in keeps its element: a new one would drop the text not yet saved.

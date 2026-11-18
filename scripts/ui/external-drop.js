@@ -51,7 +51,7 @@ async function resolve(data) {
   if (data.type === "Folder") {
     const folder = await Folder.implementation.fromDropData(data);
     if (folder?.type !== "Item") return null;
-    const items = await Promise.all(folder.contents.map((entry) => (entry instanceof Item ? entry : fromUuid(entry.uuid))));
+    const items = await Promise.all(folder.contents.map((entry) => (entry instanceof Item ? entry : foundry.utils.fromUuid(entry.uuid))));
     return { items: items.filter(Boolean) };
   }
   if (data.type === "ActiveEffect") return { effect: await ActiveEffect.implementation.fromDropData(data) };

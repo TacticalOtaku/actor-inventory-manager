@@ -646,7 +646,7 @@ export async function readFavorites(actor) {
   for (const { id, type, sort } of actor?.system?.favorites ?? []) {
     const base = { id, type, sort: num(sort, 0), itemType: null, itemId: null, effectId: null, activityId: null, activation: "", level: null };
     if (type === "item" || type === "effect" || type === "activity") {
-      const doc = await globalThis.fromUuid?.(id, { relative: actor });
+      const doc = await globalThis.foundry?.utils?.fromUuid?.(id, { relative: actor });
       if (!doc || doc.dependentOrigin?.active === false) continue;
       const data = (type === "item" ? await doc.system?.getFavoriteData?.() : await doc.getFavoriteData?.()) ?? {};
       const item = type === "activity" ? doc.item : type === "item" ? doc : null;

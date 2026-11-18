@@ -12,7 +12,7 @@ export function workingFrom(template) {
     name: template.name ?? template.templateName ?? "",
     figure: template.figure ?? "human",
     attunementMax: template.attunementMax ?? 3,
-    slots: renumber([...(template.slots ?? [])].sort((a, b) => (a.order ?? 50) - (b.order ?? 50)).map((slot) => ({
+    slots: renumber((template.slots ?? []).toSorted((a, b) => (a.order ?? 50) - (b.order ?? 50)).map((slot) => ({
       ...slot,
       accepts: [...(slot.accepts ?? [])],
       itemTypes: [...(slot.itemTypes ?? [])],
@@ -48,7 +48,7 @@ export function removeSlot(slots, id) {
 }
 
 const layoutOf = ({ figure, slots }) => JSON.stringify([figure ?? "human", workingFrom({ slots }).slots.map((slot) => [
-  slot.id, slot.label, slot.icon, slot.order, slot.zone ?? "", [...slot.itemTypes].sort(), [...slot.accepts].sort(),
+  slot.id, slot.label, slot.icon, slot.order, slot.zone ?? "", slot.itemTypes.toSorted(), slot.accepts.toSorted(),
   Boolean(slot.rules.singlePerActor), Boolean(slot.rules.locksOffHandOn2H), Boolean(slot.rules.isArmor), Boolean(slot.rules.isShield)
 ])]);
 

@@ -18,16 +18,16 @@
       <p class="aim-hint">{{settings.motionHint}}</p>
     </div>
     <div class="aim-field"><span>{{localize "AIM.window.settings.fonts"}}</span>
-      <label class="aim-toggle"><span>{{localize "AIM.window.settings.webFonts"}}</span><input type="checkbox" data-setting-toggle="useWebFonts" {{#if settings.webFonts}}checked{{/if}}></label>
+      <label class="aim-toggle"><span>{{localize "AIM.window.settings.webFonts"}}</span><input type="checkbox" role="switch" data-setting-toggle="useWebFonts" {{#if settings.webFonts}}checked{{/if}}></label>
       {{#if settings.fontsPending}}<div class="aim-hint is-pending"><span>{{localize "AIM.window.settings.reloadHint"}}</span><button type="button" class="aim-btn" data-action="reloadPage">{{localize "AIM.window.settings.reload"}}</button></div>{{/if}}
       <p class="aim-hint">{{localize "AIM.window.settings.storageHint"}}</p>
     </div>
     <div class="aim-field"><span>{{localize "AIM.window.settings.rail"}}</span>
-      <label class="aim-toggle is-off"><span>{{localize "AIM.window.rail.hp"}}<small>{{localize "AIM.window.settings.always"}}</small></span><input type="checkbox" checked disabled></label>
-      {{#each settings.railBlocks}}<label class="aim-toggle {{#if absent}}is-off{{/if}}"><span>{{label}}{{#if absent}}<small>{{../settings.absentText}}</small>{{/if}}</span><input type="checkbox" data-rail-toggle="{{id}}" {{#if shown}}checked{{/if}} {{#if absent}}disabled{{/if}}></label>{{/each}}
+      <label class="aim-toggle is-off"><span>{{localize "AIM.window.rail.hp"}}<small>{{localize "AIM.window.settings.always"}}</small></span><input type="checkbox" role="switch" checked disabled></label>
+      {{#each settings.railBlocks}}<label class="aim-toggle {{#if absent}}is-off{{/if}}"><span>{{label}}{{#if absent}}<small>{{../settings.absentText}}</small>{{/if}}</span><input type="checkbox" role="switch" data-rail-toggle="{{id}}" {{#if shown}}checked{{/if}} {{#if absent}}disabled{{/if}}></label>{{/each}}
     </div>
     <div class="aim-field"><span>{{localize "AIM.window.settings.tabs"}}</span>
-      {{#each settings.tabs}}<label class="aim-toggle {{#if locked}}is-off{{/if}}"><span>{{label}}{{#if note}}<small>{{note}}</small>{{/if}}</span><input type="checkbox" data-tab-toggle="{{id}}" {{#if shown}}checked{{/if}} {{#if locked}}disabled{{/if}}></label>{{/each}}
+      {{#each settings.tabs}}<label class="aim-toggle {{#if locked}}is-off{{/if}}"><span>{{label}}{{#if note}}<small>{{note}}</small>{{/if}}</span><input type="checkbox" role="switch" data-tab-toggle="{{id}}" {{#if shown}}checked{{/if}} {{#if locked}}disabled{{/if}}></label>{{/each}}
     </div>
     <div class="aim-drawer-foot">
       {{#if askReset}}

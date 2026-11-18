@@ -46,6 +46,7 @@ import {
   closeItemMenu,
   equipmentSnapshot,
   activityMenuEntries,
+  handleMenuKey,
   itemMenuEntries,
   openItemMenu,
   playEquipmentChanges
@@ -177,6 +178,7 @@ export class ActorWindow extends WindowBase {
       longRest: ActorWindow.#onLongRest,
       rollInitiative: ActorWindow.#onRollInitiative,
       toggleEffect: ActorWindow.#onToggleEffect,
+      toggleEffectOpen: ActorWindow.#onToggleEffectOpen,
       removeCondition: ActorWindow.#onRemoveCondition,
       toggleCondition: ActorWindow.#onToggleCondition,
       createEffect: ActorWindow.#onCreateEffect,
@@ -200,6 +202,7 @@ export class ActorWindow extends WindowBase {
       endConcentration: ActorWindow.#onEndConcentration,
       listView: ActorWindow.#onListView,
       listFilter: ActorWindow.#onListFilter,
+      selectRow: ActorWindow.#onSelectRow,
       toggleSection: ActorWindow.#onToggleSection,
       addItem: ActorWindow.#onAddItem,
       useItem: ActorWindow.#onUseItem,
@@ -506,7 +509,7 @@ export class ActorWindow extends WindowBase {
       themeHint: theme === "auto" ? t("AIM.window.settings.themeNow", { theme: t(`AIM.window.settings.themes.${resolveTheme("auto", schemeIsLight())}`) }) : "",
       accents: ACCENTS.map((id) => ({ id, label: t(`AIM.window.settings.accents.${id}`), active: id === accent })),
       densities: DENSITIES.map((id) => ({ id, label: t(`AIM.window.settings.densities.${id}`), active: id === density })),
-      motions: [...MOTION_LEVELS].reverse().map((id) => ({
+      motions: MOTION_LEVELS.toReversed().map((id) => ({
         id,
         label: t(`AIM.window.settings.motions.${id}`),
         active: id === level,
@@ -794,6 +797,7 @@ export class ActorWindow extends WindowBase {
   }
 
   _onClose(options) {
+    clearTimeout(this._themeFadeTimer);
     this._edits.close();
     this._redraws.close();
     this._awayDoc?.removeEventListener("pointerdown", this._away, { capture: true });
@@ -889,28 +893,52 @@ export class ActorWindow extends WindowBase {
       }
       return;
     }
+    if (this.menuOpen) {
+      const menu = this.element.querySelector(".aim-menu:not(.aim-popmenu)");
+      if (event.key === "ArrowDown" && event.target.matches?.('[data-action="toggleMenu"]')) {
+        event.preventDefault();
+        menu?.querySelector('[role="menuitem"]')?.focus?.({ preventScroll: true });
+        return;
+      }
+      if (event.target.closest?.(".aim-menu:not(.aim-popmenu)")) {
+        if (event.key === "Tab") {
+          this.menuOpen = false;
+          this.render({ parts: ["main"] });
+          return;
+        }
+        if (handleMenuKey(event, menu, () => {
+          this.menuOpen = false;
+          this.render({ parts: ["main"] }).then(() => {
+            this.element?.querySelector('[data-action="toggleMenu"]')?.focus({ preventScroll: true });
+          });
+        })) return;
+      }
+    }
     if (event.key === "Delete" && !event.repeat && this.canEdit && event.target.matches?.(".aim-slot, .aim-socket, .aim-slotless-item")) {
-      const control = event.target.querySelector(".aim-slot-x[data-action]");
+      const control = (event.target.closest(".aim-slot-wrap") ?? event.target).querySelector(".aim-slot-x[data-action]");
       if (control) {
         event.preventDefault();
         return this.constructor.DEFAULT_OPTIONS.actions[control.dataset.action]?.call(this, event, control);
       }
     }
     if (this.#onEquipmentKey(event)) return;
-    if (event.key === "Enter" && event.target.matches?.('[data-xp-form] [name="xp"]')) {
+    if (event.key === "Enter" && !event.isComposing && event.keyCode !== 229 && event.target.matches?.('[data-xp-form] [name="xp"]')) {
       event.preventDefault();
       return ActorWindow.#onXpChange.call(this, event, event.target);
     }
     if (event.key !== "Escape") return;
-    if (closeItemMenu(this.element)) {
+    if (closeItemMenu(this.element, { restoreFocus: true })) {
       event.stopPropagation();
     } else if (this.element.classList.contains("is-settings")) {
       event.stopPropagation();
       this.#setSettings(false);
     } else if (this.menuOpen || this.xpOpen) {
       event.stopPropagation();
+      const restoreMenu = this.menuOpen;
       this.menuOpen = this.xpOpen = false;
-      this.render({ parts: ["main"] });
+      this.render({ parts: ["main"] }).then(() => {
+        if (restoreMenu) this.element?.querySelector('[data-action="toggleMenu"]')?.focus({ preventScroll: true });
+      });
     }
   }
 
@@ -1026,12 +1054,19 @@ export class ActorWindow extends WindowBase {
   static async #onSetSetting(event, target) {
     const { key, value } = target.dataset;
     if (!key || target.disabled) return;
-    // A new theme or accent flows over the window instead of switching at once.
-    if ((key === "windowTheme" || key === "windowAccent") && document.startViewTransition && this.motionOn) {
+    // A new theme or accent transitions locally inside the window without blocking Foundry's canvas.
+    if ((key === "windowTheme" || key === "windowAccent") && this.motionOn) {
       await game.settings.set(MODULE_ID, key, value);
-      const html = document.documentElement;
-      html.classList.add("aim-vt");
-      document.startViewTransition(() => this.#applyRootState()).finished.finally(() => html.classList.remove("aim-vt"));
+      const el = this.element;
+      if (el) {
+        clearTimeout(this._themeFadeTimer);
+        el.classList.add("aim-theme-fade");
+        void el.offsetWidth;
+        this.#applyRootState();
+        this._themeFadeTimer = setTimeout(() => el.classList.remove("aim-theme-fade"), 300);
+      } else {
+        this.#applyRootState();
+      }
       return this.render({ parts: ["drawer"] });
     }
     await this.#setAndRefresh(key, value);
@@ -1064,9 +1099,11 @@ export class ActorWindow extends WindowBase {
     this.setPosition({ width: this.expandedWidth ?? 1040 });
   }
 
-  static #onToggleMenu() {
+  static async #onToggleMenu() {
     this.menuOpen = !this.menuOpen;
-    this.render({ parts: ["main"] });
+    const opening = this.menuOpen;
+    await this.render({ parts: ["main"] });
+    if (opening) this.element?.querySelector('.aim-menu:not(.aim-popmenu) [role="menuitem"]')?.focus({ preventScroll: true });
   }
 
   static #onOpenSheet() {
@@ -1104,7 +1141,7 @@ export class ActorWindow extends WindowBase {
 
   /** Someone aboard opens in their own window, or on their sheet when the window cannot show them. */
   static #onOpenCrew(event, target) {
-    const member = fromUuidSync(target.dataset.uuid);
+    const member = foundry.utils.fromUuidSync(target.dataset.uuid);
     if (!member?.testUserPermission?.(game.user, "LIMITED")) return;
     if (isSupportedActor(member) && member.testUserPermission(game.user, "OBSERVER")) openActorWindow(member);
     else member.sheet?.render({ force: true });
@@ -1360,7 +1397,7 @@ export class ActorWindow extends WindowBase {
 
   async #effectFrom(node) {
     const uuid = node?.closest("[data-effect-uuid]")?.dataset.effectUuid;
-    return uuid ? fromUuid(uuid) : null;
+    return uuid ? foundry.utils.fromUuid(uuid) : null;
   }
 
   /** Before an effect change: rows glide to their new places and the focused control keeps the focus. */
@@ -1395,6 +1432,11 @@ export class ActorWindow extends WindowBase {
 
   static #onCreateEffect() {
     if (this.canEdit) return createActorEffect(this.actor);
+  }
+
+  static #onToggleEffectOpen(event, target) {
+    const row = target.closest("[data-effect-row]");
+    if (row) return this.#toggleEffectOpen(row);
   }
 
   /** A click on the row opens its description and changes under it; again closes them. */
@@ -1523,7 +1565,7 @@ export class ActorWindow extends WindowBase {
     if (this._effectFocus) {
       const wrap = el.querySelector(`.aim-effwrap[data-key="${CSS.escape(this._effectFocus.key)}"]`);
       const action = this._effectFocus.action && wrap?.querySelector(`[data-action="${this._effectFocus.action}"]`);
-      (action ?? wrap?.querySelector("[data-effect-row]"))?.focus({ preventScroll: true });
+      (action ?? wrap?.querySelector(".aim-effect-toggle, [data-effect-row]"))?.focus({ preventScroll: true });
       this._effectFocus = null;
     }
     if (this._favGlide) {
@@ -1627,6 +1669,11 @@ export class ActorWindow extends WindowBase {
     const id = target.dataset.filter;
     await this.#savePrefs({ filters: filters.includes(id) ? filters.filter((f) => f !== id) : [...filters, id] }, tab);
     this.render({ parts: ["main"] });
+  }
+
+  static #onSelectRow(event, target) {
+    const row = target.closest("[data-row]");
+    if (row) return this.#selectRow(row);
   }
 
   static #onToggleSection(event, target) {
@@ -1824,10 +1871,11 @@ export class ActorWindow extends WindowBase {
 
   static async #onUnequipSlot(event, target) {
     event.stopPropagation();
-    const holder = target.closest("[data-item-id]");
-    const item = this.actor.items.get(holder?.dataset.itemId);
+    const holder = target.closest(".aim-slot-wrap") ?? target.closest("[data-item-id]");
+    const itemId = target.dataset.itemId ?? holder?.querySelector("[data-item-id]")?.dataset.itemId ?? holder?.dataset.itemId;
+    const item = this.actor.items.get(itemId);
     if (!item || !this.canEdit) return;
-    this.#prepareFlight(item, holder.querySelector(".aim-tile"));
+    this.#prepareFlight(item, holder?.querySelector(".aim-tile"));
     await unequipItem(this.actor, item);
   }
 
@@ -1988,7 +2036,7 @@ export class ActorWindow extends WindowBase {
     if (favorite.type === "slots") return this.#switchTo("spells");
     if (favorite.type === "skill") return this.actor.rollSkill({ event, skill: favorite.id });
     if (favorite.type === "tool") return this.actor.rollToolCheck({ event, tool: favorite.id });
-    const doc = await fromUuid(favorite.id, { relative: this.actor });
+    const doc = await foundry.utils.fromUuid(favorite.id, { relative: this.actor });
     if (!doc) return;
     // A suppressed effect stays locked here as on its row: its item must be equipped and attuned first.
     if (favorite.type === "effect") return doc.isSuppressed ? this.#shake(target.closest("[data-fav-id]")) : doc.update({ disabled: !doc.disabled });
@@ -2002,7 +2050,7 @@ export class ActorWindow extends WindowBase {
     const favorite = this.#favoriteFrom(target);
     if (!favorite) return;
     if (["effect", "skill", "tool"].includes(favorite.type)) return this.#revealFavorite(favorite);
-    const doc = ["item", "activity"].includes(favorite.type) ? await fromUuid(favorite.id, { relative: this.actor }) : null;
+    const doc = ["item", "activity"].includes(favorite.type) ? await foundry.utils.fromUuid(favorite.id, { relative: this.actor }) : null;
     const item = favorite.type === "activity" ? doc?.item : doc;
     const tab = tabForFavorite({ type: favorite.type, itemType: item?.type });
     if (!this.#switchTo(tab)) return;

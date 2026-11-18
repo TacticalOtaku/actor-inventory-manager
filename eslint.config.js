@@ -13,8 +13,6 @@ const foundryGlobals = Object.fromEntries(
     "CONFIG",
     "CONST",
     "Handlebars",
-    "fromUuid",
-    "fromUuidSync",
     "ChatMessage",
     "Roll",
     "Actor",

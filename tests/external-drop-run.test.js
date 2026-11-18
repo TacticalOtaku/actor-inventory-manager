@@ -126,8 +126,8 @@ describe("an item dropped in from another owned actor (ADR 0004)", () => {
     const second = { ...item, id: "rope", name: "Rope", async delete() {} };
     source.items.set("rope", second);
     foundry.applications.ux.TextEditor.implementation.getDragEventData = () => ({ type: "Folder" });
+    foundry.utils = { fromUuid: async (id) => source.items.get(id) };
     globalThis.Folder = { implementation: { fromDropData: async () => ({ type: "Item", contents: [{ uuid: "torch" }, { uuid: "rope" }] }) } };
-    globalThis.fromUuid = async (id) => source.items.get(id);
     const result = await dropFromOutside(app, {});
     assert.equal(result.refusal, "AIM.window.drop.partial");
     assert.equal(source.items.has("torch"), false);
@@ -204,8 +204,8 @@ describe("an item dropped in from another owned actor (ADR 0004)", () => {
     const second = { ...item, id: "rope", async delete() { source.items.delete(this.id); } };
     source.items.set(second.id, second);
     foundry.applications.ux.TextEditor.implementation.getDragEventData = () => ({ type: "Folder" });
+    foundry.utils = { fromUuid: async (id) => source.items.get(id) };
     globalThis.Folder = { implementation: { fromDropData: async () => ({ type: "Item", contents: [{ uuid: "torch" }, { uuid: "rope" }] }) } };
-    globalThis.fromUuid = async (id) => source.items.get(id);
     const result = await dropFromOutside(app, {});
     assert.equal(result.refusal, "AIM.window.drop.recovery");
     assert.equal(source.items.size, 2);
@@ -260,8 +260,8 @@ describe("an item dropped in from another owned actor (ADR 0004)", () => {
     const child = { id: "child", name: "Rope", type: "loot", parent: source, system: { quantity: 2, container: item.id } };
     source.items.set(child.id, child);
     foundry.applications.ux.TextEditor.implementation.getDragEventData = () => ({ type: "Folder" });
+    foundry.utils = { fromUuid: async (id) => source.items.get(id) };
     globalThis.Folder = { implementation: { fromDropData: async () => ({ type: "Item", contents: [{ uuid: "torch" }, { uuid: "child" }] }) } };
-    globalThis.fromUuid = async (id) => source.items.get(id);
     target.sheet._onDropCreateItems = async (event, items) => items[0].id === item.id ? [item, child].map((entry) => {
       const copy = { id: `copy-${entry.id}`, name: entry.name, type: entry.type, system: { quantity: entry.system.quantity } };
       target.items.set(copy.id, copy);

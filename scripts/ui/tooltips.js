@@ -207,9 +207,15 @@ const plain = ({ id, parent, depth, pinned, at }) => ({ id, parent, depth, pinne
 function bindRoot(root, app) {
   const layer = () => TooltipLayer.for(root.ownerDocument);
   const anchorOf = (event) => {
+    if (root.querySelector(".aim-popmenu")) return null;
     const anchor = event.target.closest?.(TRIGGERS);
     return anchor && !anchor.closest(".aim-settings, .aim-trade") ? anchor : null;
   };
+  root.addEventListener("pointerdown", (event) => {
+    if (!event.target.closest?.('[data-action="itemMenu"], .aim-menu-wrap')) return;
+    const tips = layer();
+    tips.cards.filter((c) => !c.pinned).forEach((c) => tips.close(c));
+  }, { capture: true });
   root.addEventListener("pointerover", (event) => {
     const anchor = anchorOf(event);
     if (anchor && !anchor.contains(event.relatedTarget)) layer().schedule(anchor, app);
@@ -223,22 +229,27 @@ function bindRoot(root, app) {
   root.addEventListener("keydown", (event) => {
     const tips = layer();
     if (event.key !== "Escape" || !tips.cards.some((c) => !c.pinned)) return;
-    event.stopPropagation();
     tips.cards.filter((c) => !c.pinned).forEach((c) => tips.close(c));
+    // An open menu, drawer or active inline edit still handles Escape itself.
+    if (!root.querySelector(".aim-popmenu, .aim-menu:not([hidden])")
+      && !root.classList.contains("is-settings")
+      && !event.target.matches?.("[data-hp-input], [data-coin-input], [data-uses-input], [data-bio-field], [data-bio-editor]")) {
+      event.stopPropagation();
+    }
   }, { capture: true });
 }
 
 /** The document behind an anchor: an item row, a doll tile, an effect, a favorite, a condition, a content link. */
 async function resolveAnchor(anchor, app) {
   const actor = app?.actor;
-  if (anchor.matches("a.content-link[data-uuid]")) return fromUuid(anchor.dataset.uuid);
-  if (anchor.matches("[data-effect-row]")) return fromUuid(anchor.closest("[data-effect-uuid]")?.dataset.effectUuid);
+  if (anchor.matches("a.content-link[data-uuid]")) return foundry.utils.fromUuid(anchor.dataset.uuid);
+  if (anchor.matches("[data-effect-row]")) return foundry.utils.fromUuid(anchor.closest("[data-effect-uuid]")?.dataset.effectUuid);
   if (anchor.matches(".aim-cond[data-status]")) {
     const reference = CONFIG.statusEffects?.find((s) => s.id === anchor.dataset.status)?.reference;
-    return reference ? fromUuid(reference) : null;
+    return reference ? foundry.utils.fromUuid(reference) : null;
   }
   if (anchor.matches(".aim-fav[data-fav-id]")) {
-    const doc = actor ? await fromUuid(anchor.dataset.favId, { relative: actor }) : null;
+    const doc = actor ? await foundry.utils.fromUuid(anchor.dataset.favId, { relative: actor }) : null;
     return doc?.documentName === "Item" || doc?.documentName === "ActiveEffect" ? doc : doc?.item ?? null;
   }
   return actor?.items.get(anchor.closest("[data-item-id]")?.dataset.itemId) ?? null;
@@ -247,7 +258,7 @@ async function resolveAnchor(anchor, app) {
 /** A damage type's card: its scene, its name and dnd5e's rule page for it when there is one. */
 async function damageCard(key) {
   const type = readDamageType(key);
-  const page = type?.reference ? await fromUuid(type.reference).catch(() => null) : null;
+  const page = type?.reference ? await foundry.utils.fromUuid(type.reference).catch(() => null) : null;
   const rule = page ? await readCardData(page) : null;
   return {
     kind: "damage",

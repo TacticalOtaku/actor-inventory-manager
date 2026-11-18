@@ -10,14 +10,16 @@
   </div>
   {{#each features.groups}}
   <section class="aim-section {{#if collapsed}}is-collapsed{{/if}}" data-section="{{id}}" data-key="sec-{{id}}">
-    <div class="aim-sec-head" data-action="toggleSection" data-section-id="{{id}}" role="button" tabindex="0" aria-expanded="{{#if collapsed}}false{{else}}true{{/if}}">
-      <i class="fa-light fa-chevron-down aim-chev"></i>
-      {{#if classLink}}<h3><button type="button" class="aim-link" data-action="openDocument" data-id="{{classLink}}">{{label}}</button></h3>{{else}}<h3>{{label}}</h3>{{/if}}
+    <div class="aim-sec-head">
+      <button type="button" class="aim-sec-toggle {{#if classLink}}is-compact{{/if}}" data-action="toggleSection" data-section-id="{{id}}" aria-expanded="{{#if collapsed}}false{{else}}true{{/if}}" aria-controls="{{@root.windowId}}-feat-sec-{{id}}" {{#if classLink}}aria-label="{{label}}"{{/if}}>
+        <i class="fa-light fa-chevron-down aim-chev" aria-hidden="true"></i>{{#unless classLink}}<h3>{{label}}</h3>{{/unless}}
+      </button>
+      {{#if classLink}}<h3><button type="button" class="aim-link" data-action="openDocument" data-id="{{classLink}}">{{label}}</button></h3>{{/if}}
       <span class="aim-sec-n">{{entries.length}}</span>
       <span class="aim-sec-meta">{{meta}}{{#each links}}{{#if @first}}{{#if ../meta}} · {{/if}}{{else}} · {{/if}}<button type="button" class="aim-link" data-action="openDocument" data-id="{{id}}">{{label}}</button>{{/each}}</span>
       {{#if @root.canEdit}}<button type="button" class="aim-ibtn aim-mini aim-sec-add" data-action="addFeature" aria-label="{{@root.features.addLabel}}" data-tooltip="{{@root.features.addLabel}}"><i class="fa-light fa-plus"></i></button>{{/if}}
     </div>
-    <div class="aim-sec-body"><div class="aim-sec-inner">
+    <div class="aim-sec-body" id="{{@root.windowId}}-feat-sec-{{id}}"><div class="aim-sec-inner">
       {{#if entries.length}}
       <div class="aim-items" data-view="{{@root.features.prefs.view}}">{{#each entries}}{{> "modules/actor-inventory-manager/templates/window/feature-row.hbs"}}{{/each}}</div>
       {{else}}<p class="aim-sec-empty">{{@root.features.emptyText}}</p>{{/if}}

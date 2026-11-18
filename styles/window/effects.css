@@ -7,7 +7,7 @@
   font: 12px var(--font-ui); cursor: pointer; transition: border-color var(--d-fast), opacity var(--d-fast);
 }
 .aim-effect:hover { border-color: var(--line-strong); }
-.aim-effect:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.aim-effect:has(.aim-effect-toggle:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
 .aim-effect.is-open { border-color: var(--accent-line); }
 .aim-effect img { flex: none; width: 24px; height: 24px; border: 0; border-radius: 5px; }
 .aim-effect-n { flex: 1; min-width: 0; display: grid; line-height: 1.2; }
@@ -27,6 +27,8 @@
 .aim-effect.is-found::after, .aim-check.is-found::after { content: ""; position: absolute; inset: -1px; border: 1px solid var(--accent); border-radius: inherit; box-shadow: 0 0 0 3px var(--accent-soft); pointer-events: none; opacity: 0; animation: aim-effect-found 1200ms var(--ease-settle); }
 @keyframes aim-effect-found { 15%, 60% { opacity: 1; } }
 .aim-effect button { min-height: 0; flex: none; }
+.aim-effect .aim-effect-toggle { flex: 1; min-width: 0; display: grid; padding: 0; border: 0; border-radius: var(--r-xs); background: none; color: inherit; font: inherit; line-height: 1.2; text-align: left; cursor: pointer; }
+.aim-effect .aim-effect-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .aim-switch { position: relative; width: 28px; height: 16px; padding: 0; border: 0; border-radius: 99px; background: var(--surface-3); cursor: pointer; }
 .aim-switch::after {

@@ -3,6 +3,13 @@ function showInvalid(input, invalid) {
   input.setAttribute("aria-invalid", String(invalid));
 }
 
+function errorMessage(input, root) {
+  const doc = input.ownerDocument ?? root?.ownerDocument;
+  const id = input.getAttribute?.("aria-describedby")?.trim().split(/\s+/)[0];
+  const target = id ? doc?.getElementById?.(id) : null;
+  return target?.textContent?.trim() || input.nextElementSibling?.textContent?.trim() || "";
+}
+
 /** Per-window editing lifecycle; document-specific parsing and writes stay in its adapters. */
 export class InlineEdits {
   #adapters;
@@ -10,6 +17,7 @@ export class InlineEdits {
   #onError;
   #sessions = new Map();
   #bindings = new Map();
+  #root = null;
   #revision = 0;
   #closed = false;
   #replacing = false;
@@ -36,6 +44,7 @@ export class InlineEdits {
   /** Bind only new rendered inputs; an unrelated part redraw must not move a live caret. */
   mount(root) {
     if (this.#closed) return;
+    this.#root = root;
     for (const [name, adapter] of Object.entries(this.#adapters)) {
       const session = this.#sessions.get(name);
       const input = session && root.querySelector(adapter.selector);
@@ -61,10 +70,11 @@ export class InlineEdits {
           session.text = input.value;
           session.invalid = false;
           showInvalid(input, false);
+          this.#announce("");
           adapter.preview?.(input);
         },
         keydown: event => {
-          if (!current()) return;
+          if (!current() || event.isComposing || event.keyCode === 229) return;
           if (event.key === "Enter") { event.preventDefault(); void this.#commit(name, session, input); }
           if (event.key === "Escape") {
             event.preventDefault(); event.stopPropagation(); this.#cancel(name);
@@ -105,10 +115,16 @@ export class InlineEdits {
     catch (error) { this.#onError(error); }
   }
 
+  #announce(message) {
+    const live = this.#root?.querySelector?.("[data-live-status]");
+    if (live) live.textContent = message;
+  }
+
   #cancel(name) {
     this.#sessions.delete(name);
     this.#revision++;
     this.#unbind(name);
+    this.#announce("");
     this.#refresh(this.#adapters[name].part);
   }
 
@@ -119,8 +135,11 @@ export class InlineEdits {
     if (value === null) {
       session.invalid = true;
       showInvalid(input, true);
+      const message = errorMessage(input, this.#root);
+      if (message) this.#announce(message);
       return;
     }
+    this.#announce("");
     const current = () => !this.#closed && this.#revision === session.revision;
     // Remove listeners/state synchronously: a second Enter cannot submit a relative change twice.
     this.#sessions.delete(name);

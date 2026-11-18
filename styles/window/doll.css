@@ -42,13 +42,16 @@
 .aim-slot .aim-tile { --tile: 32px; }
 .aim-slot-ico { font-size: 18px; }
 .aim-slot-label { max-width: 100%; overflow: hidden; color: var(--text-3); font-size: 10px; line-height: 1.1; text-align: center; overflow-wrap: anywhere; }
+.aim-slot-wrap { position: relative; display: inline-flex; }
+.aim-slot-wrap.is-socket-wrap { display: inline-grid; place-items: center; }
+.aim-slot-wrap.is-slotless-wrap { max-width: 100%; }
 .aim-slot-x {
-  position: absolute; top: -6px; right: -6px; display: grid; place-items: center; width: 18px; height: 18px;
+  position: absolute; top: -6px; right: -6px; display: grid; place-items: center; width: 18px; height: 18px; min-height: 0; padding: 0;
   border: 1px solid var(--line-strong); border-radius: 50%; background: var(--surface-0); color: var(--text-2);
-  font-size: 10px; opacity: 0; transition: opacity var(--d-fast);
+  font-size: 10px; cursor: pointer; opacity: 0; transition: opacity var(--d-fast);
 }
-.aim-slot:hover .aim-slot-x, .aim-slot:focus-visible .aim-slot-x,
-.aim-socket:is(:hover, :focus-visible) .aim-slot-x, .aim-slotless-item:is(:hover, :focus-visible) .aim-slot-x { opacity: 1; }
+.aim-slot-wrap:is(:hover, :focus-within) .aim-slot-x, .aim-slot-x:focus-visible { opacity: 1; }
+.aim-slot-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .aim-slot-x:hover { color: var(--hp); border-color: var(--hp); }
 .aim-slot.is-locked { border-style: solid; cursor: default; }
 .aim-slot-ghost { opacity: 0.3; filter: grayscale(1); }
@@ -72,7 +75,7 @@
 .aim-socket.is-on .aim-tile { --tile: 22px; border-radius: 50%; box-shadow: none; }
 .aim-socket.is-over { border-color: var(--hp); }
 .aim-socket.is-selected { box-shadow: 0 0 0 2px var(--accent-soft); }
-.aim-socket .aim-slot-x { top: -7px; right: -7px; width: 16px; height: 16px; }
+.aim-slot-wrap.is-socket-wrap .aim-slot-x { top: -7px; right: -7px; width: 16px; height: 16px; }
 .aim-attune.is-drop .aim-sockets { filter: drop-shadow(0 0 6px var(--accent)); }
 .aim-attune-label { color: var(--text-3); font-size: 10.5px; white-space: nowrap; }
 .aim-attune-label b { color: var(--text); font-family: var(--font-num); }

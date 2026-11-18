@@ -1,5 +1,5 @@
 <div class="aim-rowwrap" data-item-id="{{id}}" data-key="{{key}}">
-  <div class="aim-row is-feature {{#if selected}}is-selected{{/if}} {{#if passive}}is-passive{{/if}}" data-row tabindex="0" aria-expanded="{{selected}}" {{#if (eq @root.features.prefs.view "icons")}}data-tooltip="{{name}}"{{/if}}>
+  <div class="aim-row is-feature {{#if selected}}is-selected{{/if}} {{#if passive}}is-passive{{/if}}" data-row {{#if (eq @root.features.prefs.view "icons")}}data-tooltip="{{name}}"{{/if}}>
     {{#if passive}}
     <span class="aim-tile" data-origin="{{origin.kind}}"><img src="{{img}}" alt="" loading="lazy"></span>
     {{else}}
@@ -8,7 +8,7 @@
     </button>
     {{/if}}
     <div class="aim-row-main">
-      <div class="aim-row-name item-name">{{name}}</div>
+      <div class="aim-row-name item-name"><button type="button" class="aim-row-toggle" data-action="selectRow" aria-expanded="{{#if selected}}true{{else}}false{{/if}}">{{name}}</button></div>
       <div class="aim-row-meta item-detail">
         {{#if attack}}{{#if attack.toHit}}<span class="aim-tag is-roll">{{attack.toHit}}</span>{{/if}}{{#if attack.damage}}<span>{{attack.damage}}</span>{{/if}}{{/if}}
         {{#if activationLabel}}<span class="aim-tag {{#if passive}}is-passive{{/if}}">{{activationLabel}}</span>{{/if}}

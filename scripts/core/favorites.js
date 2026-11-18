@@ -23,7 +23,7 @@ export function groupFavorites(entries) {
  * @param {{id: string, sort: number}[]} favorites
  */
 export function reorderFavorites(favorites, id, targetId, before) {
-  const ordered = [...favorites].sort((a, b) => a.sort - b.sort);
+  const ordered = favorites.toSorted((a, b) => a.sort - b.sort);
   const moving = ordered.find((f) => f.id === id);
   if (!moving || id === targetId || !ordered.some((f) => f.id === targetId)) return ordered;
   const rest = ordered.filter((f) => f.id !== id);

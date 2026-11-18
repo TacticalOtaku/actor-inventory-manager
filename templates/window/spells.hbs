@@ -1,9 +1,12 @@
 {{#*inline "spellSection"}}
 <section class="aim-section {{#if collapsed}}is-collapsed{{/if}}" data-section="{{id}}" data-key="sec-{{id}}">
-  <div class="aim-sec-head" data-action="toggleSection" data-section-id="{{id}}" role="button" tabindex="0" aria-expanded="{{#if collapsed}}false{{else}}true{{/if}}">
-    <i class="fa-light fa-chevron-down aim-chev"></i><h3>{{label}}</h3><span class="aim-sec-n">{{entries.length}}</span>{{#if meta}}<span class="aim-sec-meta">{{meta}}</span>{{/if}}
+  <div class="aim-sec-head">
+    <button type="button" class="aim-sec-toggle" data-action="toggleSection" data-section-id="{{id}}" aria-expanded="{{#if collapsed}}false{{else}}true{{/if}}" aria-controls="{{@root.windowId}}-spell-sec-{{id}}">
+      <i class="fa-light fa-chevron-down aim-chev" aria-hidden="true"></i><h3>{{label}}</h3><span class="aim-sec-n">{{entries.length}}</span>
+    </button>
+    {{#if meta}}<span class="aim-sec-meta">{{meta}}</span>{{/if}}
   </div>
-  <div class="aim-sec-body"><div class="aim-sec-inner">
+  <div class="aim-sec-body" id="{{@root.windowId}}-spell-sec-{{id}}"><div class="aim-sec-inner">
     {{#if entries.length}}
     <div class="aim-items" data-view="{{@root.spells.prefs.view}}">{{#each entries}}{{> "modules/actor-inventory-manager/templates/window/spell-row.hbs"}}{{/each}}</div>
     {{else}}<p class="aim-sec-empty">{{@root.spells.emptyText}}</p>{{/if}}
@@ -34,11 +37,13 @@
 
   {{#if spells.prepared.show}}
   <section class="aim-section is-prepared {{#if spells.prepared.collapsed}}is-collapsed{{/if}}" data-section="prepared" data-key="sec-prepared">
-    <div class="aim-sec-head" data-action="toggleSection" data-section-id="prepared" role="button" tabindex="0" aria-expanded="{{#if spells.prepared.collapsed}}false{{else}}true{{/if}}">
-      <i class="fa-light fa-chevron-down aim-chev"></i><h3>{{localize "AIM.window.spells.prepared"}}</h3><span class="aim-sec-n">{{spells.prepared.entries.length}}</span>
+    <div class="aim-sec-head">
+      <button type="button" class="aim-sec-toggle" data-action="toggleSection" data-section-id="prepared" aria-expanded="{{#if spells.prepared.collapsed}}false{{else}}true{{/if}}" aria-controls="{{@root.windowId}}-spell-sec-prepared">
+        <i class="fa-light fa-chevron-down aim-chev" aria-hidden="true"></i><h3>{{localize "AIM.window.spells.prepared"}}</h3><span class="aim-sec-n">{{spells.prepared.entries.length}}</span>
+      </button>
       {{#if spells.prepared.counter}}<span class="aim-sec-meta is-{{spells.prepared.counter.state}}" data-prep-counter data-tooltip="{{spells.prepared.counter.hint}}">{{spells.prepared.counter.text}}</span>{{/if}}
     </div>
-    <div class="aim-sec-body"><div class="aim-sec-inner">
+    <div class="aim-sec-body" id="{{@root.windowId}}-spell-sec-prepared"><div class="aim-sec-inner">
       {{#if spells.prepared.entries.length}}
       <div class="aim-items" data-view="{{spells.prefs.view}}">{{#each spells.prepared.entries}}{{> "modules/actor-inventory-manager/templates/window/spell-row.hbs"}}{{/each}}</div>
       {{else}}<p class="aim-sec-empty">{{spells.emptyText}}</p>{{/if}}

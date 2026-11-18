@@ -51,7 +51,7 @@ function describe(entry) {
 export async function buildFavoritesContext(actor, { canEdit }) {
   if (!hasFavorites(actor)) return { show: false };
   // An activity midi-qol keeps for its automation is no favorite to use by hand (ADR 0003).
-  const shown = (await readFavorites(actor)).filter((entry) => entry.type !== "activity" || !automationOnly(fromUuidSync(entry.id, { relative: actor })));
+  const shown = (await readFavorites(actor)).filter((entry) => entry.type !== "activity" || !automationOnly(foundry.utils.fromUuidSync(entry.id, { relative: actor })));
   const entries = shown.map((entry) => {
     const quick = entry.itemType === "spell" ? "cast" : (entry.type === "item" || entry.type === "activity") ? "use" : null;
     return {

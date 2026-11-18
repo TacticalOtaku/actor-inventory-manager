@@ -42,22 +42,26 @@
   <div class="aim-inventory">
     {{#if inv.containers.length}}
     <section class="aim-section {{#if inv.containersCollapsed}}is-collapsed{{/if}}" data-section="container" data-key="sec-container">
-      <div class="aim-sec-head" data-action="toggleSection" data-section-id="container" role="button" tabindex="0" aria-expanded="{{#if inv.containersCollapsed}}false{{else}}true{{/if}}">
-        <i class="fa-light fa-chevron-down aim-chev"></i><h3>{{localize "AIM.window.inv.sections.container"}}</h3><span class="aim-sec-n">{{inv.containers.length}}</span>
+      <div class="aim-sec-head">
+        <button type="button" class="aim-sec-toggle" data-action="toggleSection" data-section-id="container" aria-expanded="{{#if inv.containersCollapsed}}false{{else}}true{{/if}}" aria-controls="{{@root.windowId}}-inv-sec-container">
+          <i class="fa-light fa-chevron-down aim-chev" aria-hidden="true"></i><h3>{{localize "AIM.window.inv.sections.container"}}</h3><span class="aim-sec-n">{{inv.containers.length}}</span>
+        </button>
         <button type="button" class="aim-linkbtn" data-action="foldAllTrays" data-fold="{{inv.foldAll}}">{{inv.foldAllLabel}}</button>
       </div>
-      <div class="aim-sec-body"><div class="aim-sec-inner"><div class="aim-items" data-view="list">
+      <div class="aim-sec-body" id="{{@root.windowId}}-inv-sec-container"><div class="aim-sec-inner"><div class="aim-items" data-view="list">
         {{#each inv.containers}}{{> "modules/actor-inventory-manager/templates/window/tray.hbs"}}{{/each}}
       </div></div></div>
     </section>
     {{/if}}
     {{#each inv.sections}}
     <section class="aim-section {{#if collapsed}}is-collapsed{{/if}}" data-section="{{id}}" data-key="sec-{{id}}">
-      <div class="aim-sec-head" data-action="toggleSection" data-section-id="{{id}}" role="button" tabindex="0" aria-expanded="{{#if collapsed}}false{{else}}true{{/if}}">
-        <i class="fa-light fa-chevron-down aim-chev"></i><h3>{{label}}</h3><span class="aim-sec-n">{{entries.length}}</span>
+      <div class="aim-sec-head">
+        <button type="button" class="aim-sec-toggle" data-action="toggleSection" data-section-id="{{id}}" aria-expanded="{{#if collapsed}}false{{else}}true{{/if}}" aria-controls="{{@root.windowId}}-inv-sec-{{id}}">
+          <i class="fa-light fa-chevron-down aim-chev" aria-hidden="true"></i><h3>{{label}}</h3><span class="aim-sec-n">{{entries.length}}</span>
+        </button>
         {{#if @root.canEdit}}<button type="button" class="aim-ibtn aim-mini aim-sec-add" data-action="addItem" data-type="{{id}}" aria-label="{{addLabel}}" data-tooltip="{{addLabel}}"><i class="fa-light fa-plus"></i></button>{{/if}}
       </div>
-      <div class="aim-sec-body"><div class="aim-sec-inner">
+      <div class="aim-sec-body" id="{{@root.windowId}}-inv-sec-{{id}}"><div class="aim-sec-inner">
         {{#if entries.length}}
         <div class="aim-items" data-view="{{@root.inv.prefs.view}}">{{#each entries}}{{> "modules/actor-inventory-manager/templates/window/item-row.hbs"}}{{/each}}</div>
         {{else}}<p class="aim-sec-empty">{{@root.inv.emptyText}}</p>{{/if}}

@@ -31,6 +31,21 @@
     <button type="button" class="aim-ibtn aim-mini" data-action="openPresetEditor" aria-label="{{localize "AIM.window.editor.open"}}" data-tooltip="{{localize "AIM.window.editor.open"}}"><i class="fa-light fa-pen-ruler"></i></button>
     {{else}}<span class="aim-doll-preset">{{doll.presetName}}</span>{{/if}}
   </div>
+  {{#if doll.showLoadouts}}
+  <div class="aim-loadouts" data-key="doll-loadouts" role="toolbar" focusgroup="toolbar wrap" aria-label="{{localize "AIM.window.loadouts.title"}}">
+    {{#each doll.loadouts}}
+    <button type="button" class="aim-loadout-pill {{#if missing}}is-missing{{/if}}" data-key="loadout-{{id}}" data-action="applyLoadout" data-loadout-id="{{id}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" data-tooltip="{{tip}}" {{#unless @root.canEdit}}aria-disabled="true"{{/unless}}>
+      <i class="fa-light {{icon}}" aria-hidden="true"></i>
+      <span>{{name}}</span>
+    </button>
+    {{/each}}
+    {{#if doll.canAddLoadout}}
+    <button type="button" class="aim-loadout-add" data-key="loadout-add" data-action="saveLoadout" aria-label="{{localize "AIM.window.loadouts.save"}}" data-tooltip="{{localize "AIM.window.loadouts.save"}}">
+      <i class="fa-light fa-plus" aria-hidden="true"></i>{{#unless doll.loadouts.length}}<span>{{localize "AIM.window.loadouts.new"}}</span>{{/unless}}
+    </button>
+    {{/if}}
+  </div>
+  {{/if}}
   {{#if doll.banner}}
   <div class="aim-doll-banner">
     <svg class="aim-figure" viewBox="{{doll.figureView}}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><use href="{{doll.figureHref}}"/></svg>

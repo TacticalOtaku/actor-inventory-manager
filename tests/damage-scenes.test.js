@@ -17,9 +17,9 @@ describe("damage scenes", () => {
     assert.deepEqual(damageParts(undefined), []);
   });
 
-  it("loop at «Все», play one loop and hold at «Сдержанно», draw only a still frame when off", () => {
-    assert.deepEqual(scenePlan("full"), { loop: true, stillOnly: false });
-    assert.deepEqual(scenePlan("reduced"), { loop: false, stillOnly: false });
-    assert.deepEqual(scenePlan("off"), { loop: false, stillOnly: true });
+  it("loop at «Все» with bloom, play one loop without bloom at «Сдержанно», draw only a still frame when off", () => {
+    assert.deepEqual(scenePlan("full"), { loop: true, stillOnly: false, bloom: true });
+    assert.deepEqual(scenePlan("reduced"), { loop: false, stillOnly: false, bloom: false });
+    assert.deepEqual(scenePlan("off"), { loop: false, stillOnly: true, bloom: false });
   });
 });

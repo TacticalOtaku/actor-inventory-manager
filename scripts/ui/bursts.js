@@ -2,6 +2,7 @@
 // AIM: Actor Window - bursts: short particle effects over one element, on the shared effects renderer (ui/vfx.js)
 // ─────────────────────────────────────────────────────────
 
+import { LOG } from "../foundry/logger.js";
 import { box, fade, flash, halt, hasPixi, load, makeKit, mix, paint, parseColor, pixelRatio, random, run, sizeCanvas } from "./vfx.js";
 
 const WHITE = 0xffffff;
@@ -302,7 +303,7 @@ export function playBurst(root, anchor, kind, { token, at } = {}) {
     paint(entry);
     run(entry);
   }).catch((error) => {
-    console.warn(`AIM | burst «${kind}» failed`, error);
+    LOG.warn(`Burst «${kind}» failed`, error);
     canvas.remove();
   });
 }

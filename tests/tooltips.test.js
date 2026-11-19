@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { TIP_MAX_DEPTH, TIP_TIMING, cardsToSweep, openDelay, planClose, planOpen, planPin } from "../scripts/core/tooltips.js";
+import { TIP_MAX_DEPTH, TIP_TIMING, cardsToSweep, openDelay, placeCompareRects, planClose, planOpen, planPin } from "../scripts/core/tooltips.js";
 
 const card = (id, parent = null, extra = {}) => ({ id, parent, depth: 1, pinned: false, at: 0, ...extra });
 
@@ -51,5 +51,64 @@ describe("sweeping", () => {
     const cards = [card("a"), card("b", "a", { depth: 2 }), card("x"), card("p", null, { pinned: true })];
     assert.deepEqual(cardsToSweep(cards, ["b"]), ["x"]);
     assert.deepEqual(cardsToSweep(cards, []), ["a", "b", "x"]);
+  });
+
+  it("keeps primary alive while companion compare card is hovered and closes both on primary close", () => {
+    const cards = [card("a"), card("cmp", "a", { depth: 1, companion: true })];
+    assert.deepEqual(cardsToSweep(cards, ["cmp"]), []);
+    assert.deepEqual(planClose(cards, "a"), { close: ["a", "cmp"], detach: [] });
+    assert.deepEqual(planOpen(cards, "a").replace, []);
+  });
+});
+
+describe("compare placement", () => {
+  const size = { width: 340, height: 220 };
+  const gap = 8;
+
+  it("places both cards to the right of the anchor when room allows", () => {
+    const layout = placeCompareRects(
+      { left: 100, right: 300, top: 120, bottom: 160 },
+      size,
+      size,
+      { width: 1280, height: 800 },
+      gap
+    );
+    assert.equal(layout.primary.left, 308);
+    assert.equal(layout.compare.left, 308 + 340 + 8);
+    assert.ok(layout.compare.left + 340 <= 1280 - gap);
+  });
+
+  it("places both cards to the left when the anchor sits near the right edge", () => {
+    const layout = placeCompareRects(
+      { left: 900, right: 1100, top: 120, bottom: 160 },
+      size,
+      size,
+      { width: 1280, height: 800 },
+      gap
+    );
+    assert.equal(layout.primary.left, 900 - 8 - 340);
+    assert.equal(layout.compare.left, 900 - 8 - 340 - 8 - 340);
+  });
+
+  it("straddles around the anchor on medium viewports and stays inside narrow viewports", () => {
+    const straddle = placeCompareRects(
+      { left: 420, right: 620, top: 120, bottom: 160 },
+      size,
+      size,
+      { width: 1000, height: 800 },
+      gap
+    );
+    assert.equal(straddle.primary.left, 628);
+    assert.equal(straddle.compare.left, 420 - 8 - 340);
+
+    const narrow = placeCompareRects(
+      { left: 100, right: 350, top: 100, bottom: 140 },
+      size,
+      size,
+      { width: 520, height: 700 },
+      gap
+    );
+    assert.ok(narrow.primary.left >= gap && narrow.primary.left + 340 <= 520 - gap);
+    assert.ok(narrow.compare.top >= narrow.primary.top + 220);
   });
 });

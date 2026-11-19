@@ -83,3 +83,23 @@
 .aim-dmg-part { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px; margin-right: 6px; }
 .aim-tip-scene { position: relative; margin: 8px 10px 0; overflow: hidden; border-radius: var(--r-md); background: #090b10; box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--dmg, var(--tone)) 35%, transparent); }
 .aim-tip-scene canvas { display: block; width: 100%; height: 120px; }
+
+/* side-by-side item compare card & stat deltas */
+.aim-tip.is-compare {
+  border-color: color-mix(in oklab, var(--tone) 32%, var(--line-strong));
+  background: color-mix(in oklab, var(--surface-1) 92%, var(--surface-0));
+  box-shadow: var(--shadow-lift);
+}
+.aim-tip-badge {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.aim-tip-delta { font: 600 11px var(--font-num); white-space: nowrap; }
+.aim-tip-delta.is-better { color: var(--heal); }
+.aim-tip-delta.is-worse { color: var(--hp); }

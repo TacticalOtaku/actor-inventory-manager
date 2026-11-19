@@ -16,10 +16,12 @@ export function damageParts(types) {
 }
 
 /**
- * How a scene plays at a motion level (#9). «Все»: it loops while the card is open (an ambient effect). «Сдержанно»:
- * one loop, then it holds its telling moment. «Выключены»: only that moment, drawn from a run simulated off screen.
- * @returns {{loop: boolean, stillOnly: boolean}}
+ * How a scene plays at a motion level (#9). «Все»: it loops while the card is open (an ambient effect) with bloom.
+ * «Сдержанно»: one loop without heavy bloom, then it holds its telling moment. «Выключены»: only that moment,
+ * drawn from a run simulated off screen without bloom.
+ * @returns {{loop: boolean, stillOnly: boolean, bloom: boolean}}
  */
 export function scenePlan(level) {
-  return { loop: level === "full", stillOnly: level !== "full" && level !== "reduced" };
+  const full = level === "full";
+  return { loop: full, stillOnly: !full && level !== "reduced", bloom: full };
 }

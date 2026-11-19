@@ -2,62 +2,31 @@
 // Actor Inventory Manager - Main Entry Point
 // ─────────────────────────────────────────────────────────
 
-import { MODULE_ID, SLOTS, FLAGS, ENFORCEMENT_MODES, REFRESH_HOOK } from "./constants.js";
-import { registerTradeService, registerTradeSettings } from "./trade/service.js";
-import { equipmentRuleEngine, findEquipSlot, getActorEquippedMap, isOffHandLockedBy2H } from "./core/equipment-rules.js";
-import {
-  classifyItem,
-  getItemAssignedSlot,
-  getValidSlotsForItem,
-  isItemCompatibleWithSlot,
-  isTwoHandedWeapon,
-  isShield,
-  isBodyArmor
-} from "./core/item-classifier.js";
-import { computeActorEncumbrance, computeActorCapacity } from "./core/weight-calculator.js";
+import { createPublicApi } from "./api.js";
+import { MODULE_ID, REFRESH_HOOK } from "./constants.js";
 import { registerEnforcementHooks } from "./foundry/enforcement-hooks.js";
 import { LOG } from "./foundry/logger.js";
+import { migrateLook, registerMigrationSettings, runMigration } from "./foundry/migration.js";
 import { registerFoundryPaperdollRuntime } from "./foundry/paperdoll-runtime.js";
 import { registerModuleSettings } from "./foundry/settings.js";
 import { registerSheetInjectionHooks } from "./foundry/sheet-injection.js";
-import { extractActorVitals, formatItemForDisplay } from "./integrations/dnd5e.js";
-import {
-  getContainerWeightReductionPct,
-  isWeightyContainersActive,
-  openWeightyContainersDialog,
-  validateContainerDrop
-} from "./integrations/weighty-containers.js";
-import {
-  deleteWorldCustomTemplate,
-  exportTemplateJSON,
-  getAllTemplates,
-  getActorPaperdollTemplate,
-  getActorSlots,
-  getTemplateById,
-  importTemplateJSON,
-  saveWorldCustomTemplate,
-  setActorPaperdollTemplate
-} from "./core/paperdoll-templates.js";
-import { openActorWindow, toggleActorWindow } from "./ui/actor-window.js";
-import { openPresetEditor } from "./ui/preset-editor.js";
-import { equipItemToSlot, unequipItem, toggleItemEquipped, useItem, toggleAttunement } from "./ui/item-actions.js";
-import { isItemPilesActive, computeActorCurrency } from "./integrations/item-piles.js";
+import { isWeightyContainersActive } from "./integrations/weighty-containers.js";
 import { SC_MODULE_ID, invalidateRarityColorCache } from "./integrations/sc-rarity-colors.js";
-import { migrateLook, registerMigrationSettings, runMigration } from "./foundry/migration.js";
+import { registerTradeService, registerTradeSettings } from "./trade/service.js";
 
 /**
  * Rarity colours are memoized; drop them and redraw open windows whenever
  * SC - Item Rarity Colors changes a setting.
  */
 function watchRarityColourSettings() {
-  const onChange = key => {
+  const onChange = (key) => {
     if (!String(key ?? "").startsWith(`${SC_MODULE_ID}.`)) return;
     invalidateRarityColorCache();
     Hooks.callAll(REFRESH_HOOK);
   };
-  Hooks.on("createSetting", setting => onChange(setting?.key));
-  Hooks.on("updateSetting", setting => onChange(setting?.key));
-  Hooks.on("clientSettingChanged", key => onChange(key));
+  Hooks.on("createSetting", (setting) => onChange(setting?.key));
+  Hooks.on("updateSetting", (setting) => onChange(setting?.key));
+  Hooks.on("clientSettingChanged", (key) => onChange(key));
 }
 
 // Bind platform ports before any module service reads from Foundry.
@@ -80,53 +49,8 @@ Hooks.once("ready", () => {
   registerSheetInjectionHooks();
   watchRarityColourSettings();
 
-  // Create and expose Public API
-  const api = {
-    openInventory: openActorWindow,
-    toggleInventory: toggleActorWindow,
-    openWindow: openActorWindow,
-    toggleWindow: toggleActorWindow,
-    openEditor: openPresetEditor,
-    getActorPaperdollTemplate,
-    getActorSlots,
-    setActorPaperdollTemplate,
-    saveWorldCustomTemplate,
-    deleteWorldCustomTemplate,
-    getAllTemplates,
-    getTemplateById,
-    exportTemplateJSON,
-    importTemplateJSON,
-    getEquippedMap: getActorEquippedMap,
-    isOffHandLockedBy2H,
-    classifyItem,
-    getValidSlotsForItem,
-    // Same rule-checked choice as clicking Equip; the old name stays for API callers.
-    findBestSlotForEquipping: findEquipSlot,
-    getItemAssignedSlot,
-    isItemCompatibleWithSlot,
-    isTwoHandedWeapon,
-    isShield,
-    isBodyArmor,
-    computeActorEncumbrance,
-    computeActorCapacity,
-    extractActorVitals,
-    formatItemForDisplay,
-    equipItem: equipItemToSlot,
-    unequipItem,
-    toggleItemEquipped,
-    useItem,
-    toggleAttunement,
-    equipmentRuleEngine,
-    SLOTS,
-    FLAGS,
-    ENFORCEMENT_MODES,
-    isWeightyContainersActive,
-    getContainerWeightReductionPct,
-    validateContainerDrop,
-    openWeightyContainersDialog,
-    isItemPilesActive,
-    computeActorCurrency
-  };
+  // Create and expose frozen Public API
+  const api = createPublicApi();
 
   const module = game.modules.get(MODULE_ID);
   if (module) {
@@ -137,7 +61,7 @@ Hooks.once("ready", () => {
   /**
    * Fired once the public API is available.
    * Register equipment rules (`api.equipmentRuleEngine.registerRule`) from here; slots come from the doll presets.
-   * @event actorInventoryManager.ready
+   * @event actor-inventory-manager.ready
    * @param {Object} api
    */
   Hooks.callAll(`${MODULE_ID}.ready`, api);

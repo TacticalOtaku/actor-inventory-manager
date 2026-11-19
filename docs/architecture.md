@@ -13,11 +13,12 @@ ApplicationV2 sheets, `game.itempiles.API`).
 ```
 scripts/
   constants.js      module id, flag names, slot ids, enums
+  api.js            creates and freezes the public API surface (see API.md)
   core/             pure logic - no game/ui/Hooks access, unit tested
   foundry/          adapters to the Foundry runtime (settings, hooks, logging)
-  integrations/     adapters to the game system and to other modules
+  integrations/     adapters to the game system and to other modules (dnd5e/ split by domain)
   trade/            currency adapter, offer validation, transfers and GM coordinator
-  ui/               ApplicationV2 windows and their controllers
+  ui/               ApplicationV2 windows and their controllers (ui/window/*)
   main.js           composition root: wires ports, registers hooks, exposes the API
 ```
 
@@ -140,22 +141,20 @@ Shapes handled (dnd5e 5.3.3):
 
 ## Extension points
 
-The public API is on `game.modules.get("actor-inventory-manager").api` and on
-`globalThis.ActorInventoryManager`.
+The frozen public API (`scripts/api.js`) is on `game.modules.get("actor-inventory-manager").api` and on
+`globalThis.ActorInventoryManager`. See [API.md](../API.md) for the complete reference.
 
-The item actions `equipItem`, `unequipItem`, `toggleItemEquipped` and
-`toggleAttunement` resolve to `true` when the write went through and `false`
-when it was refused (permission, slot rules, attunement limit) or vetoed by a
-`preUpdateItem` hook. A vetoed write shows no success notification.
+The item actions `equipItem`, `unequipItem`, `toggleItemEquipped`, `toggleAttunement` and `applyActorLoadout`
+resolve to `true` when the write went through and `false` when it was refused (permission, slot rules, attunement
+limit) or vetoed by a `preUpdateItem` hook. A vetoed write shows no success notification.
 
 ### Hooks
 
 | Hook | Arguments | Use |
 | --- | --- | --- |
 | `actor-inventory-manager.ready` | `(api)` | Register equipment rules |
-| `actor-inventory-manager.prepareContext` | `(app, context, actor)` | Read or augment render data (mutate `context`) |
-| `actor-inventory-manager.renderInventory` | `(app, element, context)` | Decorate the rendered DOM |
 | `actor-inventory-manager.refresh` | `()` | Ask every open window to re-render |
+| `actor-inventory-manager.tradeState` | `(state)` | React to persisted trade session state changes |
 
 Slots come from the doll presets: the built-in ones and the world presets the GM builds in the preset editor
 (`core/paperdoll-templates.js`). A module adds a slot by shipping a preset, not through the API.
@@ -276,13 +275,15 @@ the next rail render reports whether a new effect actually started.
 ## Actor window and theme
 
 Version 2.0 replaces the 1.9 inventory window with the actor window (ADR 0002): one ApplicationV2 window per actor
-UUID, opened from the ⋮ menu of any `ActorSheetV2` and the `I` key, or directly when a non-GM player triggers a forced open on a closed supported actor sheet with `replaceActorSheet` enabled (`libWrapper` `MIXED` wrap with prototype fallback; explicit AIM menu sheet opens bypass it via `renderVanillaActorSheet`). The approved mock
-`design/character-sheet/mock.html` and its `mock.notes.json` are the behaviour spec; the window is built slice by
-slice from the map #28.
+UUID, opened from the ⋮ menu of any `ActorSheetV2` and the `I` key, or directly when a non-GM player triggers a forced open on a closed supported actor sheet with `replaceActorSheet` enabled (`libWrapper` `MIXED` wrap with prototype fallback; explicit AIM menu sheet opens bypass it via `renderVanillaActorSheet`).
 
 | Part | Where |
 | --- | --- |
-| Window, its parts and actions | `scripts/ui/actor-window.js` |
+| Window shell, parts, render queue & action composition | `scripts/ui/actor-window.js` |
+| Window domain controllers (settings/layout, rail/vitals, trade, equipment/loadouts, spells/features, effects/overview) | `scripts/ui/window/*.js` |
+| Pure loadout planning & normalization | `scripts/core/loadouts.js`, `scripts/foundry/loadouts.js` |
+| Pure item comparison targets & stat deltas | `scripts/core/item-compare.js` |
+| DnD5e data-model adapters split by domain (`actor`, `inventory`, `spells`, `features`, `effects`, `overview`, `vehicle`, `tooltips`, `common`) with barrel export | `scripts/integrations/dnd5e.js`, `scripts/integrations/dnd5e/*.js` |
 | The main part patched in place on a redraw (keyed by `data-key`, `data-item-id`, `id`): only changed nodes are restyled; custom elements are swapped whole | `scripts/ui/morph.js` |
 | Pure rules: layout by width, motion caps, theme, accents, tabs, rail blocks by actor type, challenge rating, which parts an actor or effect change redraws | `scripts/core/actor-window.js` |
 | Templates (rail, main with header and tabs, inspector, settings drawer) | `templates/window/*.hbs` |
@@ -311,10 +312,10 @@ slice from the map #28.
 | Pure overview rules: proficiency marks, the dialogs behind each card, the biography fields | `scripts/core/overview.js` |
 | Trade panel on the `trade/` service: partner, offers with auto-send, coins or Item Piles currencies, confirmation, cancel, GM recovery, lock banner, offer buttons, «New» | `scripts/ui/trade.js`, `templates/window/trade.hbs` |
 | Pure trade-panel rules: what the trade waits for, offer edits, unchanged offers, partners, recovery action, Item Piles totals, load after the trade | `scripts/core/trade-panel.js` |
-| Tooltip cards on our own layer (`document.body` of the window's document): triggers, timing, nesting, pinning, dragging | `scripts/ui/tooltips.js`, `templates/window/tooltip-card.hbs`, `styles/window/tooltips.css` |
-| Pure card rules: delays, one live card per level, four levels, pin limit and order, closing and sweeping | `scripts/core/tooltips.js` |
-| Visual effects engine: sprite particles, Kenney textures and pixi-filters on one shared transparent PIXI renderer (Foundry's PIXI 7) that only grows; each effect copies its corner into its own 2D canvas; one frame loop, paused in a hidden tab | `scripts/ui/vfx.js`, `assets/vfx/`, `scripts/vendor/pixi-filters.js` |
-| Damage chips and the damage type card's scene: one scene per dnd5e type; loops, holds or stills by motion level | `scripts/ui/damage-scenes.js` |
+| Tooltip cards on our own layer (`document.body` of the window's document): triggers, timing, side-by-side item compare, nesting, pinning, dragging | `scripts/ui/tooltips.js`, `templates/window/tooltip-card.hbs`, `styles/window/tooltips.css` |
+| Pure card rules: delays, one live card per level, four levels, pin limit and order, compare placement, closing and sweeping | `scripts/core/tooltips.js` |
+| Visual effects engine: sprite particles, Kenney textures and pixi-filters on one shared transparent PIXI renderer (Foundry's PIXI 7) with `preserveDrawingBuffer: false`, released after `RENDERER_IDLE_MS` idle timeout; each effect copies into its own 2D canvas; one frame loop, paused in a hidden tab | `scripts/ui/vfx.js`, `assets/vfx/`, `scripts/vendor/pixi-filters.js` |
+| Damage chips and the damage type card's scene: one scene per dnd5e type; loops with bloom at Full, plays once without heavy bloom at Restrained, still frame when Off | `scripts/ui/damage-scenes.js` |
 | Bursts over one element of the window (HP hit and heal, coming back from 0, temporary HP gained, absorbed and broken, death saves, inspiration, spent slot gems and hit dice, coins, the long rest's night and dawn); plain blending without glow on parchment; none with motion off | `scripts/ui/bursts.js` |
 | Pure rail events: what changed between two renders, in the order its effects play | `railEvents` in `scripts/core/vitals.js` |
 | A vehicle's rail: thresholds and speed, the cargo meter, crew, passengers and draft animals with free places, «Неизвестный», rows without an actor; the line of type, size, keel and beam | `scripts/ui/vehicle.js` |

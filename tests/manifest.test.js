@@ -27,6 +27,12 @@ test("relationships use only keys Foundry understands", async () => {
   for (const key of Object.keys(relationships)) assert.ok(RELATIONSHIP_KEYS.includes(key), `relationships.${key}`);
 });
 
+test("recommends includes lib-wrapper", async () => {
+  const { relationships = {} } = await readJson("module.json");
+  const ids = (relationships.recommends ?? []).map((entry) => entry.id);
+  assert.ok(ids.includes("lib-wrapper"), "lib-wrapper should be in relationships.recommends");
+});
+
 test("every listed file exists and both languages ship", async () => {
   const manifest = await readJson("module.json");
   const files = [...manifest.esmodules, ...(manifest.styles ?? []), ...manifest.languages.map((language) => language.path)];

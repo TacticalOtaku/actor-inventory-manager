@@ -182,10 +182,47 @@ export const flash = (peak = 1) => [[0, peak], [1, 0]];
 
 // ── the shared renderer ──────────────────────────────────
 
+export const RENDERER_IDLE_MS = 15_000;
+
 let textures;
 let renderer;
+let idleTimer = null;
 const active = new Set();
 let ticking = false;
+
+function cancelIdleRelease() {
+  clearTimeout(idleTimer);
+  idleTimer = null;
+}
+
+function scheduleIdleRelease(delay = RENDERER_IDLE_MS) {
+  cancelIdleRelease();
+  if (!renderer || active.size > 0) return;
+  idleTimer = setTimeout(() => {
+    idleTimer = null;
+    if (active.size === 0) releaseRenderer();
+  }, delay);
+}
+
+/** Releases the shared PIXI renderer and its WebGL context after effects go idle. */
+export function releaseRenderer() {
+  cancelIdleRelease();
+  if (!renderer) return;
+  const current = renderer;
+  renderer = null;
+  try {
+    current.filter?.emptyPool?.();
+    const gl = current.gl;
+    current.destroy?.(true);
+    if (gl && !gl.isContextLost?.()) {
+      gl.getExtension?.("WEBGL_lose_context")?.loseContext?.();
+    }
+  } catch {
+    // Context loss or teardown may already have happened when the document unloads.
+  }
+}
+
+export const hasRenderer = () => Boolean(renderer);
 
 /** Our copy of pixi-filters keeps to its own global, so a module that brings another version keeps its own. */
 function loadFilters() {
@@ -212,11 +249,13 @@ export function load() {
 
 /**
  * Draws a stage into an entry's canvas. The renderer is transparent and only grows: a stage takes its top left corner
- * and the canvas copies that much, so cards and bursts of any size share one WebGL context.
+ * and the canvas copies that much, so cards and bursts of any size share one WebGL context while active, and release
+ * it after idle timeout.
  */
 export function paint(entry) {
+  cancelIdleRelease();
   const { w, h, ratio } = entry.size;
-  renderer ??= new PIXI.Renderer({ width: w, height: h, resolution: ratio, backgroundAlpha: 0, antialias: true, preserveDrawingBuffer: true, powerPreference: "low-power" });
+  renderer ??= new PIXI.Renderer({ width: w, height: h, resolution: ratio, backgroundAlpha: 0, antialias: true, preserveDrawingBuffer: false, powerPreference: "low-power" });
   const stale = renderer.resolution !== ratio;
   // PIXI 7's resize() takes no resolution: a new pixel ratio (browser zoom, another monitor) is set on its own.
   if (stale) renderer.resolution = ratio;
@@ -228,6 +267,10 @@ export function paint(entry) {
   const { width, height } = entry.canvas;
   entry.ctx.clearRect(0, 0, width, height);
   entry.ctx.drawImage(renderer.view, 0, 0, w * ratio, h * ratio, 0, 0, width, height);
+  if (active.size === 0) {
+    renderer.filter?.emptyPool?.();
+    scheduleIdleRelease();
+  }
 }
 
 /** The base of a scene's or a burst's kit: its size, colours, chance, textures, particles and lone sprites. */
@@ -279,15 +322,25 @@ function tick(now) {
   ticking = active.size > 0;
   if (ticking) frameWindow().requestAnimationFrame(tick);
   // Filters keep their work textures in a pool (a long rest's bloom holds tens of MB); idle, the GPU gets them back.
-  else renderer?.filter.emptyPool();
+  else {
+    renderer?.filter?.emptyPool?.();
+    scheduleIdleRelease();
+  }
 }
 
 /**
  * Plays an entry {canvas, ctx, size, stage, update(dt) → keep going, stop} frame by frame; `stop` must call `halt`.
  */
 export function run(entry) {
+  cancelIdleRelease();
   active.add(entry);
   if (!ticking) { ticking = true; frameWindow().requestAnimationFrame(tick); }
 }
 
-export const halt = (entry) => active.delete(entry);
+export function halt(entry) {
+  active.delete(entry);
+  if (active.size === 0) {
+    renderer?.filter?.emptyPool?.();
+    scheduleIdleRelease();
+  }
+}

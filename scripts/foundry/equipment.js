@@ -1,6 +1,7 @@
 import { AIM_EQUIP_OPTION, ENFORCEMENT_MODES } from "../constants.js";
 import { canEditActor } from "../core/actor-scope.js";
 import { planEquipSync, takeOffChanges } from "../core/equipment-rules.js";
+import { planLoadoutApply } from "../core/loadouts.js";
 import { LOG } from "./logger.js";
 
 const pending = new Map();
@@ -104,6 +105,21 @@ export class EquipService {
       }
       return apply(actor, [{ _id: item.id, "system.container": containerId || null,
         ...(containerId ? takeOffChanges() : {}) }]);
+    });
+  }
+
+  static applyLoadout(actor, loadout, { mode = ENFORCEMENT_MODES.BLOCK } = {}) {
+    return serial(actor, async () => {
+      if (!actor || !canEditActor(actor, game.user)) return failed();
+      const plan = planLoadoutApply(actor, loadout, { mode });
+      if (plan.refusal) return { ok: false, message: plan.refusal.message };
+      if (!plan.updates.length) {
+        return { ok: true, changed: 0, missing: plan.missing, warnings: plan.warnings };
+      }
+      const result = await apply(actor, plan.updates);
+      return result.ok
+        ? { ...result, changed: plan.updates.length, missing: plan.missing, warnings: plan.warnings }
+        : result;
     });
   }
 }

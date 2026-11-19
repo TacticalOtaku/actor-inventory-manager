@@ -61,6 +61,7 @@ Download `actor-inventory-manager-v<version>.zip` from [GitHub Releases](https:/
 ### Paperdoll & Equipment Rules
 - **9 built-in presets across 5 figures:** `Humanoid` (`Standard 2024`, `Standard 2014`), `Beast`, `Wagon` (`hold` and `tack & weapon`), `Ship` (`hold` and `gun ports`), and `Airship` (`hold` and `rigging`).
 - **Slot mechanics:** Two-handed weapons lock the off hand automatically; attunement sockets track and respect actor attunement caps; slotless worn items stay visible in a compact strip.
+- **Equipment Loadouts:** Save up to 12 named gear sets with custom icons (e.g. *Sword & Shield*, *Bow*, *Camp*) and switch between them in one click under the active equipment rules while leaving backpacks, natural weapons, and ammunition untouched.
 - **GM Preset Editor:** Customize figures, slot placement (`Left`, `Right`, `Under the doll`, `By order`), slot rules, and attunement limits per world or per actor — with JSON import/export.
 - **Shared Enforcement Modes:** Choose **Strict Block**, **Smart Auto-Swap**, or **Warn Only** in module settings. Rules are enforced consistently from both the Actor window and the actor's native sheet.
 - **Inventory management:** Switch between **List**, **Cards**, and **Icons only** views; sort by name, weight, price, rarity, or manual order; filter by `Equipped` / `Attuned`; manage nested containers, purse totals, and encumbrance meters; or use **"Drop on the ground"** with Item Piles.
@@ -77,7 +78,7 @@ Download `actor-inventory-manager-v<version>.zip` from [GitHub Releases](https:/
 | **Biography** | Character traits, appearance, and ProseMirror biography fields, held safely against background redraws while typing |
 
 ### Tooltips, Visual Effects & Privacy
-- **Nested & pinnable tooltip cards:** Hover items, spells, effects, rules, or damage types to inspect cards up to 4 levels deep, pin them, and drag them around the workspace. Damage types play PixiJS scenes for all 13 dnd5e damage types plus a generic fallback.
+- **Nested, pinnable & comparing tooltip cards:** Hover items, spells, effects, rules, or damage types to inspect cards up to 4 levels deep, pin them, and drag them around the workspace. Hovering an unequipped backpack item shows a side-by-side comparison card for what is currently worn in the target slot (with AC, Attack, and average Damage deltas), toggleable per user in Settings. Damage types play PixiJS scenes for all 13 dnd5e damage types plus a generic fallback.
 - **Reactive & ambient VFX:** Subtle sprite bursts and animations for hits, heals, temporary HP, spent slots/hit dice, starred favorites, coin updates, rests, and refusals.
 - **Unidentified item privacy:** Players never see an unidentified item's price, rarity, properties, charges, or magic bonuses in rows, the doll, the inspector, or tooltip cards.
 - **Native external drops:** Items, folders, and effects dragged from the sidebar, compendiums, chat, journals, or your other characters route through the actor's sheet so dnd5e stacking, scroll conversion, and advancement rules apply cleanly.
@@ -116,6 +117,7 @@ All integrations are optional and auto-detected; without them, AIM falls back to
 | **Item Piles** | `3.3.0+` *(with `itempilesdnd5e`)* | Enables custom currencies & automatic change in trades, `"Give to character"`, and `"Drop on the ground"` |
 | **Weighty Containers** | `3.5.0+` *(`3.10+` load rules)* | Delegates container load meters, weight reductions, drop restrictions, and post-trade carried weight |
 | **SC - Item Rarity Colors** | `3.0.18+` | Applies SC rarity gradients and spell-school styling while keeping row buttons and parchment tags legible |
+| **libWrapper** | `1.12.0+` *(optional)* | Uses `MIXED` sheet-open wrapping for clean compatibility with other sheet modules (falls back gracefully when absent) |
 
 ---
 
@@ -149,6 +151,7 @@ Requires **Node.js 24+** (`npm install`). Automated checks run on in-memory Foun
 GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs linting, unit tests, and Foundry package validation on pushes to `main`, pull requests, and manual dispatches.
 
 ### Project Docs
+- [API.md](API.md) — frozen public API, loadouts, equipment rule hooks, and macro examples
 - [docs/architecture.md](docs/architecture.md) — module layering, dnd5e data-model adapters, extension hooks, and public API
 - [docs/live-check.md](docs/live-check.md) — manual verification checklist across Foundry module combinations
 - [GLOSSARY.md](GLOSSARY.md) — domain vocabulary

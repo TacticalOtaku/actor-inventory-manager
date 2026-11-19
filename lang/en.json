@@ -397,6 +397,8 @@
         "reloadHint": "Takes effect after a reload.",
         "reload": "Reload",
         "storageHint": "Motion and fonts are stored on this device; everything else follows you.",
+        "tooltips": "Tooltips",
+        "compareOnHover": "Compare with equipped item on hover",
         "rail": "Side column",
         "tabs": "Tabs",
         "always": "always",
@@ -611,6 +613,25 @@
         "nothingFits": "Nothing fits the “{slot}” slot.",
         "cargo": "Cargo: {value} {unit}",
         "noCargo": "No cargo capacity set"
+      },
+      "loadouts": {
+        "title": "Equipment sets",
+        "new": "Save set",
+        "save": "Save current gear as a set",
+        "saveTitle": "Save equipment set",
+        "editTitle": "Edit equipment set",
+        "defaultName": "Set {n}",
+        "name": "Name",
+        "icon": "Icon",
+        "apply": "Equip set",
+        "update": "Overwrite with current gear",
+        "edit": "Rename or change icon",
+        "delete": "Delete set",
+        "limit": "You can save up to {max} sets per actor.",
+        "nameRequired": "Enter a name for the equipment set.",
+        "notFound": "Equipment set «{name}» was not found.",
+        "missingItems": "Set «{name}»: {count} item(s) could not be found in the inventory.",
+        "missingCount": "{count} missing"
       },
       "editor": {
         "title": "Doll editor — {actor}",
@@ -860,7 +881,8 @@
         "optional": "optional"
       },
       "damageType": "Damage type",
-      "damageTypeAdded": "Damage type of the world or a module"
+      "damageTypeAdded": "Damage type of the world or a module",
+      "equippedIn": "Equipped · {slot}"
     },
     "migration": {
       "ownDoll": "Own doll: {name}",

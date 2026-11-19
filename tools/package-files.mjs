@@ -13,6 +13,7 @@ export const PACKAGE_ENTRIES = [
   "module.json",
   "LICENSE",
   "README.md",
+  "API.md",
   "CHANGELOG.md",
   "lang",
   "scripts",

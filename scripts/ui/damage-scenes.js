@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────
 
 import { sceneFor, scenePlan } from "../core/damage-scenes.js";
+import { LOG } from "../foundry/logger.js";
 import { RAD, STEP, box, fade, flash, halt, hasPixi, hex, lift, load, makeKit, mix, paint, parseColor, pixelRatio, random, rgb, ring, run, sizeCanvas } from "./vfx.js";
 
 const BG = 0x090b10;
@@ -504,7 +505,7 @@ const SCENES = {
 // ── a scene on its stage ─────────────────────────────────
 
 /** Builds a scene on a stage of its own; its filters are optional, a scene without them still draws. */
-function buildScene(key, assets, size, colour) {
+function buildScene(key, assets, size, colour, { bloom: useBloom = true } = {}) {
   const { w, h, ratio } = size;
   const def = SCENES[key];
   const stage = new PIXI.Container();
@@ -527,7 +528,7 @@ function buildScene(key, assets, size, colour) {
   const twist = def.twist ? made(F?.TwistFilter, { radius: 90, angle: -1.6, padding: 0 }) : null;
   const zoom = def.zoom ? made(F?.ZoomBlurFilter, { strength: 0, center: [w / 2, h / 2], innerRadius: 12 }) : null;
   const split = def.split ? made(F?.RGBSplitFilter, [-2, 0], [0, 1], [2, 0]) : null;
-  const bloom = made(F?.AdvancedBloomFilter, { brightness: 1, quality: 6, ...def.bloom });
+  const bloom = useBloom ? made(F?.AdvancedBloomFilter, { brightness: 1, quality: 6, ...def.bloom }) : null;
   if (bloom) bloom.enabled = true;
   if (twist) twist.enabled = true;
   if (split) split.enabled = true;
@@ -610,7 +611,7 @@ export function startScene(canvas, type, color, level) {
   if (!ctx || !hasPixi()) return stop;
   load().then((assets) => {
     if (stopped || !canvas.isConnected) return stop();
-    const scene = buildScene(key, assets, size, parseColor(color));
+    const scene = buildScene(key, assets, size, parseColor(color), { bloom: plan.bloom });
     // «Сдержанно» plays one loop and holds the telling moment of the next.
     const hold = scene.def.period + scene.def.still;
     entry = {
@@ -631,7 +632,7 @@ export function startScene(canvas, type, color, level) {
     paint(entry);
     run(entry);
   }).catch((error) => {
-    console.warn(`AIM | damage scene «${key}» failed`, error);
+    LOG.warn(`Damage scene «${key}» failed`, error);
     stop();
   });
   return stop;

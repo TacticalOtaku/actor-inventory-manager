@@ -1,5 +1,22 @@
 # Changelog
 
+## 2.3.0
+
+### Added
+- **Equipment sets (loadouts)** on the paperdoll toolbar (`templates/window/doll.hbs`, `scripts/ui/doll.js`, `scripts/foundry/loadouts.js`, `scripts/core/loadouts.js`): save up to 12 named weapon/armor presets with custom icons and swap between them in one click while respecting paperdoll slot and two-handed enforcement rules and leaving containers, natural weapons, and ammo untouched. Includes a context menu to equip, overwrite, rename/re-icon, or delete sets.
+- **Hover item comparison** (`scripts/core/item-compare.js`, `scripts/core/tooltips.js`, `scripts/ui/tooltips.js`, `templates/window/tooltip-card.hbs`): hovering an inventory item displays the currently equipped item(s) for its target paperdoll slot side by side with color-coded stat deltas for Attack, Damage (average dice delta), AC, Weight, and Price, controlled by the `compareOnHover` toggle in the settings drawer.
+- **Public API reference (`API.md`) and frozen API** (`scripts/api.js`): wrapped the public module API in `Object.freeze(...)`, added `getActorLoadouts`, `saveActorLoadout`, `renameActorLoadout`, `deleteActorLoadout`, `applyActorLoadout`, and `findCompareTargets`, documented the full surface in `API.md`, and included `API.md` in the Foundry release archive.
+- **Module relationships**: added `lib-wrapper` (`>= 1.12.0`) under `relationships.recommends` in `module.json`.
+
+### Changed
+- **Window & system decomposition**: extracted `scripts/ui/actor-window.js` into 6 domain controllers under `scripts/ui/window/` (`settings-controller.js`, `rail-controller.js`, `trade-controller.js`, `equipment-controller.js`, `spells-features-controller.js`, `effects-overview-controller.js`) and split `scripts/integrations/dnd5e.js` into 9 domain modules under `scripts/integrations/dnd5e/` (`common.js`, `actor.js`, `inventory.js`, `spells.js`, `features.js`, `effects.js`, `overview.js`, `vehicle.js`, `tooltips.js`).
+- **VFX renderer lifecycle & motion budget** (`scripts/ui/vfx.js`, `scripts/core/damage-scenes.js`, `scripts/ui/damage-scenes.js`): switched the VFX `PIXI.Renderer` to `preserveDrawingBuffer: false`, automatically released idle renderers and WebGL contexts after 15 s (`RENDERER_IDLE_MS`), and disabled `AdvancedBloomFilter` in Restrained (`reduced`) and `off` motion modes.
+- **Logging & frozen constants**: routed remaining `console.warn` / `console.error` calls in `scripts/ui/bursts.js`, `scripts/ui/damage-scenes.js`, `scripts/ui/inventory-drag.js`, and `scripts/integrations/dnd5e/inventory.js` through `LOG`, and froze core enum constants (`FLAGS`, `TEMPLATE_PRESETS`, `FIGURES`, `SLOTS`, `ENFORCEMENT_MODES`, `LOG_LEVELS`, `ITEM_RARITY_COLORS`) in `scripts/constants.js`.
+- **Docs & localization**: updated `README.md`, `docs/architecture.md`, `lang/en.json`, and `lang/ru.json`.
+
+### Removed
+- Removed unused mockup files (`design/character-sheet/mock.html`, `design/character-sheet/mock.notes.json`).
+
 ## 2.2.1
 
 ### Changed

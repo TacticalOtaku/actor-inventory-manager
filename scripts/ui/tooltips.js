@@ -4,9 +4,10 @@
 // ─────────────────────────────────────────────────────────
 
 import { MODULE_ID } from "../constants.js";
-import { TIP_TIMING, TIP_MAX_DEPTH, cardsToSweep, openDelay, planClose, planOpen, planPin } from "../core/tooltips.js";
+import { TIP_TIMING, TIP_MAX_DEPTH, cardsToSweep, openDelay, placeCompareRects, planClose, planOpen, planPin } from "../core/tooltips.js";
+import { annotateCompareStats, findCompareTargets } from "../core/item-compare.js";
 import { damageParts } from "../core/damage-scenes.js";
-import { readCardData, readDamageType } from "../integrations/dnd5e.js";
+import { concealsDetails, readCardData, readDamageType } from "../integrations/dnd5e.js";
 import { startScene } from "./damage-scenes.js";
 import { t, unwrapSecrets } from "./html.js";
 import { scRarityColor, scSchoolColor } from "../integrations/sc-rarity-colors.js";
@@ -76,33 +77,88 @@ class TooltipLayer {
     this.openTimer = setTimeout(() => this.open(anchor, app ?? this.record(anchor.closest(".aim-tip"))?.app), openDelay({ inCard, liveTop }));
   }
 
+  async #renderCard(card, depth) {
+    const el = this.doc.createElement("div");
+    el.innerHTML = await foundry.applications.handlebars.renderTemplate(TOOLTIP_TEMPLATE, cardContext(card, depth));
+    const cardEl = el.firstElementChild;
+    tone(cardEl, card);
+    // Links inside the card open our cards, not core's or dnd5e's; on the last level they open nothing.
+    for (const node of cardEl.querySelectorAll("[data-tooltip], [data-tooltip-html]")) {
+      node.removeAttribute("data-tooltip");
+      node.removeAttribute("data-tooltip-html");
+    }
+    if (depth >= TIP_MAX_DEPTH) {
+      for (const link of cardEl.querySelectorAll("a.content-link")) link.classList.add("is-last");
+    }
+    return cardEl;
+  }
+
+  #mountScene(cardEl, card) {
+    const canvas = cardEl.querySelector("canvas[data-scene]");
+    if (!canvas) return;
+    const stop = startScene(canvas, canvas.dataset.scene, card.color ?? getComputedStyle(this.el).getPropertyValue("--accent").trim(), this.el.dataset.motion);
+    cardEl.addEventListener("aim-tip-close", stop, { once: true });
+  }
+
   async open(anchor, app) {
     if (!anchor.isConnected || this.cards.some((c) => c.anchor === anchor)) return;
     const parent = this.record(anchor.closest(".aim-tip"));
     const plan = planOpen(this.cards, parent?.id ?? null);
     if (!plan) return;
-    const card = anchor.matches(".aim-dmg[data-dmg]") ? await damageCard(anchor.dataset.dmg) : await readCardData(await resolveAnchor(anchor, app));
+    const isDamage = anchor.matches(".aim-dmg[data-dmg]");
+    const doc = isDamage ? null : await resolveAnchor(anchor, app);
+    const compareTarget = !isDamage && doc && shouldCompareAnchor(anchor, doc, app)
+      ? findCompareTargets(app.actor, doc).find((target) => !concealsDetails(target.item)) ?? null
+      : null;
+    const [card, equippedCard] = isDamage
+      ? [await damageCard(anchor.dataset.dmg), null]
+      : await Promise.all([readCardData(doc), compareTarget ? readCardData(compareTarget.item) : null]);
     // The pointer may have moved on while the document loaded.
     if (!card || !anchor.isConnected || !(this.under(anchor) || anchor.contains(this.doc.activeElement))) return;
+
+    const primaryCard = equippedCard
+      ? { ...card, stats: annotateCompareStats(card.stats, equippedCard.stats) }
+      : card;
+    const compareCard = equippedCard
+      ? { ...equippedCard, isCompare: true, compareBadge: t("AIM.tips.equippedIn", { slot: compareTarget.slotLabel }) }
+      : null;
+    const [cardEl, compareEl] = await Promise.all([
+      this.#renderCard(primaryCard, plan.depth),
+      compareCard ? this.#renderCard(compareCard, plan.depth) : null
+    ]);
+    if (!anchor.isConnected || !(this.under(anchor) || anchor.contains(this.doc.activeElement))) return;
+
     for (const id of plan.replace) this.close(this.cards.find((c) => c.id === id));
-    const el = this.doc.createElement("div");
-    el.innerHTML = await foundry.applications.handlebars.renderTemplate(TOOLTIP_TEMPLATE, cardContext(card, plan.depth));
-    const cardEl = el.firstElementChild;
-    tone(cardEl, card);
-    // Links inside the card open our cards, not core's or dnd5e's; on the last level they open nothing.
-    for (const node of cardEl.querySelectorAll("[data-tooltip], [data-tooltip-html]")) { node.removeAttribute("data-tooltip"); node.removeAttribute("data-tooltip-html"); }
-    if (plan.depth >= TIP_MAX_DEPTH) for (const link of cardEl.querySelectorAll("a.content-link")) link.classList.add("is-last");
     this.restamp();
     this.el.append(cardEl);
-    place(cardEl, anchor);
-    const canvas = cardEl.querySelector("canvas[data-scene]");
-    if (canvas) {
-      const stop = startScene(canvas, canvas.dataset.scene, card.color ?? getComputedStyle(this.el).getPropertyValue("--accent").trim(), this.el.dataset.motion);
-      cardEl.addEventListener("aim-tip-close", stop, { once: true });
+    if (compareEl) {
+      this.el.append(compareEl);
+      const view = anchor.ownerDocument.defaultView;
+      const layout = placeCompareRects(
+        anchor.getBoundingClientRect(),
+        { width: cardEl.offsetWidth, height: cardEl.offsetHeight },
+        { width: compareEl.offsetWidth, height: compareEl.offsetHeight },
+        { width: view.innerWidth, height: view.innerHeight }
+      );
+      cardEl.style.left = `${layout.primary.left}px`;
+      cardEl.style.top = `${layout.primary.top}px`;
+      compareEl.style.left = `${layout.compare.left}px`;
+      compareEl.style.top = `${layout.compare.top}px`;
+    } else {
+      place(cardEl, anchor);
     }
-    const rec = { id: `tip${++this.seq}`, el: cardEl, anchor, app, parent: parent?.id ?? null, depth: plan.depth, pinned: false, at: 0 };
+
+    this.#mountScene(cardEl, primaryCard);
+    const rec = { id: `tip${++this.seq}`, el: cardEl, anchor, app, parent: parent?.id ?? null, depth: plan.depth, pinned: false, companion: false, at: 0 };
     this.cards.push(rec);
     this.wire(rec);
+
+    if (compareEl) {
+      this.#mountScene(compareEl, compareCard);
+      const compareRec = { id: `tip${++this.seq}`, el: compareEl, anchor, app, parent: rec.id, depth: plan.depth, pinned: false, companion: true, at: 0 };
+      this.cards.push(compareRec);
+      this.wire(compareRec);
+    }
   }
 
   /** Holding, middle click and the pin pin it; the head drags it (pinning it); × and right click close it. */
@@ -198,7 +254,18 @@ class TooltipLayer {
   }
 }
 
-const plain = ({ id, parent, depth, pinned, at }) => ({ id, parent, depth, pinned, at });
+const plain = ({ id, parent, depth, pinned, companion, at }) => ({ id, parent, depth, pinned, companion: Boolean(companion), at });
+
+function shouldCompareAnchor(anchor, doc, app) {
+  if (!app?.actor || doc?.documentName !== "Item") return false;
+  if (!anchor.matches("[data-row]") || !anchor.closest('[data-panel="equipment"]')) return false;
+  if (concealsDetails(doc)) return false;
+  try {
+    return globalThis.game?.settings?.get?.(MODULE_ID, "compareOnHover") !== false;
+  } catch {
+    return true;
+  }
+}
 
 /**
  * Hover, focus and Escape of a window or of the layer. The layer is looked up per event: a window detached into its
@@ -285,6 +352,8 @@ function cardContext(card, depth) {
     stats: (card.stats ?? []).map((s) => ({
       label: t(`AIM.tips.stats.${s.key}`),
       value: s.key === "attunement" ? `${t(`AIM.tips.attunement.${s.value}`)}${card.attuned ? " ✓" : ""}` : s.value,
+      delta: s.delta ?? null,
+      diff: s.diff ?? null,
       // A damage part shows its formula and a chip per type («fire|cold» is two).
       parts: s.key === "damage" && card.damages?.some((d) => d.types.length)
         ? card.damages.map((d) => ({ formula: d.formula || d.label, chips: d.types.flatMap((k) => damageParts(k)).map(damageChip).filter(Boolean) }))

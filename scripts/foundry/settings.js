@@ -119,6 +119,12 @@ export function registerModuleSettings() {
       type: Boolean,
       default: true
     });
+    game.settings.register(MODULE_ID, "compareOnHover", {
+      scope: "user",
+      config: false,
+      type: Boolean,
+      default: true
+    });
 
     // 1.x values, read once by the 2.0 migration (ADR 0005) and removed in 2.1.
     game.settings.register(MODULE_ID, "theme", {

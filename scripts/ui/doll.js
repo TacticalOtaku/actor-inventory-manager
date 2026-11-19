@@ -6,8 +6,10 @@ import { MODULE_ID } from "../constants.js";
 import { getActorAttunementMax, isItemAttuned } from "../core/attunement.js";
 import { getActorEquippedMap, getTwoHandLayout, isOffHandLockedBy2H } from "../core/equipment-rules.js";
 import { PHYSICAL_ITEM_TYPES, getValidSlotsForItem, isItemCompatibleWithSlot, isTwoHandedWeapon } from "../core/item-classifier.js";
+import { MAX_LOADOUTS, detectActiveLoadoutId, summarizeLoadout } from "../core/loadouts.js";
 import { dollLayout } from "../core/paperdoll-layout.js";
 import { getActorPaperdollTemplate, getAllTemplates } from "../core/paperdoll-templates.js";
+import { getActorLoadouts } from "../foundry/loadouts.js";
 import { concealsDetails, readVehicleHold } from "../integrations/dnd5e.js";
 import { t } from "./html.js";
 
@@ -68,6 +70,23 @@ export function buildDollContext(actor, { canEdit, selected, hidden }) {
   });
 
   const hold = actor.type === "vehicle" ? readVehicleHold(actor) : null;
+  const rawLoadouts = layout.banner ? [] : getActorLoadouts(actor);
+  const activeLoadoutId = rawLoadouts.length ? detectActiveLoadoutId(actor, rawLoadouts) : null;
+  const loadouts = rawLoadouts.map((entry) => {
+    const summary = summarizeLoadout(actor, entry);
+    const baseTip = summary.names.length ? `${entry.name}: ${summary.names.join(", ")}` : entry.name;
+    const tip = summary.missingCount
+      ? `${baseTip} (${t("AIM.window.loadouts.missingCount", { count: summary.missingCount })})`
+      : baseTip;
+    return {
+      id: entry.id,
+      name: entry.name,
+      icon: entry.icon,
+      active: entry.id === activeLoadoutId,
+      missing: summary.missingCount > 0,
+      tip
+    };
+  });
   return {
     hidden,
     banner: layout.banner,
@@ -77,6 +96,9 @@ export function buildDollContext(actor, { canEdit, selected, hidden }) {
       ? getAllTemplates().map((preset) => ({ id: preset.id, name: preset.name, selected: preset.id === template.templateId }))
       : null,
     actorPreset: template.isActorCustom ? template.templateName : null,
+    loadouts,
+    showLoadouts: !layout.banner && (loadouts.length > 0 || canEdit),
+    canAddLoadout: !layout.banner && canEdit && loadouts.length < MAX_LOADOUTS,
     figureHref: `${FIGURES}#fig-${template.figure}`,
     figureView: FIGURE_VIEW[template.figure] ?? FIGURE_VIEW.human,
     figure: template.figure,

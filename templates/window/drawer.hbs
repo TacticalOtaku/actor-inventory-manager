@@ -22,6 +22,9 @@
       {{#if settings.fontsPending}}<div class="aim-hint is-pending"><span>{{localize "AIM.window.settings.reloadHint"}}</span><button type="button" class="aim-btn" data-action="reloadPage">{{localize "AIM.window.settings.reload"}}</button></div>{{/if}}
       <p class="aim-hint">{{localize "AIM.window.settings.storageHint"}}</p>
     </div>
+    <div class="aim-field"><span>{{localize "AIM.window.settings.tooltips"}}</span>
+      <label class="aim-toggle"><span>{{localize "AIM.window.settings.compareOnHover"}}</span><input type="checkbox" role="switch" data-setting-toggle="compareOnHover" {{#if settings.compareOnHover}}checked{{/if}}></label>
+    </div>
     <div class="aim-field"><span>{{localize "AIM.window.settings.rail"}}</span>
       <label class="aim-toggle is-off"><span>{{localize "AIM.window.rail.hp"}}<small>{{localize "AIM.window.settings.always"}}</small></span><input type="checkbox" role="switch" checked disabled></label>
       {{#each settings.railBlocks}}<label class="aim-toggle {{#if absent}}is-off{{/if}}"><span>{{label}}{{#if absent}}<small>{{../settings.absentText}}</small>{{/if}}</span><input type="checkbox" role="switch" data-rail-toggle="{{id}}" {{#if shown}}checked{{/if}} {{#if absent}}disabled{{/if}}></label>{{/each}}

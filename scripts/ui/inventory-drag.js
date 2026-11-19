@@ -8,6 +8,7 @@ import { validateContainerDrop } from "../integrations/weighty-containers.js";
 import { isItemCompatibleWithSlot } from "../core/item-classifier.js";
 import { equipItemToSlot, setItemContainer, toggleAttunement, unequipItem } from "./item-actions.js";
 import { MODULE_ID } from "../constants.js";
+import { LOG } from "../foundry/logger.js";
 import { dropFromOutside, noteDrop, refuseDrop, showDropTarget } from "./external-drop.js";
 import { t } from "./html.js";
 
@@ -221,7 +222,7 @@ export function bindInventoryDrag(app) {
           else if (note) noteDrop(app, event, note);
           if (shakeTray) shake(app.element.querySelector(`[data-tray="${tray}"]`));
         })
-        .catch((error) => console.error("AIM | drop from outside failed", error));
+        .catch((error) => LOG.error("Drop from outside failed", error));
       return;
     }
     const manual = listPrefsFor(game.settings.get(MODULE_ID, "listPrefs"), "equipment").sort === "manual";

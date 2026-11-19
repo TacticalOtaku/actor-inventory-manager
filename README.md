@@ -42,6 +42,14 @@ Download `actor-inventory-manager-v<version>.zip` from [GitHub Releases](https:/
 
 ---
 
+## Screenshots
+
+![AIM Actor Window Night theme with paperdoll, loadouts, and containers](docs/screenshots/equipment-paperdoll.png)
+![Side-by-side hover item comparison tooltip with stat deltas](docs/screenshots/item-compare-tooltip.png)
+![Warm Parchment light theme and Spells tab](docs/screenshots/parchment-theme.png)
+
+---
+
 ## Features
 
 ### Adaptive Actor Window

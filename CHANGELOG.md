@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.3.1
+
+### Changed
+- **License & Packaging**: Adopted **GNU GPL v3.0** (`GPL-3.0-only`) while preserving existing third-party font, particle pack, and `pixi-filters` notices inside the package.
+- **Manifest & Store Readiness**: Switched `manifest` to `releases/latest/download/module.json`, added `readme`, `changelog`, `bugs`, `license`, and `media` screenshot entries to `module.json`, and updated `README.md` with UI screenshots.
+- **Release Pipeline**: Added `.github/workflows/release.yml` for automated zip + manifest publishing and GitHub issue forms (`CONTRIBUTING.md`, `.github/ISSUE_TEMPLATE/`).
+
 ## 2.3.0
 
 ### Added

@@ -6,3 +6,7 @@ lang/
 templates/
 CLAUDE.md
 .superpowers/
+AGENTS.md
+release-notes/
+.claude/
+design/

@@ -9,7 +9,7 @@
 [![Foundry VTT](https://img.shields.io/badge/Foundry%20VTT-14-ff6400)](https://foundryvtt.com/)
 [![D&D 5e](https://img.shields.io/badge/D%26D%205e-5.3.3%2B-c62828)](https://github.com/foundryvtt/dnd5e)
 [![Languages](https://img.shields.io/badge/Languages-EN%20%7C%20RU-2e7d32)](lang/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-3b82f6)](LICENSE)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-3b82f6)](LICENSE)
 
 [Installation](#installation) · [Features](#features) · [Player Trading & Gifts](#player-trading--gifts) · [Integrations](#integrations) · [Customization](#customization) · [Development](#development)
 
@@ -31,7 +31,7 @@ AIM keeps the system or third-party sheet intact — for players, opening a supp
 In Foundry VTT Setup → **Add-on Modules** → **Install Module**, paste the Manifest URL:
 
 ```text
-https://raw.githubusercontent.com/TacticalOtaku/actor-inventory-manager/main/module.json
+https://github.com/TacticalOtaku/actor-inventory-manager/releases/latest/download/module.json
 ```
 
 ### Manual / Offline Archive
@@ -148,7 +148,9 @@ Requires **Node.js 24+** (`npm install`). Automated checks run on in-memory Foun
 | `npm run release` | Run `npm run check`, validate `module.json`, and build `dist/actor-inventory-manager-v<version>.zip` |
 | `npm run vendor` | Refresh bundled Onest font files and `styles/theme/fonts.css` |
 
-GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs linting, unit tests, and Foundry package validation on pushes to `main`, pull requests, and manual dispatches.
+GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs linting, unit tests, and Foundry package validation on pushes to `main` and manual dispatches. Tagged releases (`v*`) build and publish the ZIP archive and `module.json` via [release.yml](.github/workflows/release.yml).
+
+Pull Requests are disabled on this repository; bug reports and suggestions are welcome via [GitHub Issues](https://github.com/TacticalOtaku/actor-inventory-manager/issues) (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ### Project Docs
 - [API.md](API.md) — frozen public API, loadouts, equipment rule hooks, and macro examples
@@ -156,4 +158,4 @@ GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs linting, unit tests, an
 - [docs/live-check.md](docs/live-check.md) — manual verification checklist across Foundry module combinations
 - [GLOSSARY.md](GLOSSARY.md) — domain vocabulary
 - [CHANGELOG.md](CHANGELOG.md) — version-by-version release notes
-- [LICENSE](LICENSE) — MIT License
+- [LICENSE](LICENSE) — GNU General Public License v3.0 (GPL-3.0); bundled Onest font (`assets/fonts/OFL-onest.txt`), Kenney Particle Pack (`assets/vfx/LICENSE-kenney-particle-pack.txt`), and pixi-filters (`scripts/vendor/LICENSE-pixi-filters.txt`) retain their respective notices.

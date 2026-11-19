@@ -30,7 +30,7 @@ test("an archive reads back: every entry, its name, its data and the central dir
 
 test("a compendium pack the build does not hold makes the manifest unreleasable", () => {
   const manifest = { id: "x", version: "1.0.0", title: "X", compatibility: { minimum: "14", verified: "14", maximum: "14" },
-    url: "https://github.com/o/x", manifest: "https://raw.githubusercontent.com/o/x/main/module.json",
+    url: "https://github.com/o/x", manifest: "https://github.com/o/x/releases/latest/download/module.json",
     download: "https://github.com/o/x/releases/download/v1.0.0/x-v1.0.0.zip",
     esmodules: ["scripts/main.js"], packs: [{ path: "packs/items" }] };
   const problems = validateManifest(manifest, { version: "1.0.0", repository: "https://github.com/o/x", exists: (file) => file !== "packs/items" });

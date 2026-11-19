@@ -450,7 +450,7 @@
   `npm run deploy` replaces `npm run sync`; `FOUNDRY_DATA` now names the Foundry `Data` folder.
 - `npm run release` validates `module.json` and writes `dist/actor-inventory-manager-v<version>.zip`; it never
   replaces an existing archive.
-- `ARCHITECTURE.md` moved to `docs/architecture.md`; project rules in `CLAUDE.md`.
+- `ARCHITECTURE.md` moved to `docs/architecture.md`.
 
 ## 1.6.1
 

@@ -334,6 +334,7 @@
       "close": "Close",
       "cancel": "Cancel",
       "save": "Save",
+      "abilitySave": "Save",
       "abilityHint": "Check; Shift for a saving throw",
       "panelPending": "This tab arrives in the next 2.0 implementation slices.",
       "inspectorEmpty": "Select an entry to see its details.",

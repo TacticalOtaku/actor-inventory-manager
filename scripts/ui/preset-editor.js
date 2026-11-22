@@ -42,6 +42,7 @@ export class PresetEditor extends EditorBase {
     position: { width: 940, height: 680 },
     window: { icon: "fa-light fa-pen-ruler", resizable: true, minimizable: true },
     actions: {
+      slotClick: PresetEditor.#onSlotClick,
       addSlot: PresetEditor.#onAddSlot,
       moveSlot: PresetEditor.#onMoveSlot,
       removeSlot: PresetEditor.#onRemoveSlot,
@@ -74,6 +75,13 @@ export class PresetEditor extends EditorBase {
     this.working = workingFrom({ ...current, name: current.templateName });
     this.initialCap = getActorSourceAttunementMax(actor) ?? current.attunementMax;
     this.working.attunementMax = this.initialCap;
+    this.selectedSlotId = null;
+    this._scrollToken = 0;
+    this._abortScrollWait = null;
+  }
+
+  get motionOn() {
+    return this.element?.dataset.motion !== "off";
   }
 
   /** The preset the working copy started from; the actor's own layout for "custom". */
@@ -101,6 +109,7 @@ export class PresetEditor extends EditorBase {
       slots: working.slots.map((slot, i) => ({
         ...slot,
         shownLabel: slotLabel(slot),
+        selected: slot.id === this.selectedSlotId,
         first: i === 0,
         last: i === working.slots.length - 1,
         types: [...PHYSICAL_ITEM_TYPES].map((type) => ({ type, label: t(CONFIG.Item.typeLabels?.[type] ?? type), on: slot.itemTypes.includes(type) })),
@@ -117,7 +126,7 @@ export class PresetEditor extends EditorBase {
   #preview() {
     const working = this.working;
     const layout = dollLayout(working.slots, { max: working.attunementMax, attuned: 0 });
-    const slot = (def, style = "") => ({ id: def.id, label: slotLabel(def), icon: def.icon || "fa-light fa-gem", style, item: null, tip: slotLabel(def) });
+    const slot = (def, style = "") => ({ id: def.id, label: slotLabel(def), icon: def.icon || "fa-light fa-gem", style, item: null, selected: def.id === this.selectedSlotId, tip: slotLabel(def) });
     return {
       banner: layout.banner,
       title: t(layout.banner ? "AIM.window.doll.figureTitle" : "AIM.window.doll.title"),
@@ -145,6 +154,8 @@ export class PresetEditor extends EditorBase {
     OPEN_EDITORS.set(this.actorKey, this);
     stampTheme(this.element);
     this.element.addEventListener("change", (event) => this.#onChange(event));
+    this.element.addEventListener("focusin", (event) => this.#onSlotFocusOrClick(event));
+    this.element.addEventListener("click", (event) => this.#onSlotFocusOrClick(event));
     this._refreshHook = Hooks.on(REFRESH_HOOK, () => stampTheme(this.element));
     // «Авто» follows Foundry's colour scheme, as the actor window does.
     this._bodyObserver = new MutationObserver(() => this.element && stampTheme(this.element));
@@ -152,6 +163,8 @@ export class PresetEditor extends EditorBase {
   }
 
   _onClose(options) {
+    ++this._scrollToken;
+    this._abortScrollWait?.();
     if (OPEN_EDITORS.get(this.actorKey) === this) OPEN_EDITORS.delete(this.actorKey);
     Hooks.off(REFRESH_HOOK, this._refreshHook);
     this._bodyObserver?.disconnect();
@@ -186,6 +199,9 @@ export class PresetEditor extends EditorBase {
   }
 
   #load(id) {
+    ++this._scrollToken;
+    this._abortScrollWait?.();
+    this.selectedSlotId = null;
     this.sourceId = id;
     const template = id === "custom" ? getActorPaperdollTemplate(this.actor) : getTemplateById(id);
     const cap = this.working.attunementMax;
@@ -200,20 +216,125 @@ export class PresetEditor extends EditorBase {
     return { id, name: name || this.working.name || id, figure, attunementMax, slots };
   }
 
-  /* ─── Actions ─── */
-
-  static #onAddSlot() {
-    this.working.slots = addSlot(this.working.slots, t("AIM.window.editor.newSlot"));
-    this.render();
+  #slotCard(slotId) {
+    return [...(this.element?.querySelectorAll(".aim-editor-slots .aim-editor-slot[data-slot-id]") ?? [])]
+      .find((el) => el.dataset.slotId === slotId) ?? null;
   }
 
-  static #onMoveSlot(event, target) {
-    this.working.slots = moveSlot(this.working.slots, target.closest("[data-slot-id]").dataset.slotId, Number(target.dataset.delta));
-    this.render();
+  #syncSelectedSlot() {
+    if (!this.element) return;
+    for (const el of this.element.querySelectorAll(".aim-editor-preview .aim-slot[data-slot]")) {
+      el.classList.toggle("is-selected", el.dataset.slot === this.selectedSlotId);
+    }
+    for (const el of this.element.querySelectorAll(".aim-editor-slots .aim-editor-slot[data-slot-id]")) {
+      el.classList.toggle("is-selected", el.dataset.slotId === this.selectedSlotId);
+    }
+  }
+
+  #onSlotFocusOrClick(event) {
+    if (event.target.closest?.('[data-action="removeSlot"]')) return;
+    const slotId = event.target.closest?.(".aim-editor-slot[data-slot-id]")?.dataset.slotId;
+    if (!slotId || slotId === this.selectedSlotId) return;
+    ++this._scrollToken;
+    this._abortScrollWait?.();
+    this.selectedSlotId = slotId;
+    this.#syncSelectedSlot();
+  }
+
+  #scrollIntoViewAsync(element, options, scroller) {
+    this._abortScrollWait?.();
+    this._abortScrollWait = null;
+    const result = element.scrollIntoView?.(options);
+    if (options.behavior !== "smooth") return Promise.resolve();
+    if (result instanceof Promise) return result;
+    const host = scroller ?? globalThis.window;
+    if (!host?.addEventListener) return Promise.resolve();
+    return new Promise((resolve) => {
+      let timeoutId;
+      const finish = () => {
+        clearTimeout(timeoutId);
+        host.removeEventListener("scrollend", finish);
+        host.removeEventListener("scroll", onScroll);
+        if (this._abortScrollWait === finish) this._abortScrollWait = null;
+        resolve();
+      };
+      const onScroll = () => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(finish, 100);
+      };
+      this._abortScrollWait = finish;
+      host.addEventListener("scrollend", finish, { once: true });
+      host.addEventListener("scroll", onScroll, { passive: true });
+      timeoutId = setTimeout(finish, 100);
+    });
+  }
+
+  async #revealSlot(slotId, { focus = true, flash = true } = {}) {
+    const card = this.#slotCard(slotId);
+    if (!card) return;
+    const scroller = this.element?.querySelector(".aim-editor-slots") ?? null;
+    const scrollId = ++this._scrollToken;
+    const behavior = this.motionOn ? "smooth" : "auto";
+    const block = scroller && card.offsetHeight > scroller.clientHeight ? "start" : "nearest";
+    await this.#scrollIntoViewAsync(card, { block, inline: "nearest", behavior }, scroller);
+    if (!this.rendered || scrollId !== this._scrollToken || card.isConnected === false) return;
+    if (flash && this.motionOn) {
+      card.classList.remove("is-found");
+      void card.offsetWidth;
+      card.classList.add("is-found");
+      card.addEventListener?.("animationend", () => card.classList.remove("is-found"), { once: true });
+    }
+    if (focus) {
+      const active = card.ownerDocument?.activeElement;
+      const movedToOtherSlot = active && scroller?.contains(active) && !card.contains(active);
+      if (!movedToOtherSlot) card.querySelector('[data-field="label"]')?.focus({ preventScroll: true });
+    }
+  }
+
+  /* ─── Actions ─── */
+
+  static #onSlotClick(_event, target) {
+    const slotId = target?.dataset?.slot;
+    if (!slotId || !this.working.slots.some((s) => s.id === slotId)) return;
+    this.selectedSlotId = slotId;
+    this.#syncSelectedSlot();
+    return this.#revealSlot(slotId, { focus: true, flash: true });
+  }
+
+  static async #onAddSlot() {
+    const before = new Set(this.working.slots.map((s) => s.id));
+    this.working.slots = addSlot(this.working.slots, t("AIM.window.editor.newSlot"));
+    const added = this.working.slots.find((s) => !before.has(s.id));
+    this.selectedSlotId = added?.id ?? null;
+    await this.render();
+    if (added && this.rendered) await this.#revealSlot(added.id, { focus: true, flash: true });
+  }
+
+  static async #onMoveSlot(event, target) {
+    const slotId = target.closest("[data-slot-id]")?.dataset.slotId;
+    if (!slotId) return;
+    const delta = Number(target.dataset.delta);
+    this.working.slots = moveSlot(this.working.slots, slotId, delta);
+    this.selectedSlotId = slotId;
+    await this.render();
+    if (!this.rendered) return;
+    const card = this.#slotCard(slotId);
+    if (!card) return;
+    const sameBtn = card.querySelector(`[data-action="moveSlot"][data-delta="${delta}"]`);
+    const fallbackBtn = card.querySelector(`[data-action="moveSlot"][data-delta="${-delta}"]`);
+    const focusTarget = (sameBtn && !sameBtn.disabled)
+      ? sameBtn
+      : (fallbackBtn && !fallbackBtn.disabled)
+        ? fallbackBtn
+        : card.querySelector('[data-field="label"]');
+    focusTarget?.focus({ preventScroll: true });
+    await this.#revealSlot(slotId, { focus: false, flash: false });
   }
 
   static #onRemoveSlot(event, target) {
-    this.working.slots = removeSlot(this.working.slots, target.closest("[data-slot-id]").dataset.slotId);
+    const slotId = target.closest("[data-slot-id]")?.dataset.slotId;
+    this.working.slots = removeSlot(this.working.slots, slotId);
+    if (this.selectedSlotId === slotId) this.selectedSlotId = null;
     this.render();
   }
 

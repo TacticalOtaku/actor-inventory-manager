@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.3.2
+
+### Added
+- **Paperdoll Editor slot navigation** (`scripts/ui/preset-editor.js`, `templates/window/preset-editor.hbs`, `styles/window/editor.css`): clicking a slot in the paperdoll preview selects it on both the preview and the slot list, smoothly scrolls to its settings card, highlights it, and moves focus to its label field; focusing or clicking a slot card in the list also highlights the matching preview slot, and newly added slots are selected and revealed automatically.
+
+### Fixed
+- **Russian localization (`lang/ru.json`, `lang/en.json`, `templates/window/main.hbs`)**: separated dialog save button labels (`AIM.window.save` → `"Сохранить"`) from ability saving throw labels (`AIM.window.abilitySave` → `"Спас"`), translated `AIM.editor.gmOnly` (`"Только мастер может редактировать шаблоны кукол."`), and polished wording and spelling in `AIM.editor.appliedSuccess`, `AIM.editor.rules.locksOffHandOn2H`, `AIM.window.editor.changed`, and `AIM.encumbrance.heavily_encumbered`.
+
 ## 2.3.1
 
 ### Changed

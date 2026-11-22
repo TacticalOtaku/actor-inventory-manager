@@ -12,7 +12,8 @@
 
 .aim-editor-preview { display: grid; align-content: start; gap: var(--s2); min-height: 0; padding: var(--s4); overflow: auto; border-right: 1px solid var(--line); background: var(--surface-1); }
 .aim-editor-preview .aim-doll { background: var(--surface-0); }
-.aim-editor-preview .aim-slot { cursor: default; }
+.aim-editor-preview .aim-slot.is-selected { color: var(--text); }
+.aim-editor-preview .aim-slot.is-selected .aim-slot-label { color: var(--text); }
 .aim-editor-k { color: var(--text-3); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
 .aim-editor-k b { color: var(--text-2); font-family: var(--font-num); }
 
@@ -34,8 +35,14 @@
 .aim-editor .aim-btn { display: inline-flex; align-items: center; gap: 6px; }
 .aim-editor .aim-btn.is-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .aim-editor .aim-btn.is-quiet { background: transparent; color: var(--text-2); }
-.aim-editor-slots { flex: 1; display: grid; align-content: start; gap: var(--s2); min-height: 0; overflow: auto; padding-right: 4px; }
-.aim-editor-slot { border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-1); }
+.aim-editor-slots { flex: 1; display: grid; align-content: start; gap: var(--s2); min-height: 0; overflow: auto; padding: 3px 6px 3px 3px; }
+.aim-editor-slot { position: relative; scroll-margin-block: var(--s1); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-1); transition: border-color var(--d-fast), box-shadow var(--d-fast); }
+.aim-editor-slot.is-selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.aim-editor-slot.is-found::after { content: ""; position: absolute; inset: -1px; border: 1px solid var(--accent); border-radius: inherit; box-shadow: 0 0 0 3px var(--accent-soft); pointer-events: none; opacity: 0; animation: aim-editor-found 1200ms var(--ease-settle); }
+@keyframes aim-editor-found { 15%, 60% { opacity: 1; } }
+@media (forced-colors: active) {
+  .aim-editor-slot.is-selected { border: 2px solid Highlight; }
+}
 .aim-editor-slot-head { display: flex; align-items: center; gap: var(--s2); padding: 6px var(--s2); border-bottom: 1px solid var(--line); }
 .aim-editor-slot-head input[type="text"] { flex: 1; min-width: 0; }
 .aim-editor-slot-n { min-width: 24px; color: var(--text-3); font: 600 11px var(--font-num); text-align: right; }

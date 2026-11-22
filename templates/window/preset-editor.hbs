@@ -23,7 +23,7 @@
   </div>
   <div class="aim-editor-slots">
     {{#each slots}}
-    <div class="aim-editor-slot" data-slot-id="{{id}}">
+    <div class="aim-editor-slot {{#if selected}}is-selected{{/if}}" data-slot-id="{{id}}">
       <div class="aim-editor-slot-head">
         <span class="aim-editor-slot-n">{{order}}</span>
         <i class="{{icon}} aim-editor-slot-ico" aria-hidden="true"></i>

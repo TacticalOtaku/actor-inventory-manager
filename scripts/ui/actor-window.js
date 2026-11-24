@@ -529,6 +529,7 @@ export class ActorWindow extends WindowBase {
       const active = button.dataset.tab === tab;
       button.setAttribute("aria-selected", String(active));
       button.tabIndex = active ? 0 : -1;
+      if (active) button.scrollIntoView?.({ block: "nearest", inline: "nearest", behavior: this.motionOn ? "smooth" : "auto" });
     }
     for (const panel of this.element.querySelectorAll(".aim-panel")) {
       const on = panel.dataset.panel === tab;

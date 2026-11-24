@@ -14,14 +14,14 @@
 .aim-editor-preview .aim-doll { background: var(--surface-0); }
 .aim-editor-preview .aim-slot.is-selected { color: var(--text); }
 .aim-editor-preview .aim-slot.is-selected .aim-slot-label { color: var(--text); }
-.aim-editor-k { color: var(--text-3); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+.aim-editor-k { color: var(--text-3); font-size: var(--t-xs); text-transform: uppercase; letter-spacing: 0.06em; }
 .aim-editor-k b { color: var(--text-2); font-family: var(--font-num); }
 
 .aim-editor-form { display: flex; flex-direction: column; gap: var(--s3); min-height: 0; padding: var(--s4); }
 .aim-editor-top { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2) var(--s3); }
-.aim-editor-field { display: grid; gap: 4px; color: var(--text-3); font-size: 11px; }
+.aim-editor-field { display: grid; gap: 4px; color: var(--text-3); font-size: var(--t-xs); }
 .aim-editor input[type="text"], .aim-editor select {
-  height: 30px; padding: 0 var(--s2); border: 1px solid var(--line); border-radius: var(--r-sm);
+  height: var(--ctrl-h); padding: 0 var(--s2); border: 1px solid var(--line); border-radius: var(--r-sm);
   background: var(--surface-1); color: var(--text); font: 13px var(--font-ui); box-shadow: none;
 }
 .aim-editor input[type="text"]:focus-visible, .aim-editor select:focus-visible,
@@ -36,7 +36,7 @@
 .aim-editor .aim-btn.is-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .aim-editor .aim-btn.is-quiet { background: transparent; color: var(--text-2); }
 .aim-editor-slots { flex: 1; display: grid; align-content: start; gap: var(--s2); min-height: 0; overflow: auto; padding: 3px 6px 3px 3px; }
-.aim-editor-slot { position: relative; scroll-margin-block: var(--s1); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-1); transition: border-color var(--d-fast), box-shadow var(--d-fast); }
+.aim-editor-slot { position: relative; scroll-margin-block: var(--s1); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-1); box-shadow: var(--shadow-card); transition: border-color var(--d-fast), box-shadow var(--d-fast); }
 .aim-editor-slot.is-selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 .aim-editor-slot.is-found::after { content: ""; position: absolute; inset: -1px; border: 1px solid var(--accent); border-radius: inherit; box-shadow: 0 0 0 3px var(--accent-soft); pointer-events: none; opacity: 0; animation: aim-editor-found 1200ms var(--ease-settle); }
 @keyframes aim-editor-found { 15%, 60% { opacity: 1; } }

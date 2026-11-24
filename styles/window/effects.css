@@ -30,35 +30,36 @@
 .aim-effect .aim-effect-toggle { flex: 1; min-width: 0; display: grid; padding: 0; border: 0; border-radius: var(--r-xs); background: none; color: inherit; font: inherit; line-height: 1.2; text-align: left; cursor: pointer; }
 .aim-effect .aim-effect-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.aim-switch { position: relative; width: 28px; height: 16px; padding: 0; border: 0; border-radius: 99px; background: var(--surface-3); cursor: pointer; }
+.aim-switch { position: relative; width: 32px; height: 18px; padding: 0; border: 0; border-radius: 99px; background: var(--surface-3); cursor: pointer; transition: background-color var(--d-fast); }
 .aim-switch::after {
-  content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%;
+  content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%;
   background: var(--text-2); transition: transform var(--d-base) var(--ease-snap);
 }
 .aim-switch[aria-checked="true"] { background: var(--accent); }
-.aim-switch[aria-checked="true"]::after { transform: translateX(12px); background: var(--accent-ink); }
+.aim-switch[aria-checked="true"]::after { transform: translateX(14px); background: var(--accent-ink); }
 .aim-switch:disabled { opacity: 0.4; cursor: not-allowed; }
+.aim-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .aim-effect-detail { padding: 4px 8px 6px 36px; }
-.aim-effect-desc { color: var(--text-2); font-size: 11.5px; }
+.aim-effect-desc { color: var(--text-2); font-size: var(--t-sm); }
 .aim-effect-desc p { margin: 2px 0; }
 .aim-effect-changes { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; padding: 0; list-style: none; }
-.aim-effect-changes li { padding: 1px 6px; border-radius: 5px; background: var(--surface-3); color: var(--text-2); font: 500 10.5px var(--font-num); }
+.aim-effect-changes li { padding: 1px 6px; border-radius: 5px; background: var(--surface-3); color: var(--text-2); font: 500 var(--t-xs) var(--font-num); font-variant-numeric: tabular-nums; }
 
 /* the effects tab: the conditions grid on top, dnd5e's categories in columns */
-.aim-effectbook { display: grid; gap: var(--s3); padding-top: var(--s3); }
-.aim-conds { display: grid; gap: 6px; padding: var(--s3); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface-1); }
-.aim-conds-h, .aim-eff-cat-h { color: var(--text-3); font: 600 9.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; }
-.aim-conds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 4px; }
+.aim-effectbook { display: grid; gap: var(--s3); padding-top: var(--s1); }
+.aim-conds { display: grid; gap: 8px; padding: var(--s3); border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface-1); box-shadow: var(--shadow-card); }
+.aim-conds-h, .aim-eff-cat-h { color: var(--text-3); font: 600 var(--t-xs) var(--font-ui); letter-spacing: 0.1em; text-transform: uppercase; }
+.aim-conds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 5px; }
 .aim-cond {
-  display: flex; align-items: center; justify-content: flex-start; gap: 6px; min-width: 0; height: 28px; min-height: 0; padding: 0 6px 0 8px;
+  display: flex; align-items: center; justify-content: flex-start; gap: 7px; min-width: 0; min-height: 30px; padding: 3px 8px;
   border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface-0); color: var(--text-2);
-  font: 11.5px var(--font-ui); cursor: pointer; transition: border-color var(--d-fast), color var(--d-fast), transform var(--d-fast) var(--ease-snap);
+  font: 12px var(--font-ui); cursor: pointer; transition: border-color var(--d-fast), color var(--d-fast), background-color var(--d-fast), transform var(--d-fast) var(--ease-snap);
 }
 .aim-cond i { flex: none; width: 7px; height: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--text-3); }
 .aim-cond span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .aim-cond:hover:not(:disabled) { border-color: var(--line-strong); color: var(--text); }
-.aim-cond:active:not(:disabled) { transform: scale(0.95); }
+.aim-cond:active:not(:disabled) { transform: scale(0.97); }
 .aim-cond:disabled { cursor: default; }
 .aim-cond.is-on { border-color: color-mix(in oklab, var(--hp) 55%, transparent); color: var(--text); background: color-mix(in oklab, var(--hp) 12%, var(--surface-0)); }
 .aim-cond.is-on i { background: var(--hp); box-shadow: 0 0 6px color-mix(in oklab, var(--hp) 60%, transparent); }
@@ -67,7 +68,15 @@
 .aim-cond.is-immune span { text-decoration: line-through; }
 .aim-eff-new { justify-self: start; display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; }
 .aim-eff-cats { columns: 280px; column-gap: var(--s3); }
-.aim-eff-cat { display: grid; gap: 3px; margin: 0 0 var(--s3); break-inside: avoid; }
+.aim-eff-cat { display: grid; gap: 4px; margin: 0 0 var(--s3); break-inside: avoid; }
 .aim-eff-cat-h { display: flex; align-items: center; gap: 6px; margin: 2px 4px; }
-.aim-eff-cat-h span { font-family: var(--font-num); }
+.aim-eff-cat-h span { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
 .aim-eff-cat-h::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+@media (forced-colors: active) {
+  .aim-switch { border: 1px solid ButtonText; }
+  .aim-switch::after { background: ButtonText; }
+  .aim-switch[aria-checked="true"] { border-color: Highlight; background: Highlight; }
+  .aim-switch[aria-checked="true"]::after { background: HighlightText; }
+  .aim-cond.is-on { border: 2px solid Highlight; }
+}

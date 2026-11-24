@@ -12,30 +12,38 @@
 .aim-window.is-settings .aim-drawer { transform: none; }
 .aim-drawer-head { display: flex; align-items: center; justify-content: space-between; padding: var(--s4); border-bottom: 1px solid var(--line); }
 .aim-drawer-head h3 { margin: 0; border: 0; font: 600 16px var(--font-display); color: var(--text); }
-.aim-drawer-body { flex: 1; overflow: auto; overscroll-behavior: contain; padding: var(--s2) var(--s4) var(--s4); display: grid; gap: var(--s4); align-content: start; }
+.aim-drawer-body { flex: 1; overflow: auto; overscroll-behavior: contain; padding: var(--s3) var(--s4) var(--s4); display: grid; gap: var(--s3); align-content: start; }
 .aim-field { display: grid; gap: var(--s2); }
-.aim-field > span { font: 600 10.5px var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); }
+.aim-field + .aim-field { padding-top: var(--s3); border-top: 1px solid var(--line); }
+.aim-field > span { font: 600 var(--t-xs) var(--font-ui); letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-3); }
 /* Text choices (theme, density, motion); the inventory's icon switcher is .aim-seg. */
 .aim-choice { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; gap: 2px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-0); }
-.aim-choice button { display: grid; place-items: center; min-width: 0; height: 28px; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-2); font: 500 12.5px var(--font-ui); cursor: pointer; }
-.aim-choice button[aria-pressed="true"] { background: var(--surface-3); color: var(--text); }
+.aim-choice button { display: grid; place-items: center; min-width: 0; height: 28px; padding: 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-2); font: 500 12.5px var(--font-ui); cursor: pointer; transition: background-color var(--d-fast), color var(--d-fast); }
+.aim-choice button[aria-pressed="true"] { background: var(--surface-3); color: var(--text); box-shadow: var(--shadow-card); }
 .aim-choice button:disabled { opacity: 0.4; cursor: not-allowed; }
 .aim-swatches { display: flex; gap: var(--s2); }
-.aim-swatch { width: 28px; height: 28px; padding: 0; border-radius: 50%; border: 2px solid transparent; background: var(--sw); box-shadow: inset 0 0 0 2px var(--surface-1); cursor: pointer; transition: transform var(--d-fast) var(--ease-snap); }
+.aim-swatch { width: 28px; height: 28px; padding: 0; border-radius: 50%; border: 2px solid transparent; background: var(--sw); box-shadow: inset 0 0 0 2px var(--surface-1); cursor: pointer; transition: transform var(--d-fast) var(--ease-snap); forced-color-adjust: none; }
 .aim-swatch:hover { transform: scale(1.1); }
-.aim-swatch[aria-pressed="true"] { border-color: var(--text); }
+.aim-swatch[aria-pressed="true"] { border-color: var(--text); box-shadow: inset 0 0 0 2px var(--surface-1), 0 1px 4px rgb(0 0 0 / 0.25); }
 .aim-hint { margin: 0; font-size: 11.5px; line-height: 1.4; color: var(--text-3); }
 .aim-hint.is-pending { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); color: var(--warn); }
 .aim-toggle { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: 34px; color: var(--text); font-size: 13px; cursor: pointer; }
 .aim-toggle small { margin-left: 6px; font-size: 11px; color: var(--text-3); white-space: nowrap; }
 .aim-toggle.is-off { cursor: default; color: var(--text-3); }
-.aim-toggle input { appearance: none; position: relative; flex: none; width: 34px; height: 20px; margin: 0; border-radius: 99px; background: var(--surface-3); cursor: pointer; transition: background-color var(--d-base); }
+.aim-toggle input { appearance: none; position: relative; flex: none; width: 36px; height: 20px; margin: 0; border: 1px solid var(--line-strong); border-radius: 99px; background: var(--surface-3); cursor: pointer; transition: background-color var(--d-base), border-color var(--d-base); }
 /* Foundry draws a checkbox's box in ::before; the switch is the input and its ::after knob only. */
 .aim-toggle input::before { content: none; display: none; }
-.aim-toggle input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--text-2); transition: transform var(--d-base) var(--ease-snap); }
-.aim-toggle input:checked { background: var(--accent); }
-.aim-toggle input:checked::after { transform: translateX(14px); background: var(--accent-ink); }
+.aim-toggle input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--text-2); transition: transform var(--d-base) var(--ease-snap), background-color var(--d-base); }
+.aim-toggle input:checked { background: var(--accent); border-color: var(--accent); }
+.aim-toggle input:checked::after { transform: translateX(16px); background: var(--accent-ink); }
 .aim-toggle input:disabled { opacity: 0.45; cursor: default; }
 .aim-drawer-foot { display: grid; gap: var(--s2); padding-top: var(--s3); border-top: 1px solid var(--line); }
 .aim-drawer-foot > .aim-btn { justify-self: start; }
 .aim-reset-ask { display: flex; justify-content: flex-end; gap: var(--s2); }
+@media (forced-colors: active) {
+  .aim-choice button[aria-pressed="true"] { border: 1px solid Highlight; }
+  .aim-swatch[aria-pressed="true"] { border-color: Highlight; outline: 2px solid Highlight; outline-offset: 2px; }
+  .aim-toggle input::after { background: ButtonText; }
+  .aim-toggle input:checked { background: Highlight; border-color: Highlight; forced-color-adjust: none; }
+  .aim-toggle input:checked::after { background: HighlightText; }
+}

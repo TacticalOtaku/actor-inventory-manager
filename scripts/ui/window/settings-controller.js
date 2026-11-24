@@ -104,6 +104,8 @@ export class SettingsController {
     stampTheme(el, { fonts: this.fontsAtLoad });
     el.dataset.role = this.app.canEdit ? (game.user.isGM ? "gm" : "owner") : "observer";
     el.classList.toggle("is-trading", this.app.trade.open);
+    const tradePart = el.querySelector('[data-application-part="trade"]');
+    if (tradePart) tradePart.inert = el.classList.contains("is-settings") || !this.app.trade.open;
     el.dataset.actorType = this.app.actor.type;
     const { hp } = readRail(this.app.actor);
     el.dataset.vital = vitalState(hp.value, hp.max);
@@ -158,10 +160,15 @@ export class SettingsController {
 
   syncDrawer(open) {
     const drawer = this.app.element.querySelector('[data-application-part="drawer"]');
-    if (drawer) drawer.inert = !open;
+    if (drawer) {
+      drawer.inert = !open;
+      drawer.querySelector(".aim-drawer")?.setAttribute("aria-modal", String(open));
+    }
     for (const part of this.app.element.querySelectorAll(
       '[data-application-part="rail"], [data-application-part="main"], [data-application-part="inspector"], [data-application-part="trade"]'
-    )) part.inert = open;
+    )) {
+      part.inert = open || (part.dataset.applicationPart === "trade" && !this.app.trade.open);
+    }
   }
 
   restoreDrawerFocus(content, drawerFocus) {

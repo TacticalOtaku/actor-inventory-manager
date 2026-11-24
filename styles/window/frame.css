@@ -41,42 +41,58 @@
 .aim-rail {
   display: flex; flex-direction: column; gap: var(--s3);
   min-height: 0; padding: var(--s4) var(--s3);
-  overflow: auto; scrollbar-gutter: stable;
+  overflow: auto; scrollbar-gutter: stable; overscroll-behavior: contain;
   background: var(--surface-0);
   border-right: 1px solid var(--line);
 }
 .aim-window[data-layout="narrow"] .aim-rail {
   flex-direction: row; align-items: stretch; gap: var(--s2);
-  overflow: auto hidden; padding: 10px 12px 8px;
+  overflow: auto hidden; overscroll-behavior-x: contain; scroll-padding-inline: 24px;
+  padding: 10px 12px 8px;
   border-right: 0; border-bottom: 1px solid var(--line);
 }
 .aim-rail-portrait { display: none; align-items: center; gap: var(--s3); }
 .aim-window[data-layout="compact"] .aim-rail-portrait { display: flex; }
 .aim-avatar { flex: none; width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid var(--accent-line); }
 .aim-rail-id { flex: 1; min-width: 0; }
-.aim-rail-name { font: 600 16px/1.1 var(--font-display); }
-.aim-rail-sub { color: var(--text-2); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aim-rail-name { font: 600 16px/1.15 var(--font-display); letter-spacing: -0.01em; }
+.aim-rail-sub { color: var(--text-2); font-size: var(--t-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.aim-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.aim-main { container: aim-main / inline-size; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .aim-tabs {
   position: relative; display: flex; gap: var(--s1);
-  padding: 0 var(--s4); overflow-x: auto; scrollbar-width: none;
+  padding: 0 var(--s4); overflow-x: auto; scrollbar-width: none; scroll-padding-inline: 28px;
   border-bottom: 1px solid var(--line);
+}
+@supports (animation-timeline: scroll(self inline)) {
+  .aim-tabs {
+    --fade-size: 28px;
+    mask:
+      linear-gradient(black, black) no-clip subtract,
+      linear-gradient(to right, black, transparent) 0 0 / var(--fade-start) 100% no-repeat no-clip,
+      linear-gradient(to right, transparent, black) 100% 0 / var(--fade-end) 100% no-repeat no-clip;
+    animation: aim-tab-fade-start linear both, aim-tab-fade-end linear both;
+    animation-timeline: scroll(self inline);
+    animation-range: 0 var(--fade-size), calc(100% - var(--fade-size)) 100%;
+  }
+  @keyframes aim-tab-fade-start { to { --fade-start: var(--fade-size); } }
+  @keyframes aim-tab-fade-end { from { --fade-end: var(--fade-size); } }
 }
 .aim-tabs::-webkit-scrollbar { display: none; }
 .aim-tab {
   flex: none; height: 40px; padding: 0 var(--s3);
   border: 0; border-radius: 0; background: transparent;
-  position: relative; color: var(--text-2); font: 500 13px var(--font-ui); cursor: pointer;
+  position: relative; color: var(--text-2); font: 500 var(--t-body) var(--font-ui); cursor: pointer;
   transition: color var(--d-fast);
 }
 .aim-tab:hover, .aim-tab[aria-selected="true"] { color: var(--text); }
 /* a hovered tab previews its underline */
 .aim-tab::after { content: ""; position: absolute; left: var(--s3); right: var(--s3); bottom: 0; height: 2px; border-radius: 2px; background: var(--accent-line); transform: scaleX(0); transition: transform var(--d-base) var(--ease-settle); }
 .aim-tab:hover:not([aria-selected="true"])::after { transform: scaleX(1); }
-.aim-tab-n { margin-left: 6px; padding: 1px 5px; border-radius: 99px; background: var(--surface-3); color: var(--text-3); font: 600 10px var(--font-num); vertical-align: 1px; }
+.aim-tab-n { margin-left: 6px; padding: 1px 6px; border-radius: 99px; background: var(--surface-3); color: var(--text-2); font: 600 10.5px var(--font-num); font-variant-numeric: tabular-nums; vertical-align: 1px; }
+.aim-tab[aria-selected="true"] .aim-tab-n { background: var(--accent-soft); color: var(--text); }
 /* once a panel is scrolled, the tab strip casts a soft shadow over it */
-.aim-main.is-scrolled .aim-tabs { z-index: 1; box-shadow: 0 8px 14px -10px rgb(0 0 0 / 0.55); }
+.aim-main.is-scrolled .aim-tabs { z-index: 1; box-shadow: 0 8px 16px -10px var(--scroll-shadow); }
 .aim-tab[hidden] { display: none; }
 .aim-tab-ink {
   position: absolute; left: 0; bottom: -1px; height: 2px; width: 100px;
@@ -85,12 +101,12 @@
   transition: transform var(--d-slow) var(--ease-settle);
 }
 .aim-panels { position: relative; flex: 1; min-height: 0; }
-.aim-panel { position: absolute; inset: 0; overflow: auto; padding: var(--s4); scrollbar-gutter: stable; }
+.aim-panel { position: absolute; inset: 0; overflow: auto; overscroll-behavior: contain; padding: var(--s4); scrollbar-gutter: stable; }
 .aim-panel[hidden] { display: none; }
-.aim-empty { margin: var(--s5) auto; max-width: 36ch; text-align: center; color: var(--text-3); font-size: 12.5px; }
+.aim-empty { margin: var(--s5) auto; max-width: 36ch; text-align: center; color: var(--text-3); font-size: var(--t-md); line-height: 1.5; }
 
 .aim-inspector {
-  min-height: 0; overflow: auto; padding: var(--s4);
+  min-height: 0; overflow: auto; overscroll-behavior: contain; padding: var(--s4);
   background: var(--surface-1); border-left: 1px solid var(--line);
 }
 
@@ -100,20 +116,35 @@
   width: 30px; height: 30px; padding: 0;
   border: 1px solid transparent; border-radius: var(--r-sm);
   background: transparent; color: var(--text-2); cursor: pointer;
-  transition: color var(--d-fast), border-color var(--d-fast), background-color var(--d-fast);
+  transition: color var(--d-fast), border-color var(--d-fast), background-color var(--d-fast), transform var(--d-fast) var(--ease-snap);
 }
-.aim-ibtn:hover { color: var(--text); border-color: var(--line-strong); background-color: var(--surface-2); }
+.aim-ibtn:hover:not(:disabled) { color: var(--text); border-color: var(--line-strong); background-color: var(--surface-2); }
+.aim-ibtn:active:not(:disabled) { transform: scale(0.95); }
 .aim-ibtn:focus-visible, .aim-tab:focus-visible, .aim-btn:focus-visible,
-.aim-window :is(input, select, textarea, .aim-pip, .aim-ability, .aim-choice button, .aim-swatch):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.aim-window :is(input, select, textarea, .aim-pip, .aim-ability, .aim-choice button, .aim-swatch):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .aim-btn {
-  height: 30px; padding: 0 var(--s3);
+  height: var(--ctrl-h); padding: 0 var(--s3);
   border: 1px solid var(--line-strong); border-radius: var(--r-sm);
-  background: var(--surface-2); color: var(--text); font: 500 12.5px var(--font-ui); cursor: pointer;
-  transition: border-color var(--d-fast), transform var(--d-fast) var(--ease-snap);
+  background: var(--surface-2); color: var(--text); font: 500 var(--t-md) var(--font-ui); cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--d-fast), background-color var(--d-fast), transform var(--d-fast) var(--ease-snap);
 }
-.aim-btn:hover:not(:disabled) { border-color: var(--accent-line); transform: translateY(-1px); }
-.aim-btn:active:not(:disabled) { transform: translateY(0) scale(0.97); }
+@media (hover: hover) and (pointer: fine) {
+  .aim-btn:hover:not(:disabled) { border-color: var(--accent-line); transform: translateY(-1px); }
+}
+.aim-btn:active:not(:disabled) { transform: scale(0.985); }
 .aim-btn.is-danger { background: var(--hp); border-color: var(--hp); color: var(--surface-0); }
+
+@media (pointer: coarse) {
+  .aim-ibtn { min-inline-size: 36px; min-block-size: 36px; }
+  .aim-btn { min-block-size: 38px; }
+}
+
+@media (forced-colors: active) {
+  .aim-tab[aria-selected="true"]::after { transform: scaleX(1); border-block-end: 2px solid Highlight; background: none; }
+  .aim-tab-ink { display: none; }
+  .aim-btn, .aim-ibtn { border: 1px solid ButtonText; }
+}
 
 /* scrollbars */
 .aim-window ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -130,11 +161,11 @@
 .aim-spot { position: relative; overflow: hidden; isolation: isolate; }
 .aim-spot::before {
   content: ""; position: absolute; left: 0; top: 0; z-index: -1; width: 280px; height: 280px; border-radius: 50%; pointer-events: none;
-  background: radial-gradient(circle, rgb(255 255 255 / 0.07), transparent 70%); opacity: 0;
+  background: radial-gradient(circle, rgb(255 255 255 / 0.06), transparent 70%); opacity: 0;
   transform: translate(calc(var(--mx, 50%) - 140px), calc(var(--my, 50%) - 140px)); transition: opacity var(--d-base);
 }
 .aim-spot:hover::before { opacity: 1; }
-.aim-root[data-theme="parchment"] .aim-spot::before { background: radial-gradient(circle, rgb(255 255 255 / 0.5), transparent 70%); }
+.aim-root[data-theme="parchment"] .aim-spot::before { background: radial-gradient(circle, rgb(255 255 255 / 0.34), transparent 70%); }
 /* the press ripple */
 .aim-ripple-host { position: relative; overflow: hidden; }
 .aim-ripple-host > .aim-ripple { position: absolute; margin: 0; border-radius: 50%; background: currentColor; opacity: 0; pointer-events: none; }

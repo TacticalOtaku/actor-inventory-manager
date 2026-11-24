@@ -1,24 +1,31 @@
 /* AIM: Actor Window - the spells tab: slot gems, prepared spells, spell rows, preparation warning */
 
-.aim-spell-filters { flex-wrap: wrap; margin: calc(var(--s1) * -1) 0 var(--s3); }
+.aim-spell-filters { flex-wrap: wrap; margin: calc(var(--s1) * -1) 0 var(--s3); gap: 6px; }
 
 /* slot tracks: one row of gems per circle, the pact track after them */
 .aim-slot-tracks { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s3); }
-.aim-slot-track { display: grid; gap: 6px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-1); }
-.aim-slot-track b { color: var(--text-3); font: 600 10.5px var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; }
+.aim-slot-track { display: grid; gap: 7px; padding: 9px 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-1); box-shadow: var(--shadow-card); }
+.aim-slot-track b { color: var(--text-3); font: 600 var(--t-xs) var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; }
 .aim-slot-track.is-pact { border-color: color-mix(in oklab, var(--arcane) 45%, transparent); }
 .aim-slot-track.is-pact b { color: var(--arcane); }
-.aim-gems { display: flex; gap: 6px; }
+.aim-gems { display: flex; gap: 7px; }
 .aim-gem {
   position: relative; width: 14px; height: 14px; min-height: 0; padding: 0;
   border: 1.5px solid var(--accent); border-radius: 3px; background: transparent; transform: rotate(45deg);
   cursor: pointer; transition: box-shadow var(--d-fast), transform var(--d-fast) var(--ease-snap);
 }
+.aim-gem:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .aim-slot-track.is-pact .aim-gem { border-color: var(--arcane); }
 .aim-gem.is-lit { background: var(--accent); box-shadow: 0 0 8px color-mix(in oklab, var(--accent) 45%, transparent); }
 .aim-slot-track.is-pact .aim-gem.is-lit { background: var(--arcane); box-shadow: 0 0 8px color-mix(in oklab, var(--arcane) 45%, transparent); }
 .aim-gem:disabled { cursor: default; }
-.aim-gem:not(:disabled):hover { transform: rotate(45deg) scale(1.15); }
+@media (hover: hover) and (pointer: fine) {
+  .aim-gem:not(:disabled):hover { transform: rotate(45deg) scale(1.15); }
+}
+@media (pointer: coarse) {
+  .aim-gem { width: 18px; height: 18px; }
+  .aim-gems { gap: 10px; }
+}
 .aim-gem.is-glint { animation: aim-gem-glint 700ms ease-out; }
 @keyframes aim-gem-glint { 40% { transform: rotate(45deg) scale(1.4); } }
 .aim-gem.is-burst { animation: aim-gem-burst 520ms var(--ease-settle); }
@@ -28,12 +35,12 @@
 
 /* sections */
 .aim-section.is-prepared { border-color: color-mix(in oklab, var(--arcane) 35%, transparent); }
-.aim-sec-meta { flex: none; color: var(--text-3); font: 500 11px var(--font-num); white-space: nowrap; }
-.aim-sec-head .aim-sec-n { flex: 1; }
+.aim-sec-meta { flex: none; color: var(--text-3); font: 500 var(--t-sm) var(--font-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.aim-sec-head .aim-sec-n { flex: none; margin-right: auto; }
 .aim-sec-meta.is-full { color: var(--warn); }
 .aim-sec-meta.is-over { color: var(--hp); }
 .aim-sec-meta.is-refused { animation: aim-shake 360ms var(--ease-settle); }
-.aim-divider { display: flex; align-items: center; gap: var(--s2); margin: var(--s2) 0 var(--s3); color: var(--text-3); font: 600 11px var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; }
+.aim-divider { display: flex; align-items: center; gap: var(--s2); margin: var(--s4) 0 var(--s3); color: var(--text-3); font: 600 var(--t-xs) var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase; }
 .aim-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 
 /* spell rows */
@@ -55,7 +62,8 @@
 .aim-tag.is-always { color: var(--accent); background: var(--accent-soft); }
 /* SC can place a dark gradient beneath the light theme's dark label colors. */
 .aim-root[data-theme="parchment"] .aim-row.scirc-inv-gradient-enabled .aim-tag:is(.is-conc, .is-rit, .is-always) {
-  background: var(--surface-0);
+  background: color-mix(in oklab, var(--surface-0) 92%, transparent);
+  border: 1px solid var(--line);
 }
 .aim-row-act .aim-cast { color: var(--tone, var(--accent)); }
 .aim-row-act .aim-cast.is-ritual { color: var(--school-trs); }
@@ -64,7 +72,12 @@
 .aim-detail .aim-btn.is-on { border-color: var(--arcane); color: var(--arcane); }
 
 /* the header chip mirroring dnd5e's preparation warning */
-.aim-prep-warn { display: inline-flex; align-items: center; gap: 5px; height: 24px; margin: 2px 0; padding: 0 10px; border-radius: 99px; background: color-mix(in oklab, var(--hp) 16%, var(--surface-2)); color: var(--hp); font-size: 11.5px; }
+.aim-prep-warn { display: inline-flex; align-items: center; gap: 5px; height: 24px; margin: 3px 0 1px; padding: 0 10px; border: 1px solid color-mix(in oklab, var(--hp) 40%, transparent); border-radius: 99px; background: color-mix(in oklab, var(--hp) 14%, var(--surface-2)); color: var(--hp); font-size: var(--t-sm); font-variant-numeric: tabular-nums; }
+
+@media (forced-colors: active) {
+  .aim-gem { border-color: ButtonText; }
+  .aim-gem.is-lit { background: Highlight; }
+}
 
 .aim-window[data-motion="off"] .aim-gem { transition: none; }
 .aim-window[data-motion="off"] .aim-gem.is-burst, .aim-window[data-motion="off"] .aim-gem.is-pop { animation: none; }

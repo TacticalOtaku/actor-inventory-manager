@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 // WCAG AA for text: every colour used as text reaches 4.5:1 on all four surfaces, in both themes (#26).
 const css = readFileSync(new URL("../styles/theme/tokens.css", import.meta.url), "utf8");
+const fontsCss = readFileSync(new URL("../styles/theme/fonts.css", import.meta.url), "utf8");
 
 function block(selector) {
   const start = css.indexOf(`${selector} {`);
@@ -43,4 +44,21 @@ describe("theme contrast", () => {
       }
     });
   }
+
+  it("unifies display, UI, and numeric typography on bundled Onest without legacy local faces", () => {
+    assert.doesNotMatch(css, /AIM Display|Palatino/i);
+    assert.match(css, /--font-display:\s*var\(--font-ui\)\s*;/);
+    const webFontsBlock = css.slice(
+      css.indexOf('.aim-root[data-fonts="web"] {'),
+      css.indexOf("}", css.indexOf('.aim-root[data-fonts="web"] {')),
+    );
+    for (const token of ["--font-display", "--font-ui", "--font-num"]) {
+      assert.match(webFontsBlock, new RegExp(`${token}:\\s*"Onest Variable"`));
+    }
+    const fontFiles = [...fontsCss.matchAll(/url\(\.\.\/\.\.\/(assets\/fonts\/[^)]+)\)/g)].map((m) => m[1]);
+    assert.ok(fontFiles.length >= 4, "expected bundled Onest font subsets");
+    for (const file of fontFiles) {
+      assert.ok(existsSync(new URL(`../${file}`, import.meta.url)), `missing bundled font: ${file}`);
+    }
+  });
 });

@@ -2,6 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { PACKAGE_ENTRIES, root as packageRoot } from "../tools/package-files.mjs";
+import { releaseUrls } from "../tools/release-manifest.mjs";
 
 const root = new URL("../", import.meta.url);
 const readJson = async (path) => JSON.parse(await readFile(new URL(path, root), "utf8"));
@@ -39,4 +42,17 @@ test("every listed file exists and both languages ship", async () => {
   for (const file of files) assert.ok(existsSync(new URL(file, root)), file);
   assert.deepEqual(manifest.languages.map((language) => language.lang).sort(), ["en", "ru"]);
   assert.ok(manifest.languages.every((language) => language.path.startsWith("lang/")), "languages live in lang/");
+});
+
+test("release URLs, owner metadata, and packaged documentation entries match", async () => {
+  const manifest = await readJson("module.json");
+  const expected = releaseUrls(manifest.url ?? "", manifest.id, manifest.version);
+  assert.equal(manifest.manifest, expected.manifest);
+  assert.equal(manifest.download, expected.download);
+  assert.deepEqual(manifest.authors, [{ name: "TacticalOtaku", url: "https://github.com/TacticalOtaku" }]);
+  assert.ok(PACKAGE_ENTRIES.includes("README.md"));
+  assert.ok(PACKAGE_ENTRIES.includes("README.ru.md"));
+  for (const entry of PACKAGE_ENTRIES) {
+    assert.ok(existsSync(join(packageRoot, entry)), `package entry exists: ${entry}`);
+  }
 });

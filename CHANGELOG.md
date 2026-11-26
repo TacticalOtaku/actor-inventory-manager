@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.3.3
+
+### Changed
+- **Unified Onest display typography (`styles/theme/tokens.css`)**: unified `--font-display` with `--font-ui` and `--font-num` so both Latin and Cyrillic headings render in the bundled **Onest** variable font when web fonts are enabled (`useWebFonts`), removing the Latin-only local `Palatino` / `Book Antiqua` `@font-face` (`"AIM Display"`). When web fonts are disabled, headings, UI copy, and numerals fall back consistently to system UI fonts.
+- **Design tokens, responsive layout & accessibility (`styles/theme/tokens.css`, `styles/window/*.css`, `templates/window/main.hbs`, `templates/window/inspector.hbs`, `scripts/ui/actor-window.js`, `scripts/ui/window/settings-controller.js`)**: refined Night and Parchment surface/border/shadow tokens, unified control height (`--ctrl-h`, `--ctrl-sm`) and typography scale (`--t-xs`–`--t-title`) tokens with `tabular-nums`, added `@container aim-main` responsive rules for abilities and the inventory toolbar, switched the header to a flex bar preventing title/tool overlap, balanced the 5-item NPC stat grid, added tab-strip scroll fades, active tab `scrollIntoView`, `overscroll-behavior: contain`, an empty-state compass placeholder in the wide inspector, `aria-modal`/`inert` synchronization for the settings drawer and closed trade panel, `forced-colors: active` high-contrast styles, `pointer: coarse` touch targets, and `hover: none` action visibility.
+- **Documentation, packaging & release workflow (`README.md`, `README.ru.md`, `tools/package-files.mjs`, `.github/workflows/release.yml`, `.github/ISSUE_TEMPLATE/`)**: added synchronized Russian documentation (`README.ru.md`) and included it in the Foundry release archive, unified `README.md` badges and layout, added the Foundry AI Content Policy disclosure section, quoted YAML descriptions in GitHub issue templates, and automated `CHANGELOG.md`-based release notes with diff links in `.github/workflows/release.yml`.
+
 ## 2.3.2
 
 ### Added
